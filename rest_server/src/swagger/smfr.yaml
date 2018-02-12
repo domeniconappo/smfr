@@ -1,0 +1,155 @@
+swagger: '2.0'
+info:
+  title: SMFR Rest Server
+  description: SMFR Rest API
+  version: '1.0'
+consumes:
+  - application/json
+produces:
+  - application/json
+
+paths:
+
+  /collections:
+    post:
+      tags: [collections]
+      operationId: server.api.collections.post
+      summary: Submit a new collection
+      parameters:
+        - in: body
+          name: payload
+          schema:
+            $ref: '#/definitions/CollectorPayload'
+      responses:
+        200:
+          description: Return collectors
+          schema:
+            type: object
+            $ref: '#/definitions/CollectorResponse'
+    get:
+      tags: [collections]
+      operationId: server.api.collections.get
+      summary: Get all collections defined in SMFR
+      responses:
+        200:
+          description: Return collectors
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/CollectorResponse'
+
+  /collections/active:
+    get:
+      tags: [collections]
+      operationId: server.api.collections.get_running_collectors
+      summary: Get running collectors
+      responses:
+        200:
+          description: Return collectors
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/CollectorResponse'
+
+  /collections/start/{collector_id}:
+    post:
+      tags: [collections]
+      operationId: server.api.collections.start_collector
+      parameters:
+        - in: path
+          name: collector_id
+          type: integer
+          required: true
+          description: Numeric ID of the stored collector to start.
+      summary: Start a previously defined collector
+      responses:
+        204:
+          description: The collector was started successfully.
+
+  /collections/stop/{collector_id}:
+    post:
+      tags: [collections]
+      operationId: server.api.collections.stop_collector
+      parameters:
+        - in: path
+          name: collector_id
+          type: integer
+          required: true
+          description: Numeric ID of the stored collector to start.
+      summary: Stop a previously defined and running collector
+      responses:
+        204:
+          description: The collector was stopped successfully.
+
+
+definitions:
+
+  Collection:
+    type: object
+    properties:
+      id:
+        type: integer
+      trigger:
+        type: string
+        enum: [background, on-demand, manual]
+      ctype:
+        type: string
+        enum: [keywords, geo]
+      forecast_id:
+        type: string
+      kwfile:
+        type: string
+      locfile:
+        type: string
+      runtime:
+        type: string
+        format: date-time
+      nuts3:
+        type: string
+      nuts3source:
+        type: string
+      status:
+        type: string
+        enum: [active, inactive]
+      started_at:
+        type: string
+        format: date-time
+      stopped_at:
+        type: string
+        format: date-time
+
+  CollectorPayload:
+    type: object
+    required: [config, trigger, ctype]
+    properties:
+      config:
+        type: string
+        description: Config file to init Collector instance
+      trigger:
+        type: string
+        enum: [background, on-demand, manual]
+      ctype:
+        type: string
+        enum: [keywords, geo]
+      forecast_id:
+        type: string
+      kwfile:
+        type: string
+      locfile:
+        type: string
+      runtime:
+        type: string
+        format: date-time
+      nuts3:
+        type: string
+      nuts3source:
+        type: string
+
+  CollectorResponse:
+    type: object
+    properties:
+      collection:
+        $ref: '#/definitions/Collection'
+      id:
+        type: integer
+

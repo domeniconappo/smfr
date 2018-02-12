@@ -1,0 +1,91 @@
+version: '3.4'
+
+services:
+
+  cassandra:
+    image: cassandra:latest
+    restart: always
+    # FROM host, connect to DB with `docker `
+    volumes:
+      - '/smfr/data/cassandra:/var/lib/cassandra'
+#      - './cassandra/schema.cql:/docker-entrypoint-initdb.d/schema.cql:ro'
+    container_name: cassandra
+    ports:
+      - '9042:9042'
+      - '9160:9160'
+      - '7199:7199'
+
+  kafka:
+    image: spotify/kafka
+    container_name: kafka
+    hostname: kafka
+    environment:
+      ADVERTISED_PORT: 9092
+      ADVERTISED_HOST: kafka
+    depends_on:
+      - cassandra
+    ports:
+      - '9092:9092'
+      - '2181:2181'
+
+  mysql:
+    restart: always
+    image: mysql:latest
+    container_name: mysql
+    # FROM host, connect to DB with `mysql -h 127.0.0.1 -P 3306 -u root -p`
+    ports:
+      - '3306:3306'
+    volumes:
+      - '/smfr/data/mysql:/var/lib/mysql:rw'
+#      - './mysql/schema.sql:/docker-entrypoint-initdb.d/schema.sql:ro'
+    environment:
+      MYSQL_ROOT_PASSWORD: example
+      MYSQL_DATABASE: smfr
+#    command: mysqld --init-file="/docker-entrypoint-initdb.d/schema.sql"
+    depends_on:
+      - kafka
+      - cassandra
+
+  restserver:
+    container_name: restserver
+    build:
+      context: ./rest_server
+      args:
+        http_proxy: ${http_proxy}
+        https_proxy: ${https_proxy}
+    working_dir: /rest_server
+    environment:
+      PYTHONUNBUFFERED: 'true'
+      FLASK_APP: smfr.py
+    ports:
+      - '5555:5555'
+    depends_on:
+      - cassandra
+      - mysql
+      - kafka
+    volumes:
+      - ./rest_server/src:/rest_server
+
+  web:
+    container_name: web
+    build:
+      context: ./web
+      args:
+        http_proxy: ${http_proxy}
+        https_proxy: ${http_proxy}
+    working_dir: /web
+    command: gunicorn -b 0.0.0.0:8888 --access-logfile - --reload --name webapp "start:create_app()"
+    environment:
+      PYTHONUNBUFFERED: 'true'
+    ports:
+      - '8888:8888'
+    depends_on:
+      - restserver
+    volumes:
+      - ./web/src:/web
+
+
+volumes:
+  mysql:
+  cassandra:
+    driver: local
