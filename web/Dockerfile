@@ -1,15 +1,26 @@
-FROM python:3.6-alpine
+FROM python:3.5-alpine
 MAINTAINER Domenico Nappo <domenico.nappo@ext.ec.europa.eu>
+ENV http_proxy ${http_proxy}
+ENV https_proxy ${https_proxy}
+
+RUN apk add --no-cache g++ bash
+
 ENV INSTALL_PATH /web
 RUN mkdir -p $INSTALL_PATH
+RUN mkdir -p $INSTALL_PATH/client
 
 WORKDIR $INSTALL_PATH
 
-#COPY requirements.txt ./requirements.txt
-ADD requirements.txt ./
+COPY ./web/requirements.txt ./
+COPY ./web/src/. ./
+COPY ./client/. ./client/
+COPY ./rest_server/src/errors.py ./client/
+COPY ./rest_server/src/config/config.yaml.* ./client/config/
+COPY ./web/scripts/. /scripts/
 
+RUN pip install -U pip
 RUN pip install --no-cache-dir -r requirements.txt
 
-#COPY ./src/. ./.
-ADD ./src/. ./
+RUN chmod a+x /scripts/*.sh
 EXPOSE 8888
+CMD ["/scripts/start.sh"]

@@ -1,13 +1,14 @@
 """
-
+CLI scripts for SMFR
 """
+
 import sys
 
 import click
 from flask_migrate import upgrade
 
 from start import app
-from server.api import ApiLocalClient
+from client.api_client import ApiLocalClient
 
 
 @app.cli.command()
@@ -61,6 +62,24 @@ def stop_collector(collector):
     client = ApiLocalClient()
     click.echo('Stopping collector %s' % collector)
     res = client.stop_collector(collector)
+    click.echo(res)
+
+
+@app.cli.command()
+def stop_all_collectors():
+    """Stop a given collector by its ID"""
+    client = ApiLocalClient()
+    click.echo('Stopping all running collectors')
+    res = client.stop_all()
+    click.echo(res)
+
+
+@app.cli.command()
+def start_all_collectors():
+    """Stop a given collector by its ID"""
+    client = ApiLocalClient()
+    click.echo('Starting all running collectors')
+    res = client.start_all()
     click.echo(res)
 
 

@@ -7,15 +7,38 @@ from server.config import RestServerConfiguration
 
 def create_app():
     cli_args = sys.argv
-    is_webapp_bootstrapping = 'gunicorn' in cli_args[0]
+    is_server_bootstrapping = 'gunicorn' in cli_args[0]
     connexion_app = connexion.App('SMFR Rest Server', specification_dir='swagger/')
-    config = RestServerConfiguration(connexion_app, bootstrap_webapp=is_webapp_bootstrapping)
-    if is_webapp_bootstrapping:
-        from daemons import Consumer, Collector
+    config = RestServerConfiguration(connexion_app, bootstrap_server=is_server_bootstrapping)
+
+    if is_server_bootstrapping:
+        import signal
+        from daemons import Consumer, Collector, logger
         config.init_mysql()
         config.init_cassandra()
         Consumer.build_and_start()
         Collector.resume_active()
+
+        # Signals handler
+        logger.info('Registering signals for graceful shutdown...')
+
+        def stop_active_collectors(signum, frame):
+            logger.info("Received %d", signum)
+            logger.info(str(frame))
+            logger.info("Stopping any running collector...")
+            for _id, running_collector in Collector.running_instances().items():
+                logger.info("Stopping collector %s", str(_id))
+                running_collector.stop(reanimate=True)
+
+            c = Consumer.running_instance()
+            if c:
+                logger.info("Stopping consumer %s", str(c))
+                Consumer.running_instance().stop()
+
+        signal.signal(signal.SIGINT, stop_active_collectors)
+        signal.signal(signal.SIGTERM, stop_active_collectors)
+        signal.signal(signal.SIGQUIT, stop_active_collectors)
+        logger.info('Registered %d %d and %d', signal.SIGINT, signal.SIGTERM, signal.SIGQUIT)
 
     connexion_app.add_api('smfr.yaml', base_path=config.base_path)
     return config.flask_app

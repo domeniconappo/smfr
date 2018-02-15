@@ -1,2 +1,7 @@
+requests
+PyYAML
 Flask
+Flask-Bootstrap
+swagger-marshmallow-codegen
+flask-marshmallow
 gunicorn

@@ -66,7 +66,7 @@ class RestServerConfiguration(metaclass=Singleton):
     server_config = _read_server_configuration()
     debug = not UNDER_TESTS and not server_config.get('production', True)
 
-    def __init__(self, connexion_app=None, bootstrap_webapp=False):
+    def __init__(self, connexion_app=None, bootstrap_server=False):
         mysql_db_name = '{}{}'.format(self.server_config['mysql_db_name'], '_test' if UNDER_TESTS else '')
         mysql_db_host = self.server_config['mysql_db_host']
         cassandra_keyspace = '{}{}'.format(self.server_config['cassandra_keyspace'], '_test' if UNDER_TESTS else '')
@@ -85,7 +85,8 @@ class RestServerConfiguration(metaclass=Singleton):
             sys.exit(1)
         self.kafka_topic = self.server_config['kafka_topic']
         self.kafka_bootstrap_server = '{}:9092'.format(self.server_config['kafka_host'])
-        if bootstrap_webapp:
+        self.rest_server_port = self.server_config['rest_server_port']
+        if bootstrap_server:
             self.producer = KafkaProducer(bootstrap_servers=self.kafka_bootstrap_server, compression_type='gzip')
             self.log_configuration()
 

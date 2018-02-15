@@ -30,5 +30,6 @@ docker exec -it restserver bash -c "flask db upgrade"
 # Generate Marshmallow schemas
 
 ```bash
-$ swagger-marshmallow-codegen swagger/smfr.yaml > server/models/marshmallow.py
+$ cd rest_server/src
+$ swagger-marshmallow-codegen swagger/smfr.yaml > ../../client/marshmallow.py
 ```

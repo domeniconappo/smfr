@@ -3,11 +3,11 @@ Module to handle /collections API
 """
 
 from daemons.collector import Collector
-from server.errors import SMFRDBError
-
-from server.models.marshmallow import CollectorResponse, Collection
+from errors import SMFRDBError
 from server.models import StoredCollector, VirtualTwitterCollection
 from server.api import utils
+
+from client.marshmallow import CollectorResponse, Collection
 
 
 def post(payload):
@@ -91,4 +91,29 @@ def start_collector(collector_id):
 
     collector.launch()
 
+    return {}, 204
+
+
+def start_all():
+    """
+    POST /collections/start
+    Start all collections
+    :return:
+    """
+    collectors = Collector.start_all()
+    for c in collectors:
+        c.launch()
+    return {}, 204
+
+
+def stop_all():
+    """
+    POST /collections/stop
+    Stop all running collections
+    :return:
+    """
+
+    res = Collector.running_instances()
+    for collector in res.values():
+        collector.stop()
     return {}, 204

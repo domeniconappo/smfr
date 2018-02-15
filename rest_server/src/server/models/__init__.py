@@ -85,12 +85,12 @@ class VirtualTwitterCollection(mysql.Model):
         mysql.session.commit()
         self.id = attached_obj.id
 
-    def stop(self):
+    def deactivate(self):
         self.status = self.INACTIVE_STATUS
         self.stopped_at = datetime.datetime.utcnow()
         self.save()
 
-    def start(self):
+    def activate(self):
         self.status = self.ACTIVE_STATUS
         self.started_at = datetime.datetime.utcnow()
         self.save()

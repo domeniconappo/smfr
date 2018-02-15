@@ -7,7 +7,7 @@ import yaml
 
 from daemons.streamers import CollectorStreamer
 from server.config import RestServerConfiguration, server_configuration
-from server.errors import SMFRDBError
+from errors import SMFRDBError
 from server.models import StoredCollector, VirtualTwitterCollection
 
 
@@ -20,6 +20,8 @@ logger = logging.getLogger(__name__)
 class Collector:
     trigger = None
     running_time = None
+    account_keys = {'background': 'twitterbg',
+                    'on-demand': 'twitterod'}
 
     _running_instances = {}
 
@@ -60,12 +62,12 @@ class Collector:
 
         from server.models import VirtualTwitterCollection
         self.collection = VirtualTwitterCollection.build_from_collector(self)
-
+        tw_api_account = collector_config[self.account_keys[self.trigger]]
         self.streamer = CollectorStreamer(
-            collector_config['twitterbg']['consumer_key'],
-            collector_config['twitterbg']['consumer_secret'],
-            collector_config['twitterbg']['access_token'],
-            collector_config['twitterbg']['access_token_secret'],
+            tw_api_account['consumer_key'],
+            tw_api_account['consumer_secret'],
+            tw_api_account['access_token'],
+            tw_api_account['access_token_secret'],
             client_args=client_args,
             collection=self.collection,
             producer=self.rest_server_conf.kafka_producer
@@ -91,20 +93,22 @@ class Collector:
         """
 
         query = {'languages': [], 'track': [], 'locations': []}
+
         if self.keywords_file and os.path.exists(self.keywords_file):
             with open(self.keywords_file) as f:
                 # will build a dict like {'en': ['flooded', 'flood'], 'it': ['inondato']}
                 keywords = yaml.load(f)
 
-            query['languages'] = list(keywords.keys())
-            query['track'] = list(set(w for s in keywords.values() for w in s))
+            query['languages'] = sorted(list(keywords.keys()))
+            query['track'] = sorted(list(set(w for s in keywords.values() for w in s)))
+
         if self.locations_file and os.path.exists(self.locations_file):
             with open(self.locations_file) as f:
                 # will build a dict like {'bbox1': '2.3, 4.5, 6.7 8,9', 'bbox2': '10, 11, 12, 13'}
                 bboxes = yaml.load(f)
-            # concatenate all bboxes
+            # to query by locations, we need to concatenate all bboxes
             # https://developer.twitter.com/en/docs/tweets/filter-realtime/guides/basic-stream-parameters
-            query['locations'] = list(bboxes.values())
+            query['locations'] = sorted(list(bboxes.values()))
 
         return query
 
@@ -114,7 +118,7 @@ class Collector:
         """
         filter_args = {k: ','.join(v) for k, v in self.query.items() if k != 'languages' and self.query[k]}
         logger.info('Starting twython filtering with {}'.format(filter_args))
-        self.collection.start()
+        self.collection.activate()
 
         try:
             self._running_instances[self.hashedid()] = self
@@ -131,7 +135,7 @@ class Collector:
         self._running_instances[self.hashedid()] = None
         self.streamer.disconnect()
         if not reanimate:
-            self.collection.stop()
+            self.collection.deactivate()
 
     def __repr__(self):
         return 'Collector {} - {}'.format(self.trigger, self.ctype)
@@ -176,9 +180,18 @@ class Collector:
     def resume_active(cls):
         stored_collectors = StoredCollector.query.join(VirtualTwitterCollection, StoredCollector.collection_id == VirtualTwitterCollection.id).filter(VirtualTwitterCollection.status == VirtualTwitterCollection.ACTIVE_STATUS)
         for c in stored_collectors:
-            logger.info('Resuming %s' % str(c))
+            logger.info('Resuming %s', str(c))
             collector = cls.resume(c)
-            logger.info('Launching process in a new thread')
+            collector.launch()
+
+    @classmethod
+    def start_all(cls):
+        stored_collectors = StoredCollector.query.join(VirtualTwitterCollection,
+                                                       StoredCollector.collection_id == VirtualTwitterCollection.id).filter(
+            VirtualTwitterCollection.status == VirtualTwitterCollection.ACTIVE_STATUS)
+        for c in stored_collectors:
+            logger.info('Resuming %s', str(c))
+            collector = cls.resume(c)
             collector.launch()
 
 

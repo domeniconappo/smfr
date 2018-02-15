@@ -5,10 +5,9 @@ services:
   cassandra:
     image: cassandra:latest
     restart: always
-    # FROM host, connect to DB with `docker `
+    # FROM host, connect to DB with `docker exec -it cassandra cqlsh`
     volumes:
       - '/smfr/data/cassandra:/var/lib/cassandra'
-#      - './cassandra/schema.cql:/docker-entrypoint-initdb.d/schema.cql:ro'
     container_name: cassandra
     ports:
       - '9042:9042'
@@ -37,11 +36,9 @@ services:
       - '3306:3306'
     volumes:
       - '/smfr/data/mysql:/var/lib/mysql:rw'
-#      - './mysql/schema.sql:/docker-entrypoint-initdb.d/schema.sql:ro'
     environment:
       MYSQL_ROOT_PASSWORD: example
       MYSQL_DATABASE: smfr
-#    command: mysqld --init-file="/docker-entrypoint-initdb.d/schema.sql"
     depends_on:
       - kafka
       - cassandra
@@ -49,7 +46,8 @@ services:
   restserver:
     container_name: restserver
     build:
-      context: ./rest_server
+      context: ./
+      dockerfile: rest_server/Dockerfile
       args:
         http_proxy: ${http_proxy}
         https_proxy: ${https_proxy}
@@ -65,16 +63,19 @@ services:
       - kafka
     volumes:
       - ./rest_server/src:/rest_server
+#      - ./rest_server/scripts:/scripts
+      - ./client:/rest_server/client
+      - ./rest_server/src/errors.py:/rest_server/client/errors.py
 
   web:
     container_name: web
     build:
-      context: ./web
+      context: ./
+      dockerfile: web/Dockerfile
       args:
         http_proxy: ${http_proxy}
         https_proxy: ${http_proxy}
     working_dir: /web
-    command: gunicorn -b 0.0.0.0:8888 --access-logfile - --reload --name webapp "start:create_app()"
     environment:
       PYTHONUNBUFFERED: 'true'
     ports:
@@ -83,6 +84,8 @@ services:
       - restserver
     volumes:
       - ./web/src:/web
+      - ./client:/web/client
+      - ./rest_server/src/errors.py:/web/client/errors.py
 
 
 volumes:
