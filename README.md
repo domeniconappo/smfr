@@ -22,14 +22,24 @@ flask db upgrade
 On dockerized server, once the migrations are under SCM:
 
 ```bash
-docker exec -it restserver bash -c "flask db upgrade"
+docker exec restserver flask db upgrade
 ```
+
+**_Note: You have to create migrations on development and push them to GIT._**
+
+In addition to SMFR web interface, you can use the CLI to manage SMFR services:
+
+```bash
+docker exec restserver flask list_collections
+docker exec restserver flask ...
+```
+
 
 ## Development guide
 
-# Generate Marshmallow schemas
+# Generate Marshmallow schemas from smfr.yaml Swagger definitions using a Marshmallow custom driver
 
 ```bash
 $ cd rest_server/src
-$ swagger-marshmallow-codegen swagger/smfr.yaml > ../../client/marshmallow.py
+$ swagger-marshmallow-codegen --driver=../../client/_marshmallow_custom.py:CustomDriver swagger/smfr.yaml > ../../client/marshmallow.py
 ```

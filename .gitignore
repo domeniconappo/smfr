@@ -6,12 +6,10 @@ rest_server/src/config/*
 !rest_server/src/config/*.tpl
 
 # common source files ignore config
-# this file is mirrored from rest_server/src/errors.py
-client/errors.py
 # dirs mirrored from client/
 web/src/client
 rest_server/src/client
-
+uploads/
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

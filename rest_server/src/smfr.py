@@ -1,14 +1,23 @@
 """
 CLI scripts for SMFR
 """
-
+import os
 import sys
+import shutil
 
 import click
 from flask_migrate import upgrade
 
-from start import app
+
+current_dir = os.path.dirname(__file__)
+client_src = os.path.join(current_dir, '../../client')
+dst = os.path.join(current_dir, 'client/')
+if os.path.exists(dst):
+    shutil.rmtree(dst)
+shutil.copytree(client_src, dst)
+
 from client.api_client import ApiLocalClient
+from start import app
 
 
 @app.cli.command()
@@ -23,19 +32,18 @@ from client.api_client import ApiLocalClient
 @click.option('--nuts3source', '-s', required=False)
 def new_collection(init_config, trigger, collection_type, forecast, keywords, locations, runtime, nuts3, nuts3source):
     """Start a collector process with given arguments"""
-    click.echo('===> Starting collector process with following configuration:')
+    click.echo('===> Creating a new collection and attach a collector process to it:')
     config_msg = 'Config file: {}\nTrigger type: {}\nCollection type: {}\nForecast ID: {}\nKeywords file: {}\n' \
                  'Locations file: {}\nRunning Time: {}\nNuts3: {}\nNuts3 Source: {}'
     config_msg = config_msg.format(init_config, trigger, collection_type, forecast or '-', keywords or '-',
                                    locations or '-', runtime or '-', nuts3 or '-', nuts3source or '-')
     click.echo(config_msg)
 
-    click.echo('Consumer and collector starting in separate threads')
     payload = {'config': init_config, 'trigger': trigger, 'ctype': collection_type,
                'forecast_id': forecast, 'kwfile': keywords, 'locfile': locations,
                'runtime': runtime, 'nuts3': nuts3, 'nuts3source': nuts3source}
     client = ApiLocalClient()
-    res = client.start_new_collector(payload)
+    res = client.new_collection(payload)
     click.echo(res)
 
 
@@ -119,3 +127,12 @@ def empty_dbs():
     click.echo('Init DBs...performing migrations')
     upgrade()
     click.echo('DB at initial state!')
+
+
+@app.cli.command()
+@click.option('--file', '-f', required=True)
+def test_upload(file):
+    client = ApiLocalClient()
+    formdata = {'kwfile_file': file}
+    res = client.test_upload(formdata)
+    click.echo(res)

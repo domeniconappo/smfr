@@ -5,7 +5,7 @@ import time
 import datetime
 from sqlalchemy_utils import ChoiceType, ScalarListType, JSONType
 
-from server.config import server_configuration
+from server.config import server_configuration, LOGGER_FORMAT, DATE_FORMAT
 
 config = server_configuration()
 mysql = config.db_mysql
@@ -13,7 +13,7 @@ cassandra = config.db_cassandra
 
 
 logging.basicConfig(level=logging.INFO if not config.debug else logging.DEBUG,
-                    format='[%(levelname)s] (%(threadName)-10s) %(message)s')
+                    format=LOGGER_FORMAT, datefmt=DATE_FORMAT)
 logger = logging.getLogger(__name__)
 
 
@@ -72,6 +72,8 @@ class VirtualTwitterCollection(mysql.Model):
             locations=query['locations'],
         )
         kwargs = {k: v for k, v in vars(collection).items() if k not in ('_sa_instance_state', 'id')}
+        logger.info('EXISTING VirtualTwitterCollection query kwargs')
+        logger.info(kwargs)
         existing = VirtualTwitterCollection.query.filter_by(**kwargs).first()
         if existing:
             return existing

@@ -7,14 +7,14 @@ import os
 import logging
 
 import requests
+from werkzeug.datastructures import FileStorage
 
-from client.conf import ServerConfiguration
+from client.conf import ServerConfiguration, DATE_FORMAT, LOGGER_FORMAT
 from client.errors import SMFRError
 
 os.environ['NO_PROXY'] = ServerConfiguration.rest_server_host
 logging.basicConfig(level=logging.INFO if not ServerConfiguration.debug else logging.DEBUG,
-                    format='%(asctime)s:[%(levelname)s] (%(threadName)-10s) %(message)s',
-                    datefmt='%Y-%m-%d %H:%M:%S')
+                    format=LOGGER_FORMAT, datefmt=DATE_FORMAT)
 logger = logging.getLogger(__name__)
 
 
@@ -24,12 +24,14 @@ class ApiLocalClient:
     """
     endpoints = {
         'list_collections': '/collections',
-        'start_new_collector': '/collections',
+        'new_collection': '/collections',
         'stop_collector': '/collections/stop/{id}',
         'stop_all': '/collections/stop',
         'start_all': '/collections/start',
         'start_collector': '/collections/start/{id}',
         'list_running_collectors': '/collections/active',
+        'remove_collection': '/collections/remove/{id}',
+        'test_upload': '/collections/test_upload',
     }
 
     def __init__(self):
@@ -60,16 +62,52 @@ class ApiLocalClient:
         else:
             return res.json()
 
-    def _post(self, endpoint, payload=None, path_kwargs=None):
+    def _post(self, endpoint, payload=None, path_kwargs=None, formdata=None):
+        """
+        Main method that executes POST calls
+        :param endpoint: endpoint url name (see ApiLocalClient.endpoints)
+        :param payload: Dictionary to go in json kwarg of request.post
+        :param path_kwargs: Dictionary used for variable replacement in endpoint paths
+        :param formdata: Dictionary used for multipart/form-data calls (e.g. with files)
+        :return: JSON text
+        """
         requests_kwargs = {'json': payload} if payload else {}
+
+        if formdata:
+
+            files = {}
+            data = {}
+
+            for k, v in formdata.items():
+                if k.endswith('_file') and v:
+                    k = k.split('_')[0]
+                    files[k] = v if isinstance(v, FileStorage) else FileStorage(open(v, 'rb'))
+                elif not k.endswith('_file') and v:
+                    data[k] = v
+
+            if files:
+                requests_kwargs['files'] = files
+                requests_kwargs['headers'] = {
+                    # 'Content-Type': 'multipart/form-data;',
+                    'Accept': '*/*',
+                    'Accept-Encoding': 'gzip, deflate, br'
+                }
+            if data:
+                requests_kwargs['data'] = data
+
+        url = self._build_url(endpoint, path_kwargs)
+        # logger.info('REQUEST_KWARGS')
+        # logger.info(requests_kwargs)
+
         try:
-            url = self._build_url(endpoint, path_kwargs)
             res = requests.post(url, **requests_kwargs)
             self._check_response(res)
         except SMFRRestException as e:
             logger.error('REST API Error %s', str(e))
-        except ConnectionError:
+            raise e
+        except ConnectionError as e:
             logger.error('SMFR REST API server is not listening...')
+            raise SMFRRestException({'status': 500, 'title': 'SMFR Rest Server is not listening', 'description': url})
         else:
             try:
                 return res.json()
@@ -82,11 +120,22 @@ class ApiLocalClient:
     def list_running_collectors(self):
         return self._get('list_running_collectors')
 
-    def start_new_collector(self, payload):
+    def new_collection(self, input_payload):
         from .marshmallow import CollectorPayload
         schema = CollectorPayload()
-        payload = schema.load(payload).data
-        return self._post('start_new_collector', payload=payload)
+        formdata = schema.load(input_payload).data
+
+        formdata['kwfile_file'] = input_payload.pop('kwfile')
+        formdata['locfile_file'] = input_payload.pop('locfile')
+        formdata['config_file'] = input_payload.pop('config')
+        # logger.info('FORMDATA')
+        # logger.info(formdata)
+        # logger.info('INPUT_PAYLOAD')
+        # logger.info(input_payload)
+        return self._post('new_collection', formdata=formdata)
+
+    def remove_collection(self, collector_id):
+        return self._post('remove_collection', path_kwargs={'id': collector_id})
 
     def stop_collector(self, collector_id):
         return self._post('stop_collector', path_kwargs={'id': collector_id})
@@ -100,8 +149,13 @@ class ApiLocalClient:
     def start_all(self):
         return self._post('start_all')
 
+    def test_upload(self, formdata):
+        return self._post('test_upload', formdata=formdata)
+
 
 class SMFRRestException(SMFRError):
     def __init__(self, response):
-        message = '{}: {} {}'.format(response.get('status'), response.get('title'), response.get('description'))
+        message = '{}: {} ({})'.format(response.get('status'),
+                                       response.get('title'),
+                                       response.get('description', 'No details.'))
         super().__init__(message)

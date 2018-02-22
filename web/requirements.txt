@@ -2,6 +2,8 @@ requests
 PyYAML
 Flask
 Flask-Bootstrap
+Flask-WTF
+sqlalchemy_utils
 swagger-marshmallow-codegen
 flask-marshmallow
 gunicorn

@@ -55,17 +55,17 @@ services:
     environment:
       PYTHONUNBUFFERED: 'true'
       FLASK_APP: smfr.py
+      SERVER_PATH_UPLOADS: /smfr/uploads/
     ports:
       - '5555:5555'
     depends_on:
-      - cassandra
       - mysql
       - kafka
+      - cassandra
     volumes:
       - ./rest_server/src:/rest_server
-#      - ./rest_server/scripts:/scripts
+      - ./rest_server/scripts:/scripts
       - ./client:/rest_server/client
-      - ./rest_server/src/errors.py:/rest_server/client/errors.py
 
   web:
     container_name: web
@@ -85,7 +85,6 @@ services:
     volumes:
       - ./web/src:/web
       - ./client:/web/client
-      - ./rest_server/src/errors.py:/web/client/errors.py
 
 
 volumes:

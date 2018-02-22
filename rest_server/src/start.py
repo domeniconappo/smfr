@@ -1,8 +1,11 @@
+import logging
 import sys
 
 import connexion
 
-from server.config import RestServerConfiguration
+from server.config import RestServerConfiguration, logger, LOGGER_FORMAT, DATE_FORMAT
+
+logging.basicConfig(level=logging.INFO, format=LOGGER_FORMAT, datefmt=DATE_FORMAT)
 
 
 def create_app():
@@ -13,7 +16,7 @@ def create_app():
 
     if is_server_bootstrapping:
         import signal
-        from daemons import Consumer, Collector, logger
+        from daemons import Consumer, Collector
         config.init_mysql()
         config.init_cassandra()
         Consumer.build_and_start()
@@ -24,7 +27,6 @@ def create_app():
 
         def stop_active_collectors(signum, frame):
             logger.info("Received %d", signum)
-            logger.info(str(frame))
             logger.info("Stopping any running collector...")
             for _id, running_collector in Collector.running_instances().items():
                 logger.info("Stopping collector %s", str(_id))

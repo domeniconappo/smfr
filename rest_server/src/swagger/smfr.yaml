@@ -13,13 +13,27 @@ paths:
   /collections:
     post:
       tags: [collections]
-      operationId: server.api.collections.post
+      operationId: server.api.collections.add_collection
       summary: Submit a new collection
+      consumes:
+        - multipart/form-data
       parameters:
         - in: body
           name: payload
           schema:
             $ref: '#/definitions/CollectorPayload'
+        - in: formData
+          name: kwfile
+          type: file
+          description: File with keywords by language
+        - in: formData
+          name: locfile
+          type: file
+          description: File with bounding boxes
+        - in: formData
+          name: config
+          type: file
+          description: Configuration file for Collector
       responses:
         200:
           description: Return collectors
@@ -81,6 +95,37 @@ paths:
         204:
           description: The collector was stopped successfully.
 
+  /collections/remove/{collector_id}:
+    post:
+      tags: [collections]
+      operationId: server.api.collections.remove_collection
+      parameters:
+        - in: path
+          name: collector_id
+          type: integer
+          required: true
+          description: Numeric ID of the stored collector whose collection must be deleted from DB
+      summary: Remove a collection from the system
+      responses:
+        204:
+          description: The collection was removed successfully
+
+  /collections/test_upload:
+    post:
+      consumes:
+        - multipart/form-data
+        - application/json
+      tags: [collections]
+      operationId: server.api.collections.test_upload
+      parameters:
+        - in: formData
+          name: kwfile
+          type: file
+      summary: test upload
+      responses:
+        204:
+          description: The collection was updated successfully
+
 
 definitions:
 
@@ -97,10 +142,16 @@ definitions:
         enum: [keywords, geo]
       forecast_id:
         type: string
-      kwfile:
+      tracking_keywords:
+        type: array
+        items:
+          type: string
+      locations:
         type: string
-      locfile:
-        type: string
+      languages:
+        type: array
+        items:
+          type: string
       runtime:
         type: string
         format: date-time
@@ -120,23 +171,23 @@ definitions:
 
   CollectorPayload:
     type: object
-    required: [config, trigger, ctype]
+    required: [trigger]
     properties:
-      config:
-        type: string
-        description: Config file to init Collector instance
+#      config:
+#        type: string
+#        description: Config file to init Collector instance
       trigger:
         type: string
         enum: [background, on-demand, manual]
-      ctype:
-        type: string
-        enum: [keywords, geo]
+#      ctype:
+#        type: string
+#        enum: [keywords, geo]
       forecast_id:
         type: string
-      kwfile:
-        type: string
-      locfile:
-        type: string
+#      kwfile:
+#        type: string
+#      locfile:
+#        type: string
       runtime:
         type: string
         format: date-time

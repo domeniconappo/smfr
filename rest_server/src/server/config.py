@@ -16,15 +16,21 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_cqlalchemy import CQLAlchemy
 
 
-logging.basicConfig(level=logging.INFO,
-                    format='%(asctime)s:[%(levelname)s] (%(threadName)-10s) %(message)s',
-                    datefmt='%Y-%m-%d %H:%M:%S')
+UNDER_TESTS = any('nose2' in x for x in sys.argv)
+LOGGER_FORMAT = '%(asctime)s: Server - <%(name)s>[%(levelname)s] (%(threadName)-10s) %(message)s'
+DATE_FORMAT = '%Y%m%d %H:%M:%S'
+CONFIG_STORE_PATH = os.environ.get('SERVER_PATH_UPLOADS', os.path.join(os.path.dirname(__file__), '../../../uploads/'))
+
+logging.basicConfig(level=logging.INFO, format=LOGGER_FORMAT, datefmt=DATE_FORMAT)
+
 logger = logging.getLogger(__name__)
 logging.getLogger('cassandra').setLevel(logging.ERROR)
 logging.getLogger('kafka').setLevel(logging.ERROR)
+logging.getLogger('connexion').setLevel(logging.ERROR)
+logging.getLogger('swagger_spec_validator').setLevel(logging.ERROR)
+logging.getLogger('urllib3').setLevel(logging.ERROR)
 
-UNDER_TESTS = any('nose2' in x for x in sys.argv)
-# print((([ip for ip in socket.gethostbyname_ex(socket.gethostname())[2] if not ip.startswith("127.")] or [[(s.connect(("8.8.8.8", 53)), s.getsockname()[0], s.close()) for s in [socket.socket(socket.AF_INET, socket.SOCK_DGRAM)]][0][1]]) + ["no IP found"])[0])
+os.makedirs(CONFIG_STORE_PATH, exist_ok=True)
 
 
 def _read_server_configuration():
@@ -86,6 +92,7 @@ class RestServerConfiguration(metaclass=Singleton):
         self.kafka_topic = self.server_config['kafka_topic']
         self.kafka_bootstrap_server = '{}:9092'.format(self.server_config['kafka_host'])
         self.rest_server_port = self.server_config['rest_server_port']
+
         if bootstrap_server:
             self.producer = KafkaProducer(bootstrap_servers=self.kafka_bootstrap_server, compression_type='gzip')
             self.log_configuration()

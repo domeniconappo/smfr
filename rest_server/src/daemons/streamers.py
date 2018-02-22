@@ -13,9 +13,9 @@ class CollectorStreamer(TwythonStreamer):
 
     def __init__(self, app_key, app_secret, oauth_token, oauth_token_secret,
                  client_args, collection, producer, quiet=False):
-        from server.config import RestServerConfiguration
+        from server.config import RestServerConfiguration, LOGGER_FORMAT, DATE_FORMAT
         logging.basicConfig(level=logging.INFO if not RestServerConfiguration.debug else logging.DEBUG,
-                            format='[%(levelname)s] (%(threadName)-10s) %(message)s')
+                            format=LOGGER_FORMAT, datefmt=DATE_FORMAT)
         self.logger = logging.getLogger(__name__)
         self.kafka_topic = RestServerConfiguration.server_config['kafka_topic']
         self.quiet = quiet

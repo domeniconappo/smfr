@@ -10,6 +10,8 @@ def running_in_docker():
 
 restserver_host = 'localhost' if not running_in_docker() else 'restserver'
 os.environ['NO_PROXY'] = restserver_host
+LOGGER_FORMAT = '%(asctime)s: Client - <%(name)s>[%(levelname)s] (%(threadName)-10s) %(message)s'
+DATE_FORMAT = '%Y%m%d %H:%M:%S'
 
 
 def _read_server_configuration():

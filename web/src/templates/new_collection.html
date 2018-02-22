@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+
+{% block title %}Add a new background collection{% endblock %}
+
+{% block app_content %}
+<form method="POST" class="form-horizontal" enctype="multipart/form-data" role="form">
+    {{ form.hidden_tag() }}
+    <div class="heading">
+        <h4 class="form-heading">Create a new SMFR Background Collection service</h4>
+    </div>
+
+    <div class="form-group {% if form.config.errors %} has-error {% endif %}">
+        {{form.config.label(class="col-sm-4")}}
+        <div class="col-sm-3">
+        {{ form.config(class="form-control") }}
+        </div>
+        <p class="col-sm-5 help-block">
+        {{ form.config.errors[0] }}
+    </div>
+
+    <div class="form-group {% if form.trigger.errors %} has-error {% endif %}">
+        {{form.trigger.label(class="col-sm-4")}}
+        <div class="col-sm-3">
+        {{ form.trigger(class="radio") }}
+        </div>
+        <p class="col-sm-5 help-block">
+        {{ form.trigger.errors[0] }}
+    </div>
+
+
+    <div class="form-group {% if form.kwfile.errors %} has-error {% endif %}">
+        {{form.kwfile.label(class="col-sm-4")}}
+        <div class="col-sm-3">
+        {{ form.kwfile(class="form-control") }}
+        </div>
+        <p class="col-sm-5 help-block">
+        {{ form.kwfile.errors[0] }}
+    </div>
+
+    <div class="form-group {% if form.locfile.errors %} has-error {% endif %}">
+        {{form.locfile.label(class="col-sm-4")}}
+        <div class="col-sm-3">
+        {{ form.locfile(class="form-control") }}
+        </div>
+        <p class="col-sm-5 help-block">
+        {{ form.locfile.errors[0] }}
+    </div>
+
+    <div class="form-group {% if form.forecast_id.errors %} has-error {% endif %}">
+        {{form.forecast_id.label(class="col-sm-4")}}
+        <div class="col-sm-3">
+        {{ form.forecast_id(placeholder="201802201200", class="form-control") }}
+        </div>
+        <p class="col-sm-5 help-block">
+        {{ form.forecast_id.errors[0] }}
+    </div>
+
+    <div class="form-group {% if form.runtime.errors %} has-error {% endif %}">
+        {{form.runtime.label(class="col-sm-4")}}
+        <div class="col-sm-3">
+        {{ form.runtime(placeholder="202012310000", class="form-control") }}
+        </div>
+        <p class="col-sm-5 help-block">
+        {{ form.runtime.errors[0] }}
+    </div>
+
+    <div class="form-group {% if form.nuts3.errors %} has-error {% endif %}">
+        {{form.nuts3.label(class="col-sm-4")}}
+        <div class="col-sm-3">
+        {{ form.nuts3(placeholder="FR4", class="form-control") }}
+        </div>
+        <p class="col-sm-5 help-block">
+        {{ form.nuts3.errors[0] }}
+    </div>
+
+    <div class="form-group {% if form.nuts3source.errors %} has-error {% endif %}">
+        {{form.nuts3source.label(class="col-sm-4")}}
+        <div class="col-sm-3">
+        {{ form.nuts3source(placeholder="NUTS_2013L_20180221_161109.htm", class="form-control") }}
+        </div>
+        <p class="col-sm-5 help-block">
+        {{ form.nuts3source.errors[0] }}
+    </div>
+
+
+    <button class="btn btn-lg btn-primary" type="submit">Add new collection</button>
+
+</form>
+    {{ super() }}
+{% endblock %}

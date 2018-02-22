@@ -6,14 +6,13 @@ import threading
 import yaml
 
 from daemons.streamers import CollectorStreamer
-from server.config import RestServerConfiguration, server_configuration
+from server.config import RestServerConfiguration, server_configuration, LOGGER_FORMAT, DATE_FORMAT
 from errors import SMFRDBError
 from server.models import StoredCollector, VirtualTwitterCollection
 
 
 logging.basicConfig(level=logging.INFO if not RestServerConfiguration.debug else logging.DEBUG,
-                    format='%(asctime)s:[%(levelname)s] (%(threadName)-10s) %(message)s',
-                    datefmt='%Y-%m-%d %H:%M:%S')
+                    format=LOGGER_FORMAT, datefmt=DATE_FORMAT)
 logger = logging.getLogger(__name__)
 
 
@@ -21,7 +20,8 @@ class Collector:
     trigger = None
     running_time = None
     account_keys = {'background': 'twitterbg',
-                    'on-demand': 'twitterod'}
+                    'on-demand': 'twitterod',
+                    'manual': 'twitterod'}
 
     _running_instances = {}
 
@@ -148,9 +148,16 @@ class Collector:
         return False
 
     @classmethod
+    def get_running_collector(cls, collector_id):
+        for c in cls._running_instances.values():
+            if c.stored_instance.id == collector_id:
+                return c
+        return None
+
+    @classmethod
     def resume(cls, collector_or_collector_id):
         """
-        Restart a collector object identified by its MySQL id
+        Return a collector object identified by its MySQL id
         :param collector_or_collector_id: Collector or int
         :return: the collector instance
         """
@@ -178,17 +185,26 @@ class Collector:
 
     @classmethod
     def resume_active(cls):
-        stored_collectors = StoredCollector.query.join(VirtualTwitterCollection, StoredCollector.collection_id == VirtualTwitterCollection.id).filter(VirtualTwitterCollection.status == VirtualTwitterCollection.ACTIVE_STATUS)
-        for c in stored_collectors:
+        """
+        Resume and launch all collectors for collections that are in ACTIVE status (i.e. they were running before a shutdown)
+        """
+        collectors_for_active_collections = StoredCollector.query\
+            .join(VirtualTwitterCollection,
+                  StoredCollector.collection_id == VirtualTwitterCollection.id)\
+            .filter(VirtualTwitterCollection.status == VirtualTwitterCollection.ACTIVE_STATUS)
+
+        for c in collectors_for_active_collections:
             logger.info('Resuming %s', str(c))
             collector = cls.resume(c)
             collector.launch()
 
     @classmethod
     def start_all(cls):
-        stored_collectors = StoredCollector.query.join(VirtualTwitterCollection,
-                                                       StoredCollector.collection_id == VirtualTwitterCollection.id).filter(
-            VirtualTwitterCollection.status == VirtualTwitterCollection.ACTIVE_STATUS)
+        stored_collectors = StoredCollector.query\
+            .join(VirtualTwitterCollection,
+                  StoredCollector.collection_id == VirtualTwitterCollection.id)\
+            .filter(VirtualTwitterCollection.status == VirtualTwitterCollection.ACTIVE_STATUS)
+
         for c in stored_collectors:
             logger.info('Resuming %s', str(c))
             collector = cls.resume(c)
@@ -202,3 +218,7 @@ class BackgroundCollector(Collector):
 
 class OndemandCollector(Collector):
     trigger = 'on-demand'
+
+
+class ManualCollector(Collector):
+    trigger = 'manual'
