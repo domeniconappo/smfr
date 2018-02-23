@@ -96,8 +96,6 @@ class RestServerConfiguration(metaclass=Singleton):
         if bootstrap_server:
             self.producer = KafkaProducer(bootstrap_servers=self.kafka_bootstrap_server, compression_type='gzip')
             self.log_configuration()
-            self.init_mysql()
-            self.init_cassandra()
 
     @property
     def base_path(self):
@@ -119,9 +117,9 @@ class RestServerConfiguration(metaclass=Singleton):
         if not database_exists(engine.url):
             create_database(engine.url)
 
-        with self.flask_app.app_context():
-            from flask_migrate import upgrade
-            upgrade()
+        # with self.flask_app.app_context():
+        #     from flask_migrate import upgrade
+        #     upgrade()
 
     @property
     def kafka_producer(self):

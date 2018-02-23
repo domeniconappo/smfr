@@ -25,6 +25,13 @@ On dockerized server, once the migrations are under SCM:
 docker exec restserver flask db upgrade
 ```
 
+If smfr_restserver image has problems to start due "unsynced" db tables, try the following command
+
+```bash
+docker run -e FLASK_APP=smfr.py --entrypoint='flask' smfr_restserver 'db upgrade'
+```
+
+
 **_Note: You have to create migrations on development and push them to GIT._**
 
 In addition to SMFR web interface, you can use the CLI to manage SMFR services:
