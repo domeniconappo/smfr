@@ -66,6 +66,7 @@ services:
       - ./rest_server/src:/rest_server
       - ./rest_server/scripts:/scripts
       - ./client:/rest_server/client
+      - ./uploads:/smfr/uploads/
 
   web:
     container_name: web

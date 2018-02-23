@@ -26,12 +26,12 @@ class ApiLocalClient:
         'list_collections': '/collections',
         'new_collection': '/collections',
         'stop_collector': '/collections/stop/{id}',
-        'stop_all': '/collections/stop',
-        'start_all': '/collections/start',
+        'stopall': '/collections/stopall',
+        'startall': '/collections/startall',
         'start_collector': '/collections/start/{id}',
         'list_running_collectors': '/collections/active',
+        'list_inactive_collectors': '/collections/inactive',
         'remove_collection': '/collections/remove/{id}',
-        'test_upload': '/collections/test_upload',
     }
 
     def __init__(self):
@@ -96,8 +96,6 @@ class ApiLocalClient:
                 requests_kwargs['data'] = data
 
         url = self._build_url(endpoint, path_kwargs)
-        # logger.info('REQUEST_KWARGS')
-        # logger.info(requests_kwargs)
 
         try:
             res = requests.post(url, **requests_kwargs)
@@ -120,6 +118,9 @@ class ApiLocalClient:
     def list_running_collectors(self):
         return self._get('list_running_collectors')
 
+    def list_inactive_collectors(self):
+        return self._get('list_inactive_collectors')
+
     def new_collection(self, input_payload):
         from .marshmallow import CollectorPayload
         schema = CollectorPayload()
@@ -128,14 +129,10 @@ class ApiLocalClient:
         formdata['kwfile_file'] = input_payload.pop('kwfile')
         formdata['locfile_file'] = input_payload.pop('locfile')
         formdata['config_file'] = input_payload.pop('config')
-        # logger.info('FORMDATA')
-        # logger.info(formdata)
-        # logger.info('INPUT_PAYLOAD')
-        # logger.info(input_payload)
         return self._post('new_collection', formdata=formdata)
 
-    def remove_collection(self, collector_id):
-        return self._post('remove_collection', path_kwargs={'id': collector_id})
+    def remove_collection(self, collection_id):
+        return self._post('remove_collection', path_kwargs={'id': collection_id})
 
     def stop_collector(self, collector_id):
         return self._post('stop_collector', path_kwargs={'id': collector_id})
@@ -144,13 +141,10 @@ class ApiLocalClient:
         return self._post('start_collector', path_kwargs={'id': collector_id})
 
     def stop_all(self):
-        return self._post('stop_all')
+        return self._post('stopall')
 
     def start_all(self):
-        return self._post('start_all')
-
-    def test_upload(self, formdata):
-        return self._post('test_upload', formdata=formdata)
+        return self._post('startall')
 
 
 class SMFRRestException(SMFRError):

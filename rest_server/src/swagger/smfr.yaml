@@ -65,6 +65,19 @@ paths:
             items:
               $ref: '#/definitions/CollectorResponse'
 
+  /collections/inactive:
+    get:
+      tags: [collections]
+      operationId: server.api.collections.get_stopped_collectors
+      summary: Get inactive collections
+      responses:
+        200:
+          description: Return inactive collectors
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/CollectorResponse'
+
   /collections/start/{collector_id}:
     post:
       tags: [collections]
@@ -95,13 +108,13 @@ paths:
         204:
           description: The collector was stopped successfully.
 
-  /collections/remove/{collector_id}:
+  /collections/remove/{collection_id}:
     post:
       tags: [collections]
       operationId: server.api.collections.remove_collection
       parameters:
         - in: path
-          name: collector_id
+          name: collection_id
           type: integer
           required: true
           description: Numeric ID of the stored collector whose collection must be deleted from DB
@@ -110,21 +123,23 @@ paths:
         204:
           description: The collection was removed successfully
 
-  /collections/test_upload:
+  /collections/startall:
     post:
-      consumes:
-        - multipart/form-data
-        - application/json
       tags: [collections]
-      operationId: server.api.collections.test_upload
-      parameters:
-        - in: formData
-          name: kwfile
-          type: file
-      summary: test upload
+      operationId: server.api.collections.start_all
+      summary: Start all inactive collections defined in the system
       responses:
         204:
-          description: The collection was updated successfully
+          description: Collectors were started successfully
+
+  /collections/stopall:
+    post:
+      tags: [collections]
+      operationId: server.api.collections.stop_all
+      summary: Stop all active collections defined in the system
+      responses:
+        204:
+          description: Collectors were stopped successfully
 
 
 definitions:

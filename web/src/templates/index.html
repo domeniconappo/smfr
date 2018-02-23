@@ -2,30 +2,5 @@
 
 
 {% block app_content %}
-  <table class="table table-bordered">
-      <thead>
-      <tr>
-          <th>Collection Id</th><th>Triggered as</th>
-          <th>Collection Type</th><th>Status</th>
-          <th>Keywords</th><th>Languages</th><th>Locations</th>
-          <th>Last started at</th><th>Last stopped at</th>
-          <th>Actions</th>
-      </tr>
-      </thead>
-      <tbody>
-        {% for c in collections %}
-          <tr class="active">
-              <td>{{c.id}}</td><td>{{c.trigger}}</td>
-              <td>{{c.ctype}}</td><td>{{c.status}}</td>
-              <td>{{c.tracking_keywords}}</td><td>{{c.languages}}</td><td>{{c.locations}}</td>
-              <td>{{c.started_at}}</td><td>{{c.stopped_at}}</td>
-              <td class="btn-group btn-group-sm">
-                  <a class="btn btn-default {% if c.status == 'Active'%} disabled {% endif %}" href="#"><i class="glyphicon glyphicon-play"></i> Start</a>
-                  <a class="btn btn-default {% if c.status == 'Inactive'%} disabled {% endif %}"><i class="glyphicon glyphicon-stop"></i> Stop</a>
-                  <a class="btn btn-default"><i class="glyphicon glyphicon-remove-circle"></i> Remove</a>
-              </td>
-          </tr>
-        {% endfor %}
-      </tbody>
-  </table>
+  <h1>Welcome to SMFR!!!</h1>
 {% endblock %}

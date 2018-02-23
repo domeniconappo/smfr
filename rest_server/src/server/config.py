@@ -83,7 +83,7 @@ class RestServerConfiguration(metaclass=Singleton):
             self.flask_app.config['CASSANDRA_HOSTS'] = [self.server_config['cassandra_db_host']]
             self.flask_app.config['CASSANDRA_KEYSPACE'] = cassandra_keyspace
             os.environ['CQLENG_ALLOW_SCHEMA_MANAGEMENT'] = '1'
-            self.db_mysql = SQLAlchemy(self.flask_app)
+            self.db_mysql = SQLAlchemy(self.flask_app, session_options={'expire_on_commit': False})
             self.db_cassandra = CQLAlchemy(self.flask_app)
             self.migrate = Migrate(self.flask_app, self.db_mysql)
         except (NoHostAvailable, OperationalError):

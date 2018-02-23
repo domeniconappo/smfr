@@ -30,7 +30,7 @@ class Collector:
         return cls._running_instances
 
     def hashedid(self):
-        return hash('{o.ctype}{o.trigger}{o.forecast_id}{o.keywords_file}{o.locations_file}'.format(o=self))
+        return hash('{o.config}{o.nuts3source}{o.nuts3}{o.runtime}{o.ctype}{o.trigger}{o.forecast_id}{o.kwfile}{o.locfile}'.format(o=self))
 
     def __init__(self, config_file,
                  keywords_file=None, locations_file=None,
@@ -39,16 +39,16 @@ class Collector:
 
         self.forecast_id = forecast_id
         self.rest_server_conf = server_configuration()
-        self.config_file = config_file
-        self.keywords_file = keywords_file
-        self.locations_file = locations_file
+        self.config = config_file
+        self.kwfile = keywords_file
+        self.locfile = locations_file
         self.ctype = 'keywords' if keywords_file else 'geo'
         self.runtime = running_time if self.running_time is None else self.running_time
         self.nuts3 = nuts3
         self.nuts3source = nuts3source
         self.stored_instance = None
 
-        collector_config = yaml.load(open(self.config_file).read())
+        collector_config = yaml.load(open(self.config).read())
         client_args = {}
         if os.environ.get('http_proxy'):
             client_args = {
@@ -94,16 +94,16 @@ class Collector:
 
         query = {'languages': [], 'track': [], 'locations': []}
 
-        if self.keywords_file and os.path.exists(self.keywords_file):
-            with open(self.keywords_file) as f:
+        if self.kwfile and os.path.exists(self.kwfile):
+            with open(self.kwfile) as f:
                 # will build a dict like {'en': ['flooded', 'flood'], 'it': ['inondato']}
                 keywords = yaml.load(f)
 
             query['languages'] = sorted(list(keywords.keys()))
             query['track'] = sorted(list(set(w for s in keywords.values() for w in s)))
 
-        if self.locations_file and os.path.exists(self.locations_file):
-            with open(self.locations_file) as f:
+        if self.locfile and os.path.exists(self.locfile):
+            with open(self.locfile) as f:
                 # will build a dict like {'bbox1': '2.3, 4.5, 6.7 8,9', 'bbox2': '10, 11, 12, 13'}
                 bboxes = yaml.load(f)
             # to query by locations, we need to concatenate all bboxes
@@ -143,7 +143,7 @@ class Collector:
     @classmethod
     def is_running(cls, collector_id):
         for c in cls._running_instances.values():
-            if c.stored_instance.id == collector_id:
+            if c and c.stored_instance.id == collector_id:
                 return True
         return False
 
@@ -158,7 +158,7 @@ class Collector:
     def resume(cls, collector_or_collector_id):
         """
         Return a collector object identified by its MySQL id
-        :param collector_or_collector_id: Collector or int
+        :param collector_or_collector_id: Collector object or int
         :return: the collector instance
         """
         stored_collector = collector_or_collector_id
@@ -170,10 +170,11 @@ class Collector:
             raise SMFRDBError('Invalid Collector id. Not existing in DB')
 
         clazz = Collector.get_collector_class(stored_collector.parameters['trigger'])
+        server_configuration().db_mysql.session.expunge(stored_collector)
+
         collector = clazz.from_payload(stored_collector.parameters)
-        server_conf = server_configuration()
-        server_conf.db_mysql.session.expunge(stored_collector)
         collector.stored_instance = stored_collector
+
         return collector
 
     def launch(self):
@@ -193,22 +194,30 @@ class Collector:
                   StoredCollector.collection_id == VirtualTwitterCollection.id)\
             .filter(VirtualTwitterCollection.status == VirtualTwitterCollection.ACTIVE_STATUS)
 
-        for c in collectors_for_active_collections:
-            logger.info('Resuming %s', str(c))
-            collector = cls.resume(c)
-            collector.launch()
+        return (cls.resume(c) for c in collectors_for_active_collections)
 
     @classmethod
-    def start_all(cls):
+    def resume_inactive(cls):
+        """
+        Resume and launch all collectors for collections that are in ACTIVE status (i.e. they were running before a shutdown)
+        """
+        collectors_for_active_collections = StoredCollector.query \
+            .join(VirtualTwitterCollection,
+                  StoredCollector.collection_id == VirtualTwitterCollection.id) \
+            .filter(VirtualTwitterCollection.status == VirtualTwitterCollection.INACTIVE_STATUS)
+
+        return (cls.resume(c) for c in collectors_for_active_collections)
+
+    @classmethod
+    def resume_all(cls):
+        """
+
+        :return: Gen of Collector instances resumed based on StoredCollector db items stored in MySQL
+        """
         stored_collectors = StoredCollector.query\
             .join(VirtualTwitterCollection,
-                  StoredCollector.collection_id == VirtualTwitterCollection.id)\
-            .filter(VirtualTwitterCollection.status == VirtualTwitterCollection.ACTIVE_STATUS)
-
-        for c in stored_collectors:
-            logger.info('Resuming %s', str(c))
-            collector = cls.resume(c)
-            collector.launch()
+                  StoredCollector.collection_id == VirtualTwitterCollection.id)
+        return (cls.resume(c) for c in stored_collectors)
 
 
 class BackgroundCollector(Collector):

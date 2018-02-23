@@ -20,7 +20,10 @@ def create_app():
         config.init_mysql()
         config.init_cassandra()
         Consumer.build_and_start()
-        Collector.resume_active()
+        collectors_to_resume = Collector.resume_active()
+        for c in collectors_to_resume:
+            logger.info('Resuming collector %s', str(c))
+            c.launch()
 
         # Signals handler
         logger.info('Registering signals for graceful shutdown...')

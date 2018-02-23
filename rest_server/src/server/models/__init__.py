@@ -72,8 +72,6 @@ class VirtualTwitterCollection(mysql.Model):
             locations=query['locations'],
         )
         kwargs = {k: v for k, v in vars(collection).items() if k not in ('_sa_instance_state', 'id')}
-        logger.info('EXISTING VirtualTwitterCollection query kwargs')
-        logger.info(kwargs)
         existing = VirtualTwitterCollection.query.filter_by(**kwargs).first()
         if existing:
             return existing
@@ -86,6 +84,10 @@ class VirtualTwitterCollection(mysql.Model):
         mysql.session.add(attached_obj)
         mysql.session.commit()
         self.id = attached_obj.id
+
+    def delete(self):
+        mysql.session.delete(self)
+        mysql.session.commit()
 
     def deactivate(self):
         self.status = self.INACTIVE_STATUS
@@ -111,6 +113,10 @@ class StoredCollector(mysql.Model):
         mysql.session.add(attached_obj)
         mysql.session.commit()
         self.id = attached_obj.id
+
+    def delete(self):
+        mysql.session.delete(self)
+        mysql.session.commit()
 
     def __str__(self):
         return 'Collector stored ID: {} (collection: {})'.format(self.id, self.collection_id)
