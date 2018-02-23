@@ -65,6 +65,7 @@ def get():
     Get all collections stored in DB (active and not active)
     :return:
     """
+    logger.info('Get all collections defined in SMFR')
     stored_collectors = StoredCollector.query.join(VirtualTwitterCollection,
                                                    StoredCollector.collection_id == VirtualTwitterCollection.id)
     coll_schema = CollectorResponse()

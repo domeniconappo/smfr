@@ -17,8 +17,8 @@ def create_app():
     if is_server_bootstrapping:
         import signal
         from daemons import Consumer, Collector
-        config.init_mysql()
-        config.init_cassandra()
+        # config.init_mysql()
+        # config.init_cassandra()
         Consumer.build_and_start()
         collectors_to_resume = Collector.resume_active()
         for c in collectors_to_resume:
