@@ -126,9 +126,10 @@ class ApiLocalClient:
         schema = CollectorPayload()
         formdata = schema.load(input_payload).data
 
-        formdata['kwfile_file'] = input_payload.pop('kwfile')
-        formdata['locfile_file'] = input_payload.pop('locfile')
-        formdata['config_file'] = input_payload.pop('config')
+        formdata['kwfile_file'] = input_payload.get('kwfile')
+        formdata['locfile_file'] = input_payload.get('locfile')
+        formdata['config_file'] = input_payload.get('config')
+        formdata['tzclient'] = input_payload.get('tzclient')
         return self._post('new_collection', formdata=formdata)
 
     def remove_collection(self, collection_id):

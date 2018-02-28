@@ -27,12 +27,12 @@ def create_app():
             c.launch()
 
         # Signals handler
-        logger.info('Registering signals for graceful shutdown...')
+        logger.debug('Registering signals for graceful shutdown...')
 
         def stop_active_collectors(signum, frame):
-            logger.info("Received %d", signum)
-            logger.info("Stopping any running collector...")
-            for _id, running_collector in Collector.running_instances().items():
+            logger.debug("Received %d", signum)
+            logger.debug("Stopping any running collector...")
+            for _id, running_collector in Collector.running_instances():
                 logger.info("Stopping collector %s", str(_id))
                 running_collector.stop(reanimate=True)
 
@@ -44,7 +44,7 @@ def create_app():
         signal.signal(signal.SIGINT, stop_active_collectors)
         signal.signal(signal.SIGTERM, stop_active_collectors)
         signal.signal(signal.SIGQUIT, stop_active_collectors)
-        logger.info('Registered %d %d and %d', signal.SIGINT, signal.SIGTERM, signal.SIGQUIT)
+        logger.debug('Registered %d %d and %d', signal.SIGINT, signal.SIGTERM, signal.SIGQUIT)
 
     connexion_app.add_api('smfr.yaml', base_path=config.base_path)
     return config.flask_app

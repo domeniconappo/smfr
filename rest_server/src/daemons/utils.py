@@ -1,4 +1,7 @@
+import pytz
 import re
+import time
+from datetime import datetime, timedelta
 
 import langdetect
 
@@ -64,3 +67,19 @@ def safe_langdetect(text):
             return langdetect.detect(sanitized.lower())
         except langdetect.lang_detect_exception.LangDetectException:
             return NO_LANGUAGE
+
+
+def tz_diff(user_offset):
+    # TODO not used: can be removed
+    """
+
+    :param user_offset: str time offset in the format '+04:00'
+    :return: the timedelta object to convert a local user time to the system timezone
+    """
+    hours_uos, minutes_uos = tuple(map(int, user_offset.split(':')))
+    system_tz = pytz.timezone(time.tzname[0])
+    # following line returns offset string in the format '+0100'
+    system_offset = system_tz.localize(datetime.now()).strftime('%z')
+    hours_sos, minutes_sos = tuple(map(int, (system_offset[:3], system_offset[3:])))
+
+    return timedelta(hours=hours_uos - hours_sos, minutes=minutes_uos - minutes_sos)

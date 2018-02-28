@@ -117,10 +117,6 @@ class RestServerConfiguration(metaclass=Singleton):
         if not database_exists(engine.url):
             create_database(engine.url)
 
-        # with self.flask_app.app_context():
-        #     from flask_migrate import upgrade
-        #     upgrade()
-
     @property
     def kafka_producer(self):
         return self.producer

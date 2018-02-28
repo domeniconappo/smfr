@@ -1,10 +1,27 @@
 {% extends "base.html" %}
 
 {% block title %}Add a new background collection{% endblock %}
+{% block styles %}
+    {{ super() }}
+    <link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+    <link rel="stylesheet" href="/static/css/jquery-ui-timepicker-addon.css">
+{% endblock styles %}
+
+{% block scripts %}
+    {{ super() }}
+	<script src="//code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+    <script src="/static/js/jquery-ui-timepicker-addon.js"></script>
+    <script src="/static/js/moment-with-locales.min.js"></script>
+	<script>
+	    $(function() {$( ".dtpick" ).datetimepicker({dateFormat: "yy-mm-dd", timeFormat: "HH:mm"});});
+	</script>
+    <script>document.getElementById("tzclient").value = moment().format("Z");</script>
+{% endblock %}
 
 {% block app_content %}
 <form method="POST" class="form-horizontal" enctype="multipart/form-data" role="form">
     {{ form.hidden_tag() }}
+{#    <input id="tzclient" name="tzclient" type="hidden" value=""/>#}
     <div class="heading">
         <h4 class="form-heading">Create a new SMFR Background Collection service</h4>
     </div>
@@ -58,7 +75,7 @@
     <div class="form-group {% if form.runtime.errors %} has-error {% endif %}">
         {{form.runtime.label(class="col-sm-4")}}
         <div class="col-sm-3">
-        {{ form.runtime(placeholder="202012310000", class="form-control") }}
+        {{ form.runtime(placeholder="2018-03-14 00:00", class="form-control, dtpick") }}
         </div>
         <p class="col-sm-5 help-block">
         {{ form.runtime.errors[0] }}

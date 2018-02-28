@@ -42,6 +42,11 @@ docker exec restserver flask ...
 ```
 
 
+- Connect to interface by pointing your browser to http://localhost:8888
+- REST Server API responds to http://localhost:5555/1.0 calls.
+- Swagger UI is available at http://localhost:5555/1.0/ui
+
+
 ## Development guide
 
 # Generate Marshmallow schemas from smfr.yaml Swagger definitions using a Marshmallow custom driver

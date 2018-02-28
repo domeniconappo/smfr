@@ -1,4 +1,6 @@
 requests
+pytz
+python-dateutil
 PyYAML
 Flask
 Flask-Bootstrap

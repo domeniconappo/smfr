@@ -1,15 +1,18 @@
 import logging
 import os
+import sched
 import sys
 import threading
 
+import time
 import yaml
+
+from dateutil import parser
 
 from daemons.streamers import CollectorStreamer
 from server.config import RestServerConfiguration, server_configuration, LOGGER_FORMAT, DATE_FORMAT
 from errors import SMFRDBError
 from server.models import StoredCollector, VirtualTwitterCollection
-
 
 logging.basicConfig(level=logging.INFO if not RestServerConfiguration.debug else logging.DEBUG,
                     format=LOGGER_FORMAT, datefmt=DATE_FORMAT)
@@ -18,7 +21,6 @@ logger = logging.getLogger(__name__)
 
 class Collector:
     trigger = None
-    running_time = None
     account_keys = {'background': 'twitterbg',
                     'on-demand': 'twitterod',
                     'manual': 'twitterod'}
@@ -27,15 +29,15 @@ class Collector:
 
     @classmethod
     def running_instances(cls):
-        return cls._running_instances
+        return ((hashed_id, running_coll) for hashed_id, running_coll in cls._running_instances.items() if running_coll)
 
     def hashedid(self):
         return hash('{o.config}{o.nuts3source}{o.nuts3}{o.runtime}{o.ctype}{o.trigger}{o.forecast_id}{o.kwfile}{o.locfile}'.format(o=self))
 
     def __init__(self, config_file,
                  keywords_file=None, locations_file=None,
-                 running_time=0, forecast_id=None,
-                 nuts3=None, nuts3source=None):
+                 running_time=None, forecast_id=None,
+                 nuts3=None, nuts3source=None, tz=None):
 
         self.forecast_id = forecast_id
         self.rest_server_conf = server_configuration()
@@ -43,7 +45,8 @@ class Collector:
         self.kwfile = keywords_file
         self.locfile = locations_file
         self.ctype = 'keywords' if keywords_file else 'geo'
-        self.runtime = running_time if self.running_time is None else self.running_time
+        self.runtime = running_time
+        self.user_tzone = tz
         self.nuts3 = nuts3
         self.nuts3source = nuts3source
         self.stored_instance = None
@@ -83,7 +86,8 @@ class Collector:
     def from_payload(cls, payload):
         return cls(config_file=payload['config'], keywords_file=payload.get('kwfile'),
                    locations_file=payload.get('locfile'),
-                   running_time=payload.get('runtime'), forecast_id=payload.get('forecast'),
+                   running_time=payload.get('runtime'), tz=payload.get('tzclient'),
+                   forecast_id=payload.get('forecast'),
                    nuts3=payload.get('nuts3'), nuts3source=payload.get('nuts3source'))
 
     def build_query(self):
@@ -183,6 +187,14 @@ class Collector:
         """
         t = threading.Thread(target=self.start, name=str(self), daemon=True)
         t.start()
+        if self.runtime:
+            # schedule the stop
+            s = sched.scheduler(time.time, time.sleep)
+            logger.info('---+ Collector scheduled to stop at %s %s...', self.runtime, self.user_tzone)
+            stop_at = parser.parse('{} {}'.format(self.runtime, self.user_tzone))  # - tz_diff(self.user_tzone)
+            s.enterabs(stop_at.timestamp(), 1, self.stop)
+            t = threading.Thread(target=s.run, name='stop_at_%s' % str(stop_at))
+            t.start()
 
     @classmethod
     def resume_active(cls):
@@ -222,7 +234,6 @@ class Collector:
 
 class BackgroundCollector(Collector):
     trigger = 'background'
-    running_time = 0
 
 
 class OndemandCollector(Collector):

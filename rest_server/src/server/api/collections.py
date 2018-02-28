@@ -48,9 +48,15 @@ def add_collection(payload):
 
     payload = utils.normalize_payload(payload)
     collector = CollectorClass.from_payload(payload)
-    # # The collector/collection objects are created only, there are no processes starting at this moment
-    # # (so we comment the call to Collector.launch() method)
-    # # collector.launch()
+
+    # # The collector/collection objects are only instantiated at this point,
+    # there are no processes starting here, unless it's a collector process with runtime
+    # (i.e. start now and finish at the datetime defined in runtime)
+    if collector.runtime:
+        # launch the collector at creation time only when runtime parameter is set.
+        # In all other cases, the collection process is being started manually from interface/cli
+        collector.launch()
+
     stored = StoredCollector(collection_id=collector.collection.id, parameters=payload)
     stored.save()
     collector.stored_instance = stored
@@ -82,7 +88,7 @@ def get_running_collectors():
     """
     out_schema = CollectorResponse()
     res = Collector.running_instances()
-    res = [{'id': c.stored_instance.id, 'collection': c.collection} for c in res.values() if c]
+    res = [{'id': c.stored_instance.id, 'collection': c.collection} for _, c in res]
     res = out_schema.dump(res, many=True).data
     return res, 200
 
@@ -111,8 +117,8 @@ def stop_collector(collector_id):
         return {}, 204
 
     res = Collector.running_instances()
-    for collector in res.values():
-        if collector and collector_id == collector.stored_instance.id:
+    for _, collector in res:
+        if collector_id == collector.stored_instance.id:
             collector.stop()
             return {}, 204
 
@@ -186,6 +192,6 @@ def stop_all():
     """
 
     res = Collector.running_instances()
-    for collector in res.values():
+    for _, collector in res:
         collector.stop()
     return {}, 204

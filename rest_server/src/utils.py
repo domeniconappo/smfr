@@ -7,6 +7,7 @@ def running_in_docker():
 
 
 def docker_ip():
+    # TODO to remove
     print(
         (
                 (

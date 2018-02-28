@@ -49,6 +49,7 @@ class VirtualTwitterCollection(mysql.Model):
     nuts3source = mysql.Column(mysql.String(255), nullable=True)
     started_at = mysql.Column(mysql.TIMESTAMP, nullable=True)
     stopped_at = mysql.Column(mysql.TIMESTAMP, nullable=True)
+    runtime = mysql.Column(mysql.TIMESTAMP, nullable=True)
 
     def __str__(self):
         return 'VirtualTwitterCollection<{o.id}: {o.forecast_id} - {o.trigger.value}/{o.ctype.value}>'.format(o=self)
@@ -70,8 +71,14 @@ class VirtualTwitterCollection(mysql.Model):
             tracking_keywords=query['track'],
             languages=query['languages'],
             locations=query['locations'],
+            runtime=collector.runtime,
         )
-        kwargs = {k: v for k, v in vars(collection).items() if k not in ('_sa_instance_state', 'id')}
+        kwargs = {}
+        for k, v in vars(collection).items():
+            if k in ('_sa_instance_state', 'id'):
+                continue
+            kwargs[k] = v if not isinstance(v, ChoiceType) else v.value
+
         existing = VirtualTwitterCollection.query.filter_by(**kwargs).first()
         if existing:
             return existing

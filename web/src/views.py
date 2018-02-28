@@ -40,10 +40,11 @@ def list_inactive_collections():
 def new_collection():
     form = NewCollectorForm()
     if form.validate_on_submit():
-        payload = {'config': form.config.data, 'kwfile': form.kwfile.data, 'locfile': form.locfile.data,
-                   'runtime': form.runtime.data, 'trigger': form.trigger.data, 'nuts3': form.nuts3.data,
-                   'forecast': form.forecast_id.data, 'nuts3source': form.nuts3source.data,
-                   }
+        payload = {
+            'config': form.config.data, 'kwfile': form.kwfile.data, 'locfile': form.locfile.data,
+            'runtime': form.runtime.data, 'trigger': form.trigger.data, 'nuts3': form.nuts3.data,
+            'forecast': form.forecast_id.data, 'nuts3source': form.nuts3source.data, 'tzclient': form.tzclient.data,
+        }
         try:
             res = client.new_collection(payload)
             logger.info(res)
