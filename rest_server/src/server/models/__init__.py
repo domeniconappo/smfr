@@ -147,6 +147,8 @@ class Tweet(cassandra.Model):
     nuts3source = cassandra.columns.Text()
     annotations = cassandra.columns.Map(cassandra.columns.DateTime, cassandra.columns.Text)
     tweet = cassandra.columns.Text(required=True)
+    latlong = cassandra.columns.Tuple(cassandra.columns.Decimal(9, 6), cassandra.columns.Decimal(9, 6))
+
     """
     Twitter data serialized as JSON text
     """
@@ -171,6 +173,12 @@ class Tweet(cassandra.Model):
 
     @classmethod
     def build_from_tweet(cls, collection, tweet):
+        """
+
+        :param collection:
+        :param tweet:
+        :return:
+        """
         return cls(
             tweetid=tweet['id_str'],
             collectionid=collection.id,
@@ -184,11 +192,14 @@ class Tweet(cassandra.Model):
 
     @classmethod
     def build_from_kafka_message(cls, message):
+        """
+
+        :param message:
+        :return:
+        """
         values = json.loads(message)
         obj = cls()
         for k, v in values.items():
-            if k != 'tweet':
-                logger.debug('---- Building from kafka message %s %s', k, str(v))
             if k == 'created_at':
                 v = datetime.datetime.strptime(v, '%Y-%m-%dT%H:%M:%S')
             setattr(obj, k, v)

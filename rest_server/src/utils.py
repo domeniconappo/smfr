@@ -1,5 +1,8 @@
 import socket
 
+from flask.json import JSONEncoder
+from numpy import float32
+
 
 def running_in_docker():
     with open('/proc/1/cgroup', 'rt') as f:
@@ -16,3 +19,12 @@ def docker_ip():
                 ) + ["no IP found"]
         )[0]
     )
+
+
+class CustomJSONEncoder(JSONEncoder):
+
+    def default(self, obj):
+        if isinstance(obj, float32):
+            obj = 1. * obj
+            return obj
+        return super().default(obj)

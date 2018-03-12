@@ -24,7 +24,7 @@
               <td>{{c.collection.stopped_at|datetimeformat('%Y-%m-%d %H:%M:%S')}}</td>
 
               <td class="btn-group btn-group-sm" role="group">
-                  <a class="btn btn-sm" href="/details/{{ c.collection.id }}"><i class="glyphicon glyphicon-open-file"></i> Drop</a>
+                  <a class="btn btn-sm" href="/details/{{ c.collection.id }}"><i class="glyphicon glyphicon-remove-circle"></i> Drop</a>
                   <a {% if c.collection.status == 'Active'%} class="btn btn-sm disabled" {% else %} class="btn btn-sm" {% endif %} href="/start/{{ c.id }}"><i class="glyphicon glyphicon-play"></i> Start</a>
                   <a {% if c.collection.status == 'Inactive'%} class="btn btn-sm disabled" {% else %} class="btn btn-sm" {% endif %} href="/stop/{{ c.id }}"><i class="glyphicon glyphicon-stop"></i> Stop</a>
                   <a class="btn btn-sm" href="/remove/{{ c.collection.id }}"><i class="glyphicon glyphicon-remove-circle"></i> Drop</a>

@@ -12,6 +12,7 @@ sqlalchemy_utils
 flask-cqlalchemy
 swagger-marshmallow-codegen
 
+mordecai
 twython
 langdetect
 

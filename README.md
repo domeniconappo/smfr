@@ -12,6 +12,8 @@
 
 ## Init and manage Databases
 
+### MySQL
+
 On development:
 
 ```
@@ -31,8 +33,22 @@ If smfr_restserver image has problems to start due "unsynced" db tables, try the
 docker run -e FLASK_APP=smfr.py --entrypoint='flask' smfr_restserver 'db upgrade'
 ```
 
+From host, connect to MySQL DB with `mysql -h 127.0.0.1 -P 3306 -u root -p` (if you have mysql client installed) or just use docker exec:
+`docker exec -it mysql mysql -h 127.0.0.1 -P 3306 -u root -p`
 
 **_Note: You have to create migrations on development and push them to GIT._**
+
+
+### Cassandra
+
+Table migrations (i.e. new columns) will be automatically added by CQLAlchemy.
+**_Note: New columns are added by CQLAlchemy but you have to manually drop or alter types of existing columns using cqlsh._**
+
+From host, use cqlsh on docker container to connect to DB: `docker exec -it cassandra cqlsh`
+
+
+## Interfaces
+
 
 In addition to SMFR web interface, you can use the CLI to manage SMFR services:
 

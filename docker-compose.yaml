@@ -5,9 +5,9 @@ services:
   cassandra:
     image: cassandra:latest
     restart: always
-    # FROM host, connect to DB with `docker exec -it cassandra cqlsh`
+    # From host, connect to DB with `docker exec -it cassandra cqlsh`
     volumes:
-      - '/smfr/data/cassandra:/var/lib/cassandra'
+      - '/DATA/smfr/data/cassandra:/var/lib/cassandra'
     container_name: cassandra
     ports:
       - '9042:9042'
@@ -31,17 +31,46 @@ services:
     restart: always
     image: mysql:latest
     container_name: mysql
-    # FROM host, connect to DB with `mysql -h 127.0.0.1 -P 3306 -u root -p`
+    # From host, connect to DB with `mysql -h 127.0.0.1 -P 3306 -u root -p` (if you have mysql client installed)
+    # or using docker exec: `docker exec -it mysql mysql -h 127.0.0.1 -P 3306 -u root -p`
     ports:
       - '3306:3306'
     volumes:
-      - '/smfr/data/mysql:/var/lib/mysql:rw'
+      - '/DATA/smfr/data/mysql:/var/lib/mysql:rw'
     environment:
       MYSQL_ROOT_PASSWORD: example
       MYSQL_DATABASE: smfr
     depends_on:
       - kafka
       - cassandra
+
+  geonames:
+    build:
+      context: ./
+      dockerfile: geonames/Dockerfile
+      args:
+        http_proxy: ${http_proxy}
+        https_proxy: ${https_proxy}
+    working_dir: /geonames
+    container_name: geonames
+#    command: /usr/local/bin/cmd.sh
+    ports:
+      - '9200:9200'
+      - '9300:9300'
+    environment:
+      PYTHONUNBUFFERED: 'true'
+    volumes:
+      - '/DATA/smfr/data/geonames_index/:/usr/share/elasticsearch/data:rw'
+
+#  geonames:
+#    image: docker.elastic.co/elasticsearch/elasticsearch:6.2.2
+#    container_name: geonames
+#    ports:
+#      - '9200:9200'
+#      - '9300:9300'
+#    volumes:
+#      - '/DATA/smfr/data/geonames_index:/usr/share/elasticsearch/data:rw'
+
 
   restserver:
     container_name: restserver
@@ -56,12 +85,14 @@ services:
       PYTHONUNBUFFERED: 'true'
       FLASK_APP: smfr.py
       SERVER_PATH_UPLOADS: /smfr/uploads/
+      GEONAMES_HOST: geonames
     ports:
       - '5555:5555'
     depends_on:
       - mysql
       - kafka
       - cassandra
+      - geonames
     volumes:
       - ./rest_server/src:/rest_server
       - ./rest_server/scripts:/scripts

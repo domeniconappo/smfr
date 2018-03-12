@@ -10,6 +10,7 @@ rest_server/src/config/*
 web/src/client
 rest_server/src/client
 uploads/
+*geonames_index*
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

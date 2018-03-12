@@ -15,6 +15,7 @@ from flask_migrate import Migrate
 from flask_sqlalchemy import SQLAlchemy
 from flask_cqlalchemy import CQLAlchemy
 
+from utils import CustomJSONEncoder
 
 UNDER_TESTS = any('nose2' in x for x in sys.argv)
 LOGGER_FORMAT = '%(asctime)s: Server - <%(name)s>[%(levelname)s] (%(threadName)-10s) %(message)s'
@@ -68,7 +69,7 @@ class RestServerConfiguration(metaclass=Singleton):
     A class whose objects hold SMFR Rest Server Configuration as singletons.
     Constructor accepts a connexion app object.
     """
-
+    find_mysqluri_regex = re.compile(r'(?<=:)(.*)(?=@)')
     server_config = _read_server_configuration()
     debug = not UNDER_TESTS and not server_config.get('production', True)
 
@@ -77,6 +78,7 @@ class RestServerConfiguration(metaclass=Singleton):
         mysql_db_host = self.server_config['mysql_db_host']
         cassandra_keyspace = '{}{}'.format(self.server_config['cassandra_keyspace'], '_test' if UNDER_TESTS else '')
         self.flask_app = connexion_app.app
+        self.flask_app.json_encoder = CustomJSONEncoder
         try:
             self.flask_app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:example@{}/{}'.format(mysql_db_host, mysql_db_name)
             self.flask_app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
@@ -94,6 +96,7 @@ class RestServerConfiguration(metaclass=Singleton):
         self.rest_server_port = self.server_config['rest_server_port']
 
         if bootstrap_server:
+            # Flask apps are also setup when issuing CLI commands. Here in case we are launching REST Server
             self.producer = KafkaProducer(bootstrap_servers=self.kafka_bootstrap_server, compression_type='gzip')
             self.log_configuration()
 
@@ -106,7 +109,8 @@ class RestServerConfiguration(metaclass=Singleton):
         session = _connections[DEFAULT_CONNECTION].session
         session.execute(
             "CREATE KEYSPACE IF NOT EXISTS %s WITH replication = {'class':'SimpleStrategy','replication_factor':'1'};" %
-            self.server_config['cassandra_keyspace'])
+            self.server_config['cassandra_keyspace']
+        )
 
         # do not remove the import below
         from server.models import Tweet
@@ -122,6 +126,7 @@ class RestServerConfiguration(metaclass=Singleton):
         return self.producer
 
     def log_configuration(self):
+
         logger.info('SMFR Rest Server and Collector manager')
         logger.info('======= START LOGGING Configuration =======')
         logger.info('+++ Kafka')
@@ -131,7 +136,7 @@ class RestServerConfiguration(metaclass=Singleton):
         logger.info(' - Host: {}'.format(self.flask_app.config['CASSANDRA_HOSTS']))
         logger.info(' - Keyspace: {}'.format(self.flask_app.config['CASSANDRA_KEYSPACE']))
         logger.info('+++ MySQL')
-        masked = re.sub(r"(?<=:)(.*)(?=@)", '******', self.flask_app.config['SQLALCHEMY_DATABASE_URI'])
+        masked = self.find_mysqluri_regex.sub('******', self.flask_app.config['SQLALCHEMY_DATABASE_URI'])
         logger.info(' - URI: {}'.format(masked))
         logger.info('======= END LOGGING Configuration =======')
 

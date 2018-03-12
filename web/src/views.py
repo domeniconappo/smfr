@@ -104,6 +104,18 @@ def remove_collection(collection_id):
         return redirect('/list')
 
 
+@app.route('/details/<int:collection_id>', methods=('GET',))
+def collection_details(collection_id):
+    try:
+        collection = client.get_collection(collection_id)
+    except SMFRRestException as e:
+        add_message('An error occurred: {}'.format(e), category=MessageClass.ERROR)
+        logger.error(str(e))
+        return redirect('/list')
+    else:
+        return render_template('details.html', collection=collection)
+
+
 @app.errorhandler(404)
 def page_not_found(e):
     return render_template('404.html'), 404

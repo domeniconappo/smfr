@@ -31,7 +31,8 @@ class ApiLocalClient:
         'start_collector': '/collections/start/{id}',
         'list_running_collectors': '/collections/active',
         'list_inactive_collectors': '/collections/inactive',
-        'remove_collection': '/collections/remove/{id}',
+        'remove_collection': '/collections/{id}/remove',
+        'collection_details': '/collections/{id}/details',
     }
 
     def __init__(self):
@@ -50,9 +51,9 @@ class ApiLocalClient:
         if code >= 400:
             raise SMFRRestException(res.json())
 
-    def _get(self, endpoint):
+    def _get(self, endpoint, path_kwargs):
         try:
-            url = self._build_url(endpoint)
+            url = self._build_url(endpoint, path_kwargs)
             res = requests.get(url)
             self._check_response(res)
         except SMFRRestException as e:
@@ -146,6 +147,9 @@ class ApiLocalClient:
 
     def start_all(self):
         return self._post('startall')
+
+    def get_collection(self, collection_id):
+        return self._get('collection_details', path_kwargs={'id': collection_id})
 
 
 class SMFRRestException(SMFRError):

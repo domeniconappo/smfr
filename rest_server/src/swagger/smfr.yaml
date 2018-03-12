@@ -9,6 +9,14 @@ produces:
   - application/json
 
 paths:
+  /mordecai:
+    get:
+      operationId: server.api.collections.test_mordecai
+      responses:
+        201:
+          description: Return OK
+          schema:
+            type: object
 
   /collections:
     post:
@@ -108,7 +116,7 @@ paths:
         204:
           description: The collector was stopped successfully.
 
-  /collections/remove/{collection_id}:
+  /collections/{collection_id}/remove:
     post:
       tags: [collections]
       operationId: server.api.collections.remove_collection
@@ -122,6 +130,24 @@ paths:
       responses:
         204:
           description: The collection was removed successfully
+
+  /collections/{collection_id}/details:
+    get:
+      tags: [collections]
+      operationId: server.api.collections.get_collection_details
+      parameters:
+        - in: path
+          name: collection_id
+          type: integer
+          required: true
+          description: Numeric ID of the stored collector whose collection must be deleted from DB
+      summary: Details of a collection
+      responses:
+        200:
+          description: The collection was removed successfully
+          schema:
+            type: object
+            $ref: '#/definitions/CollectionResponse'
 
   /collections/startall:
     post:
@@ -188,21 +214,11 @@ definitions:
     type: object
     required: [trigger]
     properties:
-#      config:
-#        type: string
-#        description: Config file to init Collector instance
       trigger:
         type: string
         enum: [background, on-demand, manual]
-#      ctype:
-#        type: string
-#        enum: [keywords, geo]
       forecast_id:
         type: string
-#      kwfile:
-#        type: string
-#      locfile:
-#        type: string
       runtime:
         type: string
         format: date-time
@@ -219,3 +235,57 @@ definitions:
       id:
         type: integer
 
+  CollectionStats:
+    type: object
+    properties:
+      tweets_count:
+        type: integer
+      tweets_annotated:
+        type: integer
+      tweets_geotagged:
+        type: integer
+      tweets_day_avg:
+        type: number
+        format: float
+
+  CollectionTweetSample:
+    type: object
+    properties:
+      tweetid:
+        type: string
+      collectionid:
+        type: integer
+      text:
+        type: string
+      annotations:
+        type: array
+        items:
+          type: string
+      nuts3:
+        type: string
+      latlong:
+        type: array
+        items:
+          type: number
+          format: float
+        minItems: 2
+        maxItems: 2
+      ttype:
+        type: string
+        enum: [annotated, collected, geotagged]
+      created_at:
+        type: string
+        format: date-time
+
+
+  CollectionResponse:
+    type: object
+    properties:
+      collection:
+        $ref: '#/definitions/Collection'
+      stats:
+        $ref: '#/definitions/CollectionStats'
+      samples:
+        type: array
+        items:
+          $ref: '#/definitions/CollectionTweetSample'

@@ -14,7 +14,7 @@ from server.config import LOGGER_FORMAT, DATE_FORMAT, CONFIG_STORE_PATH
 from server.models import StoredCollector, VirtualTwitterCollection
 from server.api import utils
 
-from client.marshmallow import CollectorResponse
+from client.marshmallow import CollectorResponse, CollectionResponse, Collection, CollectionStats, CollectionTweetSample
 
 logging.basicConfig(level=logging.INFO, format=LOGGER_FORMAT, datefmt=DATE_FORMAT)
 logger = logging.getLogger(__name__)
@@ -133,8 +133,8 @@ def stop_collector(collector_id):
 
 def start_collector(collector_id):
     """
-    POST /collections/start/{collector_id}
-    Start an existing and stopped collection
+    POST /collections/{collector_id}/start
+    Start an existing collection by resuming its assoicated collector
     :param collector_id:
     :return:
     """
@@ -152,7 +152,7 @@ def start_collector(collector_id):
 
 def remove_collection(collection_id):
     """
-    POST /collections/remove/{collection_id}
+    POST /collections/{collection_id}/remove
     Remove a collection from DB
     :param collection_id: int
     :return:
@@ -170,6 +170,22 @@ def remove_collection(collection_id):
         stored.delete()
     collection.delete()
     return {}, 204
+
+
+def get_collection_details(collection_id):
+    """
+    GET /collections/{collection_id}/details
+    :param collection_id: int
+    :return: A CollectionResponse marshmallow object
+    """
+    collection = VirtualTwitterCollection.query.get(collection_id)
+    if not collection:
+        return {'error': {'description': 'No collector with this id was found'}}, 404
+    coll_schema = Collection()
+    coll_stats_schema = CollectionStats()
+    tweet_sample_schema = CollectionTweetSample()
+
+    return {}, 200
 
 
 def start_all():
@@ -195,3 +211,11 @@ def stop_all():
     for _, collector in res:
         collector.stop()
     return {}, 204
+
+
+def test_mordecai():
+    from mordecai import Geoparser
+    g = Geoparser('geonames')
+    res = g.geoparse('Travelling from New York to Berlin')
+    logger.info(res)
+    return res, 201
