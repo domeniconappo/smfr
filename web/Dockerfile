@@ -12,14 +12,13 @@ RUN mkdir -p $INSTALL_PATH/client
 WORKDIR $INSTALL_PATH
 
 COPY ./web/requirements.txt ./
+RUN pip install -U pip
+RUN pip install -r requirements.txt
+
 COPY ./web/src/. ./
 COPY ./client/. ./client/
 COPY ./rest_server/src/config/config.yaml.* ./client/config/
 COPY ./web/scripts/. /scripts/
-
-RUN pip install -U pip
-RUN pip install --no-cache-dir -r requirements.txt
-
 RUN chmod a+x -R /scripts/
 
 EXPOSE 8888

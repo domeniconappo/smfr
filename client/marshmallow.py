@@ -40,6 +40,12 @@ class CollectorResponse(BaseSchema):
     id = fields.Integer()
 
 
+class Collector(BaseSchema):
+    id = fields.Integer()
+    collection_id = fields.Integer()
+    parameters = fields.String()
+
+
 class CollectionStats(BaseSchema):
     tweets_count = fields.Integer()
     tweets_annotated = fields.Integer()
@@ -48,17 +54,18 @@ class CollectionStats(BaseSchema):
 
 
 class CollectionTweetSample(BaseSchema):
-    tweetid = fields.String()
+    tweetid = fields.String(required=True)
     collectionid = fields.Integer()
-    text = fields.String()
-    annotations = fields.List(fields.String())
+    tweet = fields.Field(required=True)
+    annotations = fields.Field()
     nuts3 = fields.String()
     latlong = fields.List(fields.Float(), validate=[ItemsRange(min=2, max=2)])
     ttype = fields.String(validate=[OneOf(choices=['annotated', 'collected', 'geotagged'], labels=[])])
-    created_at = DateTime()
+    created_at = DateTime(required=True)
 
 
 class CollectionResponse(BaseSchema):
     collection = fields.Nested('Collection')
+    collector = fields.Nested('Collector')
     stats = fields.Nested('CollectionStats')
     samples = fields.List(fields.Nested('CollectionTweetSample'))

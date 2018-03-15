@@ -129,6 +129,8 @@ class StoredCollector(mysql.Model):
         return 'Collector stored ID: {} (collection: {})'.format(self.id, self.collection_id)
 
 
+# CASSANDRA MODELS
+
 class Tweet(cassandra.Model):
     """
     """
@@ -141,13 +143,14 @@ class Tweet(cassandra.Model):
     ]
     tweetid = cassandra.columns.Text(primary_key=True, required=True)
     created_at = cassandra.columns.DateTime(index=True, required=True)
-    collectionid = cassandra.columns.Integer(required=True, default=0, partition_key=True)
+    collectionid = cassandra.columns.Integer(required=True, default=0, partition_key=True, index=True,)
     ttype = cassandra.columns.Text(required=True, partition_key=True)
     nuts3 = cassandra.columns.Text()
     nuts3source = cassandra.columns.Text()
     annotations = cassandra.columns.Map(cassandra.columns.DateTime, cassandra.columns.Text)
     tweet = cassandra.columns.Text(required=True)
     latlong = cassandra.columns.Tuple(cassandra.columns.Decimal(9, 6), cassandra.columns.Decimal(9, 6))
+    latlong.db_type = 'frozen<tuple<decimal, decimal>>'
 
     """
     Twitter data serialized as JSON text

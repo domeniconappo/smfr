@@ -107,13 +107,13 @@ def remove_collection(collection_id):
 @app.route('/details/<int:collection_id>', methods=('GET',))
 def collection_details(collection_id):
     try:
-        collection = client.get_collection(collection_id)
+        res = client.get_collection(collection_id)
     except SMFRRestException as e:
         add_message('An error occurred: {}'.format(e), category=MessageClass.ERROR)
         logger.error(str(e))
         return redirect('/list')
     else:
-        return render_template('details.html', collection=collection)
+        return render_template('details.html', data=res)
 
 
 @app.errorhandler(404)

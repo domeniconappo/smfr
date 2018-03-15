@@ -1,4 +1,9 @@
 {% extends "bootstrap/base.html" %}
+
+{% block styles %}
+    {{ super() }}
+    <link rel="stylesheet" href="/static/css/fontawesome-all.min.css">
+{% endblock %}
 {% block title %}SFMR Collections{% endblock %}
 {% block navbar %}
 <nav class="navbar navbar-inverse">
@@ -7,14 +12,14 @@
       <a class="navbar-brand" href="/">SMFR</a>
     </div>
     <ul class="nav navbar-nav">
-        <li><a href="/list"><span class="glyphicon glyphicon-list"></span> List All Collections</a></li>
-        <li><a href="/running"><span class="glyphicon glyphicon-play-circle"></span> List Active collections</a></li>
-        <li><a href="/stopped"><span class="glyphicon glyphicon-stop"></span> List Inactive collections</a></li>
-        <li><a href="/new"><span class="glyphicon glyphicon-plus-sign"></span> Add a Collection</a></li>
+        <li><a href="/list"><span class="fas fa-list"></span> List All Collections</a></li>
+        <li><a href="/running"><span class="fas fa-play-circle"></span> List Active collections</a></li>
+        <li><a href="/stopped"><span class="fas fa-stop-circle"></span> List Inactive collections</a></li>
+        <li><a href="/new"><span class="fas fa-search-plus"></span> Add a Collection</a></li>
     </ul>
     <ul class="nav navbar-nav navbar-right">
-      <li><a href="#"><span class="glyphicon glyphicon-user"></span> Sign Up</a></li>
-      <li><a href="#"><span class="glyphicon glyphicon-log-in"></span> Login</a></li>
+      <li><a href="#"><span class="fas fas-user"></span> Sign Up</a></li>
+      <li><a href="#"><span class="fas fas-log-in"></span> Login</a></li>
     </ul>
   </div>
 </nav>

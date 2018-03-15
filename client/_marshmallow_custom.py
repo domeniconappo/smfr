@@ -1,6 +1,6 @@
 from swagger_marshmallow_codegen.driver import Driver
-from marshmallow import Schema, pre_dump
-from sqlalchemy_utils import ChoiceType
+from marshmallow import Schema, pre_dump, post_dump
+from sqlalchemy_utils import ChoiceType, ScalarListType
 
 
 class BaseSchema(Schema):
@@ -20,6 +20,15 @@ class BaseSchema(Schema):
                 if hasattr(val, 'value'):
                     val = val.value
                 setattr(obj, c.name, val)
+
+    @post_dump(pass_many=False)
+    def list_values(self, data):
+        for k, v in data.items():
+            if not isinstance(v, list):
+                continue
+            v = ', '.join(v)
+            data[k] = v
+        return data
 
 
 class CustomDriver(Driver):

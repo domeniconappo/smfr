@@ -51,7 +51,7 @@ class ApiLocalClient:
         if code >= 400:
             raise SMFRRestException(res.json())
 
-    def _get(self, endpoint, path_kwargs):
+    def _get(self, endpoint, path_kwargs=None):
         try:
             url = self._build_url(endpoint, path_kwargs)
             res = requests.get(url)

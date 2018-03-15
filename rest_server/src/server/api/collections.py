@@ -3,6 +3,7 @@ Module to handle /collections API
 """
 import os
 import logging
+import json
 import uuid
 from functools import partial
 
@@ -11,10 +12,10 @@ import connexion
 from daemons.collector import Collector
 from errors import SMFRDBError
 from server.config import LOGGER_FORMAT, DATE_FORMAT, CONFIG_STORE_PATH
-from server.models import StoredCollector, VirtualTwitterCollection
+from server.models import StoredCollector, VirtualTwitterCollection, Tweet
 from server.api import utils
 
-from client.marshmallow import CollectorResponse, CollectionResponse, Collection, CollectionStats, CollectionTweetSample
+from client.marshmallow import Collector as CollectorSchema, CollectorResponse, CollectionResponse, Collection, CollectionStats, CollectionTweetSample
 
 logging.basicConfig(level=logging.INFO, format=LOGGER_FORMAT, datefmt=DATE_FORMAT)
 logger = logging.getLogger(__name__)
@@ -181,11 +182,29 @@ def get_collection_details(collection_id):
     collection = VirtualTwitterCollection.query.get(collection_id)
     if not collection:
         return {'error': {'description': 'No collector with this id was found'}}, 404
-    coll_schema = Collection()
+    collector = StoredCollector.query.filter_by(collection_id=collection.id).first()
+
+    collection_schema = Collection()
+    collection_dump = collection_schema.dump(collection).data
+    collector_schema = CollectorSchema()
+    collector_dump = collector_schema.dump(collector).data
+
+    tweets = Tweet.objects(collectionid=collection_id)
+    stats_dump = {'tweets_count': tweets.count()}
+    samples = tweets[:10]
+    for t in samples:
+        t['tweet'] = json.loads(t['tweet'])
     coll_stats_schema = CollectionStats()
     tweet_sample_schema = CollectionTweetSample()
+    samples_dump = tweet_sample_schema.dump(samples, many=True).data
 
-    return {}, 200
+    logger.info(collector_dump)
+    res = {'collection': collection_dump, 'stats': stats_dump, 'samples': samples_dump, 'collector': collector_dump}
+    return res, 200
+
+
+def geolocalize(collection_id, startdate=None, enddate=None):
+    pass
 
 
 def start_all():

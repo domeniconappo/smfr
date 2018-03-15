@@ -146,6 +146,11 @@ class Collector:
 
     @classmethod
     def is_running(cls, collector_id):
+        """
+
+        :param collector_id:
+        :return:
+        """
         for c in cls._running_instances.values():
             if c and c.stored_instance.id == collector_id:
                 return True
@@ -153,6 +158,11 @@ class Collector:
 
     @classmethod
     def get_running_collector(cls, collector_id):
+        """
+
+        :param collector_id:
+        :return:
+        """
         for c in cls._running_instances.values():
             if c.stored_instance.id == collector_id:
                 return c

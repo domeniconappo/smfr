@@ -125,7 +125,7 @@ paths:
           name: collection_id
           type: integer
           required: true
-          description: Numeric ID of the stored collector whose collection must be deleted from DB
+          description: Collection ID as stored in MySQL DB
       summary: Remove a collection from the system
       responses:
         204:
@@ -140,7 +140,7 @@ paths:
           name: collection_id
           type: integer
           required: true
-          description: Numeric ID of the stored collector whose collection must be deleted from DB
+          description: Collection ID as stored in MySQL DB
       summary: Details of a collection
       responses:
         200:
@@ -148,6 +148,31 @@ paths:
           schema:
             type: object
             $ref: '#/definitions/CollectionResponse'
+
+  /collections/{collection_id}/geo:
+    post:
+      tags: [collections]
+      operationId: server.api.collections.geolocalize
+      parameters:
+        - in: path
+          name: collection_id
+          type: integer
+          required: true
+          description: Collection ID as stored in MySQL DB
+        - in: query
+          name: startdate
+          type: string
+          format: date-time
+          description: Start date
+        - in: query
+          name: enddate
+          type: string
+          format: date-time
+          description: End date
+      summary: Details of a collection
+      responses:
+        204:
+          description: The collection was removed successfully
 
   /collections/startall:
     post:
@@ -235,6 +260,16 @@ definitions:
       id:
         type: integer
 
+  Collector:
+    type: object
+    properties:
+      id:
+        type: integer
+      collection_id:
+        type: integer
+      parameters:
+        type: string
+
   CollectionStats:
     type: object
     properties:
@@ -250,17 +285,19 @@ definitions:
 
   CollectionTweetSample:
     type: object
+    required:
+      - tweetid
+      - tweet
+      - created_at
     properties:
       tweetid:
         type: string
       collectionid:
         type: integer
-      text:
-        type: string
+      tweet:
+        type: object
       annotations:
-        type: array
-        items:
-          type: string
+        type: object
       nuts3:
         type: string
       latlong:
@@ -283,6 +320,8 @@ definitions:
     properties:
       collection:
         $ref: '#/definitions/Collection'
+      collector:
+        $ref: '#/definitions/Collector'
       stats:
         $ref: '#/definitions/CollectionStats'
       samples:

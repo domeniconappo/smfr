@@ -18,12 +18,3 @@ RUN chmod -R a+w /usr/share/elasticsearch/
 
 EXPOSE 9200
 EXPOSE 9300
-
-#COPY ./geonames/entrypoint.sh /usr/local/bin
-#COPY ./geonames/cmd.sh /usr/local/bin
-#RUN ["chmod", "-R", "a+x", "/usr/local/bin"]
-##USER elasticsearch
-#ENV PATH=$PATH:/usr/share/elasticsearch/bin
-
-#ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
-#CMD ["/usr/local/bin/cmd.sh"]

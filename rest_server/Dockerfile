@@ -25,18 +25,19 @@ RUN mkdir -p $INSTALL_PATH && mkdir -p $INSTALL_PATH/client && chmod a+w -R $INS
 WORKDIR $INSTALL_PATH
 
 COPY ./rest_server/requirements.txt ./
-COPY ./rest_server/src/. ./
-COPY ./client/. ./client/
-COPY ./rest_server/scripts/. /scripts/
-COPY ./rest_server/src/config/. /configuration/
 
-RUN pip3.6 install -U pip
+RUN pip3.6 install --upgrade pip
 RUN pip3.6 install --upgrade https://storage.googleapis.com/tensorflow/linux/cpu/tensorflow-1.6.0-cp36-cp36m-linux_x86_64.whl
 RUN pip3.6 install cassandra-driver
 RUN pip3.6 install -r requirements.txt
 RUN python3.6 -m spacy download en_core_web_lg
 
 RUN apt-get remove -y g++ libmariadbclient-dev libmariadbd-dev && apt-get install -y mariadb-client
+
+COPY ./rest_server/src/. ./
+COPY ./client/. ./client/
+COPY ./rest_server/scripts/. /scripts/
+COPY ./rest_server/src/config/. /configuration/
 
 RUN ["chmod", "a+x", "/scripts/wait_for_it.sh"]
 

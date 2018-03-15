@@ -2,48 +2,181 @@
 
 
 {% block app_content %}
-  <table class="table table-bordered table-striped">
-      <thead>
-          <tr>
-              <th>Id</th><th>Collector Id</th><th>Trigger</th>
-              <th>Type</th><th>Status</th>
-              <th>Keywords</th><th>Languages</th><th>Locations</th>
-              <th>Stop at (local time)</th><th>Started at (UTC)</th><th>Stopped at (UTC)</th>
-              <th>Actions</th>
-          </tr>
-      </thead>
-      <tbody>
-        {% for c in collectors %}
-          <tr>
-              <td>{{c.collection.id}}</td><td>{{c.id}}</td><td>{{c.collection.trigger}}</td>
-              <td>{{c.collection.ctype}}</td><td>{{c.collection.status}}</td>
-              <td>{{c.collection.tracking_keywords}}</td><td>{{c.collection.languages}}</td><td>{{c.collection.locations}}</td>
+  <article class="wrapper">
+	    <section class="main">
+	        <section>
+	           <section class="fade in content" id="dashboard">
 
-              <td>{{c.collection.runtime|datetimeformat}}</td>
-              <td>{{c.collection.started_at|datetimeformat('%Y-%m-%d %H:%M:%S')}}</td>
-              <td>{{c.collection.stopped_at|datetimeformat('%Y-%m-%d %H:%M:%S')}}</td>
+	                <div class="row">
 
-              <td class="btn-group btn-group-sm" role="group">
-                  <a class="btn btn-sm" href="/details/{{ c.collection.id }}"><i class="glyphicon glyphicon-remove-circle"></i> Drop</a>
-                  <a {% if c.collection.status == 'Active'%} class="btn btn-sm disabled" {% else %} class="btn btn-sm" {% endif %} href="/start/{{ c.id }}"><i class="glyphicon glyphicon-play"></i> Start</a>
-                  <a {% if c.collection.status == 'Inactive'%} class="btn btn-sm disabled" {% else %} class="btn btn-sm" {% endif %} href="/stop/{{ c.id }}"><i class="glyphicon glyphicon-stop"></i> Stop</a>
-                  <a class="btn btn-sm" href="/remove/{{ c.collection.id }}"><i class="glyphicon glyphicon-remove-circle"></i> Drop</a>
-              </td>
-          </tr>
-        {% endfor %}
-      <tr>
-          <td colspan="11">&nbsp;</td>
-          <td class="btn-group btn-group-sm" role="group">
-              <a class="btn btn-sm" href="/startall">
-                  <i class="glyphicon glyphicon-play"></i>
-                  Start all not running collections
-              </a>
-              <a class="btn btn-sm" href="/stopall">
-                  <i class="glyphicon glyphicon-stop"></i>
-                  Stop all running collections
-              </a>
-          </td>
-      </tr>
-      </tbody>
-  </table>
+                        <div class="col-xs-12 col-sm-9">
+	                       <div class="panel panel-default">
+	                           <div class="panel-heading">
+	                               Collection details
+	                           </div>
+	                           <div class="panel-body">
+                                   <table class="table table-striped">
+                                       <tbody>
+                                       <tr>
+                                           <th>Collection Id</th>
+                                           <td>{{ data.collection.id }}</td>
+                                           <th>Collector Id</th>
+                                           <td>{{ data.collector.id }}</td>
+                                       </tr>
+                                       <tr>
+                                           <th>Trigger</th>
+                                           <td>{{ data.collection.trigger }}</td>
+                                           <th>Collection Type</th>
+                                           <td>{{ data.collection.ctype }}</td>
+                                       </tr>
+                                       <tr>
+                                           {% if data.collection.ctype == 'Keywords' %}
+                                               <th colspan="2">Keywords</th>
+                                               <td colspan="2">{{ data.collection.tracking_keywords }}</td>
+                                           {% else %}
+                                               <th colspan="2">Locations</th>
+                                               <td colspan="2">{{ data.collection.locations }}</td>
+                                           {% endif %}
+                                       </tr>
+                                       <tr>
+                                           <th>Status</th>
+                                           <td>{{ data.collection.status }}</td>
+                                           <th>Languages</th>
+                                           <td>{{ data.collection.languages }}</td>
+                                       </tr>
+                                       <tr>
+                                           <th>Started at</th>
+                                           <td>{{ data.collection.started_at|datetimeformat('%Y-%m-%d %H:%M:%S') }}</td>
+                                           <th>Stopped at</th>
+                                           <td>{{ data.collection.stopped_at|datetimeformat('%Y-%m-%d %H:%M:%S') }}</td>
+                                       </tr>
+                                       {% if data.collection.runtime %}
+                                       <tr>
+                                           <th colspan="2">Run until</th>
+                                           <td colspan="2">{{ data.collection.runtime|datetimeformat('%Y-%m-%d %H:%M:%S') }}</td>
+                                       </tr>
+                                       {% endif %}
+                                       {% if data.collection.nuts3 %}
+                                       <tr>
+                                           <th>NUTS3</th>
+                                           <td>{{ data.collection.nuts3 }}</td>
+                                           <th>NUTS3 Source</th>
+                                           <td>{{ data.collection.nuts3source or '-' }}</td>
+                                       </tr>
+                                       {% endif %}
+
+                                       </tbody>
+                                   </table>
+
+	                           </div>
+	                       </div>
+                        </div>
+                        <div class="col-xs-6 col-sm-3">
+
+	                       <div class="panel panel-default">
+
+                               <div class="panel-heading">
+                                   <h4>Actions</h4>
+	                           </div>
+	                           <div class="panel-body">
+                                   <div class="btn-group btn-group-justified" role="group">
+                                       <div class="btn-group">
+                                        <a {% if data.collection.status == 'Active'%} class="btn btn-sm btn-default disabled" {% else %} class="btn btn-sm btn-default" {% endif %} href="/start/{{ data.collector.id }}"><em class="fas fa-play"></em></a>
+                                       </div>
+                                       <div class="btn-group">
+                                        <a {% if data.collection.status == 'Inactive'%} class="btn btn-sm btn-default disabled" {% else %} class="btn btn-sm btn-default" {% endif %} href="/stop/{{ data.collector.id }}"><em class="fas fa-stop"></em></a>
+                                       </div>
+                                       <div class="btn-group">
+                                        <a class="btn btn-sm btn-danger" href="/remove/{{ data.collection.id }}"><em class="fas fa-trash"></em></a>
+                                       </div>
+                                   </div>
+                               </div>
+	                       </div>
+                           <div class="panel panel-default">
+                               <div class="panel-heading"><h4># of collected tweets</h4></div>
+	                            <div class="panel-body">
+                                     <h2 align="center">{{ data.stats.tweets_count }}</h2>
+	                            </div>
+                           </div>
+	                        <div class="panel panel-default">
+
+                               <div class="panel-heading">
+                                   <h4>Analysis</h4>
+	                           </div>
+	                           <div class="panel-body">
+                                   <div class="btn-group btn-group-justified" role="group">
+                                       <div class="btn-group">
+                                        <a title="Start geolocalization on collected tweets" class="btn btn-sm btn-default disabled" href="/geolocalize/{{ data.collection.id }}"><em class="fas fa-globe"></em></a>
+                                       </div>
+                                       <div class="btn-group">
+                                        <a title="Start classification or other analysis on collected tweets" class="btn btn-sm btn-default disabled" href="/classify/{{ data.collection.id }}"><em class="fas fa-algolia"></em></a>
+                                       </div>
+                                   </div>
+                               </div>
+	                       </div>
+
+	                   </div>
+                       <div class="col-xs-12 col-sm-12">
+	                       <div class="panel panel-default">
+	                           <div class="panel-heading">
+                                   <h4>Tweets (samples)</h4>
+	                           </div>
+	                           <div class="panel-body">
+                                    <table class="table table-hover">
+                                        <thead>
+                                            <tr>
+                                                <th>#</th>
+                                                <th colspan="2">Author</th>
+                                                <th>Tweet id</th>
+                                                <th>Type</th>
+                                                <th>Annotations</th>
+                                                <th>Tweeted at</th>
+                                                <th>Collected at</th>
+                                                <th>Full text</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                        {% for t in data.samples %}
+                                            <tr id="hover_iframe_{{ t.tweet.id_str }}">
+                                                <th scope="row">{{ loop.index }}</th>
+                                                <td><img src="{{ t.tweet.user.profile_image_url }}"/></td>
+                                                <td>{{ t.tweet.user.screen_name }}</td>
+                                                <td>{{ t.tweet.id_str }}</td>
+                                                <td>{{ t.ttype }}</td>
+                                                <td>{{ t.annotations or '-' }}</td>
+                                                <td>{{ t.tweet.created_at }}</td>
+                                                <td>{{ t.created_at }}</td>
+                                                <td>{{ t.tweet.retweeted_status.extended_tweet.full_text|safe }}</td>
+                                            </tr>
+                                        {% endfor %}
+                                    </tbody>
+
+                                    </table>
+
+{#	                               {{ data.samples.0.tweet }}#}
+	                           </div>
+	                       </div>
+	                   </div>
+
+	               </div>
+
+	           </section>
+	        </section>
+	    </section>
+	</article>
+
+{% endblock %}
+
+{% block scripts %}
+    {{ super() }}
+    <script>
+    $('[id^="hover_iframe_"]').hover(
+        function () {
+            $('[id^="iframe_"]').fadeIn();
+        },
+        function () {
+            $('[id^="iframe_"]').fadeOut();
+        }
+    );
+    </script>
 {% endblock %}
