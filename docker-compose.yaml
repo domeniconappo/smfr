@@ -7,14 +7,21 @@ services:
     restart: always
     # From host, connect to DB with `docker exec -it cassandra cqlsh`
     volumes:
-      - '/DATA/smfr/data/cassandra:/var/lib/cassandra'
+      - '/DATA/smfr/data/cassandra:/var/lib/cassandra:rw'
     container_name: cassandra
     ports:
       - '9042:9042'
       - '9160:9160'
       - '7199:7199'
+    cap_add:
+      - ALL
+    privileged: true
+    environment:
+      MAX_HEAP_SIZE: 1G
+      HEAP_NEWSIZE: 256M
 
   kafka:
+    restart: always
     image: spotify/kafka
     container_name: kafka
     hostname: kafka
