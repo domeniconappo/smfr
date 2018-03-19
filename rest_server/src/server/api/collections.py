@@ -190,11 +190,12 @@ def get_collection_details(collection_id):
     collector_dump = collector_schema.dump(collector).data
 
     tweets = Tweet.objects(collectionid=collection_id)
-    stats_dump = {'tweets_count': tweets.count()}
+    # stats_dump = {'tweets_count': tweets.count()}
+    stats_dump = {'tweets_count': 'n/a'}
     samples = tweets[:10]
     for t in samples:
         t['tweet'] = json.loads(t['tweet'])
-    coll_stats_schema = CollectionStats()
+    # coll_stats_schema = CollectionStats()
     tweet_sample_schema = CollectionTweetSample()
     samples_dump = tweet_sample_schema.dump(samples, many=True).data
 
