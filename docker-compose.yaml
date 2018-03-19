@@ -7,7 +7,7 @@ services:
     restart: always
     # From host, connect to DB with `docker exec -it cassandra cqlsh`
     volumes:
-      - '/DATA/smfr/data/cassandra:/var/lib/cassandra:rw'
+      - '/DATA/smfr/data/cassandra:/var/lib/cassandra'
     container_name: cassandra
     ports:
       - '9042:9042'
@@ -60,7 +60,6 @@ services:
         https_proxy: ${https_proxy}
     working_dir: /geonames
     container_name: geonames
-#    command: /usr/local/bin/cmd.sh
     ports:
       - '9200:9200'
       - '9300:9300'
@@ -68,15 +67,6 @@ services:
       PYTHONUNBUFFERED: 'true'
     volumes:
       - '/DATA/smfr/data/geonames_index/:/usr/share/elasticsearch/data:rw'
-
-#  geonames:
-#    image: docker.elastic.co/elasticsearch/elasticsearch:6.2.2
-#    container_name: geonames
-#    ports:
-#      - '9200:9200'
-#      - '9300:9300'
-#    volumes:
-#      - '/DATA/smfr/data/geonames_index:/usr/share/elasticsearch/data:rw'
 
 
   restserver:

@@ -207,3 +207,13 @@ class Tweet(cassandra.Model):
                 v = datetime.datetime.strptime(v, '%Y-%m-%dT%H:%M:%S')
             setattr(obj, k, v)
         return obj
+
+
+class TweetCounters(cassandra.Model):
+    """
+
+    """
+    __keyspace__ = config.server_config['cassandra_keyspace']
+    collectionid = cassandra.columns.Integer(required=True, primary_key=True)
+    ttype = cassandra.columns.Text(required=True, partition_key=True, index=True)
+    counter = cassandra.columns.Counter(required=True, default=0)

@@ -179,6 +179,7 @@ def get_collection_details(collection_id):
     :param collection_id: int
     :return: A CollectionResponse marshmallow object
     """
+    num_samples = 10
     collection = VirtualTwitterCollection.query.get(collection_id)
     if not collection:
         return {'error': {'description': 'No collector with this id was found'}}, 404
@@ -189,12 +190,17 @@ def get_collection_details(collection_id):
     collector_schema = CollectorSchema()
     collector_dump = collector_schema.dump(collector).data
 
-    tweets = Tweet.objects(collectionid=collection_id)
+    # client join
+    tweets = Tweet.objects()
     # stats_dump = {'tweets_count': tweets.count()}
     stats_dump = {'tweets_count': 'n/a'}
-    samples = tweets[:10]
-    for t in samples:
-        t['tweet'] = json.loads(t['tweet'])
+    samples = []
+    for i, t in enumerate(tweets):
+        if t.collectionid == collection_id:
+            t['tweet'] = json.loads(t['tweet'])
+            samples.append(t)
+        if i == num_samples:
+            break
     # coll_stats_schema = CollectionStats()
     tweet_sample_schema = CollectionTweetSample()
     samples_dump = tweet_sample_schema.dump(samples, many=True).data
