@@ -207,7 +207,7 @@ def get_collection_details(collection_id):
     for t in samples:
         t['tweet'] = json.loads(t['tweet'])
         full_text = t['tweet'].get('retweeted_status', {}).get('extended_tweet', {}).get('full_text', '')
-        t['full_text'] = full_text
+        t['tweet']['full_text'] = full_text
 
     tweet_sample_schema = CollectionTweetSample()
     samples_dump = tweet_sample_schema.dump(samples, many=True).data
