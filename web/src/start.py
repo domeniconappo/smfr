@@ -1,3 +1,4 @@
+import json
 from dateutil.parser import parse
 
 from flask import Flask
@@ -29,4 +30,9 @@ def datetimeformat(value, format='%Y-%m-%d %H:%M'):
     return value.strftime(format)
 
 
+def jsonfilter(value):
+    return json.dumps(value)
+
+
+app.jinja_env.filters['json'] = jsonfilter
 app.jinja_env.filters['datetimeformat'] = datetimeformat

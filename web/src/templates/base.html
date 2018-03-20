@@ -3,6 +3,9 @@
 {% block styles %}
     {{ super() }}
     <link rel="stylesheet" href="/static/css/fontawesome-all.min.css">
+    <link rel="stylesheet" type="text/css" href="/static/DataTables/datatables.min.css"/>
+{#    <link rel="stylesheet" href="/static/hljs/styles/googlecode.css">#}
+    <link rel="stylesheet" type="text/css" href="/static/css/base.css"/>
 {% endblock %}
 {% block title %}SFMR Collections{% endblock %}
 {% block navbar %}
@@ -40,6 +43,9 @@
 
 {% block scripts%}
     {{ super() }}
+    <script type="text/javascript" src="/static/DataTables/datatables.min.js"></script>
+{#    <script src="/static/hljs/highlight.pack.js"></script>#}
+    <script type="text/javascript" src="/static/js/prettyjson.js"></script>
     <script>
     $(document).ready(function() {
 	    // get current URL path and assign 'active' class

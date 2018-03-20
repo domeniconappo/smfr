@@ -191,29 +191,40 @@ def get_collection_details(collection_id):
     collector_dump = collector_schema.dump(collector).data
 
     # client join
-    tweets = Tweet.objects().limit(100)
+    # tweets = Tweet.objects().limit(100)
+    tweets = Tweet.objects(collectionid=collection_id)
     # stats_dump = {'tweets_count': tweets.count()}
     stats_dump = {'tweets_count': 'n/a'}
     samples = []
     num = 0
 
-    for t in tweets:
-        if t.collectionid == collection_id:
-            samples.append(t)
-            num += 1
-            if num == num_samples:
-                break
-
-    for t in samples:
+    # for t in tweets:
+    #     if t.collectionid == collection_id:
+    #         samples.append(t)
+    #         num += 1
+    #         if num == num_samples:
+    #             break
+    samples = tweets[:num_samples]
+    samples_table = []
+    for i, t in enumerate(samples, start=1):
         t['tweet'] = json.loads(t['tweet'])
-        full_text = t['tweet'].get('retweeted_status', {}).get('extended_tweet', {}).get('full_text', '')
+        full_text = t['tweet'].get('full_text') or t['tweet'].get('retweeted_status', {}).get('extended_tweet', {}).get('full_text', '')
         t['tweet']['full_text'] = full_text
+        obj = {'rownum': i, 'Full Text': full_text, 'Tweet id': t.tweetid,
+               'original_tweet': json.dumps(t['tweet'], indent=2, sort_keys=True),
+               'Profile': '<img src="{}"/>'.format(t['tweet']['user']['profile_image_url']),
+               'Name': t['tweet']['user']['screen_name'], 'Type': t['ttype'], 'Annotations': t['annotations'] or '-',
+               'Collected at': t['created_at'], 'Tweeted at': t['tweet']['created_at']}
+        samples_table.append(obj)
 
     tweet_sample_schema = CollectionTweetSample()
     samples_dump = tweet_sample_schema.dump(samples, many=True).data
+    # samples_datatable = [t for t in samples_dump]
 
-    logger.info(collector_dump)
-    res = {'collection': collection_dump, 'stats': stats_dump, 'samples': samples_dump, 'collector': collector_dump}
+    res = {'collection': collection_dump, 'stats': stats_dump,
+           'samples': samples_dump, 'collector': collector_dump,
+           'table': samples_table
+           }
     return res, 200
 
 

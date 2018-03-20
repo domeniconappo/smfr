@@ -122,11 +122,13 @@
                                    <h4>Tweets (samples)</h4>
 	                           </div>
 	                           <div class="panel-body">
-                                    <table class="table table-hover">
+                                    <table class="table table-hover display" id="tabletweets">
                                         <thead>
                                             <tr>
+                                                <th></th>
                                                 <th>#</th>
-                                                <th colspan="2">Author</th>
+                                                <th>Profile</th>
+                                                <th>Name</th>
                                                 <th>Tweet id</th>
                                                 <th>Type</th>
                                                 <th>Annotations</th>
@@ -135,25 +137,39 @@
                                                 <th>Full text</th>
                                             </tr>
                                         </thead>
-                                        <tbody>
-                                        {% for t in data.samples %}
-                                            <tr id="hover_iframe_{{ t.tweet.id_str }}">
-                                                <th scope="row">{{ loop.index }}</th>
-                                                <td><img src="{{ t.tweet.user.profile_image_url }}"/></td>
-                                                <td>{{ t.tweet.user.screen_name }}</td>
-                                                <td>{{ t.tweet.id_str }}</td>
-                                                <td>{{ t.ttype }}</td>
-                                                <td>{{ t.annotations or '-' }}</td>
-                                                <td>{{ t.tweet.created_at }}</td>
-                                                <td>{{ t.created_at }}</td>
-                                                <td>{{ t.tweet.full_text|safe }}</td>
+{#                                        <tbody>#}
+{#                                        {% for t in data.samples %}#}
+{#                                            <tr id="hover_iframe_{{ t.tweet.id_str }}">#}
+{#                                                <td></td>#}
+{#                                                <td>{{ loop.index }}</td>#}
+{#                                                <td><img src="{{ t.tweet.user.profile_image_url }}"/></td>#}
+{#                                                <td>{{ t.tweet.user.screen_name }}</td>#}
+{#                                                <td>{{ t.tweet.id_str }}</td>#}
+{#                                                <td>{{ t.ttype }}</td>#}
+{#                                                <td>{{ t.annotations or '-' }}</td>#}
+{#                                                <td>{{ t.tweet.created_at }}</td>#}
+{#                                                <td>{{ t.created_at or '-' }}</td>#}
+{#                                                <td>{{ t.tweet.full_text|safe }}</td>#}
+{#                                            </tr>#}
+{#                                        {% endfor %}#}
+{#                                    </tbody>#}
+                                    <tfoot>
+                                            <tr>
+                                                <th></th>
+                                                <th>#</th>
+                                                <th>Profile</th>
+                                                <th>Name</th>
+                                                <th>Tweet id</th>
+                                                <th>Type</th>
+                                                <th>Annotations</th>
+                                                <th>Tweeted at</th>
+                                                <th>Collected at</th>
+                                                <th>Full text</th>
                                             </tr>
-                                        {% endfor %}
-                                    </tbody>
+                                        </tfoot>
 
                                     </table>
 
-{#	                               {{ data.samples.0.tweet }}#}
 	                           </div>
 	                       </div>
 	                   </div>
@@ -170,13 +186,70 @@
 {% block scripts %}
     {{ super() }}
     <script>
-    $('[id^="hover_iframe_"]').hover(
-        function () {
-            $('[id^="iframe_"]').fadeIn();
-        },
-        function () {
-            $('[id^="iframe_"]').fadeOut();
+function format (d) {
+    // `d` is the original data object for the row
+
+    return '<table cellpadding="5" cellspacing="0" border="0" style="padding-left:50px;"><tr><td>'+
+        //'<div><strong>JSON Tweet</strong>'+
+        '<pre id="jsonout_' + d.rownum + '"></pre></div>'+
+        '</td></tr></table>';
+}
+
+
+$(document).ready(function() {
+    var dataSet = {{ data.table | safe }};
+
+    var table = $('#tabletweets').DataTable( {
+        "data": dataSet,
+        "columns": [
+            {
+                "className":      'details-control',
+                "orderable":      false,
+                "data":           null,
+                "defaultContent": ''
+            },
+            { "data": "rownum" },
+            { "data": "Profile" },
+            { "data": "Name" },
+            { "data": "Tweet id" },
+            { "data": "Type" },
+            { "data": "Annotations" },
+            { "data": "Tweeted at" },
+            { "data": "Collected at" },
+            { "data": "Full Text" }
+        ],
+        "order": [[1, 'asc']]
+    } );
+
+    // Add event listener for opening and closing details
+    $('#tabletweets tbody').on('click', 'td.details-control', function () {
+        var tr = $(this).closest('tr');
+        var row = table.row( tr );
+
+        if ( row.child.isShown() ) {
+            // This row is already open - close it
+            row.child.hide();
+            tr.removeClass('shown');
         }
-    );
+        else {
+            // Open this row
+            var d = row.data();
+            row.child( format(d) ).show();
+            tr.addClass('shown');
+            var obj = d.original_tweet;
+            output("#jsonout_" + d.rownum, syntaxHighlight(obj));
+        }
+    } );
+} );
     </script>
+{#    <script>#}
+{#    $('[id^="hover_iframe_"]').hover(#}
+{#        function () {#}
+{#            $('[id^="iframe_"]').fadeIn();#}
+{#        },#}
+{#        function () {#}
+{#            $('[id^="iframe_"]').fadeOut();#}
+{#        }#}
+{#    );#}
+{#    </script>#}
 {% endblock %}
