@@ -191,17 +191,15 @@ def get_collection_details(collection_id):
     collector_dump = collector_schema.dump(collector).data
 
     # client join
-    tweets = Tweet.objects()
+    tweets = Tweet.objects(collectionid=collection_id)
     # stats_dump = {'tweets_count': tweets.count()}
     stats_dump = {'tweets_count': 'n/a'}
-    samples = []
-    for i, t in enumerate(tweets):
-        if t.collectionid == collection_id:
-            t['tweet'] = json.loads(t['tweet'])
-            samples.append(t)
-        if i == num_samples:
-            break
-    # coll_stats_schema = CollectionStats()
+    samples = tweets[:10]
+    for t in samples:
+        t['tweet'] = json.loads(t['tweet'])
+        full_text = t['tweet'].get('retweeted_status', {}).get('extended_tweet', {}).get('full_text', '')
+        t['full_text'] = full_text
+
     tweet_sample_schema = CollectionTweetSample()
     samples_dump = tweet_sample_schema.dump(samples, many=True).data
 

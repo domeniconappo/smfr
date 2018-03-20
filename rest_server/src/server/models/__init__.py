@@ -211,7 +211,6 @@ class Tweet(cassandra.Model):
 
 class TweetCounters(cassandra.Model):
     """
-
     """
     __keyspace__ = config.server_config['cassandra_keyspace']
     collectionid = cassandra.columns.Integer(required=True, primary_key=True)

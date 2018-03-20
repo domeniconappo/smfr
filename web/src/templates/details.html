@@ -146,7 +146,7 @@
                                                 <td>{{ t.annotations or '-' }}</td>
                                                 <td>{{ t.tweet.created_at }}</td>
                                                 <td>{{ t.created_at }}</td>
-                                                <td>{{ t.tweet.retweeted_status.extended_tweet.full_text|safe }}</td>
+                                                <td>{{ t.full_text|safe }}</td>
                                             </tr>
                                         {% endfor %}
                                     </tbody>
