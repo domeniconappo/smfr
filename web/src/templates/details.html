@@ -137,23 +137,7 @@
                                                 <th>Full text</th>
                                             </tr>
                                         </thead>
-{#                                        <tbody>#}
-{#                                        {% for t in data.samples %}#}
-{#                                            <tr id="hover_iframe_{{ t.tweet.id_str }}">#}
-{#                                                <td></td>#}
-{#                                                <td>{{ loop.index }}</td>#}
-{#                                                <td><img src="{{ t.tweet.user.profile_image_url }}"/></td>#}
-{#                                                <td>{{ t.tweet.user.screen_name }}</td>#}
-{#                                                <td>{{ t.tweet.id_str }}</td>#}
-{#                                                <td>{{ t.ttype }}</td>#}
-{#                                                <td>{{ t.annotations or '-' }}</td>#}
-{#                                                <td>{{ t.tweet.created_at }}</td>#}
-{#                                                <td>{{ t.created_at or '-' }}</td>#}
-{#                                                <td>{{ t.tweet.full_text|safe }}</td>#}
-{#                                            </tr>#}
-{#                                        {% endfor %}#}
-{#                                    </tbody>#}
-                                    <tfoot>
+                                        <tfoot>
                                             <tr>
                                                 <th></th>
                                                 <th>#</th>
@@ -242,14 +226,4 @@ $(document).ready(function() {
     } );
 } );
     </script>
-{#    <script>#}
-{#    $('[id^="hover_iframe_"]').hover(#}
-{#        function () {#}
-{#            $('[id^="iframe_"]').fadeIn();#}
-{#        },#}
-{#        function () {#}
-{#            $('[id^="iframe_"]').fadeOut();#}
-{#        }#}
-{#    );#}
-{#    </script>#}
 {% endblock %}
