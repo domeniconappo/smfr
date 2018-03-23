@@ -216,6 +216,13 @@ def geolocalize(collection_id, startdate=None, enddate=None):
     pass
 
 
+def annotate(collection_id=None, forecast_id=None, lang='en', startdate=None, enddate=None):
+    from daemons.annotator import Annotator
+    annotator = Annotator(collection_id, ttype='collected', lang=lang)
+    annotator.launch()
+    return {}, 204
+
+
 def start_all():
     """
     POST /collections/startall

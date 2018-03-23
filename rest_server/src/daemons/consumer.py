@@ -56,7 +56,6 @@ class Consumer:
 
         :return:
         """
-
         with self._lock:
             if self._running_instance:
                 self._running_instance.stop()

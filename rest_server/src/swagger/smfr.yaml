@@ -169,10 +169,39 @@ paths:
           type: string
           format: date-time
           description: End date
-      summary: Details of a collection
+      summary: Geotag tweets for this collection
       responses:
         204:
-          description: The collection was removed successfully
+          description: Annotated tweets are starting to be geotagged...
+
+  /collections/{collection_id}/annotate:
+    post:
+      tags: [collections]
+      operationId: server.api.collections.geolocalize
+      parameters:
+        - in: path
+          name: collection_id
+          type: integer
+          required: true
+          description: Collection ID as stored in MySQL DB
+        - in: query
+          name: forecast_id
+          type: integer
+          description: forecast id (e.g. 201804111200)
+        - in: query
+          name: startdate
+          type: string
+          format: date-time
+          description: Start date
+        - in: query
+          name: enddate
+          type: string
+          format: date-time
+          description: End date
+      summary: Annotate (classify) tweets for this collection
+      responses:
+        204:
+          description: Collected tweets are starting to be annotated...
 
   /collections/startall:
     post:

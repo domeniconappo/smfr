@@ -153,13 +153,15 @@ class Tweet(cassandra.Model):
     nuts3source = cassandra.columns.Text()
     annotations = cassandra.columns.Map(cassandra.columns.Text, cassandra.columns.Text)
     tweet = cassandra.columns.Text(required=True)
-    latlong = cassandra.columns.Tuple(cassandra.columns.Decimal(9, 6), cassandra.columns.Decimal(9, 6))
-    latlong.db_type = 'frozen<tuple<decimal, decimal>>'
-
-
     """
     Twitter data serialized as JSON text
     """
+    latlong = cassandra.columns.Tuple(cassandra.columns.Decimal(9, 6), cassandra.columns.Decimal(9, 6))
+    latlong.db_type = 'frozen<tuple<decimal, decimal>>'
+
+    @classmethod
+    def get_iterator(cls, collection_id, ttype):
+        return cls.objects(collectionid=collection_id, ttype=ttype)
 
     @classmethod
     def get_samples(cls, collection_id, ttype, size=10):
@@ -185,9 +187,10 @@ class Tweet(cassandra.Model):
         return json.dumps(outdict, ensure_ascii=False).encode('utf-8')
 
     @classmethod
-    def build_from_tweet(cls, collection, tweet):
+    def build_from_tweet(cls, collection, tweet, ttype='collected'):
         """
 
+        :param ttype:
         :param collection:
         :param tweet:
         :return:
@@ -196,7 +199,7 @@ class Tweet(cassandra.Model):
             tweetid=tweet['id_str'],
             collectionid=collection.id,
             created_at=time.mktime(time.strptime(tweet['created_at'], '%a %b %d %H:%M:%S +0000 %Y')),
-            ttype='collected',
+            ttype=ttype,
             nuts3=collection.nuts3,
             nuts3source=collection.nuts3source,
             annotations={},
