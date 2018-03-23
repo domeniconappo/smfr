@@ -1,11 +1,13 @@
 import logging
 import json
 import time
-
 import datetime
+
 from sqlalchemy_utils import ChoiceType, ScalarListType, JSONType
+from cassandra.query import dict_factory
 
 from server.config import server_configuration, LOGGER_FORMAT, DATE_FORMAT
+from server.models.utils import cassandra_session_factory
 
 config = server_configuration()
 mysql = config.db_mysql
@@ -135,6 +137,8 @@ class Tweet(cassandra.Model):
     """
     """
     __keyspace__ = config.server_config['cassandra_keyspace']
+    session = cassandra_session_factory()
+    samples_stmt = session.prepare("SELECT * FROM tweet WHERE collectionid=? AND ttype=? ORDER BY tweetid DESC LIMIT ?")
 
     TYPES = [
         ('annotated', 'Annotated'),
@@ -147,14 +151,20 @@ class Tweet(cassandra.Model):
     ttype = cassandra.columns.Text(required=True, partition_key=True)
     nuts3 = cassandra.columns.Text()
     nuts3source = cassandra.columns.Text()
-    annotations = cassandra.columns.Map(cassandra.columns.DateTime, cassandra.columns.Text)
+    annotations = cassandra.columns.Map(cassandra.columns.Text, cassandra.columns.Text)
     tweet = cassandra.columns.Text(required=True)
     latlong = cassandra.columns.Tuple(cassandra.columns.Decimal(9, 6), cassandra.columns.Decimal(9, 6))
     latlong.db_type = 'frozen<tuple<decimal, decimal>>'
 
+
     """
     Twitter data serialized as JSON text
     """
+
+    @classmethod
+    def get_samples(cls, collection_id, ttype, size=10):
+        rows = cls.session.execute(cls.samples_stmt, parameters=[collection_id, ttype, size])
+        return rows
 
     def validate(self):
         # TODO validate tweet content

@@ -190,11 +190,8 @@ def get_collection_details(collection_id):
     collector_schema = CollectorSchema()
     collector_dump = collector_schema.dump(collector).data
 
-    # client join
-    # tweets = Tweet.objects().limit(100)
-    tweets = Tweet.objects(collectionid=collection_id, ttype='collected').limit(num_samples)
+    tweets = Tweet.get_samples(collection_id=collection_id, ttype='collected', size=10)
     stats_dump = {'tweets_count': 'n/a'}
-    # stats_dump = {'tweets_count': tweets.count()}  # --> TIMEOUT
 
     samples = tweets[:num_samples]
     samples_table = []
@@ -202,7 +199,7 @@ def get_collection_details(collection_id):
         t['tweet'] = json.loads(t['tweet'])
         full_text = t['tweet'].get('full_text') or t['tweet'].get('retweeted_status', {}).get('extended_tweet', {}).get('full_text', '')
         t['tweet']['full_text'] = full_text
-        obj = {'rownum': i, 'Full Text': full_text, 'Tweet id': t.tweetid,
+        obj = {'rownum': i, 'Full Text': full_text, 'Tweet id': t['tweetid'],
                'original_tweet': json.dumps(t['tweet'], indent=2, sort_keys=True),
                'Profile': '<img src="{}"/>'.format(t['tweet']['user']['profile_image_url']) or '',
                'Name': t['tweet']['user']['screen_name'] or '', 'Type': t['ttype'] or '',
@@ -210,11 +207,8 @@ def get_collection_details(collection_id):
                'Collected at': t['created_at'] or '', 'Tweeted at': t['tweet']['created_at'] or ''}
         samples_table.append(obj)
 
-    tweet_sample_schema = CollectionTweetSample()
-    samples_dump = tweet_sample_schema.dump(samples, many=True).data
-
-    res = {'collection': collection_dump, 'stats': stats_dump, 'samples': samples_dump,
-           'collector': collector_dump, 'table': samples_table}
+    res = {'collection': collection_dump, 'stats': stats_dump,
+           'collector': collector_dump, 'datatable': samples_table}
     return res, 200
 
 

@@ -181,7 +181,7 @@ function format (d) {
 
 
 $(document).ready(function() {
-    var dataSet = {{ data.table | safe }};
+    var dataSet = {{ data.datatable | safe }};
 
     var table = $('#tabletweets').DataTable( {
         "data": dataSet,
