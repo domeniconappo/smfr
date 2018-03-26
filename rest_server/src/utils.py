@@ -1,5 +1,6 @@
 import socket
 
+from cassandra.util import OrderedMapSerializedKey
 from flask.json import JSONEncoder
 from numpy import float32
 
@@ -27,4 +28,9 @@ class CustomJSONEncoder(JSONEncoder):
         if isinstance(obj, float32):
             obj = 1. * obj
             return obj
+        elif isinstance(obj, OrderedMapSerializedKey):
+            res = {}
+            for k, v in obj.items():
+                res[k] = (v[0], float(v[1]))
+                return res
         return super().default(obj)

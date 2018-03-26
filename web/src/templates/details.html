@@ -109,7 +109,7 @@
                                         <a title="Start geolocalization on collected tweets" class="btn btn-sm btn-default disabled" href="/geolocalize/{{ data.collection.id }}"><em class="fas fa-globe"></em></a>
                                        </div>
                                        <div class="btn-group">
-                                        <a title="Start classification or other analysis on collected tweets" class="btn btn-sm btn-default disabled" href="/classify/{{ data.collection.id }}"><em class="fas fa-algolia"></em></a>
+                                        <a title="Start classification or other analysis on collected tweets" class="btn btn-sm btn-default" href="/annotate/{{ data.collection.id }}"><em class="fas fa-tasks"></em></a>
                                        </div>
                                    </div>
                                </div>
@@ -121,8 +121,51 @@
 	                           <div class="panel-heading">
                                    <h4>Tweets (samples)</h4>
 	                           </div>
-	                           <div class="panel-body">
+
+                               <div class="panel-body">
                                     <table class="table table-hover display" id="tabletweets">
+
+                                        <thead>
+                                            <tr>
+                                                <th></th>
+                                                <th>#</th>
+                                                <th>Profile</th>
+                                                <th>Name</th>
+                                                <th>Tweet id</th>
+                                                <th>Type</th>
+                                                <th>Tweeted at</th>
+                                                <th>Collected at</th>
+                                                <th>Full text</th>
+                                            </tr>
+                                        </thead>
+                                        <tfoot>
+                                            <tr>
+                                                <th></th>
+                                                <th>#</th>
+                                                <th>Profile</th>
+                                                <th>Name</th>
+                                                <th>Tweet id</th>
+                                                <th>Type</th>
+                                                <th>Tweeted at</th>
+                                                <th>Collected at</th>
+                                                <th>Full text</th>
+                                            </tr>
+                                        </tfoot>
+
+                                    </table>
+
+	                           </div>
+	                       </div>
+	                   </div>
+                       <div class="col-xs-12 col-sm-12">
+	                       <div class="panel panel-default">
+	                           <div class="panel-heading">
+                                   <h4>Annotated Tweets (samples)</h4>
+	                           </div>
+
+                               <div class="panel-body">
+                                    <table class="table table-hover display" id="tabletweetsannotated">
+
                                         <thead>
                                             <tr>
                                                 <th></th>
@@ -159,7 +202,6 @@
 	                   </div>
 
 	               </div>
-
 	           </section>
 	        </section>
 	    </section>
@@ -170,12 +212,11 @@
 {% block scripts %}
     {{ super() }}
     <script>
-function format (d) {
+function format (d, inc) {
     // `d` is the original data object for the row
 
     return '<table cellpadding="5" cellspacing="0" border="0" style="padding-left:50px;"><tr><td>'+
-        //'<div><strong>JSON Tweet</strong>'+
-        '<pre id="jsonout_' + d.rownum + '"></pre></div>'+
+        '<pre id="jsonout_' + (d.rownum + inc) + '"></pre></div>'+
         '</td></tr></table>';
 }
 
@@ -197,7 +238,7 @@ $(document).ready(function() {
             { "data": "Name" },
             { "data": "Tweet id" },
             { "data": "Type" },
-            { "data": "Annotations" },
+            {#{ "data": "Annotations" },#}
             { "data": "Tweeted at" },
             { "data": "Collected at" },
             { "data": "Full Text" }
@@ -218,12 +259,57 @@ $(document).ready(function() {
         else {
             // Open this row
             var d = row.data();
-            row.child( format(d) ).show();
+            row.child( format(d, 0) ).show();
             tr.addClass('shown');
             var obj = d.original_tweet;
             output("#jsonout_" + d.rownum, syntaxHighlight(obj));
         }
     } );
+
+    var dataSetAnnotated = {{ data.datatableannotated | safe }};
+
+    var tableAnnotated = $('#tabletweetsannotated').DataTable( {
+        "data": dataSetAnnotated,
+        "columns": [
+            {
+                "className":      'details-control',
+                "orderable":      false,
+                "data":           null,
+                "defaultContent": ''
+            },
+            { "data": "rownum" },
+            { "data": "Profile" },
+            { "data": "Name" },
+            { "data": "Tweet id" },
+            { "data": "Type" },
+            { "data": "Annotations" },
+            { "data": "Tweeted at" },
+            { "data": "Collected at" },
+            { "data": "Full Text" }
+        ],
+        "order": [[1, 'asc']]
+    } );
+
+    // Add event listener for opening and closing details
+    $('#tabletweetsannotated tbody').on('click', 'td.details-control', function () {
+        var tr = $(this).closest('tr');
+        var row = tableAnnotated.row( tr );
+
+        if ( row.child.isShown() ) {
+            // This row is already open - close it
+            row.child.hide();
+            tr.removeClass('shown');
+        }
+        else {
+            // Open this row
+            var d = row.data();
+            row.child( format(d, 1000) ).show();
+            tr.addClass('shown');
+            var obj = d.original_tweet;
+            output("#jsonout_" + (d.rownum + 1000), syntaxHighlight(obj));
+        }
+    } );
+
 } );
     </script>
 {% endblock %}

@@ -1,10 +1,9 @@
 import logging
-import json
+import ujson as json
 import time
 import datetime
 
 from sqlalchemy_utils import ChoiceType, ScalarListType, JSONType
-from cassandra.query import dict_factory
 
 from server.config import server_configuration, LOGGER_FORMAT, DATE_FORMAT
 from server.models.utils import cassandra_session_factory
@@ -137,6 +136,7 @@ class Tweet(cassandra.Model):
     """
     """
     __keyspace__ = config.server_config['cassandra_keyspace']
+
     session = cassandra_session_factory()
     samples_stmt = session.prepare("SELECT * FROM tweet WHERE collectionid=? AND ttype=? ORDER BY tweetid DESC LIMIT ?")
 
@@ -145,23 +145,68 @@ class Tweet(cassandra.Model):
         ('collected', 'Collected'),
         ('geotagged', 'Geo Tagged'),
     ]
+
     tweetid = cassandra.columns.Text(primary_key=True, required=True)
     created_at = cassandra.columns.DateTime(index=True, required=True)
     collectionid = cassandra.columns.Integer(required=True, default=0, partition_key=True, index=True,)
     ttype = cassandra.columns.Text(required=True, partition_key=True)
+
     nuts3 = cassandra.columns.Text()
     nuts3source = cassandra.columns.Text()
-    annotations = cassandra.columns.Map(cassandra.columns.Text, cassandra.columns.Text)
+
+    annotations = cassandra.columns.Map(
+        cassandra.columns.Text,
+        cassandra.columns.Tuple(
+            cassandra.columns.Text,
+            cassandra.columns.Decimal(9, 6)
+        )
+    )
+
     tweet = cassandra.columns.Text(required=True)
     """
     Twitter data serialized as JSON text
     """
+
     latlong = cassandra.columns.Tuple(cassandra.columns.Decimal(9, 6), cassandra.columns.Decimal(9, 6))
     latlong.db_type = 'frozen<tuple<decimal, decimal>>'
+    """
+    Coordinates
+    """
+
+    lang = cassandra.columns.Text(index=True)
+    """
+    """
 
     @classmethod
     def get_iterator(cls, collection_id, ttype):
         return cls.objects(collectionid=collection_id, ttype=ttype)
+
+    @classmethod
+    def make_table_object(cls, row, tweet_dict):
+        """
+
+        :param row:
+        :param tweet_dict:
+        :return:
+        """
+        tweet_obj = cls(**tweet_dict)
+        tweet_dict['tweet'] = json.loads(tweet_dict['tweet'])
+
+        full_text = tweet_dict['tweet'].get('full_text') \
+            or tweet_dict['tweet'].get('text') \
+            or tweet_dict['tweet'].get('retweeted_status', {}).get('extended_tweet', {}).get('full_text', '')
+
+        tweet_dict['tweet']['full_text'] = full_text
+
+        obj = {'rownum': row, 'Full Text': full_text, 'Tweet id': tweet_dict['tweetid'],
+               'original_tweet': tweet_obj.original_tweet,
+               'Profile': '<img src="{}"/>'.format(tweet_dict['tweet']['user']['profile_image_url']) if tweet_dict['tweet']['user']['profile_image_url'] else '',
+               'Name': tweet_dict['tweet']['user']['screen_name'] or '',
+               'Type': tweet_dict['ttype'],
+               'Annotations': tweet_obj.pretty_annotations,
+               'Collected at': tweet_dict['created_at'] or '',
+               'Tweeted at': tweet_dict['tweet']['created_at'] or ''}
+        return obj
 
     @classmethod
     def get_samples(cls, collection_id, ttype, size=10):
@@ -170,14 +215,27 @@ class Tweet(cassandra.Model):
 
     def validate(self):
         # TODO validate tweet content
-
         super().validate()
+
+    @property
+    def original_tweet(self):
+        return json.dumps(json.loads(self.tweet), indent=2, sort_keys=True)
+
+    @property
+    def pretty_annotations(self):
+        if not self.annotations:
+            return '-'
+        out = ''
+        for k, v in self.annotations.items():
+            out += '{}: {} - {}\n'.format(k, v[0], v[1])
+        return out
 
     def serialize(self):
         """
         Method to serialize object to Kafka
         :return: string version in JSON format
-        """
+        "
+        ""
         outdict = {}
         for k, v in self.__dict__['_values'].items():
             if isinstance(v.value, (datetime.datetime, datetime.date)):
@@ -202,8 +260,8 @@ class Tweet(cassandra.Model):
             ttype=ttype,
             nuts3=collection.nuts3,
             nuts3source=collection.nuts3source,
-            annotations={},
-            tweet=json.dumps(tweet, ensure_ascii=False, indent=True),
+            annotations={}, lang=tweet['lang'],
+            tweet=json.dumps(tweet, ensure_ascii=False),
         )
 
     @classmethod
@@ -217,7 +275,7 @@ class Tweet(cassandra.Model):
         obj = cls()
         for k, v in values.items():
             if k == 'created_at':
-                v = datetime.datetime.strptime(v, '%Y-%m-%dT%H:%M:%S')
+                v = datetime.datetime.strptime(v.partition('.')[0], '%Y-%m-%dT%H:%M:%S') if v is not None else datetime.datetime.now().replace(microsecond=0)
             setattr(obj, k, v)
         return obj
 
@@ -226,6 +284,7 @@ class TweetCounters(cassandra.Model):
     """
     """
     __keyspace__ = config.server_config['cassandra_keyspace']
+
     collectionid = cassandra.columns.Integer(required=True, primary_key=True)
     ttype = cassandra.columns.Text(required=True, partition_key=True)
     counter = cassandra.columns.Counter(required=True)

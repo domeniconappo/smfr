@@ -12,7 +12,7 @@ from dateutil import parser
 from daemons.streamers import CollectorStreamer
 from server.config import RestServerConfiguration, server_configuration, LOGGER_FORMAT, DATE_FORMAT
 from errors import SMFRDBError
-from server.models import StoredCollector, VirtualTwitterCollection
+
 
 logging.basicConfig(level=logging.INFO if not RestServerConfiguration.debug else logging.DEBUG,
                     format=LOGGER_FORMAT, datefmt=DATE_FORMAT)
@@ -178,6 +178,7 @@ class Collector:
         stored_collector = collector_or_collector_id
 
         if isinstance(collector_or_collector_id, int):
+            from server.models import StoredCollector
             stored_collector = StoredCollector.query.get(collector_or_collector_id)
 
         if not stored_collector:
@@ -211,6 +212,7 @@ class Collector:
         """
         Resume and launch all collectors for collections that are in ACTIVE status (i.e. they were running before a shutdown)
         """
+        from server.models import StoredCollector, VirtualTwitterCollection
         collectors_for_active_collections = StoredCollector.query\
             .join(VirtualTwitterCollection,
                   StoredCollector.collection_id == VirtualTwitterCollection.id)\
@@ -223,6 +225,7 @@ class Collector:
         """
         Resume and launch all collectors for collections that are in ACTIVE status (i.e. they were running before a shutdown)
         """
+        from server.models import StoredCollector, VirtualTwitterCollection
         collectors_for_active_collections = StoredCollector.query \
             .join(VirtualTwitterCollection,
                   StoredCollector.collection_id == VirtualTwitterCollection.id) \
@@ -234,8 +237,9 @@ class Collector:
     def resume_all(cls):
         """
 
-        :return: Gen of Collector instances resumed based on StoredCollector db items stored in MySQL
+        :return: Generator of Collector instances resumed based on StoredCollector db items stored in MySQL
         """
+        from server.models import StoredCollector, VirtualTwitterCollection
         stored_collectors = StoredCollector.query\
             .join(VirtualTwitterCollection,
                   StoredCollector.collection_id == VirtualTwitterCollection.id)

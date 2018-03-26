@@ -10,8 +10,8 @@ import nltk
 
 NO_LANGUAGE = 'no_language'
 RECOGNIZED_LANGUAGES = ('es', 'en', 'fr', 'de', 'it')
+CNN_MAX_SEQUENCE_LENGTH = 100
 
-# regexp
 regexp = {'ampersand': re.compile(r'\s+&amp;?\s+'),
           'retweet': re.compile(r'^RT @\w+\s?:\s*'),
           'mention': re.compile(r'@[A-Za-z0-9_]+\b'),
@@ -103,6 +103,7 @@ def replace_locations_loc_text(raw_text, locations):
     lowercase_text_without_locations = raw_text.lower()
     for location in places_list + locations:
         lowercase_text_without_locations = re.sub(r"\b" + location.lower() + r"\b", '_loc_', lowercase_text_without_locations)
+    return lowercase_text_without_locations
 
 
 def compute_features_text(raw_text, locations, stopwords):
@@ -187,3 +188,23 @@ def compute_features_tweet(tweet, locations, stopwords):
         compute_features_text(tweet['text'], locations, stopwords),
         compute_metadata_features(tweet)
     )
+
+
+def create_text_for_cnn(tweet, locations):
+    """Tokenization/string cleaning for conv neural network: removes all quote characters;
+    it also append metadata features at the end of the tweet."""
+
+    # Remove locations
+    lowercase_text_without_locations = replace_locations_loc_text(tweet['text'], locations)
+
+    string = tweet_normalization_aggressive(lowercase_text_without_locations)
+
+    string = re.sub(r"\\", "", string)
+    string = re.sub(r"\'", "", string)
+    string = re.sub(r"\"", "", string)
+
+    # Add metadata features
+    metadata_as_dict = compute_metadata_features(tweet)
+
+    string += " " + " ".join(sorted(list(metadata_as_dict.keys())))
+    return string.strip().lower()

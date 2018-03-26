@@ -5,7 +5,7 @@ from cassandra.cqlengine import ValidationError
 from kafka import KafkaConsumer
 
 from server.config import server_configuration, RestServerConfiguration, LOGGER_FORMAT, DATE_FORMAT
-from server.models import Tweet
+
 
 logging.basicConfig(level=logging.INFO if not RestServerConfiguration.debug else logging.DEBUG,
                     format=LOGGER_FORMAT, datefmt=DATE_FORMAT)
@@ -63,6 +63,7 @@ class Consumer:
             self.set_running(inst=self)
 
         logger.info('Starting Consumer in thread!')
+        from server.models import Tweet
 
         try:
             for i, msg in enumerate(self.consumer):
@@ -74,7 +75,7 @@ class Consumer:
                 except ValidationError as e:
                     logger.error(msg[:100])
                     logger.error('Poison message for Cassandra: %s', str(e))
-                except TypeError as e:
+                except (ValueError, TypeError) as e:
                     logger.error(msg[:100])
                     logger.error(e)
                 except Exception as e:

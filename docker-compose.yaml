@@ -83,6 +83,7 @@ services:
       FLASK_APP: smfr.py
       SERVER_PATH_UPLOADS: /smfr/uploads/
       GEONAMES_HOST: geonames
+      KERAS_BACKEND: theano
     ports:
       - '5555:5555'
     depends_on:

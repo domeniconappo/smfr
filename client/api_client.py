@@ -2,7 +2,7 @@
 
 """
 
-import json
+import ujson as json
 import os
 import logging
 
@@ -33,6 +33,7 @@ class ApiLocalClient:
         'list_inactive_collectors': '/collections/inactive',
         'remove_collection': '/collections/{id}/remove',
         'collection_details': '/collections/{id}/details',
+        'annotate_collection': '/collections/{id}/annotate',
     }
 
     def __init__(self):
@@ -150,6 +151,9 @@ class ApiLocalClient:
 
     def get_collection(self, collection_id):
         return self._get('collection_details', path_kwargs={'id': collection_id})
+
+    def start_annotation(self, collection_id):
+        return self._post('annotate_collection', path_kwargs={'id': collection_id})
 
 
 class SMFRRestException(SMFRError):

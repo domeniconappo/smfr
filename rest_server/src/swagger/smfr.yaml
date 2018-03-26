@@ -177,7 +177,7 @@ paths:
   /collections/{collection_id}/annotate:
     post:
       tags: [collections]
-      operationId: server.api.collections.geolocalize
+      operationId: server.api.collections.annotate
       parameters:
         - in: path
           name: collection_id

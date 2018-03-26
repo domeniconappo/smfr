@@ -3,7 +3,6 @@ Module to handle /collections API
 """
 import os
 import logging
-import json
 import uuid
 from functools import partial
 
@@ -15,7 +14,7 @@ from server.config import LOGGER_FORMAT, DATE_FORMAT, CONFIG_STORE_PATH
 from server.models import StoredCollector, VirtualTwitterCollection, Tweet
 from server.api import utils
 
-from client.marshmallow import Collector as CollectorSchema, CollectorResponse, CollectionResponse, Collection, CollectionStats, CollectionTweetSample
+from client.marshmallow import Collector as CollectorSchema, CollectorResponse, Collection
 
 logging.basicConfig(level=logging.INFO, format=LOGGER_FORMAT, datefmt=DATE_FORMAT)
 logger = logging.getLogger(__name__)
@@ -190,25 +189,22 @@ def get_collection_details(collection_id):
     collector_schema = CollectorSchema()
     collector_dump = collector_schema.dump(collector).data
 
-    tweets = Tweet.get_samples(collection_id=collection_id, ttype='collected', size=10)
-    stats_dump = {'tweets_count': 'n/a'}
+    tweets = Tweet.get_samples(collection_id=collection_id, ttype='collected', size=num_samples)
+    annotated_tweets = Tweet.get_samples(collection_id=collection_id, ttype='annotated', size=num_samples)
 
-    samples = tweets[:num_samples]
     samples_table = []
-    for i, t in enumerate(samples, start=1):
-        t['tweet'] = json.loads(t['tweet'])
-        full_text = t['tweet'].get('full_text') or t['tweet'].get('retweeted_status', {}).get('extended_tweet', {}).get('full_text', '')
-        t['tweet']['full_text'] = full_text
-        obj = {'rownum': i, 'Full Text': full_text, 'Tweet id': t['tweetid'],
-               'original_tweet': json.dumps(t['tweet'], indent=2, sort_keys=True),
-               'Profile': '<img src="{}"/>'.format(t['tweet']['user']['profile_image_url']) or '',
-               'Name': t['tweet']['user']['screen_name'] or '', 'Type': t['ttype'] or '',
-               'Annotations': t['annotations'] or '-',
-               'Collected at': t['created_at'] or '', 'Tweeted at': t['tweet']['created_at'] or ''}
-        samples_table.append(obj)
+    annotated_table = []
 
+    for i, t in enumerate(tweets, start=1):
+        samples_table.append(Tweet.make_table_object(i, t))
+
+    for i, t in enumerate(annotated_tweets, start=1):
+        annotated_table.append(Tweet.make_table_object(i, t))
+
+    stats_dump = {'tweets_count': 'n/a'}
     res = {'collection': collection_dump, 'stats': stats_dump,
-           'collector': collector_dump, 'datatable': samples_table}
+           'collector': collector_dump, 'datatable': samples_table,
+           'datatableannotated': annotated_table}
     return res, 200
 
 

@@ -116,6 +116,24 @@ def collection_details(collection_id):
         return render_template('details.html', data=res)
 
 
+@app.route('/annotate/<int:collection_id>', methods=('GET',))
+def annotate_collection(collection_id):
+    try:
+        client.start_annotation(collection_id)
+    except SMFRRestException as e:
+        add_message('An error occurred: {}'.format(e), category=MessageClass.ERROR)
+        logger.error(str(e))
+    else:
+        add_message('Classification started for collection', category=MessageClass.SUCCESS)
+    finally:
+        return redirect('/details/{}'.format(collection_id))
+
+
+@app.route('/geolocalize/<int:collection_id>', methods=('GET',))
+def geolocalize_collection(collection_id):
+    return redirect('/details/{}'.format(collection_id))
+
+
 @app.errorhandler(404)
 def page_not_found(e):
     return render_template('404.html'), 404

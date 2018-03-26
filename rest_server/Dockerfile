@@ -32,7 +32,7 @@ RUN pip3.6 install cassandra-driver
 RUN pip3.6 install -r requirements.txt
 RUN python3.6 -m spacy download en_core_web_lg
 
-RUN apt-get remove -y g++ libmariadbclient-dev libmariadbd-dev && apt-get install -y mariadb-client
+RUN apt-get remove -y libmariadbclient-dev libmariadbd-dev && apt-get install -y mariadb-client
 
 COPY ./rest_server/src/. ./
 COPY ./client/. ./client/

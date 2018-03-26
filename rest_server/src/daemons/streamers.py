@@ -39,9 +39,9 @@ class CollectorStreamer(TwythonStreamer):
         if 'text' in data:
             lang = safe_langdetect(tweet_normalization_aggressive(data['text']))
             languages = self.collection.languages
-            self.logger.debug('Languages: ' + '-'.join(languages))
             if lang in languages:
                 from server.models import Tweet
+                data['lang'] = lang
                 tweet = Tweet.build_from_tweet(self.collection, data)
                 # the tweet is sent immediately to kafka queue
                 message = tweet.serialize()
