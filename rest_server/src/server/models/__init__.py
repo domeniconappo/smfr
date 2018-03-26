@@ -234,8 +234,8 @@ class Tweet(cassandra.Model):
         """
         Method to serialize object to Kafka
         :return: string version in JSON format
-        "
-        ""
+        """
+
         outdict = {}
         for k, v in self.__dict__['_values'].items():
             if isinstance(v.value, (datetime.datetime, datetime.date)):
