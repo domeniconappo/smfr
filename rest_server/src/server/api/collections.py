@@ -9,6 +9,8 @@ from functools import partial
 import connexion
 
 from daemons.collector import Collector
+from daemons.annotator import Annotator
+
 from errors import SMFRDBError
 from server.config import LOGGER_FORMAT, DATE_FORMAT, CONFIG_STORE_PATH
 from server.models import StoredCollector, VirtualTwitterCollection, Tweet
@@ -71,7 +73,7 @@ def get():
     Get all collections stored in DB (active and not active)
     :return:
     """
-    logger.info('Get all collections defined in SMFR')
+    logger.debug('Get all collections defined in SMFR')
     stored_collectors = StoredCollector.query.join(VirtualTwitterCollection,
                                                    StoredCollector.collection_id == VirtualTwitterCollection.id)
     coll_schema = CollectorResponse()
@@ -178,7 +180,7 @@ def get_collection_details(collection_id):
     :param collection_id: int
     :return: A CollectionResponse marshmallow object
     """
-    num_samples = 10
+    num_samples = 100
     collection = VirtualTwitterCollection.query.get(collection_id)
     if not collection:
         return {'error': {'description': 'No collector with this id was found'}}, 404
@@ -201,8 +203,7 @@ def get_collection_details(collection_id):
     for i, t in enumerate(annotated_tweets, start=1):
         annotated_table.append(Tweet.make_table_object(i, t))
 
-    stats_dump = {'tweets_count': 'n/a'}
-    res = {'collection': collection_dump, 'stats': stats_dump,
+    res = {'collection': collection_dump, 'running_annotators': Annotator.running,
            'collector': collector_dump, 'datatable': samples_table,
            'datatableannotated': annotated_table}
     return res, 200
@@ -212,10 +213,14 @@ def geolocalize(collection_id, startdate=None, enddate=None):
     pass
 
 
-def annotate(collection_id=None, forecast_id=None, lang='en', startdate=None, enddate=None):
+def annotate(collection_id=None, lang='en', forecast_id=None, startdate=None, enddate=None):
     from daemons.annotator import Annotator
+    if lang not in Annotator.models:
+        return {'error': {'description': 'No model available for language'.format(lang)}}, 400
+    if Annotator.is_running_for(collection_id, lang):
+        return {'error': {'description': 'Annotation is already ongoing on collection id {}, for language'.format(collection_id, lang)}}, 400
     annotator = Annotator(collection_id, ttype='collected', lang=lang)
-    annotator.launch()
+    annotator.launch()  # launch annotation processing into a separate thread
     return {}, 204
 
 

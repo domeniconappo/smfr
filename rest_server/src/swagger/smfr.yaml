@@ -185,6 +185,12 @@ paths:
           required: true
           description: Collection ID as stored in MySQL DB
         - in: query
+          name: lang
+          type: string
+          description: Language model to use for annotations
+          required: true
+          default: en
+        - in: query
           name: forecast_id
           type: integer
           description: forecast id (e.g. 201804111200)

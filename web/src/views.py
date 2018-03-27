@@ -116,10 +116,10 @@ def collection_details(collection_id):
         return render_template('details.html', data=res)
 
 
-@app.route('/annotate/<int:collection_id>', methods=('GET',))
-def annotate_collection(collection_id):
+@app.route('/annotate/<int:collection_id>/<string:lang>', methods=('GET',))
+def annotate_collection(collection_id, lang):
     try:
-        client.start_annotation(collection_id)
+        client.start_annotation(collection_id, lang)
     except SMFRRestException as e:
         add_message('An error occurred: {}'.format(e), category=MessageClass.ERROR)
         logger.error(str(e))

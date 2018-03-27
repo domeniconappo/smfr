@@ -11,9 +11,11 @@ import stop_words
 from daemons.utils import create_text_for_cnn, CNN_MAX_SEQUENCE_LENGTH
 from server.config import server_configuration, LOGGER_FORMAT, DATE_FORMAT
 from server.models import Tweet
+from errors import SMFRError
 
 
 os.environ['KERAS_BACKEND'] = 'theano'
+logging.basicConfig(level=logging.INFO, format=LOGGER_FORMAT, datefmt=DATE_FORMAT)
 
 
 class Annotator:
@@ -21,14 +23,12 @@ class Annotator:
 
     models = {'en': '20180319.relevance-cnn-init.en'}
 
-    @classmethod
-    def _model_path(cls, f):
-        return os.path.join(cls.models_path, f)
+    running = []
 
     def __init__(self, collection_id, ttype='collected', lang='en'):
+        if lang not in self.models:
+            raise SMFRError('Model for language {} is not available'.format(lang))
         self.rest_server_conf = server_configuration()
-        logging.basicConfig(level=logging.INFO if not self.rest_server_conf.debug else logging.DEBUG,
-                            format=LOGGER_FORMAT, datefmt=DATE_FORMAT)
 
         self.logger = logging.getLogger(__name__)
         self.kafka_topic = self.rest_server_conf.server_config['kafka_topic']
@@ -45,9 +45,14 @@ class Annotator:
     def start(self):
         self.logger.info('Starting Annotation collection: {} for "{}" tweets'.format(self.collection_id, self.ttype))
 
-        tweets = Tweet.get_iterator(self.collection_id, self.ttype)
+        # add tuple (collection_id, language) to `running` list
+        self.running.append((self.collection_id, self.lang))
+
+        tweets = Tweet.get_iterator(self.collection_id, self.ttype, lang=self.lang)
 
         for t in tweets:
+            # if t.lang != self.lang:
+            #     continue
             original_json = json.loads(t.tweet)
             text = create_text_for_cnn(original_json, [])
             sequences = self.tokenizer.texts_to_sequences([text])
@@ -60,9 +65,20 @@ class Annotator:
             self.logger.info('Sending to queue: {}'.format(message[:120]))
             self.producer.send(self.kafka_topic, message)
 
+        # remove from `running` list
+        self.running.remove((self.collection_id, self.lang))
+
     def launch(self):
         """
         Launch an Annotator process in a separate thread
         """
-        t = threading.Thread(target=self.start, name='Annotator - collection id: {}'.format(self.collection_id))
+        t = threading.Thread(target=self.start, name='Annotator ({}) - collection id: {}'.format(self.lang, self.collection_id))
         t.start()
+
+    @classmethod
+    def _model_path(cls, f):
+        return os.path.join(cls.models_path, f)
+
+    @classmethod
+    def is_running_for(cls, collection_id, lang):
+        return (collection_id, lang) in cls.running

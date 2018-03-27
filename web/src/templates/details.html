@@ -32,7 +32,9 @@
                                        <tr>
                                            {% if data.collection.ctype == 'Keywords' %}
                                                <th colspan="2">Keywords</th>
-                                               <td colspan="2">{{ data.collection.tracking_keywords }}</td>
+                                               <td colspan="2">{% for l in data.collection.tracking_keywords %}
+                                                   {{ l }}{% if not loop.last %}, {% endif %}
+                                               {% endfor %}</td>
                                            {% else %}
                                                <th colspan="2">Locations</th>
                                                <td colspan="2">{{ data.collection.locations }}</td>
@@ -42,7 +44,11 @@
                                            <th>Status</th>
                                            <td>{{ data.collection.status }}</td>
                                            <th>Languages</th>
-                                           <td>{{ data.collection.languages }}</td>
+                                           <td>
+                                                {% for l in data.collection.languages %}
+                                                {{ l }}{% if not loop.last %}, {% endif %}
+                                                {% endfor %}
+                                           </td>
                                        </tr>
                                        <tr>
                                            <th>Started at</th>
@@ -92,12 +98,7 @@
                                    </div>
                                </div>
 	                       </div>
-                           <div class="panel panel-default">
-                               <div class="panel-heading"><h4># of collected tweets</h4></div>
-	                            <div class="panel-body">
-                                     <h2 align="center">{{ data.stats.tweets_count }}</h2>
-	                            </div>
-                           </div>
+
 	                        <div class="panel panel-default">
 
                                <div class="panel-heading">
@@ -108,9 +109,11 @@
                                        <div class="btn-group">
                                         <a title="Start geolocalization on collected tweets" class="btn btn-sm btn-default disabled" href="/geolocalize/{{ data.collection.id }}"><em class="fas fa-globe"></em></a>
                                        </div>
+                                       {% for l in data.collection.languages %}
                                        <div class="btn-group">
-                                        <a title="Start classification or other analysis on collected tweets" class="btn btn-sm btn-default" href="/annotate/{{ data.collection.id }}"><em class="fas fa-tasks"></em></a>
+                                           <a title="Start {{ l.upper() }} classification for this collection" {% if (data.collection.id, l) in data.running_annotators %} class="btn btn-sm btn-default disabled" {% else %} class="btn btn-sm btn-default" {% endif %} href="/annotate/{{ data.collection.id }}/{{ l }}"><em class="fas fa-tasks"></em>&nbsp;{{ l.upper() }}</a>
                                        </div>
+                                       {% endfor %}
                                    </div>
                                </div>
 	                       </div>
@@ -135,6 +138,7 @@
                                                 <th>Type</th>
                                                 <th>Tweeted at</th>
                                                 <th>Collected at</th>
+                                                <th>Lang</th>
                                                 <th>Full text</th>
                                             </tr>
                                         </thead>
@@ -148,6 +152,7 @@
                                                 <th>Type</th>
                                                 <th>Tweeted at</th>
                                                 <th>Collected at</th>
+                                                <th>Lang</th>
                                                 <th>Full text</th>
                                             </tr>
                                         </tfoot>
@@ -177,6 +182,7 @@
                                                 <th>Annotations</th>
                                                 <th>Tweeted at</th>
                                                 <th>Collected at</th>
+                                                <th>Lang</th>
                                                 <th>Full text</th>
                                             </tr>
                                         </thead>
@@ -191,6 +197,7 @@
                                                 <th>Annotations</th>
                                                 <th>Tweeted at</th>
                                                 <th>Collected at</th>
+                                                <th>Lang</th>
                                                 <th>Full text</th>
                                             </tr>
                                         </tfoot>
@@ -238,9 +245,9 @@ $(document).ready(function() {
             { "data": "Name" },
             { "data": "Tweet id" },
             { "data": "Type" },
-            {#{ "data": "Annotations" },#}
             { "data": "Tweeted at" },
             { "data": "Collected at" },
+            { "data": "Lang" },
             { "data": "Full Text" }
         ],
         "order": [[1, 'asc']]
@@ -285,6 +292,7 @@ $(document).ready(function() {
             { "data": "Annotations" },
             { "data": "Tweeted at" },
             { "data": "Collected at" },
+            { "data": "Lang" },
             { "data": "Full Text" }
         ],
         "order": [[1, 'asc']]

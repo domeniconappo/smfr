@@ -64,19 +64,21 @@ class ApiLocalClient:
         else:
             return res.json()
 
-    def _post(self, endpoint, payload=None, path_kwargs=None, formdata=None):
+    def _post(self, endpoint, payload=None, path_kwargs=None, formdata=None, query_params=None):
         """
         Main method that executes POST calls
+        :param query_params: dict for querystring part to put into `params` kwarg of request.post
         :param endpoint: endpoint url name (see ApiLocalClient.endpoints)
-        :param payload: Dictionary to go in json kwarg of request.post
-        :param path_kwargs: Dictionary used for variable replacement in endpoint paths
-        :param formdata: Dictionary used for multipart/form-data calls (e.g. with files)
+        :param payload: dict to put into `json` kwarg of request.post
+        :param path_kwargs: dict used for variable replacement in endpoint paths
+        :param formdata: dict used for multipart/form-data calls (e.g. with files)
         :return: JSON text
         """
         requests_kwargs = {'json': payload} if payload else {}
+        if query_params:
+            requests_kwargs['params'] = query_params
 
         if formdata:
-
             files = {}
             data = {}
 
@@ -90,7 +92,6 @@ class ApiLocalClient:
             if files:
                 requests_kwargs['files'] = files
                 requests_kwargs['headers'] = {
-                    # 'Content-Type': 'multipart/form-data;',
                     'Accept': '*/*',
                     'Accept-Encoding': 'gzip, deflate, br'
                 }
@@ -152,8 +153,8 @@ class ApiLocalClient:
     def get_collection(self, collection_id):
         return self._get('collection_details', path_kwargs={'id': collection_id})
 
-    def start_annotation(self, collection_id):
-        return self._post('annotate_collection', path_kwargs={'id': collection_id})
+    def start_annotation(self, collection_id, lang='en'):
+        return self._post('annotate_collection', path_kwargs={'id': collection_id}, query_params={'lang': lang})
 
 
 class SMFRRestException(SMFRError):

@@ -1,11 +1,14 @@
 td.details-control {
     background: url('/static/details_open.png') no-repeat center center;
     cursor: pointer;
+    padding: 7px;
 }
+
 tr.shown td.details-control {
     background: url('/static/details_close.png') no-repeat center center;
 }
 
+/* JSON output highlighted */
 pre {
     outline: 1px solid #ccc;
     padding: 5px;

@@ -5,7 +5,10 @@ import os
 import sys
 import shutil
 
+import ujson as json
 import click
+import datetime
+
 from flask_migrate import upgrade
 
 import utils
@@ -132,9 +135,22 @@ def empty_dbs():
 
 
 @app.cli.command()
-@click.option('--file', '-f', required=True)
-def test_upload(file):
-    client = ApiLocalClient()
-    formdata = {'kwfile_file': file}
-    res = client.test_upload(formdata)
-    click.echo(res)
+@click.option('--collectionid', '-c', required=True)
+@click.option('--ttype', '-t', required=True)
+def set_language(collectionid, ttype):
+
+    from daemons.utils import safe_langdetect, tweet_normalization_aggressive
+    from server.models import Tweet
+
+    tweets = Tweet.get_iterator(int(collectionid), ttype)
+    for t in tweets:
+        if t.lang is not None:
+            continue
+        original_json = json.loads(t.tweet)
+        text = original_json['text']
+        lang = safe_langdetect(tweet_normalization_aggressive(text))
+        t.lang = lang
+        if not t.created_at:
+            t.created_at = datetime.datetime.strptime(original_json['created_at'], '%a %b %d %H:%M:%S +0000 %Y')
+        click.echo('Saving lang {} for {}'.format(lang, t.tweetid))
+        t.save()

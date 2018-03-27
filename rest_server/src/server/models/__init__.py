@@ -138,7 +138,10 @@ class Tweet(cassandra.Model):
     __keyspace__ = config.server_config['cassandra_keyspace']
 
     session = cassandra_session_factory()
+    session.default_fetch_size = 1000
     samples_stmt = session.prepare("SELECT * FROM tweet WHERE collectionid=? AND ttype=? ORDER BY tweetid DESC LIMIT ?")
+    stmt = session.prepare("SELECT * FROM tweet WHERE collectionid=? AND ttype=? ORDER BY tweetid DESC")
+    stmt_with_lang = session.prepare("SELECT * FROM tweet WHERE collectionid=? AND ttype=? AND lang=?")
 
     TYPES = [
         ('annotated', 'Annotated'),
@@ -178,31 +181,37 @@ class Tweet(cassandra.Model):
     """
 
     @classmethod
-    def get_iterator(cls, collection_id, ttype):
-        return cls.objects(collectionid=collection_id, ttype=ttype)
+    def get_iterator(cls, collection_id, ttype, lang=None):
+        if lang:
+            results = cls.session.execute(cls.stmt_with_lang, parameters=[collection_id, ttype, lang])
+        else:
+            results = cls.session.execute(cls.stmt, parameters=[collection_id, ttype])
+        for row in results:
+            yield cls(**row)
 
     @classmethod
-    def make_table_object(cls, row, tweet_dict):
+    def make_table_object(cls, numrow, tweet_dict):
         """
 
-        :param row:
-        :param tweet_dict:
+        :param numrow: int: numrow
+        :param tweet_dict: dict representing Tweet row in smfr_persistent.tweet column family
         :return:
         """
         tweet_obj = cls(**tweet_dict)
         tweet_dict['tweet'] = json.loads(tweet_dict['tweet'])
 
         full_text = tweet_dict['tweet'].get('full_text') \
-            or tweet_dict['tweet'].get('text') \
-            or tweet_dict['tweet'].get('retweeted_status', {}).get('extended_tweet', {}).get('full_text', '')
+            or tweet_dict['tweet'].get('extended_tweet', {}).get('full_text', '') \
+            or tweet_dict['tweet'].get('retweeted_status', {}).get('extended_tweet', {}).get('full_text', '') \
+            or tweet_dict['tweet'].get('text')
 
         tweet_dict['tweet']['full_text'] = full_text
 
-        obj = {'rownum': row, 'Full Text': full_text, 'Tweet id': tweet_dict['tweetid'],
+        obj = {'rownum': numrow, 'Full Text': full_text, 'Tweet id': tweet_dict['tweetid'],
                'original_tweet': tweet_obj.original_tweet,
                'Profile': '<img src="{}"/>'.format(tweet_dict['tweet']['user']['profile_image_url']) if tweet_dict['tweet']['user']['profile_image_url'] else '',
                'Name': tweet_dict['tweet']['user']['screen_name'] or '',
-               'Type': tweet_dict['ttype'],
+               'Type': tweet_dict['ttype'], 'Lang': tweet_dict['lang'] or '-',
                'Annotations': tweet_obj.pretty_annotations,
                'Collected at': tweet_dict['created_at'] or '',
                'Tweeted at': tweet_dict['tweet']['created_at'] or ''}
