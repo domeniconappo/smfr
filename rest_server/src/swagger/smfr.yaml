@@ -359,6 +359,10 @@ definitions:
         $ref: '#/definitions/Collector'
       stats:
         $ref: '#/definitions/CollectionStats'
+      running_annotators:
+        type: array
+        items:
+          type: object
       samples:
         type: array
         items:

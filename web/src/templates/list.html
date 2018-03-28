@@ -55,9 +55,9 @@
                     <td>{{c.collection.id}}</td>
                     <td>{{c.id}}</td>
                     <td>{{c.collection.trigger}}</td>
-                    <td data-toggle="tooltip" data-placement="top" title="{{c.collection.tracking_keywords}}"><u><b>{{c.collection.ctype}}</b></u></td>
+                    <td data-toggle="tooltip" data-placement="top" title="{{c.collection.tracking_keywords|join(', ')}}"><u><b>{{c.collection.ctype}}</b></u></td>
                     <td>{{c.collection.status}}</td>
-                    <td>{{c.collection.languages}}</td>
+                    <td>{{c.collection.languages|join(', ')}}</td>
                     <td>{{c.collection.locations}}</td>
                     <td>{{c.collection.runtime|datetimeformat}}</td>
                     <td>{{c.collection.started_at|datetimeformat('%Y-%m-%d %H:%M:%S')}}</td>

@@ -32,9 +32,9 @@
                                        <tr>
                                            {% if data.collection.ctype == 'Keywords' %}
                                                <th colspan="2">Keywords</th>
-                                               <td colspan="2">{% for l in data.collection.tracking_keywords %}
-                                                   {{ l }}{% if not loop.last %}, {% endif %}
-                                               {% endfor %}</td>
+                                               <td colspan="2">
+                                               {{ data.collection.tracking_keywords|join(', ') }}
+                                               </td>
                                            {% else %}
                                                <th colspan="2">Locations</th>
                                                <td colspan="2">{{ data.collection.locations }}</td>
@@ -44,10 +44,7 @@
                                            <th>Status</th>
                                            <td>{{ data.collection.status }}</td>
                                            <th>Languages</th>
-                                           <td>
-                                                {% for l in data.collection.languages %}
-                                                {{ l }}{% if not loop.last %}, {% endif %}
-                                                {% endfor %}
+                                           <td>{{ data.collection.languages|join(', ') }}
                                            </td>
                                        </tr>
                                        <tr>
@@ -110,9 +107,13 @@
                                         <a title="Start geolocalization on collected tweets" class="btn btn-sm btn-default disabled" href="/geolocalize/{{ data.collection.id }}"><em class="fas fa-globe"></em></a>
                                        </div>
                                        {% for l in data.collection.languages %}
-                                       <div class="btn-group">
-                                           <a title="Start {{ l.upper() }} classification for this collection" {% if (data.collection.id, l) in data.running_annotators %} class="btn btn-sm btn-default disabled" {% else %} class="btn btn-sm btn-default" {% endif %} href="/annotate/{{ data.collection.id }}/{{ l }}"><em class="fas fa-tasks"></em>&nbsp;{{ l.upper() }}</a>
-                                       </div>
+                                           {% set cur = [data.collection.id, l] %}
+                                           {% set test = cur in data.running_annotators %}
+                                           <div class="btn-group">
+                                               <a {% if test %}title="Classification {{ l.upper() }} is currently running for this collection" class="btn btn-sm btn-default disabled"{% else %} title="Start {{ l.upper() }} classification for this collection" class="btn btn-sm btn-default"{% endif %} href="/annotate/{{ data.collection.id }}/{{ l }}">
+                                                   <em class="fas fa-tasks"></em>&nbsp;{{ l.upper() }}
+                                               </a>
+                                           </div>
                                        {% endfor %}
                                    </div>
                                </div>

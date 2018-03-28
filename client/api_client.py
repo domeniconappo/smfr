@@ -50,7 +50,7 @@ class ApiLocalClient:
     def _check_response(cls, res):
         code = res.status_code
         if code >= 400:
-            raise SMFRRestException(res.json())
+            raise SMFRRestException(res.json(), code)
 
     def _get(self, endpoint, path_kwargs=None):
         try:
@@ -158,8 +158,7 @@ class ApiLocalClient:
 
 
 class SMFRRestException(SMFRError):
-    def __init__(self, response):
-        message = '{}: {} ({})'.format(response.get('status'),
-                                       response.get('title'),
-                                       response.get('description', 'No details.'))
+    def __init__(self, response, status_code):
+        err = response.get('error', {})
+        message = '{}: ({})'.format(status_code, err.get('description', 'No details.'))
         super().__init__(message)

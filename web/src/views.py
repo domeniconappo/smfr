@@ -21,19 +21,19 @@ def index():
 @app.route('/list', methods=('GET',))
 def list_collections():
     res = client.list_collections()
-    return render_template('list.html', collectors=res)
+    return render_template('list.html', collectors=res), 200
 
 
 @app.route('/running', methods=('GET',))
 def list_active_collections():
     res = client.list_running_collectors()
-    return render_template('list.html', collectors=res)
+    return render_template('list.html', collectors=res), 200
 
 
 @app.route('/stopped', methods=('GET',))
 def list_inactive_collections():
     res = client.list_inactive_collectors()
-    return render_template('list.html', collectors=res)
+    return render_template('list.html', collectors=res), 200
 
 
 @app.route('/new', methods=('GET', 'POST',))
@@ -53,7 +53,7 @@ def new_collection():
         except SMFRRestException as e:
             add_message('An error occurred: {}'.format(e), category=MessageClass.ERROR)
             return render_template('new_collection.html', form=form)
-    return render_template('new_collection.html', form=form)
+    return render_template('new_collection.html', form=form), 200
 
 
 @app.route('/start/<int:collector_id>', methods=('GET',))
@@ -113,7 +113,7 @@ def collection_details(collection_id):
         logger.error(str(e))
         return redirect('/list')
     else:
-        return render_template('details.html', data=res)
+        return render_template('details.html', data=res), 200
 
 
 @app.route('/annotate/<int:collection_id>/<string:lang>', methods=('GET',))

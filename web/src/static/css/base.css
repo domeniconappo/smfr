@@ -24,3 +24,8 @@ pre {
 .boolean { color: blue; }
 .null { color: magenta; }
 .key { color: red; }
+
+/* showing tooltip for disabled buttons */
+a.btn.disabled {
+    pointer-events: auto;
+}

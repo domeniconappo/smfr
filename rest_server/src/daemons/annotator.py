@@ -51,8 +51,6 @@ class Annotator:
         tweets = Tweet.get_iterator(self.collection_id, self.ttype, lang=self.lang)
 
         for t in tweets:
-            # if t.lang != self.lang:
-            #     continue
             original_json = json.loads(t.tweet)
             text = create_text_for_cnn(original_json, [])
             sequences = self.tokenizer.texts_to_sequences([text])

@@ -182,11 +182,13 @@ class Tweet(cassandra.Model):
 
     @classmethod
     def get_iterator(cls, collection_id, ttype, lang=None):
-        if lang:
-            results = cls.session.execute(cls.stmt_with_lang, parameters=[collection_id, ttype, lang])
-        else:
-            results = cls.session.execute(cls.stmt, parameters=[collection_id, ttype])
+        # if lang:
+        #     results = cls.session.execute(cls.stmt_with_lang, parameters=[collection_id, ttype, lang])
+        # else:
+        results = cls.session.execute(cls.stmt, parameters=[collection_id, ttype])
         for row in results:
+            if lang and row.get('lang') != lang:
+                continue
             yield cls(**row)
 
     @classmethod

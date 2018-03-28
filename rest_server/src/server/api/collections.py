@@ -218,7 +218,7 @@ def annotate(collection_id=None, lang='en', forecast_id=None, startdate=None, en
     if lang not in Annotator.models:
         return {'error': {'description': 'No model available for language'.format(lang)}}, 400
     if Annotator.is_running_for(collection_id, lang):
-        return {'error': {'description': 'Annotation is already ongoing on collection id {}, for language'.format(collection_id, lang)}}, 400
+        return {'error': {'description': 'Annotation is already ongoing on collection id {}, for language {}'.format(collection_id, lang)}}, 400
     annotator = Annotator(collection_id, ttype='collected', lang=lang)
     annotator.launch()  # launch annotation processing into a separate thread
     return {}, 204
