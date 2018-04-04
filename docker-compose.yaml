@@ -4,7 +4,6 @@ services:
 
   cassandra:
     image: cassandra:latest
-#    image: zmarcantel/cassandra:latest
     restart: always
     # From host, connect to DB with `docker exec -it cassandra cqlsh`
     volumes:
@@ -64,9 +63,9 @@ services:
       - '9200:9200'
       - '9300:9300'
     environment:
-      PYTHONUNBUFFERED: 'true'
+      ES_JAVA_OPTS: "-Xms2g -Xmx2g"
     volumes:
-      - '/DATA/smfr/data/geonames_index/:/usr/share/elasticsearch/data:rw'
+      - '/DATA/smfr/data/geonames_index:/var/lib/elasticsearch/elasticsearch:rw'
 
 
   restserver:
@@ -83,7 +82,10 @@ services:
       FLASK_APP: smfr.py
       SERVER_PATH_UPLOADS: /smfr/uploads/
       GEONAMES_HOST: geonames
-      KERAS_BACKEND: theano
+      KERAS_BACKEND: tensorflow
+      MYSQL_HOST: mysql
+      CASSANDRA_HOST: cassandra
+      CQLENG_ALLOW_SCHEMA_MANAGEMENT: 1
     ports:
       - '5555:5555'
     depends_on:
@@ -92,10 +94,10 @@ services:
       - cassandra
       - geonames
     volumes:
-      - ./rest_server/src:/rest_server
-      - ./rest_server/scripts:/scripts
-      - ./client:/rest_server/client
-      - ./uploads:/smfr/uploads/
+      - './rest_server/src:/rest_server'
+      - './rest_server/scripts:/scripts'
+      - './client:/rest_server/client'
+      - './uploads:/smfr/uploads/'
 
   web:
     container_name: web
@@ -113,8 +115,8 @@ services:
     depends_on:
       - restserver
     volumes:
-      - ./web/src:/web
-      - ./client:/web/client
+      - './web/src:/web'
+      - './client:/web/client'
 
 
 volumes:

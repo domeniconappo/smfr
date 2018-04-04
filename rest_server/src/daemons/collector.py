@@ -14,8 +14,6 @@ from server.config import RestServerConfiguration, server_configuration, LOGGER_
 from errors import SMFRDBError
 
 
-logging.basicConfig(level=logging.INFO if not RestServerConfiguration.debug else logging.DEBUG,
-                    format=LOGGER_FORMAT, datefmt=DATE_FORMAT)
 logger = logging.getLogger(__name__)
 
 

@@ -9,13 +9,12 @@ from keras.preprocessing.sequence import pad_sequences
 import stop_words
 
 from daemons.utils import create_text_for_cnn, CNN_MAX_SEQUENCE_LENGTH
-from server.config import server_configuration, LOGGER_FORMAT, DATE_FORMAT
+from server.config import server_configuration
 from server.models import Tweet
 from errors import SMFRError
 
 
 os.environ['KERAS_BACKEND'] = 'theano'
-logging.basicConfig(level=logging.INFO, format=LOGGER_FORMAT, datefmt=DATE_FORMAT)
 
 
 class Annotator:
@@ -65,6 +64,7 @@ class Annotator:
 
         # remove from `running` list
         self.running.remove((self.collection_id, self.lang))
+        self.logger.info('Annotation process terminated! Collection: {} for "{}" tweets'.format(self.collection_id, self.ttype))
 
     def launch(self):
         """

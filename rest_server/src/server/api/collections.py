@@ -8,17 +8,21 @@ from functools import partial
 
 import connexion
 
+from mordecai import Geoparser
+
 from daemons.collector import Collector
 from daemons.annotator import Annotator
 
 from errors import SMFRDBError
-from server.config import LOGGER_FORMAT, DATE_FORMAT, CONFIG_STORE_PATH
+from server.config import CONFIG_STORE_PATH
 from server.models import StoredCollector, VirtualTwitterCollection, Tweet
 from server.api import utils
 
 from client.marshmallow import Collector as CollectorSchema, CollectorResponse, Collection
 
-logging.basicConfig(level=logging.INFO, format=LOGGER_FORMAT, datefmt=DATE_FORMAT)
+
+g = Geoparser('geonames')
+
 logger = logging.getLogger(__name__)
 
 
@@ -30,7 +34,7 @@ def add_collection(payload):
     :return:
     """
     payload = connexion.request.form.to_dict()
-    logger.info(payload)
+    logger.debug(payload)
     if not payload.get('forecast'):
         payload['forecast'] = 123456789
 
@@ -250,8 +254,7 @@ def stop_all():
 
 
 def test_mordecai():
-    from mordecai import Geoparser
-    g = Geoparser('geonames')
-    res = g.geoparse('Travelling from New York to Berlin')
+
+    res = g.geoparse('I traveled from Oxford to Ottawa.')
     logger.info(res)
     return res, 201

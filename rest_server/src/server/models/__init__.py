@@ -5,17 +5,12 @@ import datetime
 
 from sqlalchemy_utils import ChoiceType, ScalarListType, JSONType
 
-from server.config import server_configuration, LOGGER_FORMAT, DATE_FORMAT
+from server.config import server_configuration
 from server.models.utils import cassandra_session_factory
 
 config = server_configuration()
 mysql = config.db_mysql
 cassandra = config.db_cassandra
-
-
-logging.basicConfig(level=logging.INFO if not config.debug else logging.DEBUG,
-                    format=LOGGER_FORMAT, datefmt=DATE_FORMAT)
-logger = logging.getLogger(__name__)
 
 
 class VirtualTwitterCollection(mysql.Model):

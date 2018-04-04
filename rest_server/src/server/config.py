@@ -3,10 +3,12 @@ import os
 import re
 import sys
 import threading
+from time import sleep
 
 import yaml
 from cassandra.cluster import NoHostAvailable
 from kafka import KafkaProducer
+from kafka.errors import NoBrokersAvailable
 
 from sqlalchemy import create_engine
 from sqlalchemy.exc import OperationalError
@@ -22,14 +24,13 @@ LOGGER_FORMAT = '%(asctime)s: Server - <%(name)s>[%(levelname)s] (%(threadName)-
 DATE_FORMAT = '%Y%m%d %H:%M:%S'
 CONFIG_STORE_PATH = os.environ.get('SERVER_PATH_UPLOADS', os.path.join(os.path.dirname(__file__), '../../../uploads/'))
 
-logging.basicConfig(level=logging.INFO, format=LOGGER_FORMAT, datefmt=DATE_FORMAT)
 
-logger = logging.getLogger(__name__)
 logging.getLogger('cassandra').setLevel(logging.ERROR)
 logging.getLogger('kafka').setLevel(logging.ERROR)
 logging.getLogger('connexion').setLevel(logging.ERROR)
 logging.getLogger('swagger_spec_validator').setLevel(logging.ERROR)
 logging.getLogger('urllib3').setLevel(logging.ERROR)
+logging.getLogger('elasticsearch').setLevel(logging.ERROR)
 
 os.makedirs(CONFIG_STORE_PATH, exist_ok=True)
 
@@ -41,10 +42,10 @@ def _read_server_configuration():
     config_file = 'config.yaml.tpl' if not os.path.exists(os.path.join(config_path, 'config.yaml')) else 'config.yaml'
     with open(os.path.join(config_path, config_file)) as f:
         server_config = yaml.load(f)
-    server_config['mysql_db_host'] = '127.0.0.1' if not in_docker else 'mysql'
-    server_config['cassandra_db_host'] = '127.0.0.1' if not in_docker else 'cassandra'
-    kafka_host = os.environ.get('KAFKA_ADVERTISED_HOST', '127.0.0.1')
-    server_config['kafka_host'] = kafka_host if not in_docker else 'kafka'
+    server_config['mysql_db_host'] = os.environ.get('MYSQL_HOST', '127.0.0.1') if not in_docker else 'mysql'
+    server_config['cassandra_db_host'] = os.environ.get('CASSANDRA_HOST', '127.0.0.1') if not in_docker else 'cassandra'
+    server_config['geonames_host'] = os.environ.get('GEONAMES_HOST', '127.0.0.1') if not in_docker else 'geonames'
+    server_config['kafka_host'] = os.environ.get('KAFKA_ADVERTISED_HOST', '127.0.0.1') if not in_docker else 'kafka'
     return server_config
 
 
@@ -72,6 +73,8 @@ class RestServerConfiguration(metaclass=Singleton):
     find_mysqluri_regex = re.compile(r'(?<=:)(.*)(?=@)')
     server_config = _read_server_configuration()
     debug = not UNDER_TESTS and not server_config.get('production', True)
+    logger = logging.getLogger(__name__)
+    logger.setLevel(logging.INFO if not debug else logging.DEBUG)
 
     def __init__(self, connexion_app=None, bootstrap_server=False):
         mysql_db_name = '{}{}'.format(self.server_config['mysql_db_name'], '_test' if UNDER_TESTS else '')
@@ -79,26 +82,38 @@ class RestServerConfiguration(metaclass=Singleton):
         cassandra_keyspace = '{}{}'.format(self.server_config['cassandra_keyspace'], '_test' if UNDER_TESTS else '')
         self.flask_app = connexion_app.app
         self.flask_app.json_encoder = CustomJSONEncoder
-        try:
-            self.flask_app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:example@{}/{}'.format(mysql_db_host, mysql_db_name)
-            self.flask_app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-            self.flask_app.config['CASSANDRA_HOSTS'] = [self.server_config['cassandra_db_host']]
-            self.flask_app.config['CASSANDRA_KEYSPACE'] = cassandra_keyspace
-            os.environ['CQLENG_ALLOW_SCHEMA_MANAGEMENT'] = '1'
-            self.db_mysql = SQLAlchemy(self.flask_app, session_options={'expire_on_commit': False})
-            self.db_cassandra = CQLAlchemy(self.flask_app)
-            self.migrate = Migrate(self.flask_app, self.db_mysql)
-        except (NoHostAvailable, OperationalError):
-            logger.error('Cannot boot because DB servers are not reachable')
-            sys.exit(1)
+        self.flask_app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:example@{}/{}'.format(mysql_db_host, mysql_db_name)
+        self.flask_app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+        self.flask_app.config['CASSANDRA_HOSTS'] = [self.server_config['cassandra_db_host']]
+        self.flask_app.config['CASSANDRA_KEYSPACE'] = cassandra_keyspace
+        self.geonames_host = self.server_config['geonames_host']
         self.kafka_topic = self.server_config['kafka_topic']
         self.kafka_bootstrap_server = '{}:9092'.format(self.server_config['kafka_host'])
         self.rest_server_port = self.server_config['rest_server_port']
+        self.producer = None
 
-        if bootstrap_server:
-            # Flask apps are also setup when issuing CLI commands. Here in case we are launching REST Server
-            self.producer = KafkaProducer(bootstrap_servers=self.kafka_bootstrap_server, compression_type='gzip')
-            self.log_configuration()
+        up = False
+        retries = 1
+        while not up and retries <= 5:
+            try:
+                self.db_mysql = SQLAlchemy(self.flask_app, session_options={'expire_on_commit': False})
+                self.db_cassandra = CQLAlchemy(self.flask_app)
+                self.migrate = Migrate(self.flask_app, self.db_mysql)
+                if bootstrap_server and not self.producer:
+                    # Flask apps are setup when issuing CLI commands as well.
+                    # This code is executed in case of launching REST Server
+                    self.producer = KafkaProducer(bootstrap_servers=self.kafka_bootstrap_server, compression_type='gzip')
+            except (NoHostAvailable, OperationalError, NoBrokersAvailable):
+                self.logger.warning('Cassandra/Mysql/Kafka were not up...waiting')
+                sleep(5)
+                retries += 1
+            else:
+                up = True
+            finally:
+                if not up and retries >= 5:
+                    self.logger.error('Cannot boot because DB servers are not reachable')
+                    sys.exit(1)
+        self.log_configuration()
 
     @property
     def base_path(self):
@@ -127,18 +142,18 @@ class RestServerConfiguration(metaclass=Singleton):
 
     def log_configuration(self):
 
-        logger.info('SMFR Rest Server and Collector manager')
-        logger.info('======= START LOGGING Configuration =======')
-        logger.info('+++ Kafka')
-        logger.info(' - Topic: {}'.format(self.kafka_topic))
-        logger.info(' - Bootstrap server: {}'.format(self.kafka_bootstrap_server))
-        logger.info('+++ Cassandra')
-        logger.info(' - Host: {}'.format(self.flask_app.config['CASSANDRA_HOSTS']))
-        logger.info(' - Keyspace: {}'.format(self.flask_app.config['CASSANDRA_KEYSPACE']))
-        logger.info('+++ MySQL')
+        self.logger.info('SMFR Rest Server and Collector manager')
+        self.logger.info('======= START LOGGING Configuration =======')
+        self.logger.info('+++ Kafka')
+        self.logger.info(' - Topic: {}'.format(self.kafka_topic))
+        self.logger.info(' - Bootstrap server: {}'.format(self.kafka_bootstrap_server))
+        self.logger.info('+++ Cassandra')
+        self.logger.info(' - Host: {}'.format(self.flask_app.config['CASSANDRA_HOSTS']))
+        self.logger.info(' - Keyspace: {}'.format(self.flask_app.config['CASSANDRA_KEYSPACE']))
+        self.logger.info('+++ MySQL')
         masked = self.find_mysqluri_regex.sub('******', self.flask_app.config['SQLALCHEMY_DATABASE_URI'])
-        logger.info(' - URI: {}'.format(masked))
-        logger.info('======= END LOGGING Configuration =======')
+        self.logger.info(' - URI: {}'.format(masked))
+        self.logger.info('======= END LOGGING Configuration =======')
 
 
 def server_configuration():

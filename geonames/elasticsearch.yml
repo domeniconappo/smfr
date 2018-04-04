@@ -1,0 +1,7 @@
+cluster.name: smfr
+node.name: smfr
+action.auto_create_index: -l*,+z*
+network.host: 0.0.0.0
+path:
+  data: /var/lib/elasticsearch/elasticsearch/
+  logs: /var/log/elasticsearch/

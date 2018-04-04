@@ -9,12 +9,18 @@ WORKDIR $INSTALL_PATH
 
 RUN wget https://s3.amazonaws.com/ahalterman-geo/geonames_index.tar.gz
 RUN tar -xzf geonames_index.tar.gz
-RUN mv $(pwd)/geonames_index/* /usr/share/elasticsearch/data/
-RUN chown -R elasticsearch. /usr/share/elasticsearch/
-RUN chmod -R a+w /usr/share/elasticsearch/
 
-# Mount elasticsearch.yml config
-#COPY geonames/elasticsearch.yaml /usr/share/elasticsearch/config/elasticsearch.yml
+RUN mv $INSTALL_PATH/geonames_index /var/lib/elasticsearch/elasticsearch/
+RUN rm geonames_index.tar.gz
 
-EXPOSE 9200
-EXPOSE 9300
+#RUN chown -R elasticsearch. /var/lib/elasticsearch/
+RUN chmod -R a+w /var/lib/elasticsearch/
+RUN chmod -R g+w /var/lib/elasticsearch/
+COPY geonames/elasticsearch.yml /usr/share/elasticsearch/config/
+COPY geonames/log4j2.properties /usr/share/elasticsearch/config/
+
+ENV PATH=$PATH:/usr/share/elasticsearch/bin
+USER elasticsearch
+CMD ["elasticsearch"]
+
+EXPOSE 9200 9300

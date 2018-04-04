@@ -12,6 +12,61 @@
 
 ### Init and manage Databases
 
+#### Geonames
+
+Troubleshooting for Elasticsearch
+
+```
+The vm_map_max_count setting should be set permanently in /etc/sysctl.conf:
+
+$ grep vm.max_map_count /etc/sysctl.conf
+vm.max_map_count=262144
+```
+
+Usage of mordecai library from restserver image:
+
+```python
+
+In [1]: import mordecai
+/DATA/virtualenvs/smfr/lib/python3.6/site-packages/h5py/__init__.py:36: FutureWarning: Conversion of the second argument of issubdtype from `float` to `np.floating` is deprecated. In future, it will be treated as `np.float64 == np.dtype(float).type`.
+  from ._conv import register_converters as _register_converters
+Using TensorFlow backend.
+
+In [2]: g=mordecai.Geoparser
+
+In [3]: g=mordecai.Geoparser()
+2018-04-04 16:15:39.099405: I tensorflow/core/platform/cpu_feature_guard.cc:140] Your CPU supports instructions that this TensorFlow binary was not compiled to use: AVX2
+
+In [4]: g.geoparse('Going from Rome to New York')
+Out[4]:
+[{'country_conf': 0.97380584,
+  'country_predicted': 'ITA',
+  'geo': {'admin1': 'Latium',
+   'country_code3': 'ITA',
+   'feature_class': 'P',
+   'feature_code': 'PPLC',
+   'geonameid': '3169070',
+   'lat': '41.89193',
+   'lon': '12.51133',
+   'place_name': 'Rome'},
+  'spans': [{'end': 4, 'start': 0}],
+  'word': 'Rome'},
+ {'country_conf': 0.9998105,
+  'country_predicted': 'USA',
+  'geo': {'admin1': 'New York',
+   'country_code3': 'USA',
+   'feature_class': 'P',
+   'feature_code': 'PPL',
+   'geonameid': '5128581',
+   'lat': '40.71427',
+   'lon': '-74.00597',
+   'place_name': 'New York City'},
+  'spans': [{'end': 8, 'start': 0}],
+  'word': 'New York'}]
+
+```
+
+
 #### MySQL
 
 On development:

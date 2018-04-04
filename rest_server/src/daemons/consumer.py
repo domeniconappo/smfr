@@ -4,11 +4,9 @@ import threading
 from cassandra.cqlengine import ValidationError
 from kafka import KafkaConsumer
 
-from server.config import server_configuration, RestServerConfiguration, LOGGER_FORMAT, DATE_FORMAT
+from server.config import server_configuration
 
 
-logging.basicConfig(level=logging.INFO if not RestServerConfiguration.debug else logging.DEBUG,
-                    format=LOGGER_FORMAT, datefmt=DATE_FORMAT)
 logger = logging.getLogger(__name__)
 
 
