@@ -1,9 +1,9 @@
 import logging
 import threading
 
-import ujson as json
 from mordecai import Geoparser
 
+from errors import SMFRError
 from server.config import server_configuration
 from server.models import Tweet
 
@@ -13,7 +13,8 @@ class Geotagger:
     running = []
 
     def __init__(self, collection_id, ttype='annotated', lang='en'):
-        self.tagger = Geoparser('geonames')
+        if self.is_running_for(collection_id):
+            raise SMFRError('Geotagging is already ongoing on collection id {}'.format(collection_id))
 
         self.rest_server_conf = server_configuration()
 
@@ -26,28 +27,45 @@ class Geotagger:
 
     def start(self):
         self.logger.info('Starting Geotagging collection: {}'.format(self.collection_id))
-
         self.running.append(self.collection_id)
-
         tweets = Tweet.get_iterator(self.collection_id, self.ttype, lang=self.lang)
-
+        min_flood_prob = self.rest_server_conf.min_flood_probability
+        tagger = Geoparser('geonames')
+        errors = 0
         for t in tweets:
-            original_json = json.loads(t.tweet)
-            t.ttype = 'geotagged'
-            message = t.serialize()
-            self.logger.info('Sending to queue: {}'.format(message[:120]))
-            self.producer.send(self.kafka_topic, message)
-
+            try:
+                flood_prob = t.annotations.get('flood_probability', ('', 0.0))[1]
+                if flood_prob <= min_flood_prob:
+                    self.logger.debug('Skipping low flood probability')
+                    continue
+                t.ttype = 'geotagged'
+                res = tagger.geoparse(t.full_text)
+                for result in res:
+                    if result.get('country_conf', 0) < 0.5 or 'lat' not in result.get('geo', {}):
+                        self.logger.debug('Skipping low geotagging confidence: %s', str(result))
+                        continue
+                    t.latlong = (float(result['geo']['lat']), float(result['geo']['lon']))
+                    message = t.serialize()
+                    self.logger.info('Sending to queue: {}'.format(message[:120]))
+                    self.producer.send(self.kafka_topic, message)
+                    # we just take the first available result
+                    break
+            except Exception as e:
+                self.logger.error('An error occured during geotagging: %s', str(e))
+                errors += 1
+                if errors >= 100:
+                    self.logger.error('Too many errors...going to terminate geolocalization')
+                    break
+                continue
         # remove from `running` list
         self.running.remove(self.collection_id)
-
         self.logger.info('Geotagging process terminated! Collection: {}'.format(self.collection_id))
 
     def launch(self):
         """
-        Launch an Annotator process in a separate thread
+        Launch a Geotagger process in a separate thread
         """
-        t = threading.Thread(target=self.start, name='Annotator ({}) - collection id: {}'.format(self.lang, self.collection_id))
+        t = threading.Thread(target=self.start, name='Geotagger collection id: {}'.format(self.collection_id))
         t.start()
 
     @classmethod

@@ -4,7 +4,6 @@
     {{ super() }}
     <link rel="stylesheet" href="/static/css/fontawesome-all.min.css">
     <link rel="stylesheet" type="text/css" href="/static/DataTables/datatables.min.css"/>
-{#    <link rel="stylesheet" href="/static/hljs/styles/googlecode.css">#}
     <link rel="stylesheet" type="text/css" href="/static/css/base.css"/>
 {% endblock %}
 {% block title %}SFMR Collections{% endblock %}
@@ -16,8 +15,6 @@
     </div>
     <ul class="nav navbar-nav">
         <li><a href="/list"><span class="fas fa-list"></span> List All Collections</a></li>
-        <li><a href="/running"><span class="fas fa-play-circle"></span> List Active collections</a></li>
-        <li><a href="/stopped"><span class="fas fa-stop-circle"></span> List Inactive collections</a></li>
         <li><a href="/new"><span class="fas fa-search-plus"></span> Add a Collection</a></li>
     </ul>
     <ul class="nav navbar-nav navbar-right">
@@ -44,7 +41,6 @@
 {% block scripts%}
     {{ super() }}
     <script type="text/javascript" src="/static/DataTables/datatables.min.js"></script>
-{#    <script src="/static/hljs/highlight.pack.js"></script>#}
     <script type="text/javascript" src="/static/js/prettyjson.js"></script>
     <script>
     $(document).ready(function() {

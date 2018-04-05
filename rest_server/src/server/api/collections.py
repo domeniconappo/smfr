@@ -12,16 +12,15 @@ from mordecai import Geoparser
 
 from daemons.collector import Collector
 from daemons.annotator import Annotator
+from daemons.geotagger import Geotagger
 
-from errors import SMFRDBError
+from errors import SMFRDBError, SMFRError
 from server.config import CONFIG_STORE_PATH
 from server.models import StoredCollector, VirtualTwitterCollection, Tweet
 from server.api import utils
 
 from client.marshmallow import Collector as CollectorSchema, CollectorResponse, Collection
 
-
-g = Geoparser('geonames')
 
 logger = logging.getLogger(__name__)
 
@@ -197,9 +196,11 @@ def get_collection_details(collection_id):
 
     tweets = Tweet.get_samples(collection_id=collection_id, ttype='collected', size=num_samples)
     annotated_tweets = Tweet.get_samples(collection_id=collection_id, ttype='annotated', size=num_samples)
+    geotagged_tweets = Tweet.get_samples(collection_id=collection_id, ttype='geotagged', size=num_samples)
 
     samples_table = []
     annotated_table = []
+    geotagged_table = []
 
     for i, t in enumerate(tweets, start=1):
         samples_table.append(Tweet.make_table_object(i, t))
@@ -207,25 +208,35 @@ def get_collection_details(collection_id):
     for i, t in enumerate(annotated_tweets, start=1):
         annotated_table.append(Tweet.make_table_object(i, t))
 
-    res = {'collection': collection_dump, 'running_annotators': Annotator.running,
-           'collector': collector_dump, 'datatable': samples_table,
-           'datatableannotated': annotated_table}
+    for i, t in enumerate(geotagged_tweets, start=1):
+        geotagged_table.append(Tweet.make_table_object(i, t))
+
+    res = {'collection': collection_dump, 'collector': collector_dump, 'datatable': samples_table,
+           'running_annotators': Annotator.running, 'running_geotaggers': Geotagger.running,
+           'datatableannotated': annotated_table, 'datatablegeotagged': geotagged_table}
     return res, 200
 
 
 def geolocalize(collection_id, startdate=None, enddate=None):
-    pass
+    from daemons.geotagger import Geotagger
+    try:
+        geotagger = Geotagger(collection_id)
+        geotagger.launch()
+    except SMFRError as e:
+        return {'error': {'description': str(e)}}, 400
+    else:
+        return {}, 204
 
 
 def annotate(collection_id=None, lang='en', forecast_id=None, startdate=None, enddate=None):
     from daemons.annotator import Annotator
-    if lang not in Annotator.models:
-        return {'error': {'description': 'No model available for language'.format(lang)}}, 400
-    if Annotator.is_running_for(collection_id, lang):
-        return {'error': {'description': 'Annotation is already ongoing on collection id {}, for language {}'.format(collection_id, lang)}}, 400
-    annotator = Annotator(collection_id, ttype='collected', lang=lang)
-    annotator.launch()  # launch annotation processing into a separate thread
-    return {}, 204
+    try:
+        annotator = Annotator(collection_id, ttype='collected', lang=lang)
+        annotator.launch()  # launch annotation processing into a separate thread
+    except SMFRError as e:
+        return {'error': {'description': str(e)}}, 400
+    else:
+        return {}, 204
 
 
 def start_all():
@@ -251,10 +262,3 @@ def stop_all():
     for _, collector in res:
         collector.stop()
     return {}, 204
-
-
-def test_mordecai():
-
-    res = g.geoparse('I traveled from Oxford to Ottawa.')
-    logger.info(res)
-    return res, 201

@@ -27,6 +27,8 @@ class Annotator:
     def __init__(self, collection_id, ttype='collected', lang='en'):
         if lang not in self.models:
             raise SMFRError('Model for language {} is not available'.format(lang))
+        if self.is_running_for(collection_id, lang):
+            raise SMFRError('Annotation is already ongoing on collection id {}, for language {}'.format(collection_id, lang))
         self.rest_server_conf = server_configuration()
 
         self.logger = logging.getLogger(__name__)
@@ -38,7 +40,6 @@ class Annotator:
         self.tokenizer = sklearn.externals.joblib.load(self._model_path(self.models[self.lang] + ".tokenizer"))
         self.tokenizer.oov_token = None
         self.model = keras.models.load_model(self._model_path(self.models[self.lang] + ".model.h5"))
-        self.model.summary()
         self.stopwords = dict([(k, True) for k in stop_words.get_stop_words(self.lang)])
 
     def start(self):

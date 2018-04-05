@@ -2,6 +2,7 @@ from cassandra.util import OrderedMapSerializedKey
 import numpy as np
 
 from flask.json import JSONEncoder
+from decimal import Decimal
 
 
 def running_in_docker():
@@ -12,11 +13,9 @@ def running_in_docker():
 class CustomJSONEncoder(JSONEncoder):
 
     def default(self, obj):
-        if isinstance(obj, (np.float32, np.float64)):
-            # obj = 1. * obj
+        if isinstance(obj, (np.float32, np.float64, Decimal)):
             return float(obj)
         elif isinstance(obj, (np.int32, np.int64)):
-            # obj = 1 * obj
             return int(obj)
         elif isinstance(obj, OrderedMapSerializedKey):
             res = {}

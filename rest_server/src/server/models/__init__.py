@@ -1,4 +1,3 @@
-import logging
 import ujson as json
 import time
 import datetime
@@ -177,9 +176,6 @@ class Tweet(cassandra.Model):
 
     @classmethod
     def get_iterator(cls, collection_id, ttype, lang=None):
-        # if lang:
-        #     results = cls.session.execute(cls.stmt_with_lang, parameters=[collection_id, ttype, lang])
-        # else:
         results = cls.session.execute(cls.stmt, parameters=[collection_id, ttype])
         for row in results:
             if lang and row.get('lang') != lang:
@@ -197,19 +193,17 @@ class Tweet(cassandra.Model):
         tweet_obj = cls(**tweet_dict)
         tweet_dict['tweet'] = json.loads(tweet_dict['tweet'])
 
-        full_text = tweet_dict['tweet'].get('full_text') \
-            or tweet_dict['tweet'].get('extended_tweet', {}).get('full_text', '') \
-            or tweet_dict['tweet'].get('retweeted_status', {}).get('extended_tweet', {}).get('full_text', '') \
-            or tweet_dict['tweet'].get('text')
+        full_text = tweet_obj.full_text
 
         tweet_dict['tweet']['full_text'] = full_text
 
         obj = {'rownum': numrow, 'Full Text': full_text, 'Tweet id': tweet_dict['tweetid'],
-               'original_tweet': tweet_obj.original_tweet,
+               'original_tweet': tweet_obj.original_tweet_as_string,
                'Profile': '<img src="{}"/>'.format(tweet_dict['tweet']['user']['profile_image_url']) if tweet_dict['tweet']['user']['profile_image_url'] else '',
                'Name': tweet_dict['tweet']['user']['screen_name'] or '',
                'Type': tweet_dict['ttype'], 'Lang': tweet_dict['lang'] or '-',
                'Annotations': tweet_obj.pretty_annotations,
+               'LatLon': tweet_obj.latlong or '-',
                'Collected at': tweet_dict['created_at'] or '',
                'Tweeted at': tweet_dict['tweet']['created_at'] or ''}
         return obj
@@ -224,8 +218,20 @@ class Tweet(cassandra.Model):
         super().validate()
 
     @property
-    def original_tweet(self):
-        return json.dumps(json.loads(self.tweet), indent=2, sort_keys=True)
+    def original_tweet_as_string(self):
+        """
+        The string of the original tweet to store in Cassandra column.
+        :return: JSON string representing the original tweet dictionary as received from Twitter Streaming API
+        """
+        return json.dumps(self.original_tweet_as_dict, indent=2, sort_keys=True)
+
+    @property
+    def original_tweet_as_dict(self):
+        """
+        The string of the original tweet to store in Cassandra column.
+        :return: JSON string representing the original tweet dictionary as received from Twitter Streaming API
+        """
+        return json.loads(self.tweet)
 
     @property
     def pretty_annotations(self):
@@ -285,12 +291,21 @@ class Tweet(cassandra.Model):
             setattr(obj, k, v)
         return obj
 
+    @property
+    def full_text(self):
+        tweet = json.loads(self.tweet)
+        full_text = None
 
-class TweetCounters(cassandra.Model):
-    """
-    """
-    __keyspace__ = config.server_config['cassandra_keyspace']
+        for status in ('retweeted_status', 'quoted_status'):
 
-    collectionid = cassandra.columns.Integer(required=True, primary_key=True)
-    ttype = cassandra.columns.Text(required=True, partition_key=True)
-    counter = cassandra.columns.Counter(required=True)
+            if status in tweet:
+                nature = status.split('_')[0].title()
+                extended = tweet[status].get('extended_tweet', {})
+                full_text = '{} - {}'.format(nature, extended.get('full_text') or extended.get('text', ''))
+                break
+
+        if not full_text:
+            full_text = tweet.get('full_text') or tweet.get('extended_tweet', {}).get('full_text', '') \
+                        or tweet.get('text', '')
+
+        return full_text

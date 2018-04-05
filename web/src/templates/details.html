@@ -104,7 +104,9 @@
 	                           <div class="panel-body">
                                    <div class="btn-group btn-group-justified" role="group">
                                        <div class="btn-group">
-                                        <a title="Start geolocalization on collected tweets" class="btn btn-sm btn-default disabled" href="/geolocalize/{{ data.collection.id }}"><em class="fas fa-globe"></em></a>
+                                           {% set test = data.collection.id in data.running_geotaggers %}
+                                            <a {% if test %}title="Geotagging is currently running for this collection" class="btn btn-sm btn-default disabled"{% else %} title="Start geotagging for annotated tweets in this collection" class="btn btn-sm btn-default"{% endif %}
+                                               href="/geolocalize/{{ data.collection.id }}"><em class="fas fa-globe"></em></a>
                                        </div>
                                        {% for l in data.collection.languages %}
                                            {% set cur = [data.collection.id, l] %}
@@ -120,10 +122,14 @@
 	                       </div>
 
 	                   </div>
+
+                       <!-- TABLES WITH SAMPLED TWEETS -->
+
+
                        <div class="col-xs-12 col-sm-12">
 	                       <div class="panel panel-default">
 	                           <div class="panel-heading">
-                                   <h4>Tweets (samples)</h4>
+                                   <h4>Collected Tweets (samples)</h4>
 	                           </div>
 
                                <div class="panel-body">
@@ -136,7 +142,6 @@
                                                 <th>Profile</th>
                                                 <th>Name</th>
                                                 <th>Tweet id</th>
-                                                <th>Type</th>
                                                 <th>Tweeted at</th>
                                                 <th>Collected at</th>
                                                 <th>Lang</th>
@@ -150,7 +155,6 @@
                                                 <th>Profile</th>
                                                 <th>Name</th>
                                                 <th>Tweet id</th>
-                                                <th>Type</th>
                                                 <th>Tweeted at</th>
                                                 <th>Collected at</th>
                                                 <th>Lang</th>
@@ -163,6 +167,7 @@
 	                           </div>
 	                       </div>
 	                   </div>
+
                        <div class="col-xs-12 col-sm-12">
 	                       <div class="panel panel-default">
 	                           <div class="panel-heading">
@@ -179,7 +184,6 @@
                                                 <th>Profile</th>
                                                 <th>Name</th>
                                                 <th>Tweet id</th>
-{#                                                <th>Type</th>#}
                                                 <th>Annotations</th>
                                                 <th>Tweeted at</th>
                                                 <th>Collected at</th>
@@ -194,11 +198,54 @@
                                                 <th>Profile</th>
                                                 <th>Name</th>
                                                 <th>Tweet id</th>
-{#                                                <th>Type</th>#}
                                                 <th>Annotations</th>
                                                 <th>Tweeted at</th>
                                                 <th>Collected at</th>
                                                 <th>Lang</th>
+                                                <th>Full text</th>
+                                            </tr>
+                                        </tfoot>
+
+                                    </table>
+
+	                           </div>
+	                       </div>
+	                    </div>
+
+                        <div class="col-xs-12 col-sm-12">
+	                       <div class="panel panel-default">
+	                           <div class="panel-heading">
+                                   <h4>Geotagged Tweets (samples)</h4>
+	                           </div>
+
+                               <div class="panel-body">
+                                    <table class="table table-hover display" id="tabletweetsgeotagged">
+
+                                        <thead>
+                                            <tr>
+                                                <th></th>
+                                                <th>#</th>
+                                                <th>Profile</th>
+                                                <th>Name</th>
+                                                <th>Tweet id</th>
+                                                <th>Annotations</th>
+                                                <th>Lat/Lon</th>
+                                                <th>Tweeted at</th>
+                                                <th>Collected at</th>
+                                                <th>Full text</th>
+                                            </tr>
+                                        </thead>
+                                        <tfoot>
+                                            <tr>
+                                                <th></th>
+                                                <th>#</th>
+                                                <th>Profile</th>
+                                                <th>Name</th>
+                                                <th>Tweet id</th>
+                                                <th>Annotations</th>
+                                                <th>Lat/Lon</th>
+                                                <th>Tweeted at</th>
+                                                <th>Collected at</th>
                                                 <th>Full text</th>
                                             </tr>
                                         </tfoot>
@@ -245,7 +292,6 @@ $(document).ready(function() {
             { "data": "Profile" },
             { "data": "Name" },
             { "data": "Tweet id" },
-            { "data": "Type" },
             { "data": "Tweeted at" },
             { "data": "Collected at" },
             { "data": "Lang" },
@@ -274,8 +320,8 @@ $(document).ready(function() {
         }
     } );
 
-    var dataSetAnnotated = {{ data.datatableannotated | safe }};
 
+    var dataSetAnnotated = {{ data.datatableannotated | safe }};
     var tableAnnotated = $('#tabletweetsannotated').DataTable( {
         "data": dataSetAnnotated,
         "columns": [
@@ -289,7 +335,6 @@ $(document).ready(function() {
             { "data": "Profile" },
             { "data": "Name" },
             { "data": "Tweet id" },
-            {#{ "data": "Type" },#}
             { "data": "Annotations" },
             { "data": "Tweeted at" },
             { "data": "Collected at" },
@@ -316,6 +361,50 @@ $(document).ready(function() {
             tr.addClass('shown');
             var obj = d.original_tweet;
             output("#jsonout_" + (d.rownum + 1000), syntaxHighlight(obj));
+        }
+    } );
+
+
+    var dataSetGeotagged = {{ data.datatablegeotagged | safe }};
+    var tableGeotagged = $('#tabletweetsgeotagged').DataTable( {
+        "data": dataSetGeotagged,
+        "columns": [
+            {
+                "className":      'details-control',
+                "orderable":      false,
+                "data":           null,
+                "defaultContent": ''
+            },
+            { "data": "rownum" },
+            { "data": "Profile" },
+            { "data": "Name" },
+            { "data": "Tweet id" },
+            { "data": "Annotations" },
+            { "data": "LatLon" },
+            { "data": "Tweeted at" },
+            { "data": "Collected at" },
+            { "data": "Full Text" }
+        ],
+        "order": [[1, 'asc']]
+    } );
+
+    // Add event listener for opening and closing details
+    $('#tabletweetsgeotagged tbody').on('click', 'td.details-control', function () {
+        var tr = $(this).closest('tr');
+        var row = tableGeotagged.row( tr );
+
+        if ( row.child.isShown() ) {
+            // This row is already open - close it
+            row.child.hide();
+            tr.removeClass('shown');
+        }
+        else {
+            // Open this row
+            var d = row.data();
+            row.child( format(d, 2000) ).show();
+            tr.addClass('shown');
+            var obj = d.original_tweet;
+            output("#jsonout_" + (d.rownum + 2000), syntaxHighlight(obj));
         }
     } );
 

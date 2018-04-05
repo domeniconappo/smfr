@@ -20,6 +20,7 @@ from flask_cqlalchemy import CQLAlchemy
 from utils import CustomJSONEncoder
 
 UNDER_TESTS = any('nose2' in x for x in sys.argv)
+SERVER_BOOTSTRAP = 'gunicorn' in sys.argv[0]
 LOGGER_FORMAT = '%(asctime)s: Server - <%(name)s>[%(levelname)s] (%(threadName)-10s) %(message)s'
 DATE_FORMAT = '%Y%m%d %H:%M:%S'
 CONFIG_STORE_PATH = os.environ.get('SERVER_PATH_UPLOADS', os.path.join(os.path.dirname(__file__), '../../../uploads/'))
@@ -76,7 +77,7 @@ class RestServerConfiguration(metaclass=Singleton):
     logger = logging.getLogger(__name__)
     logger.setLevel(logging.INFO if not debug else logging.DEBUG)
 
-    def __init__(self, connexion_app=None, bootstrap_server=False):
+    def __init__(self, connexion_app=None):
         mysql_db_name = '{}{}'.format(self.server_config['mysql_db_name'], '_test' if UNDER_TESTS else '')
         mysql_db_host = self.server_config['mysql_db_host']
         cassandra_keyspace = '{}{}'.format(self.server_config['cassandra_keyspace'], '_test' if UNDER_TESTS else '')
@@ -90,6 +91,7 @@ class RestServerConfiguration(metaclass=Singleton):
         self.kafka_topic = self.server_config['kafka_topic']
         self.kafka_bootstrap_server = '{}:9092'.format(self.server_config['kafka_host'])
         self.rest_server_port = self.server_config['rest_server_port']
+        self.min_flood_probability = self.server_config.get('min_flood_probability', 0.59)
         self.producer = None
 
         up = False
@@ -99,7 +101,7 @@ class RestServerConfiguration(metaclass=Singleton):
                 self.db_mysql = SQLAlchemy(self.flask_app, session_options={'expire_on_commit': False})
                 self.db_cassandra = CQLAlchemy(self.flask_app)
                 self.migrate = Migrate(self.flask_app, self.db_mysql)
-                if bootstrap_server and not self.producer:
+                if SERVER_BOOTSTRAP and not self.producer:
                     # Flask apps are setup when issuing CLI commands as well.
                     # This code is executed in case of launching REST Server
                     self.producer = KafkaProducer(bootstrap_servers=self.kafka_bootstrap_server, compression_type='gzip')

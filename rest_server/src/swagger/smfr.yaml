@@ -9,14 +9,6 @@ produces:
   - application/json
 
 paths:
-  /mordecai:
-    get:
-      operationId: server.api.collections.test_mordecai
-      responses:
-        201:
-          description: Return OK
-          schema:
-            type: object
 
   /collections:
     post:
@@ -169,7 +161,7 @@ paths:
           type: string
           format: date-time
           description: End date
-      summary: Geotag tweets for this collection
+      summary: Start Geotagging annotated tweets for this collection
       responses:
         204:
           description: Annotated tweets are starting to be geotagged...

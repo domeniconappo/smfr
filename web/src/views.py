@@ -131,7 +131,15 @@ def annotate_collection(collection_id, lang):
 
 @app.route('/geolocalize/<int:collection_id>', methods=('GET',))
 def geolocalize_collection(collection_id):
-    return redirect('/details/{}'.format(collection_id))
+    try:
+        client.start_geotagging(collection_id)
+    except SMFRRestException as e:
+        add_message('An error occurred: {}'.format(e), category=MessageClass.ERROR)
+        logger.error(str(e))
+    else:
+        add_message('Geotagging started for collection', category=MessageClass.SUCCESS)
+    finally:
+        return redirect('/details/{}'.format(collection_id))
 
 
 @app.errorhandler(404)

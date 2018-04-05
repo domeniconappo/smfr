@@ -35,6 +35,7 @@ RUN python3.6 -m spacy download en_core_web_lg
 
 RUN apt-get remove -y libmariadbclient-dev libmariadbd-dev && apt-get install -y mariadb-client
 
+RUN pip3.6 install objgraph
 COPY ./rest_server/src/. ./
 COPY ./client/. ./client/
 COPY ./rest_server/scripts/. /scripts/
@@ -44,4 +45,4 @@ RUN ["chmod", "a+x", "/scripts/wait_for_it.sh"]
 
 EXPOSE 5555
 ENTRYPOINT ["/scripts/wait_for_it.sh", "cassandra:9042"]
-CMD ["--", "gunicorn", "-b", "0.0.0.0:5555", "--workers", "1", "--timeout", "240", "--threads", "4", "--worker-class", "gthread", "--reload", "--access-logfile", "-", "--name", "restserver", "start:app"]
+CMD ["--", "gunicorn", "-b", "0.0.0.0:5555", "--workers", "1", "--log-level", "warning", "--timeout", "240", "--threads", "4", "--worker-class", "gthread", "--reload", "--access-logfile", "-", "--name", "restserver", "start:app"]

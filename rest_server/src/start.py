@@ -1,24 +1,20 @@
 import logging
-import sys
 import pathlib
 
 import connexion
 
-from server.config import RestServerConfiguration, LOGGER_FORMAT, DATE_FORMAT
+from server.config import RestServerConfiguration, LOGGER_FORMAT, DATE_FORMAT, SERVER_BOOTSTRAP
 
 logging.basicConfig(level=logging.INFO if not RestServerConfiguration.debug else logging.DEBUG,
-                    format=LOGGER_FORMAT,
-                    datefmt=DATE_FORMAT)
+                    format=LOGGER_FORMAT, datefmt=DATE_FORMAT)
 
 
 def create_app():
-    cli_args = sys.argv
-    is_server_bootstrapping = 'gunicorn' in cli_args[0]
     connexion_app = connexion.App('SMFR Rest Server', specification_dir='swagger/')
-    config = RestServerConfiguration(connexion_app, bootstrap_server=is_server_bootstrapping)
+    config = RestServerConfiguration(connexion_app)
     logger = RestServerConfiguration.logger
 
-    if is_server_bootstrapping:
+    if SERVER_BOOTSTRAP:
 
         # this code is only executed at http server bootstrap
         # it's not executed for Flask CLI executions

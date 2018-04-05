@@ -34,6 +34,7 @@ class ApiLocalClient:
         'remove_collection': '/collections/{id}/remove',
         'collection_details': '/collections/{id}/details',
         'annotate_collection': '/collections/{id}/annotate',
+        'geotag_collection': '/collections/{id}/geo',
     }
 
     def __init__(self):
@@ -155,6 +156,9 @@ class ApiLocalClient:
 
     def start_annotation(self, collection_id, lang='en'):
         return self._post('annotate_collection', path_kwargs={'id': collection_id}, query_params={'lang': lang})
+
+    def start_geotagging(self, collection_id):
+        return self._post('geotag_collection', path_kwargs={'id': collection_id})
 
 
 class SMFRRestException(SMFRError):

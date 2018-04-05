@@ -9,7 +9,7 @@
 
 {% block scripts %}
     {{ super() }}
-	<script src="//code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+	<script src="/static/js/jquery-ui.min.js"></script>
     <script src="/static/js/jquery-ui-timepicker-addon.js"></script>
     <script src="/static/js/moment-with-locales.min.js"></script>
 	<script>
@@ -21,7 +21,6 @@
 {% block app_content %}
 <form method="POST" class="form-horizontal" enctype="multipart/form-data" role="form">
     {{ form.hidden_tag() }}
-{#    <input id="tzclient" name="tzclient" type="hidden" value=""/>#}
     <div class="heading">
         <h4 class="form-heading">Create a new SMFR Background Collection service</h4>
     </div>
