@@ -5,14 +5,27 @@
 ### Docker configuration
 
 - Ensure to have installed Docker and Docker Compose
-- Set env variables
-  -  MYSQL_DATA_PATH
-  -  CASSANDRA_DATA_PATH
-  -  ...
+- Copy _.env.tpl_ file to _.env_ and edit the last one: `cp .env.tpl .env`
+- Execute `./build.sh` (use `sudo` in case you need it to execute docker-compose commands)
+- Execute `docker-compose up -d` or `sudo docker-compose up -d`
+
+- Connect to interface by pointing your browser to http://localhost:8888
+- REST Server API responds to http://localhost:5555/1.0 calls.
+- Swagger UI is available at http://localhost:5555/1.0/ui
+- Elasticsearch at http://localhost:9200
 
 ### Init and manage Databases
 
 #### Geonames
+
+##### Check that Geonames index is up in ES:
+Connect to http://localhost:9200/_cat/indices?v
+You should see something like (check __docs.count__ and __store.size__):
+
+```
+health status index    uuid                   pri rep docs.count docs.deleted store.size pri.store.size
+yellow open   geonames 23vFz20STbudmqktmHVOLg   1   1   11139265            0      2.7gb          2.7gb
+```
 
 Troubleshooting for Elasticsearch
 
@@ -114,11 +127,6 @@ In addition to SMFR web interface, you can use the CLI to manage SMFR services:
 docker exec restserver flask list_collections
 docker exec restserver flask ...
 ```
-
-
-- Connect to interface by pointing your browser to http://localhost:8888
-- REST Server API responds to http://localhost:5555/1.0 calls.
-- Swagger UI is available at http://localhost:5555/1.0/ui
 
 
 ## Development guide
