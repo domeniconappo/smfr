@@ -6,6 +6,7 @@ rest_server/src/config/*
 !rest_server/src/config/*.tpl
 !rest_server/src/config/classifier/
 !rest_server/src/config/classifier/*
+.env
 
 # common source files ignore config
 # dirs mirrored from client/

@@ -2,12 +2,29 @@ version: '3.4'
 
 services:
 
+  geonames:
+    build:
+      context: ./
+      dockerfile: geonames/Dockerfile
+      args:
+        http_proxy: ${http_proxy}
+        https_proxy: ${https_proxy}
+    working_dir: /geonames
+    container_name: geonames
+    ports:
+      - '9200:9200'
+      - '9300:9300'
+    environment:
+      ES_JAVA_OPTS: "-Xms2g -Xmx2g"
+    volumes:
+      - '${SMFR_DATADIR}/geonames_index:/var/lib/elasticsearch/elasticsearch:rw'
+
   cassandra:
     image: cassandra:latest
     restart: always
     # From host, connect to DB with `docker exec -it cassandra cqlsh`
     volumes:
-      - '/DATA/smfr/data/cassandra:/var/lib/cassandra:rw'
+      - '${SMFR_DATADIR}/cassandra:/var/lib/cassandra:rw'
     container_name: cassandra
     ports:
       - '9042:9042'
@@ -42,31 +59,13 @@ services:
     ports:
       - '3306:3306'
     volumes:
-      - '/DATA/smfr/data/mysql:/var/lib/mysql:rw'
+      - '${SMFR_DATADIR}/mysql:/var/lib/mysql:rw'
     environment:
       MYSQL_ROOT_PASSWORD: example
       MYSQL_DATABASE: smfr
     depends_on:
       - kafka
       - cassandra
-
-  geonames:
-    build:
-      context: ./
-      dockerfile: geonames/Dockerfile
-      args:
-        http_proxy: ${http_proxy}
-        https_proxy: ${https_proxy}
-    working_dir: /geonames
-    container_name: geonames
-    ports:
-      - '9200:9200'
-      - '9300:9300'
-    environment:
-      ES_JAVA_OPTS: "-Xms2g -Xmx2g"
-    volumes:
-      - '/DATA/smfr/data/geonames_index:/var/lib/elasticsearch/elasticsearch:rw'
-
 
   restserver:
     container_name: restserver
@@ -118,8 +117,8 @@ services:
       - './web/src:/web'
       - './client:/web/client'
 
-
-volumes:
-  mysql:
-  cassandra:
-    driver: local
+#
+#volumes:
+#  mysql:
+#  cassandra:
+#    driver: local

@@ -10,11 +10,8 @@ import yaml
 from dateutil import parser
 
 from daemons.streamers import CollectorStreamer
-from server.config import RestServerConfiguration, server_configuration, LOGGER_FORMAT, DATE_FORMAT
+from server.config import RestServerConfiguration, server_configuration
 from errors import SMFRDBError
-
-
-logger = logging.getLogger(__name__)
 
 
 class Collector:
@@ -24,6 +21,8 @@ class Collector:
                     'manual': 'twitterod'}
 
     _running_instances = {}
+    logger = logging.getLogger(__name__)
+    logger.setLevel(RestServerConfiguration.logger_level)
 
     @classmethod
     def running_instances(cls):
@@ -119,7 +118,7 @@ class Collector:
         Start a Collector process in same thread
         """
         filter_args = {k: ','.join(v) for k, v in self.query.items() if k != 'languages' and self.query[k]}
-        logger.info('Starting twython filtering with {}'.format(filter_args))
+        self.logger.info('Starting twython filtering with %s', str(filter_args))
         self.collection.activate()
 
         try:
@@ -133,7 +132,7 @@ class Collector:
         Stop twython streamers and set collection stopped into db (virtual_twitter_collections)
         :param reanimate: bool
         """
-        logger.info('Stopping collector %s', self)
+        self.logger.info('Stopping collector %s', self)
         self._running_instances[self.hashedid()] = None
         self.streamer.disconnect()
         if not reanimate:
@@ -199,7 +198,7 @@ class Collector:
         if self.runtime:
             # schedule the stop
             s = sched.scheduler(time.time, time.sleep)
-            logger.info('---+ Collector scheduled to stop at %s %s...', self.runtime, self.user_tzone)
+            self.logger.info('---+ Collector scheduled to stop at %s %s...', self.runtime, self.user_tzone)
             stop_at = parser.parse('{} {}'.format(self.runtime, self.user_tzone))  # - tz_diff(self.user_tzone)
             s.enterabs(stop_at.timestamp(), 1, self.stop)
             t = threading.Thread(target=s.run, name='stop_at_%s' % str(stop_at))

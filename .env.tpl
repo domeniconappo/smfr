@@ -1,0 +1,1 @@
+SMFR_DATADIR=/DATA/smfr/data
