@@ -35,7 +35,6 @@ RUN python3.6 -m spacy download en_core_web_lg
 
 RUN apt-get remove -y libmariadbclient-dev libmariadbd-dev && apt-get install -y mariadb-client
 
-RUN pip3.6 install objgraph
 COPY ./rest_server/src/. ./
 COPY ./client/. ./client/
 COPY ./rest_server/scripts/. /scripts/

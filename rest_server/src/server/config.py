@@ -74,8 +74,9 @@ class RestServerConfiguration(metaclass=Singleton):
     find_mysqluri_regex = re.compile(r'(?<=:)(.*)(?=@)')
     server_config = _read_server_configuration()
     debug = not UNDER_TESTS and not server_config.get('production', True)
+    logger_level = logging.getLevelName(server_config['logger_level'].upper())
     logger = logging.getLogger(__name__)
-    logger.setLevel(logging.INFO if not debug else logging.DEBUG)
+    logger.setLevel(logger_level)
 
     def __init__(self, connexion_app=None):
         mysql_db_name = '{}{}'.format(self.server_config['mysql_db_name'], '_test' if UNDER_TESTS else '')

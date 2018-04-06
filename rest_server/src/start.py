@@ -20,7 +20,9 @@ def create_app():
         # it's not executed for Flask CLI executions
 
         import signal
-        from daemons import Consumer, Collector
+        from daemons.consumer import Consumer
+        from daemons.collector import Collector
+
         with config.flask_app.app_context():
             config.init_mysql()
         config.init_cassandra()

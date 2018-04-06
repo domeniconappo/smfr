@@ -19,19 +19,20 @@ os.environ['KERAS_BACKEND'] = 'theano'
 
 class Annotator:
     models_path = os.path.join(os.path.dirname(__file__), '../config/classifier/models/')
-
     models = {'en': '20180319.relevance-cnn-init.en'}
 
     running = []
+
+    rest_server_conf = server_configuration()
+    logger = logging.getLogger(__name__)
+    logger.setLevel(rest_server_conf.logger_level)
 
     def __init__(self, collection_id, ttype='collected', lang='en'):
         if lang not in self.models:
             raise SMFRError('Model for language {} is not available'.format(lang))
         if self.is_running_for(collection_id, lang):
             raise SMFRError('Annotation is already ongoing on collection id {}, for language {}'.format(collection_id, lang))
-        self.rest_server_conf = server_configuration()
 
-        self.logger = logging.getLogger(__name__)
         self.kafka_topic = self.rest_server_conf.server_config['kafka_topic']
         self.producer = self.rest_server_conf.kafka_producer
         self.collection_id = collection_id

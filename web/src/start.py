@@ -1,8 +1,11 @@
 import json
+import logging
 from dateutil.parser import parse
 
 from flask import Flask
 from flask_bootstrap import Bootstrap
+
+logging.getLogger('urllib3').setLevel(logging.ERROR)
 
 
 def create_app():

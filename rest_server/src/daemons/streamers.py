@@ -5,16 +5,20 @@ from twython import TwythonStreamer
 
 from daemons.utils import safe_langdetect, tweet_normalization_aggressive
 
+from server.config import RestServerConfiguration
+
 
 class CollectorStreamer(TwythonStreamer):
     """
 
     """
 
+    logger = logging.getLogger(__name__)
+    logger.setLevel(RestServerConfiguration.logger_level)
+
     def __init__(self, app_key, app_secret, oauth_token, oauth_token_secret,
                  client_args, collection, producer, quiet=False):
-        from server.config import RestServerConfiguration, LOGGER_FORMAT, DATE_FORMAT
-        self.logger = logging.getLogger(__name__)
+
         self.kafka_topic = RestServerConfiguration.server_config['kafka_topic']
         self.quiet = quiet
         # if self.quiet:
