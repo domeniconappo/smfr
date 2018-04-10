@@ -4,11 +4,11 @@ import threading
 from cassandra.cqlengine import ValidationError
 from kafka import KafkaConsumer
 
-from server.config import server_configuration
+from server.config import RestServerConfiguration
 
 
 class Consumer:
-    config = server_configuration()
+    config = RestServerConfiguration()
     _running_instance = None
     _lock = threading.RLock()
 
@@ -57,17 +57,17 @@ class Consumer:
         with self._lock:
             if self._running_instance:
                 self._running_instance.stop()
-            self.logger.info('Setting running instance to %s', str(self))
+            self.logger.debug('Setting running instance to %s', str(self))
             self.set_running(inst=self)
 
-        self.logger.info('Starting Consumer in thread!')
+        self.logger.info('Consumer started %s', str(self))
         from server.models import Tweet
 
         try:
             for i, msg in enumerate(self.consumer):
                 try:
                     msg = msg.value.decode('utf-8')
-                    self.logger.info('Reading from queue: %s', msg[:80])
+                    self.logger.debug('Reading from queue: %s', msg[:120])
                     tweet = Tweet.build_from_kafka_message(msg)
                     tweet.save()
                 except ValidationError as e:

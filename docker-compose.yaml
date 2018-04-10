@@ -116,9 +116,3 @@ services:
     volumes:
       - './web/src:/web'
       - './client:/web/client'
-
-#
-#volumes:
-#  mysql:
-#  cassandra:
-#    driver: local

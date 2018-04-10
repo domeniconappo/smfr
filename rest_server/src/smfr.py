@@ -106,13 +106,24 @@ def start_collector(collector):
 
 
 @app.cli.command()
+@click.option('--lat', '-l', required=True)
+@click.option('--lon', '-g', required=True)
+def check_point_in_nuts(lat, lon):
+    """Get NUTS3 code for the point"""
+    from daemons.geotagger import Nuts3Finder
+
+    res = Nuts3Finder.find_nuts3_id(lat, lon)
+    click.echo(res if res else 'No NUTS3 FOUND for point %s' % (str((lat, lon))))
+
+
+@app.cli.command()
 def empty_dbs():
     """Reset databases! Warning! Issue the command only in DEV environments"""
-    from server.config import server_configuration
+    from server.config import RestServerConfiguration
     from server.models import Tweet
     from cassandra.cqlengine.connection import get_session
 
-    configuration = server_configuration()
+    configuration = RestServerConfiguration()
 
     if not configuration.debug:
         click.echo('Cannot empty dbs: not a development instance!')

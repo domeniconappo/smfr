@@ -4,10 +4,10 @@ import datetime
 
 from sqlalchemy_utils import ChoiceType, ScalarListType, JSONType
 
-from server.config import server_configuration
+from server.config import RestServerConfiguration
 from server.models.utils import cassandra_session_factory
 
-config = server_configuration()
+config = RestServerConfiguration()
 mysql = config.db_mysql
 cassandra = config.db_cassandra
 

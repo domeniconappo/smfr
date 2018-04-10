@@ -3,10 +3,12 @@
 
 .idea
 rest_server/src/config/*
+.env
+
 !rest_server/src/config/*.tpl
 !rest_server/src/config/classifier/
 !rest_server/src/config/classifier/*
-.env
+!/rest_server/src/config/nuts3
 
 # common source files ignore config
 # dirs mirrored from client/
@@ -98,7 +100,6 @@ celerybeat-schedule
 *.sage.py
 
 # Environments
-.env
 .venv
 env/
 venv/

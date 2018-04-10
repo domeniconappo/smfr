@@ -1,24 +1,25 @@
 pytz
-Flask
-cassandra-driver
 kafka-python
 mysqlclient
 
+Flask
 connexion
+
 flask-sqlalchemy
 flask-migrate
-flask-marshmallow
 sqlalchemy_utils
 flask-cqlalchemy
+
+flask-marshmallow
 swagger-marshmallow-codegen
 
 mordecai
-twython
-langdetect
+shapely
+fiona
 
-gunicorn
-nose2
-Flask-Testing
+twython
+
+langdetect
 
 # Text libraries
 geotext>=0.3.0
@@ -33,3 +34,7 @@ Theano>=0.9.0
 
 # Data library for Keras
 h5py>=2.7.1
+
+gunicorn
+nose2
+Flask-Testing

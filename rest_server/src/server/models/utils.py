@@ -1,12 +1,11 @@
 from cassandra.cluster import Cluster
 from cassandra.query import dict_factory
 
-from server.config import server_configuration
-
-configuration = server_configuration()
+from server.config import RestServerConfiguration
 
 
 def cassandra_session_factory():
+    configuration = RestServerConfiguration()
     hosts = configuration.flask_app.config['CASSANDRA_HOSTS']
     keyspace = configuration.flask_app.config['CASSANDRA_KEYSPACE']
     cluster = Cluster(hosts)

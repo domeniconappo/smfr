@@ -1,11 +1,11 @@
-from server.config import server_configuration
+from server.config import RestServerConfiguration
 from start import app
 from tests import SMFRTestCase
 
 
 class DBTest(SMFRTestCase):
 
-    config = server_configuration()
+    config = RestServerConfiguration()
 
     @classmethod
     def setUpClass(cls):

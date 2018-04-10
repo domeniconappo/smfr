@@ -1,18 +1,71 @@
+import os
 import logging
 import threading
 
 from mordecai import Geoparser
+import fiona
+from shapely.geometry import Point, Polygon
 
 from errors import SMFRError
-from server.config import server_configuration
+from server.config import RestServerConfiguration
 from server.models import Tweet
 
 
+class Nuts3Finder:
+    """
+
+    """
+    rest_server_conf = RestServerConfiguration()
+    logger = logging.getLogger(__name__)
+    logger.setLevel(rest_server_conf.logger_level)
+    shapefile_dir = os.path.join(rest_server_conf.config_dir, 'nuts3/')
+    shapefile_name = rest_server_conf.server_config.get('nut3_shapefile', '2018_GlobalRegionsWGS84_CUT_WGS84Coord.shp')
+    path = os.path.join(shapefile_dir, shapefile_name)
+    polygons = [pol for pol in fiona.open(path)]
+
+    @classmethod
+    def find_nuts3_id(cls, lat, lon):
+        """
+
+        :param lat:
+        :param lon:
+        :return:
+        """
+        lat, lon = float(lat), float(lon)
+        point = Point(lon, lat)
+        p = None
+        geo = None
+        try:
+            for p in cls.polygons:
+                geo = None
+                for geo in p['geometry']['coordinates']:
+                    if isinstance(geo[0], tuple):
+                        poly = Polygon(geo)
+                        if point.within(poly):
+                            return p['properties'].get('ID') or p.get('id', '')
+                    else:
+                        for ggeo in geo:
+                            poly = Polygon(ggeo)
+                            if point.within(poly):
+                                return p['properties'].get('ID') or p.get('id', '')
+        except (KeyError, IndexError) as e:
+            cls.logger.error('An error occured %s %s', type(e), str(e))
+            cls.logger.error(p)
+            cls.logger.error(geo)
+            return None
+        except Exception as e:
+            cls.logger.error('An error occured %s %s', type(e), str(e))
+            return None
+
+
 class Geotagger:
+    """
+
+    """
 
     running = []
 
-    rest_server_conf = server_configuration()
+    rest_server_conf = RestServerConfiguration()
     logger = logging.getLogger(__name__)
     logger.setLevel(rest_server_conf.logger_level)
 
@@ -33,25 +86,26 @@ class Geotagger:
         min_flood_prob = self.rest_server_conf.min_flood_probability
         tagger = Geoparser('geonames')
         errors = 0
-        # from pympler import tracker
-        # tr = tracker.SummaryTracker()
         for i, t in enumerate(tweets):
             try:
                 flood_prob = t.annotations.get('flood_probability', ('', 0.0))[1]
                 if flood_prob <= min_flood_prob:
-                    self.logger.debug('Skipping low flood probability')
                     continue
+
                 t.ttype = 'geotagged'
                 res = tagger.geoparse(t.full_text)
 
                 for result in res:
                     if result.get('country_conf', 0) < 0.5 or 'lat' not in result.get('geo', {}):
-                        self.logger.debug('Skipping low geotagging confidence: %s', str(result))
                         continue
-
-                    t.latlong = (float(result['geo']['lat']), float(result['geo']['lon']))
+                    latlong = (float(result['geo']['lat']), float(result['geo']['lon']))
+                    t.latlong = latlong
+                    nuts3_id = Nuts3Finder.find_nuts3_id(*latlong)
+                    t.nuts3 = str(nuts3_id) if nuts3_id else None
+                    if nuts3_id:
+                        self.logger.debug('Nuts3 was found!: %s', t.nuts3)
                     message = t.serialize()
-                    self.logger.info('Sending to queue: {}'.format(message[:120]))
+                    self.logger.debug('Sending to queue: %s', str(message[:120]))
                     self.producer.send(self.kafka_topic, message)
                     # we just take the first available result
                     break
@@ -64,10 +118,7 @@ class Geotagger:
                 continue
             finally:
                 if not (i % 250):
-                    # objgraph.show_most_common_types()
-                    # tr.print_diff()
-                    # time.sleep(3)
-                    # workaround for lru_cache memory leak problems
+                    # workaround for lru_cache "memory leak" problems
                     # https://benbernardblog.com/tracking-down-a-freaky-python-memory-leak/
                     tagger.query_geonames.cache_clear()
                     tagger.query_geonames_country.cache_clear()
@@ -85,4 +136,9 @@ class Geotagger:
 
     @classmethod
     def is_running_for(cls, collection_id):
+        """
+
+        :param collection_id:
+        :return:
+        """
         return collection_id in cls.running

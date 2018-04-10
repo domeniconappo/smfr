@@ -10,7 +10,7 @@ import yaml
 from dateutil import parser
 
 from daemons.streamers import CollectorStreamer
-from server.config import RestServerConfiguration, server_configuration
+from server.config import RestServerConfiguration
 from errors import SMFRDBError
 
 
@@ -23,6 +23,7 @@ class Collector:
     _running_instances = {}
     logger = logging.getLogger(__name__)
     logger.setLevel(RestServerConfiguration.logger_level)
+    rest_server_conf = RestServerConfiguration()
 
     @classmethod
     def running_instances(cls):
@@ -37,7 +38,6 @@ class Collector:
                  nuts3=None, nuts3source=None, tz=None):
 
         self.forecast_id = forecast_id
-        self.rest_server_conf = server_configuration()
         self.config = config_file
         self.kwfile = keywords_file
         self.locfile = locations_file
@@ -182,7 +182,7 @@ class Collector:
             raise SMFRDBError('Invalid Collector id. Not existing in DB')
 
         clazz = Collector.get_collector_class(stored_collector.parameters['trigger'])
-        server_configuration().db_mysql.session.expunge(stored_collector)
+        cls.rest_server_conf.db_mysql.session.expunge(stored_collector)
 
         collector = clazz.from_payload(stored_collector.parameters)
         collector.stored_instance = stored_collector

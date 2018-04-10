@@ -32,6 +32,9 @@ logging.getLogger('connexion').setLevel(logging.ERROR)
 logging.getLogger('swagger_spec_validator').setLevel(logging.ERROR)
 logging.getLogger('urllib3').setLevel(logging.ERROR)
 logging.getLogger('elasticsearch').setLevel(logging.ERROR)
+logging.getLogger('fiona').setLevel(logging.ERROR)
+logging.getLogger('Fiona').setLevel(logging.ERROR)
+logging.getLogger('shapely').setLevel(logging.ERROR)
 
 os.makedirs(CONFIG_STORE_PATH, exist_ok=True)
 
@@ -41,13 +44,14 @@ def _read_server_configuration():
     in_docker = running_in_docker()
     config_path = os.path.join(os.path.dirname(__file__), '../config/') if not in_docker else '/configuration/'
     config_file = 'config.yaml.tpl' if not os.path.exists(os.path.join(config_path, 'config.yaml')) else 'config.yaml'
+
     with open(os.path.join(config_path, config_file)) as f:
         server_config = yaml.load(f)
     server_config['mysql_db_host'] = os.environ.get('MYSQL_HOST', '127.0.0.1') if not in_docker else 'mysql'
     server_config['cassandra_db_host'] = os.environ.get('CASSANDRA_HOST', '127.0.0.1') if not in_docker else 'cassandra'
     server_config['geonames_host'] = os.environ.get('GEONAMES_HOST', '127.0.0.1') if not in_docker else 'geonames'
     server_config['kafka_host'] = os.environ.get('KAFKA_ADVERTISED_HOST', '127.0.0.1') if not in_docker else 'kafka'
-    return server_config
+    return config_path, server_config
 
 
 class Singleton(type):
@@ -59,20 +63,13 @@ class Singleton(type):
         return cls.instances[cls]
 
 
-def start_consumer():
-    from daemons.consumer import Consumer
-    consumer = Consumer()
-    t_cons = threading.Thread(target=consumer.start, name='Consumer', daemon=True)
-    t_cons.start()
-
-
 class RestServerConfiguration(metaclass=Singleton):
     """
     A class whose objects hold SMFR Rest Server Configuration as singletons.
     Constructor accepts a connexion app object.
     """
     find_mysqluri_regex = re.compile(r'(?<=:)(.*)(?=@)')
-    server_config = _read_server_configuration()
+    config_dir, server_config = _read_server_configuration()
     debug = not UNDER_TESTS and not server_config.get('production', True)
     logger_level = logging.getLevelName(server_config['logger_level'].upper())
     logger = logging.getLogger(__name__)
@@ -157,11 +154,3 @@ class RestServerConfiguration(metaclass=Singleton):
         masked = self.find_mysqluri_regex.sub('******', self.flask_app.config['SQLALCHEMY_DATABASE_URI'])
         self.logger.info(' - URI: {}'.format(masked))
         self.logger.info('======= END LOGGING Configuration =======')
-
-
-def server_configuration():
-    conf = Singleton.instances.get(RestServerConfiguration)
-    if not conf:
-        from start import app
-        conf = Singleton.instances[RestServerConfiguration]
-    return conf

@@ -9,7 +9,7 @@ from keras.preprocessing.sequence import pad_sequences
 import stop_words
 
 from daemons.utils import create_text_for_cnn, CNN_MAX_SEQUENCE_LENGTH
-from server.config import server_configuration
+from server.config import RestServerConfiguration
 from server.models import Tweet
 from errors import SMFRError
 
@@ -23,7 +23,7 @@ class Annotator:
 
     running = []
 
-    rest_server_conf = server_configuration()
+    rest_server_conf = RestServerConfiguration()
     logger = logging.getLogger(__name__)
     logger.setLevel(rest_server_conf.logger_level)
 

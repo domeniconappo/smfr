@@ -6,3 +6,4 @@ base_path: "/1.0"
 rest_server_port: 5555
 min_flood_probability: 0.6
 logger_level: warning
+nut3_shapefile: 2018_GlobalRegionsWGS84_CUT_WGS84Coord.shp
