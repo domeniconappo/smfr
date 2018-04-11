@@ -14,9 +14,6 @@ from server.models import Tweet
 from errors import SMFRError
 
 
-os.environ['KERAS_BACKEND'] = 'theano'
-
-
 class Annotator:
     models_path = os.path.join(os.path.dirname(__file__), '../config/classifier/models/')
     models = {'en': '20180319.relevance-cnn-init.en'}

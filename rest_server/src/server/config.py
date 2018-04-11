@@ -67,7 +67,6 @@ class RestServerConfiguration(metaclass=Singleton):
     A class whose objects hold SMFR Rest Server Configuration as singletons.
     Constructor accepts a connexion app object.
     """
-    find_mysqluri_regex = re.compile(r'(?<=:)(.*)(?=@)')
     config_dir, server_config = _read_server_configuration()
     debug = not UNDER_TESTS and not server_config.get('production', True)
     logger_level = logging.getLevelName(server_config['logger_level'].upper())
@@ -86,7 +85,7 @@ class RestServerConfiguration(metaclass=Singleton):
         self.flask_app.config['CASSANDRA_KEYSPACE'] = cassandra_keyspace
         self.geonames_host = self.server_config['geonames_host']
         self.kafka_topic = self.server_config['kafka_topic']
-        self.kafka_bootstrap_server = '{}:9092'.format(self.server_config['kafka_host'])
+        self.kafka_boot_server = '{}:9092'.format(self.server_config['kafka_host'])
         self.rest_server_port = self.server_config['rest_server_port']
         self.min_flood_probability = self.server_config.get('min_flood_probability', 0.59)
         self.producer = None
@@ -101,7 +100,7 @@ class RestServerConfiguration(metaclass=Singleton):
                 if SERVER_BOOTSTRAP and not self.producer:
                     # Flask apps are setup when issuing CLI commands as well.
                     # This code is executed in case of launching REST Server
-                    self.producer = KafkaProducer(bootstrap_servers=self.kafka_bootstrap_server, compression_type='gzip')
+                    self.producer = KafkaProducer(bootstrap_servers=self.kafka_boot_server, compression_type='gzip')
             except (NoHostAvailable, OperationalError, NoBrokersAvailable):
                 self.logger.warning('Cassandra/Mysql/Kafka were not up...waiting')
                 sleep(10)
@@ -122,6 +121,10 @@ class RestServerConfiguration(metaclass=Singleton):
         return self.server_config['base_path']
 
     def init_cassandra(self):
+        """
+
+        :return:
+        """
         from cassandra.cqlengine.connection import _connections, DEFAULT_CONNECTION
         session = _connections[DEFAULT_CONNECTION].session
         session.execute(
@@ -134,6 +137,10 @@ class RestServerConfiguration(metaclass=Singleton):
         self.db_cassandra.sync_db()
 
     def init_mysql(self):
+        """
+
+        :return:
+        """
         engine = create_engine(self.flask_app.config['SQLALCHEMY_DATABASE_URI'])
         if not database_exists(engine.url):
             create_database(engine.url)
@@ -148,11 +155,11 @@ class RestServerConfiguration(metaclass=Singleton):
         self.logger.info('======= START LOGGING Configuration =======')
         self.logger.info('+++ Kafka')
         self.logger.info(' - Topic: {}'.format(self.kafka_topic))
-        self.logger.info(' - Bootstrap server: {}'.format(self.kafka_bootstrap_server))
+        self.logger.info(' - Bootstrap server: {}'.format(self.kafka_boot_server))
         self.logger.info('+++ Cassandra')
         self.logger.info(' - Host: {}'.format(self.flask_app.config['CASSANDRA_HOSTS']))
         self.logger.info(' - Keyspace: {}'.format(self.flask_app.config['CASSANDRA_KEYSPACE']))
         self.logger.info('+++ MySQL')
-        masked = self.find_mysqluri_regex.sub('******', self.flask_app.config['SQLALCHEMY_DATABASE_URI'])
+        masked = re.sub(r'(?<=:)(.*)(?=@)', '******', self.flask_app.config['SQLALCHEMY_DATABASE_URI'])
         self.logger.info(' - URI: {}'.format(masked))
         self.logger.info('======= END LOGGING Configuration =======')

@@ -23,7 +23,7 @@ class Collector:
     _running_instances = {}
     logger = logging.getLogger(__name__)
     logger.setLevel(RestServerConfiguration.logger_level)
-    rest_server_conf = RestServerConfiguration()
+    server_conf = RestServerConfiguration()
 
     @classmethod
     def running_instances(cls):
@@ -70,7 +70,7 @@ class Collector:
             tw_api_account['access_token_secret'],
             client_args=client_args,
             collection=self.collection,
-            producer=self.rest_server_conf.kafka_producer
+            producer=self.server_conf.kafka_producer
         )
 
     @classmethod
@@ -182,7 +182,7 @@ class Collector:
             raise SMFRDBError('Invalid Collector id. Not existing in DB')
 
         clazz = Collector.get_collector_class(stored_collector.parameters['trigger'])
-        cls.rest_server_conf.db_mysql.session.expunge(stored_collector)
+        cls.server_conf.db_mysql.session.expunge(stored_collector)
 
         collector = clazz.from_payload(stored_collector.parameters)
         collector.stored_instance = stored_collector

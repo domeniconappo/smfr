@@ -42,7 +42,7 @@ class Consumer:
 
     def __init__(self, group_id='SMFR', auto_offset_reset='earliest'):
         self.topic = self.config.kafka_topic
-        self.bootstrap_server = self.config.kafka_bootstrap_server
+        self.bootstrap_server = self.config.kafka_boot_server
         self.auto_offset_reset = auto_offset_reset
         self.group_id = group_id
         self.consumer = KafkaConsumer(self.topic, group_id=self.group_id,

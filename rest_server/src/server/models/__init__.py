@@ -218,11 +218,14 @@ class Tweet(cassandra.Model):
         full_text = tweet_obj.full_text
 
         tweet_dict['tweet']['full_text'] = full_text
+        user_name = tweet_dict['tweet']['user']['screen_name']
+        profile_img = tweet_dict['tweet']['user']['profile_image_url'] or ''
 
-        obj = {'rownum': numrow, 'Full Text': full_text, 'Tweet id': tweet_dict['tweetid'],
+        obj = {'rownum': numrow, 'Full Text': full_text,
+               'Tweet id': '<a href="https://twitter.com/statuses/{}"'.format(tweet_dict['tweetid']),
                'original_tweet': tweet_obj.original_tweet_as_string,
-               'Profile': '<img src="{}"/>'.format(tweet_dict['tweet']['user']['profile_image_url']) if tweet_dict['tweet']['user']['profile_image_url'] else '',
-               'Name': tweet_dict['tweet']['user']['screen_name'] or '',
+               'Profile': '<a href="https://twitter.com/{}"><img src="{}"/></a>'.format(user_name, profile_img),
+               'Name': '<a href="{}">{}</a>'.format(user_name, user_name),
                'Type': tweet_dict['ttype'], 'Lang': tweet_dict['lang'] or '-',
                'Annotations': tweet_obj.pretty_annotations,
                'LatLon': tweet_obj.latlong or '-',
@@ -262,7 +265,8 @@ class Tweet(cassandra.Model):
         out = ''
         for k, v in self.annotations.items():
             out += '{}: {} - {}\n'.format(k, v[0], v[1])
-        return out
+
+        return '<pre>{}</pre>'.format(out)
 
     def serialize(self):
         """
