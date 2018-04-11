@@ -2,7 +2,6 @@ import logging
 import os
 import re
 import sys
-import threading
 from time import sleep
 
 import yaml
@@ -105,13 +104,16 @@ class RestServerConfiguration(metaclass=Singleton):
                     self.producer = KafkaProducer(bootstrap_servers=self.kafka_bootstrap_server, compression_type='gzip')
             except (NoHostAvailable, OperationalError, NoBrokersAvailable):
                 self.logger.warning('Cassandra/Mysql/Kafka were not up...waiting')
-                sleep(5)
+                sleep(10)
                 retries += 1
             else:
                 up = True
             finally:
                 if not up and retries >= 5:
                     self.logger.error('Cannot boot because DB servers are not reachable')
+                    # if running in docker with `restart: always`, the server will try to bootup over and over
+                    # this comes handy because sometimes Cassandra takes minutes
+                    # to warm up and accept incoming connections
                     sys.exit(1)
         self.log_configuration()
 

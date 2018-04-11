@@ -82,6 +82,7 @@ Out[4]:
 
 #### MySQL
 
+Whenever new models (or new fields) are added to the mysql schema, follow these steps to update DB:
 On development:
 
 ```
@@ -101,8 +102,8 @@ If smfr_restserver image has problems to start due "unsynced" db tables, try the
 docker run -e FLASK_APP=smfr.py --entrypoint='flask' smfr_restserver 'db upgrade'
 ```
 
-From host, connect to MySQL DB with `mysql -h 127.0.0.1 -P 3306 -u root -p` (if you have mysql client installed) or just use docker exec:
-`docker exec -it mysql mysql -h 127.0.0.1 -P 3306 -u root -p`
+From host, connect to MySQL DB as the docker root user with `mysql -h 127.0.0.1 -p` (if you have mysql client installed) or just use docker exec:
+`docker exec -it mysql mysql -h 127.0.0.1 -p`
 
 **_Note: You have to create migrations in development and push them to GIT repo. Then you have to apply migrations on all systems where SMFR runs (dev, test, prod etc.)_**
 
@@ -120,6 +121,7 @@ From host, use cqlsh on docker container to connect to DB: `docker exec -it cass
 
 ## Interfaces
 
+Connect to http://localhost:8888/ for SMFR web interface.
 
 In addition to SMFR web interface, you can use the CLI to manage SMFR services:
 
@@ -131,9 +133,18 @@ docker exec restserver flask ...
 
 ## Development guide
 
-# Generate Marshmallow schemas from smfr.yaml Swagger definitions using a Marshmallow custom driver
+### Generate Marshmallow schemas from smfr.yaml Swagger definitions using a Marshmallow custom driver
 
 ```bash
 $ cd rest_server/src
 $ swagger-marshmallow-codegen --driver=../../client/_marshmallow_custom.py:CustomDriver swagger/smfr.yaml > ../../client/marshmallow.py
+```
+
+### Free some disk space from unused 'dockers'
+```
+docker images --no-trunc | grep '<none>' | awk '{ print $3 }' | xargs -r docker rmi
+```
+
+```
+docker-compose down --rmi all --remove-orphans
 ```

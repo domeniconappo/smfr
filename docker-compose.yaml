@@ -51,11 +51,19 @@ services:
       - '2181:2181'
 
   mysql:
-    restart: always
     image: mysql:latest
+#    build:
+#      context: ./
+#      dockerfile: mysql/Dockerfile
+#      args:
+#        http_proxy: ${http_proxy}
+#        https_proxy: ${https_proxy}
+#        SMFR_DATADIR: ${SMFR_DATADIR}
+#    working_dir: /mysql
+    restart: always
     container_name: mysql
-    # From host, connect to DB with `mysql -h 127.0.0.1 -P 3306 -u root -p` (if you have mysql client installed)
-    # or using docker exec: `docker exec -it mysql mysql -h 127.0.0.1 -P 3306 -u root -p`
+    # From host, connect to DB with `mysql -h 127.0.0.1 -p` (if you have mysql client installed)
+    # or using docker exec: `docker exec -it mysql mysql -h 127.0.0.1 -p'
     ports:
       - '3306:3306'
     volumes:
@@ -63,9 +71,7 @@ services:
     environment:
       MYSQL_ROOT_PASSWORD: example
       MYSQL_DATABASE: smfr
-    depends_on:
-      - kafka
-      - cassandra
+      MYSQL_ALLOW_EMPTY_PASSWORD: 'yes'
 
   restserver:
     container_name: restserver
