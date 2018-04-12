@@ -52,14 +52,6 @@ services:
 
   mysql:
     image: mysql:latest
-#    build:
-#      context: ./
-#      dockerfile: mysql/Dockerfile
-#      args:
-#        http_proxy: ${http_proxy}
-#        https_proxy: ${https_proxy}
-#        SMFR_DATADIR: ${SMFR_DATADIR}
-#    working_dir: /mysql
     restart: always
     container_name: mysql
     # From host, connect to DB with `mysql -h 127.0.0.1 -p` (if you have mysql client installed)
@@ -72,6 +64,24 @@ services:
       MYSQL_ROOT_PASSWORD: example
       MYSQL_DATABASE: smfr
       MYSQL_ALLOW_EMPTY_PASSWORD: 'yes'
+
+  annotator:
+    container_name: annotator
+    build:
+      context: ./
+      dockerfile: annotator/Dockerfile
+      args:
+        http_proxy: ${http_proxy}
+        https_proxy: ${https_proxy}
+    working_dir: /annotator
+    ports:
+      - '5555:5555'
+    environment:
+      PYTHONUNBUFFERED: 'true'
+    depends_on:
+      - mysql
+      - kafka
+      - cassandra
 
   restserver:
     container_name: restserver

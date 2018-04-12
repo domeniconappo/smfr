@@ -1,0 +1,6 @@
+- Domenico Nappo  [domenico.nappo@ext.ec.europa.eu]
+    - Architecture
+    - REST API, web app
+    - Containerization
+- Carlos Castillo [carlos.castillo@upf.edu]
+    - Machine learning algorithms, models, training

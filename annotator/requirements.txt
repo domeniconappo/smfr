@@ -1,2 +1,4 @@
 Flask
 flask-restful
+gunicorn
+https://github.com/domeniconappo/smfr_core/archive/master.zip
