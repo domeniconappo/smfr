@@ -124,6 +124,26 @@ class StoredCollector(mysql.Model):
         return 'Collector stored ID: {} (collection: {})'.format(self.id, self.collection_id)
 
 
+class NutsBoundingBox(mysql.Model):
+    """
+    """
+    id = mysql.Column(mysql.Integer, primary_key=True, nullable=False, autoincrement=False)
+    min_lon = mysql.Column(mysql.Float)
+    max_lon = mysql.Column(mysql.Float)
+    min_lat = mysql.Column(mysql.Float)
+    max_lat = mysql.Column(mysql.Float)
+
+    @classmethod
+    def nuts3_bbox(cls, id_nuts):
+        """
+        :param id_nuts:
+        :return:
+        """
+        row = cls.query.filter_by(id=id_nuts).first()
+        bbox = {'min_lat': row.min_lat, 'max_lat': row.max_lat, 'min_lon': row.min_lon, 'max_lon': row.max_lon}
+        return bbox
+
+
 # CASSANDRA MODELS
 
 class Tweet(cassandra.Model):

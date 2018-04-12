@@ -76,44 +76,49 @@ class RestServerConfiguration(metaclass=Singleton):
     logger.setLevel(logger_level)
 
     def __init__(self, connexion_app=None):
-        mysql_db_name = '{}{}'.format(self.server_config['mysql_db_name'], '_test' if UNDER_TESTS else '')
-        mysql_db_host = self.server_config['mysql_db_host']
-        cassandra_keyspace = '{}{}'.format(self.server_config['cassandra_keyspace'], '_test' if UNDER_TESTS else '')
-        self.flask_app = connexion_app.app
-        self.flask_app.json_encoder = CustomJSONEncoder
-        self.flask_app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:example@{}/{}'.format(mysql_db_host, mysql_db_name)
-        self.flask_app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-        self.flask_app.config['CASSANDRA_HOSTS'] = [self.server_config['cassandra_db_host']]
-        self.flask_app.config['CASSANDRA_KEYSPACE'] = cassandra_keyspace
-        self.geonames_host = self.server_config['geonames_host']
-        self.kafka_topic = self.server_config['kafka_topic']
-        self.kafka_bootstrap_server = '{}:9092'.format(self.server_config['kafka_host'])
-        self.rest_server_port = self.server_config['rest_server_port']
-        self.min_flood_probability = self.server_config.get('min_flood_probability', 0.59)
-        self.producer = None
+        if not connexion_app:
+            if RestServerConfiguration not in self.__class__.instances:
+                from start import app
+            self = self.__class__.instances[RestServerConfiguration]
+        else:
+            mysql_db_name = '{}{}'.format(self.server_config['mysql_db_name'], '_test' if UNDER_TESTS else '')
+            mysql_db_host = self.server_config['mysql_db_host']
+            cassandra_keyspace = '{}{}'.format(self.server_config['cassandra_keyspace'], '_test' if UNDER_TESTS else '')
+            self.flask_app = connexion_app.app
+            self.flask_app.json_encoder = CustomJSONEncoder
+            self.flask_app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:example@{}/{}'.format(mysql_db_host, mysql_db_name)
+            self.flask_app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+            self.flask_app.config['CASSANDRA_HOSTS'] = [self.server_config['cassandra_db_host']]
+            self.flask_app.config['CASSANDRA_KEYSPACE'] = cassandra_keyspace
+            self.geonames_host = self.server_config['geonames_host']
+            self.kafka_topic = self.server_config['kafka_topic']
+            self.kafka_bootstrap_server = '{}:9092'.format(self.server_config['kafka_host'])
+            self.rest_server_port = self.server_config['rest_server_port']
+            self.min_flood_probability = self.server_config.get('min_flood_probability', 0.59)
+            self.producer = None
 
-        up = False
-        retries = 1
-        while not up and retries <= 5:
-            try:
-                self.db_mysql = SQLAlchemy(self.flask_app, session_options={'expire_on_commit': False})
-                self.db_cassandra = CQLAlchemy(self.flask_app)
-                self.migrate = Migrate(self.flask_app, self.db_mysql)
-                if SERVER_BOOTSTRAP and not self.producer:
-                    # Flask apps are setup when issuing CLI commands as well.
-                    # This code is executed in case of launching REST Server
-                    self.producer = KafkaProducer(bootstrap_servers=self.kafka_bootstrap_server, compression_type='gzip')
-            except (NoHostAvailable, OperationalError, NoBrokersAvailable):
-                self.logger.warning('Cassandra/Mysql/Kafka were not up...waiting')
-                sleep(5)
-                retries += 1
-            else:
-                up = True
-            finally:
-                if not up and retries >= 5:
-                    self.logger.error('Cannot boot because DB servers are not reachable')
-                    sys.exit(1)
-        self.log_configuration()
+            up = False
+            retries = 1
+            while not up and retries <= 5:
+                try:
+                    self.db_mysql = SQLAlchemy(self.flask_app, session_options={'expire_on_commit': False})
+                    self.db_cassandra = CQLAlchemy(self.flask_app)
+                    self.migrate = Migrate(self.flask_app, self.db_mysql)
+                    if SERVER_BOOTSTRAP and not self.producer:
+                        # Flask apps are setup when issuing CLI commands as well.
+                        # This code is executed in case of launching REST Server
+                        self.producer = KafkaProducer(bootstrap_servers=self.kafka_bootstrap_server, compression_type='gzip')
+                except (NoHostAvailable, OperationalError, NoBrokersAvailable):
+                    self.logger.warning('Cassandra/Mysql/Kafka were not up...waiting')
+                    sleep(5)
+                    retries += 1
+                else:
+                    up = True
+                finally:
+                    if not up and retries >= 5:
+                        self.logger.error('Cannot boot because DB servers are not reachable')
+                        sys.exit(1)
+            self.log_configuration()
 
     @property
     def base_path(self):
