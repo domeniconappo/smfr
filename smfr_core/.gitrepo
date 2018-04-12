@@ -1,0 +1,11 @@
+; DO NOT EDIT (unless you know what you are doing)
+;
+; This subdirectory is a git "subrepo", and this file is maintained by the
+; git-subrepo command. See https://github.com/git-commands/git-subrepo#readme
+;
+[subrepo]
+	remote = https://domeniconappo:f3c23995b286876f0e92f0141131012935cbb30b@github.com/domeniconappo/smfr_core.git
+	branch = master
+	commit = 75e742d736eba1b0b8c8d234c5910e292debaef3
+	parent = 960e04878b75de56f10b4a137930f155d1efc8b0
+	cmdver = 0.3.1
