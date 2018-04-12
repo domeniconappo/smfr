@@ -126,7 +126,6 @@ class StoredCollector(mysql.Model):
 
 class NutsBoundingBox(mysql.Model):
     """
-
     """
     id = mysql.Column(mysql.Integer, primary_key=True, nullable=False, autoincrement=False)
     min_lon = mysql.Column(mysql.Float)
@@ -137,7 +136,6 @@ class NutsBoundingBox(mysql.Model):
     @classmethod
     def nuts3_bbox(cls, id_nuts):
         """
-
         :param id_nuts:
         :return:
         """
