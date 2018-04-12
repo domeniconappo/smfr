@@ -225,7 +225,7 @@ class Tweet(cassandra.Model):
                'Tweet id': '<a href="https://twitter.com/statuses/{}"'.format(tweet_dict['tweetid']),
                'original_tweet': tweet_obj.original_tweet_as_string,
                'Profile': '<a href="https://twitter.com/{}"><img src="{}"/></a>'.format(user_name, profile_img),
-               'Name': '<a href="{}">{}</a>'.format(user_name, user_name),
+               'Name': '<a href="https://twitter.com/{}">{}</a>'.format(user_name, user_name),
                'Type': tweet_dict['ttype'], 'Lang': tweet_dict['lang'] or '-',
                'Annotations': tweet_obj.pretty_annotations,
                'LatLon': tweet_obj.latlong or '-',
