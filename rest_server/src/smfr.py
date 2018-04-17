@@ -13,15 +13,15 @@ from flask_migrate import upgrade
 
 from smfrcore.utils import running_in_docker
 
-if not running_in_docker():
-    current_dir = os.path.dirname(__file__)
-    client_src = os.path.join(current_dir, '../../client')
-    dst = os.path.join(current_dir, 'client/')
-    if os.path.exists(dst):
-        shutil.rmtree(dst)
-    shutil.copytree(client_src, dst)
+# if not running_in_docker():
+#     current_dir = os.path.dirname(__file__)
+#     client_src = os.path.join(current_dir, '../../client')
+#     dst = os.path.join(current_dir, 'client/')
+#     if os.path.exists(dst):
+#         shutil.rmtree(dst)
+#     shutil.copytree(client_src, dst)
 
-from client.api_client import ApiLocalClient
+from smfrcore.client.api_client import ApiLocalClient
 from start import app
 
 

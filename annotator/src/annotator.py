@@ -148,6 +148,7 @@ class Annotator:
     logger = logging.getLogger(__name__)
     kafka_bootstrap_server = '{}:9092'.format('kafka' if running_in_docker() else '127.0.0.1')
     producer = KafkaProducer(bootstrap_servers=kafka_bootstrap_server, compression_type='gzip')
+    kafka_topic = os.environ.get('KAFKA_TOPIC', 'persister')
 
     @classmethod
     def is_running_for(cls, collection_id, lang):
@@ -161,7 +162,7 @@ class Annotator:
         tokenizer.oov_token = None
         model_path = os.path.join(cls.models_path, cls.models[lang] + '.model.h5')
         model = keras.models.load_model(model_path)
-        kafka_topic = 'persister'
+
         cls.logger.info('Starting Annotation collection: {} {}'.format(collection_id, lang))
 
         # add tuple (collection_id, language) to `running` list
@@ -184,7 +185,7 @@ class Annotator:
             t.ttype = 'annotated'
             message = t.serialize()
             cls.logger.info('Sending annotated tweet to queue: {}'.format(message[:80]))
-            cls.producer.send(kafka_topic, message)
+            cls.producer.send(cls.kafka_topic, message)
 
         # remove from `running` list
         cls.running.remove((collection_id, lang))
@@ -196,5 +197,5 @@ class Annotator:
 
     @classmethod
     def launch_in_background(cls, collection_id, lang):
-        t = threading.Thread(target=cls.start, name='{} {}'.format(lang, collection_id))
+        t = threading.Thread(target=cls.start, args=(collection_id, lang), name='{} {}'.format(collection_id, lang))
         t.start()
