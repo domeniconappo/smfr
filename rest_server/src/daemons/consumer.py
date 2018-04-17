@@ -3,6 +3,7 @@ import threading
 
 from cassandra.cqlengine import ValidationError
 from kafka import KafkaConsumer
+from kafka.errors import CommitFailedError
 
 from server.config import RestServerConfiguration
 
@@ -42,7 +43,7 @@ class Consumer:
 
     def __init__(self, group_id='SMFR', auto_offset_reset='earliest'):
         self.topic = self.config.kafka_topic
-        self.bootstrap_server = self.config.kafka_boot_server
+        self.bootstrap_server = self.config.kafka_bootstrap_server
         self.auto_offset_reset = auto_offset_reset
         self.group_id = group_id
         self.consumer = KafkaConsumer(self.topic, group_id=self.group_id,
@@ -61,7 +62,7 @@ class Consumer:
             self.set_running(inst=self)
 
         self.logger.info('Consumer started %s', str(self))
-        from server.models import Tweet
+        from smfrcore.models.cassandramodels import Tweet
 
         try:
             for i, msg in enumerate(self.consumer):
@@ -80,6 +81,8 @@ class Consumer:
                     self.logger.error(type(e))
                     self.logger.error(msg[:100])
                     self.logger.error(e)
+        except CommitFailedError as e:
+            self.logger.error("Consumer was disconnected during I/O operations. Exited.")
         except ValueError:
             # tipically an I/O operation on closed epoll object
             # as the consumer can be disconnected in another thread (see signal handling in start.py)

@@ -7,10 +7,15 @@ from .base import SMFRModel, metadata
 from ..ext.database import SQLAlchemy
 
 
-db = SQLAlchemy(metadata=metadata)
+sqldb = SQLAlchemy(metadata=metadata, session_options={'expire_on_commit': False})
 
 
-class VirtualTwitterCollection(SMFRModel):
+class TwitterCollection(SMFRModel):
+    """
+
+    """
+    __tablename__ = 'virtual_twitter_collection'
+
     ACTIVE_STATUS = 'active'
     INACTIVE_STATUS = 'inactive'
 
@@ -72,7 +77,7 @@ class VirtualTwitterCollection(SMFRModel):
                 continue
             kwargs[k] = v if not isinstance(v, ChoiceType) else v.value
 
-        existing = VirtualTwitterCollection.query.filter_by(**kwargs).first()
+        existing = TwitterCollection.query.filter_by(**kwargs).first()
         if existing:
             return existing
         collection.save()
@@ -80,14 +85,14 @@ class VirtualTwitterCollection(SMFRModel):
 
     def save(self):
         # we need 'merge' method because objects can be attached to db sessions in different threads
-        attached_obj = db.session.merge(self)
-        db.session.add(attached_obj)
-        db.session.commit()
+        attached_obj = sqldb.session.merge(self)
+        sqldb.session.add(attached_obj)
+        sqldb.session.commit()
         self.id = attached_obj.id
 
     def delete(self):
-        db.session.delete(self)
-        db.session.commit()
+        sqldb.session.delete(self)
+        sqldb.session.commit()
 
     def deactivate(self):
         self.status = self.INACTIVE_STATUS
@@ -101,22 +106,27 @@ class VirtualTwitterCollection(SMFRModel):
 
 
 class StoredCollector(SMFRModel):
+    """
+
+    """
+    __tablename__ = 'stored_collector'
+
     id = Column(Integer, primary_key=True, autoincrement=True, nullable=False)
     collection_id = Column(Integer, ForeignKey('virtual_twitter_collection.id'))
-    collection = db.relationship("VirtualTwitterCollection",
-                                 backref=db.backref("virtual_twitter_collection", uselist=False))
+    collection = sqldb.relationship("VirtualTwitterCollection",
+                                    backref=sqldb.backref("virtual_twitter_collection", uselist=False))
     parameters = Column(JSONType, nullable=False)
 
     def save(self):
         # we need 'merge' method because objects can be attached to db sessions in different threads
-        attached_obj = db.session.merge(self)
-        db.session.add(attached_obj)
-        db.session.commit()
+        attached_obj = sqldb.session.merge(self)
+        sqldb.session.add(attached_obj)
+        sqldb.session.commit()
         self.id = attached_obj.id
 
     def delete(self):
-        db.session.delete(self)
-        db.session.commit()
+        sqldb.session.delete(self)
+        sqldb.session.commit()
 
     def __str__(self):
         return 'Collector stored ID: {} (collection: {})'.format(self.id, self.collection_id)
@@ -126,6 +136,8 @@ class NutsBoundingBox(SMFRModel):
     """
 
     """
+
+    __tablename__ = 'nuts_bounding_box'
     id = Column(Integer, primary_key=True, nullable=False, autoincrement=False)
     min_lon = Column(Float)
     max_lon = Column(Float)

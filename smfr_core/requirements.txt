@@ -2,3 +2,4 @@ sqlalchemy_utils
 flask
 flask-sqlalchemy
 flask-cqlalchemy
+ujson

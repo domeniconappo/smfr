@@ -9,6 +9,8 @@ import yaml
 
 from dateutil import parser
 
+from smfrcore.models.sqlmodels import VirtualTwitterCollection, StoredCollector
+
 from daemons.streamers import CollectorStreamer
 from server.config import RestServerConfiguration
 from errors import SMFRDBError
@@ -60,7 +62,6 @@ class Collector:
         # Build a query from a keywords or locations file containing pairs lang, keyword or a list of bounding boxes
         self.query = self.build_query()
 
-        from server.models import VirtualTwitterCollection
         self.collection = VirtualTwitterCollection.build_from_collector(self)
         tw_api_account = collector_config[self.account_keys[self.trigger]]
         self.streamer = CollectorStreamer(
@@ -209,26 +210,24 @@ class Collector:
         """
         Resume and launch all collectors for collections that are in ACTIVE status (i.e. they were running before a shutdown)
         """
-        from server.models import StoredCollector, VirtualTwitterCollection
-        collectors_for_active_collections = StoredCollector.query\
+        collectors_active_collections = StoredCollector.query\
             .join(VirtualTwitterCollection,
                   StoredCollector.collection_id == VirtualTwitterCollection.id)\
             .filter(VirtualTwitterCollection.status == VirtualTwitterCollection.ACTIVE_STATUS)
 
-        return (cls.resume(c) for c in collectors_for_active_collections)
+        return (cls.resume(c) for c in collectors_active_collections)
 
     @classmethod
     def resume_inactive(cls):
         """
-        Resume and launch all collectors for collections that are in ACTIVE status (i.e. they were running before a shutdown)
+        Resume and launch all collectors for collections that are in INACTIVE status
         """
-        from server.models import StoredCollector, VirtualTwitterCollection
-        collectors_for_active_collections = StoredCollector.query \
+        collectors_inactive_collections = StoredCollector.query \
             .join(VirtualTwitterCollection,
                   StoredCollector.collection_id == VirtualTwitterCollection.id) \
             .filter(VirtualTwitterCollection.status == VirtualTwitterCollection.INACTIVE_STATUS)
 
-        return (cls.resume(c) for c in collectors_for_active_collections)
+        return (cls.resume(c) for c in collectors_inactive_collections)
 
     @classmethod
     def resume_all(cls):
@@ -236,7 +235,6 @@ class Collector:
 
         :return: Generator of Collector instances resumed based on StoredCollector db items stored in MySQL
         """
-        from server.models import StoredCollector, VirtualTwitterCollection
         stored_collectors = StoredCollector.query\
             .join(VirtualTwitterCollection,
                   StoredCollector.collection_id == VirtualTwitterCollection.id)

@@ -11,9 +11,9 @@ import datetime
 
 from flask_migrate import upgrade
 
-import utils
+from smfrcore.utils import running_in_docker
 
-if not utils.running_in_docker():
+if not running_in_docker():
     current_dir = os.path.dirname(__file__)
     client_src = os.path.join(current_dir, '../../client')
     dst = os.path.join(current_dir, 'client/')
@@ -120,7 +120,7 @@ def check_point_in_nuts(lat, lon):
 def empty_dbs():
     """Reset databases! Warning! Issue the command only in DEV environments"""
     from server.config import RestServerConfiguration
-    from server.models import Tweet
+    from smfrcore.models.cassandramodels import Tweet
     from cassandra.cqlengine.connection import get_session
 
     configuration = RestServerConfiguration()
@@ -151,7 +151,7 @@ def empty_dbs():
 def set_language(collectionid, ttype):
 
     from daemons.utils import safe_langdetect, tweet_normalization_aggressive
-    from server.models import Tweet
+    from smfrcore.models.cassandramodels import Tweet
 
     tweets = Tweet.get_iterator(int(collectionid), ttype)
     for t in tweets:

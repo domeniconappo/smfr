@@ -2,21 +2,26 @@ import logging
 import os
 import re
 import sys
+from _pydecimal import Decimal
 from time import sleep
 
+import numpy as np
 import yaml
 from cassandra.cluster import NoHostAvailable
+from cassandra.cqlengine import connection
+from cassandra.util import OrderedMapSerializedKey
+from flask.json import JSONEncoder
 from kafka import KafkaProducer
 from kafka.errors import NoBrokersAvailable
+from smfrcore.utils import running_in_docker
 
 from sqlalchemy import create_engine
 from sqlalchemy.exc import OperationalError
 from sqlalchemy_utils import database_exists, create_database
 from flask_migrate import Migrate
-from flask_sqlalchemy import SQLAlchemy
-from flask_cqlalchemy import CQLAlchemy
 
-from utils import CustomJSONEncoder
+from smfrcore.models.sqlmodels import sqldb
+from smfrcore.models.cassandramodels import cqldb
 
 UNDER_TESTS = any('nose2' in x for x in sys.argv)
 SERVER_BOOTSTRAP = 'gunicorn' in sys.argv[0]
@@ -24,12 +29,12 @@ LOGGER_FORMAT = '%(asctime)s: Server - <%(name)s>[%(levelname)s] (%(threadName)-
 DATE_FORMAT = '%Y%m%d %H:%M:%S'
 CONFIG_STORE_PATH = os.environ.get('SERVER_PATH_UPLOADS', os.path.join(os.path.dirname(__file__), '../../../uploads/'))
 
-
 logging.getLogger('cassandra').setLevel(logging.ERROR)
 logging.getLogger('kafka').setLevel(logging.ERROR)
 logging.getLogger('connexion').setLevel(logging.ERROR)
 logging.getLogger('swagger_spec_validator').setLevel(logging.ERROR)
 logging.getLogger('urllib3').setLevel(logging.ERROR)
+logging.getLogger('requests_oauthlib').setLevel(logging.ERROR)
 logging.getLogger('elasticsearch').setLevel(logging.ERROR)
 logging.getLogger('fiona').setLevel(logging.ERROR)
 logging.getLogger('Fiona').setLevel(logging.ERROR)
@@ -39,7 +44,7 @@ os.makedirs(CONFIG_STORE_PATH, exist_ok=True)
 
 
 def _read_server_configuration():
-    from utils import running_in_docker
+
     in_docker = running_in_docker()
     config_path = os.path.join(os.path.dirname(__file__), '../config/') if not in_docker else '/configuration/'
     config_file = 'config.yaml.tpl' if not os.path.exists(os.path.join(config_path, 'config.yaml')) else 'config.yaml'
@@ -53,7 +58,28 @@ def _read_server_configuration():
     return config_path, server_config
 
 
+class CustomJSONEncoder(JSONEncoder):
+    """
+
+    """
+
+    def default(self, obj):
+        if isinstance(obj, (np.float32, np.float64, Decimal)):
+            return float(obj)
+        elif isinstance(obj, (np.int32, np.int64)):
+            return int(obj)
+        elif isinstance(obj, OrderedMapSerializedKey):
+            res = {}
+            for k, v in obj.items():
+                res[k] = (v[0], float(v[1]))
+            return res
+        return super().default(obj)
+
+
 class Singleton(type):
+    """
+
+    """
     instances = {}
 
     def __call__(cls, *args, **kwargs):
@@ -77,21 +103,20 @@ class RestServerConfiguration(metaclass=Singleton):
         if not connexion_app:
             if RestServerConfiguration not in self.__class__.instances:
                 from start import app
+            # noinspection PyMethodFirstArgAssignment
             self = self.__class__.instances[RestServerConfiguration]
         else:
-            mysql_db_name = '{}{}'.format(self.server_config['mysql_db_name'], '_test' if UNDER_TESTS else '')
-            mysql_db_host = self.server_config['mysql_db_host']
-            cassandra_keyspace = '{}{}'.format(self.server_config['cassandra_keyspace'], '_test' if UNDER_TESTS else '')
-            self.flask_app = connexion_app.app
-            self.flask_app.json_encoder = CustomJSONEncoder
-            self.flask_app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:example@{}/{}'.format(mysql_db_host, mysql_db_name)
-            self.flask_app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-            self.flask_app.config['CASSANDRA_HOSTS'] = [self.server_config['cassandra_db_host']]
-            self.flask_app.config['CASSANDRA_KEYSPACE'] = cassandra_keyspace
+            self.flask_app = self.set_flaskapp(connexion_app)
+            self.flask_app.app_context().push()
+
             self.geonames_host = self.server_config['geonames_host']
             self.kafka_topic = self.server_config['kafka_topic']
             self.kafka_bootstrap_server = '{}:9092'.format(self.server_config['kafka_host'])
-            self.rest_server_port = self.server_config['rest_server_port']
+            self.restserver_port = self.server_config['restserver_port']
+            self.annotator_port = self.server_config['annotator_port']
+            self.annotator_host = '127.0.0.1' if not running_in_docker() else 'annotator'
+            self.geotagger_port = self.server_config['geotagger_port']
+            self.geotagger_host = '127.0.0.1' if not running_in_docker() else 'geotagger'
             self.min_flood_probability = self.server_config.get('min_flood_probability', 0.59)
             self.producer = None
 
@@ -99,8 +124,10 @@ class RestServerConfiguration(metaclass=Singleton):
             retries = 1
             while not up and retries <= 5:
                 try:
-                    self.db_mysql = SQLAlchemy(self.flask_app, session_options={'expire_on_commit': False})
-                    self.db_cassandra = CQLAlchemy(self.flask_app)
+                    sqldb.init_app(self.flask_app)
+                    cqldb.init_app(self.flask_app)
+                    self.db_mysql = sqldb
+                    self.db_cassandra = cqldb
                     self.migrate = Migrate(self.flask_app, self.db_mysql)
                     if SERVER_BOOTSTRAP and not self.producer:
                         # Flask apps are setup when issuing CLI commands as well.
@@ -114,9 +141,22 @@ class RestServerConfiguration(metaclass=Singleton):
                     up = True
                 finally:
                     if not up and retries >= 5:
-                        self.logger.error('Cannot boot because DB servers are not reachable')
+                        self.logger.error('Cannot boot because DB servers are not reachable! Exiting...')
                         sys.exit(1)
             self.log_configuration()
+
+    def set_flaskapp(self, connexion_app):
+        mysql_db_name = '{}{}'.format(self.server_config['mysql_db_name'], '_test' if UNDER_TESTS else '')
+        mysql_db_host = self.server_config['mysql_db_host']
+        cassandra_keyspace = '{}{}'.format(self.server_config['cassandra_keyspace'], '_test' if UNDER_TESTS else '')
+
+        app = connexion_app.app
+        app.json_encoder = CustomJSONEncoder
+        app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:example@{}/{}'.format(mysql_db_host, mysql_db_name)
+        app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+        app.config['CASSANDRA_HOSTS'] = [self.server_config['cassandra_db_host']]
+        app.config['CASSANDRA_KEYSPACE'] = cassandra_keyspace
+        return app
 
     @property
     def base_path(self):
@@ -127,15 +167,14 @@ class RestServerConfiguration(metaclass=Singleton):
 
         :return:
         """
-        from cassandra.cqlengine.connection import _connections, DEFAULT_CONNECTION
-        session = _connections[DEFAULT_CONNECTION].session
+        session = connection._connections[connection.DEFAULT_CONNECTION].session
         session.execute(
             "CREATE KEYSPACE IF NOT EXISTS %s WITH replication = {'class':'SimpleStrategy','replication_factor':'1'};" %
             self.server_config['cassandra_keyspace']
         )
 
         # do not remove the import below
-        from server.models import Tweet
+        from smfrcore.models.cassandramodels import Tweet
         self.db_cassandra.sync_db()
 
     def init_mysql(self):
@@ -143,9 +182,10 @@ class RestServerConfiguration(metaclass=Singleton):
 
         :return:
         """
-        engine = create_engine(self.flask_app.config['SQLALCHEMY_DATABASE_URI'])
-        if not database_exists(engine.url):
-            create_database(engine.url)
+        with self.flask_app.app_context():
+            engine = create_engine(self.flask_app.config['SQLALCHEMY_DATABASE_URI'])
+            if not database_exists(engine.url):
+                create_database(engine.url)
 
     @property
     def kafka_producer(self):
@@ -157,7 +197,7 @@ class RestServerConfiguration(metaclass=Singleton):
         self.logger.info('======= START LOGGING Configuration =======')
         self.logger.info('+++ Kafka')
         self.logger.info(' - Topic: {}'.format(self.kafka_topic))
-        self.logger.info(' - Bootstrap server: {}'.format(self.kafka_boot_server))
+        self.logger.info(' - Bootstrap server: {}'.format(self.kafka_bootstrap_server))
         self.logger.info('+++ Cassandra')
         self.logger.info(' - Host: {}'.format(self.flask_app.config['CASSANDRA_HOSTS']))
         self.logger.info(' - Keyspace: {}'.format(self.flask_app.config['CASSANDRA_KEYSPACE']))

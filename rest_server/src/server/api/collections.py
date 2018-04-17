@@ -8,15 +8,17 @@ from functools import partial
 
 import connexion
 
-from mordecai import Geoparser
+from smfrcore.models.sqlmodels import StoredCollector, TwitterCollection
+from smfrcore.models.cassandramodels import Tweet
 
 from daemons.collector import Collector
-from daemons.annotator import Annotator
+# from daemons.annotator import Annotator
 from daemons.geotagger import Geotagger
 
 from errors import SMFRDBError, SMFRError
+from server.api.clients import AnnotatorClient
 from server.config import CONFIG_STORE_PATH
-from server.models import StoredCollector, VirtualTwitterCollection, Tweet
+
 from server.api import utils
 
 from client.marshmallow import Collector as CollectorSchema, CollectorResponse, Collection
@@ -76,11 +78,9 @@ def get():
     Get all collections stored in DB (active and not active)
     :return:
     """
-    logger.debug('Get all collections defined in SMFR')
-    stored_collectors = StoredCollector.query.join(VirtualTwitterCollection,
-                                                   StoredCollector.collection_id == VirtualTwitterCollection.id)
+    collectors = StoredCollector.query.join(TwitterCollection, StoredCollector.collection_id == TwitterCollection.id)
     coll_schema = CollectorResponse()
-    res = [{'id': c.id, 'collection': c.collection} for c in stored_collectors]
+    res = [{'id': c.id, 'collection': c.collection} for c in collectors]
     res = coll_schema.dump(res, many=True).data
     return res, 200
 
@@ -162,7 +162,7 @@ def remove_collection(collection_id):
     :param collection_id: int
     :return:
     """
-    collection = VirtualTwitterCollection.query.get(collection_id)
+    collection = TwitterCollection.query.get(collection_id)
     if not collection:
         return {'error': {'description': 'No collector with this id was found'}}, 404
     stored = StoredCollector.query.filter_by(collection_id=collection.id).first()
@@ -184,7 +184,7 @@ def get_collection_details(collection_id):
     :return: A CollectionResponse marshmallow object
     """
     num_samples = 100
-    collection = VirtualTwitterCollection.query.get(collection_id)
+    collection = TwitterCollection.query.get(collection_id)
     if not collection:
         return {'error': {'description': 'No collector with this id was found'}}, 404
     collector = StoredCollector.query.filter_by(collection_id=collection.id).first()
@@ -212,7 +212,7 @@ def get_collection_details(collection_id):
         geotagged_table.append(Tweet.make_table_object(i, t))
 
     res = {'collection': collection_dump, 'collector': collector_dump, 'datatable': samples_table,
-           'running_annotators': Annotator.running, 'running_geotaggers': Geotagger.running,
+           'running_annotators': AnnotatorClient.running(), 'running_geotaggers': Geotagger.running,
            'datatableannotated': annotated_table, 'datatablegeotagged': geotagged_table}
     return res, 200
 
@@ -229,14 +229,8 @@ def geolocalize(collection_id, startdate=None, enddate=None):
 
 
 def annotate(collection_id=None, lang='en', forecast_id=None, startdate=None, enddate=None):
-    from daemons.annotator import Annotator
-    try:
-        annotator = Annotator(collection_id, ttype='collected', lang=lang)
-        annotator.launch()  # launch annotation processing into a separate thread
-    except SMFRError as e:
-        return {'error': {'description': str(e)}}, 400
-    else:
-        return {}, 204
+    res = AnnotatorClient.start(collection_id, lang)
+    return res
 
 
 def start_all():

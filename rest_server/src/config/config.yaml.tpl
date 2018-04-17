@@ -3,7 +3,9 @@ cassandra_keyspace: smfr_persistent
 kafka_topic: persister
 production: false
 base_path: "/1.0"
-rest_server_port: 5555
+restserver_port: 5555
+annotator_port: 5556
+geotagger_port: 5557
 min_flood_probability: 0.6
 logger_level: warning
 nut3_shapefile: 2018_GlobalRegionsWGS84_CUT_WGS84Coord.shp

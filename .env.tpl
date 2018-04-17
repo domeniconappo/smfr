@@ -1,1 +1,2 @@
 SMFR_DATADIR=/DATA/smfr/data
+CASSANDRA_KEYSPACE=smfr_persistent

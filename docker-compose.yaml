@@ -73,13 +73,17 @@ services:
       args:
         http_proxy: ${http_proxy}
         https_proxy: ${https_proxy}
+        cassandra_keyspace: ${CASSANDRA_KEYSPACE}
+        cassandra_host: cassandra
     working_dir: /annotator
+    volumes:
+      - './annotator/src:/annotator'
+      - './annotator/scripts:/scripts'
     ports:
-      - '5555:5555'
+      - '5556:5556'
     environment:
       PYTHONUNBUFFERED: 'true'
     depends_on:
-      - mysql
       - kafka
       - cassandra
 
@@ -107,6 +111,7 @@ services:
       - mysql
       - kafka
       - cassandra
+      - annotator
       - geonames
     volumes:
       - './rest_server/src:/rest_server'

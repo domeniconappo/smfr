@@ -12,5 +12,6 @@ class DBTest(SMFRTestCase):
 
         cls.app = app.test_client()
         cls.db = cls.config.db_mysql
+        assert '_test' in cls.db.engine.url
         cls.db.drop_all()
         cls.db.create_all()

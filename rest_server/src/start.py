@@ -23,8 +23,8 @@ def create_app():
         from daemons.consumer import Consumer
         from daemons.collector import Collector
 
-        with config.flask_app.app_context():
-            config.init_mysql()
+        # with config.flask_app.app_context():
+        config.init_mysql()
         config.init_cassandra()
         Consumer.build_and_start()
         collectors_to_resume = Collector.resume_active()
@@ -42,9 +42,9 @@ def create_app():
                 logger.info("Stopping collector %s", str(_id))
                 running_collector.stop(reanimate=True)
 
-            c = Consumer.running_instance()
-            if c:
-                logger.info("Stopping consumer %s", str(c))
+            running_consumer = Consumer.running_instance()
+            if running_consumer:
+                logger.info("Stopping consumer %s", str(running_consumer))
                 Consumer.running_instance().stop()
 
         signal.signal(signal.SIGINT, stop_active_collectors)

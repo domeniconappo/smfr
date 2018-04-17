@@ -36,6 +36,11 @@ RUN apt-get remove -y libmariadbclient-dev libmariadbd-dev && apt-get install -y
 RUN apt-get autoremove -y
 ENV PATH=/usr/local/mysql/bin/:$PATH
 
+RUN mkdir -p /smfr_core
+COPY ./smfr_core/. /smfr_core/
+WORKDIR /smfr_core
+RUN python3.6 setup.py install
+
 COPY ./rest_server/src/. ./
 COPY ./client/. ./client/
 COPY ./rest_server/scripts/. /scripts/
@@ -43,6 +48,7 @@ COPY ./rest_server/src/config/. /configuration/
 
 RUN ["chmod", "a+x", "/scripts/wait_for_it.sh"]
 
+WORKDIR $INSTALL_PATH
 EXPOSE 5555
 ENTRYPOINT ["/scripts/wait_for_it.sh", "cassandra:9042"]
 CMD ["--", "gunicorn", "-b", "0.0.0.0:5555", "--workers", "1", "--log-level", "warning", "--timeout", "240", "--threads", "4", "--worker-class", "gthread", "--reload", "--access-logfile", "-", "--name", "restserver", "start:app"]
