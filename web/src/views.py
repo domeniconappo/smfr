@@ -2,7 +2,7 @@ import logging
 from flask import render_template, redirect
 from start import app
 
-from client.api_client import ApiLocalClient, SMFRRestException
+from smfrcore.client.api_client import ApiLocalClient, SMFRRestException
 from client.conf import LOGGER_FORMAT, DATE_FORMAT
 from forms import NewCollectorForm
 from utils import MessageClass, add_message

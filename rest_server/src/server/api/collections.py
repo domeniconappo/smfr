@@ -15,7 +15,7 @@ from daemons.collector import Collector
 # from daemons.annotator import Annotator
 from daemons.geotagger import Geotagger
 
-from errors import SMFRDBError, SMFRError
+from smfrcore.errors import SMFRDBError
 from server.api.clients import AnnotatorClient
 from server.config import CONFIG_STORE_PATH
 

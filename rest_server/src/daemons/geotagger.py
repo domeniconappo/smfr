@@ -6,9 +6,9 @@ from mordecai import Geoparser
 import fiona
 from shapely.geometry import Point, Polygon
 
-from errors import SMFRError
+from smfrcore.errors import SMFRError
 from server.config import RestServerConfiguration
-from server.models import Tweet
+from smfrcore.models.cassandramodels import Tweet
 
 
 class Nuts3Finder:
