@@ -72,6 +72,10 @@ class Tweet(cqldb.Model):
     """
     """
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        Tweet.generate_prepared_statements()
+
     @classmethod
     def get_iterator(cls, collection_id, ttype, lang=None):
         results = cls.session.execute(cls.stmt, parameters=[collection_id, ttype])
@@ -79,6 +83,16 @@ class Tweet(cqldb.Model):
             if lang and row.get('lang') != lang:
                 continue
             yield cls(**row)
+
+    @classmethod
+    def generate_prepared_statements(cls):
+        """
+        Generate prepared SQL statements for existing tables
+        """
+        cls.samples_stmt = cls.session.prepare(
+            "SELECT * FROM tweet WHERE collectionid=? AND ttype=? ORDER BY tweetid DESC LIMIT ?")
+        cls.stmt = cls.session.prepare("SELECT * FROM tweet WHERE collectionid=? AND ttype=? ORDER BY tweetid DESC")
+        cls.stmt_with_lang = cls.session.prepare("SELECT * FROM tweet WHERE collectionid=? AND ttype=? AND lang=?")
 
     @classmethod
     def make_table_object(cls, numrow, tweet_dict):
