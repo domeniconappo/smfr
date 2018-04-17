@@ -4,7 +4,7 @@ import datetime
 
 from sqlalchemy_utils import ChoiceType, ScalarListType, JSONType
 
-from server.config import RestServerConfiguration
+from server.config import RestServerConfiguration, SERVER_BOOTSTRAP
 from server.models.utils import cassandra_session_factory
 
 config = RestServerConfiguration()
@@ -153,9 +153,9 @@ class Tweet(cassandra.Model):
 
     session = cassandra_session_factory()
     session.default_fetch_size = 1000
-    samples_stmt = session.prepare("SELECT * FROM tweet WHERE collectionid=? AND ttype=? ORDER BY tweetid DESC LIMIT ?")
-    stmt = session.prepare("SELECT * FROM tweet WHERE collectionid=? AND ttype=? ORDER BY tweetid DESC")
-    stmt_with_lang = session.prepare("SELECT * FROM tweet WHERE collectionid=? AND ttype=? AND lang=?")
+    samples_stmt = None
+    stmt = None
+    stmt_with_lang = None
 
     TYPES = [
         ('annotated', 'Annotated'),
@@ -165,7 +165,7 @@ class Tweet(cassandra.Model):
 
     tweetid = cassandra.columns.Text(primary_key=True, required=True)
     created_at = cassandra.columns.DateTime(index=True, required=True)
-    collectionid = cassandra.columns.Integer(required=True, default=0, partition_key=True, index=True,)
+    collectionid = cassandra.columns.Integer(required=True, default=0, partition_key=True, index=True, )
     ttype = cassandra.columns.Text(required=True, partition_key=True)
 
     nuts3 = cassandra.columns.Text()
@@ -194,13 +194,30 @@ class Tweet(cassandra.Model):
     """
     """
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        Tweet.generate_prepared_statements()
+
+    @classmethod
+    def generate_prepared_statements(cls):
+        """
+        Generate prepared SQL statements for existing tables
+        """
+        cls.samples_stmt = cls.session.prepare(
+            "SELECT * FROM tweet WHERE collectionid=? AND ttype=? ORDER BY tweetid DESC LIMIT ?")
+        cls.stmt = cls.session.prepare("SELECT * FROM tweet WHERE collectionid=? AND ttype=? ORDER BY tweetid DESC")
+        cls.stmt_with_lang = cls.session.prepare("SELECT * FROM tweet WHERE collectionid=? AND ttype=? AND lang=?")
+
     @classmethod
     def get_iterator(cls, collection_id, ttype, lang=None):
-        results = cls.session.execute(cls.stmt, parameters=[collection_id, ttype])
-        for row in results:
-            if lang and row.get('lang') != lang:
-                continue
-            yield cls(**row)
+        if cls.stmt is not None:
+            results = cls.session.execute(cls.stmt, parameters=[collection_id, ttype])
+            for row in results:
+                if lang and row.get('lang') != lang:
+                    continue
+                yield cls(**row)
+        else:
+            return []
 
     @classmethod
     def make_table_object(cls, numrow, tweet_dict):
@@ -219,7 +236,8 @@ class Tweet(cassandra.Model):
 
         obj = {'rownum': numrow, 'Full Text': full_text, 'Tweet id': tweet_dict['tweetid'],
                'original_tweet': tweet_obj.original_tweet_as_string,
-               'Profile': '<img src="{}"/>'.format(tweet_dict['tweet']['user']['profile_image_url']) if tweet_dict['tweet']['user']['profile_image_url'] else '',
+               'Profile': '<img src="{}"/>'.format(tweet_dict['tweet']['user']['profile_image_url']) if
+               tweet_dict['tweet']['user']['profile_image_url'] else '',
                'Name': tweet_dict['tweet']['user']['screen_name'] or '',
                'Type': tweet_dict['ttype'], 'Lang': tweet_dict['lang'] or '-',
                'Annotations': tweet_obj.pretty_annotations,
@@ -230,8 +248,11 @@ class Tweet(cassandra.Model):
 
     @classmethod
     def get_samples(cls, collection_id, ttype, size=10):
-        rows = cls.session.execute(cls.samples_stmt, parameters=[collection_id, ttype, size])
-        return rows
+        if cls.samples_stmt is not None:
+            rows = cls.session.execute(cls.samples_stmt, parameters=[collection_id, ttype, size])
+            return rows
+        else:
+            return []
 
     def validate(self):
         # TODO validate tweet content
@@ -307,7 +328,9 @@ class Tweet(cassandra.Model):
         obj = cls()
         for k, v in values.items():
             if k == 'created_at':
-                v = datetime.datetime.strptime(v.partition('.')[0], '%Y-%m-%dT%H:%M:%S') if v is not None else datetime.datetime.now().replace(microsecond=0)
+                v = datetime.datetime.strptime(v.partition('.')[0],
+                                               '%Y-%m-%dT%H:%M:%S') if v is not None else datetime.datetime.now().replace(
+                    microsecond=0)
             setattr(obj, k, v)
         return obj
 
