@@ -4,3 +4,6 @@
     - Containerization
 - Carlos Castillo [carlos.castillo@upf.edu]
     - Machine learning algorithms, models, training
+- Other contributions
+    - Valerio Lorini [valerio.lorini@ec.europa.eu]
+    - Alessandra Bianchi [alessandra.bianchi@ext.ec.europa.eu]

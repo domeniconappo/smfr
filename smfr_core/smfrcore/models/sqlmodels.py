@@ -50,14 +50,14 @@ class TwitterCollection(SMFRModel):
     runtime = Column(TIMESTAMP, nullable=True)
 
     def __str__(self):
-        return 'VirtualTwitterCollection<{o.id}: {o.forecast_id} - {o.trigger.value}/{o.ctype.value}>'.format(o=self)
+        return 'TwitterCollection<{o.id}: {o.forecast_id} - {o.trigger.value}/{o.ctype.value}>'.format(o=self)
 
     @classmethod
     def build_from_collector(cls, collector):
         """
-        Construct a VirtualTwitterCollection object mapped to a row in MySQL
+        Construct a TwitterCollection object mapped to a row in MySQL
         :param collector: A :class:`daemons.collector.Collector` object
-        :return: A :class:`VirtualTwitterCollection` object
+        :return: A :class:`TwitterCollection` object
         """
         query = collector.query
         collection = cls(
@@ -113,7 +113,7 @@ class StoredCollector(SMFRModel):
 
     id = Column(Integer, primary_key=True, autoincrement=True, nullable=False)
     collection_id = Column(Integer, ForeignKey('virtual_twitter_collection.id'))
-    collection = sqldb.relationship("VirtualTwitterCollection",
+    collection = sqldb.relationship("TwitterCollection",
                                     backref=sqldb.backref("virtual_twitter_collection", uselist=False))
     parameters = Column(JSONType, nullable=False)
 

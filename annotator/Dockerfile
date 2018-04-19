@@ -10,7 +10,6 @@ ENV HDF5_MAJOR_REL       hdf5-1.10
 ENV HDF5_MINOR_REL       hdf5-1.10.2
 ENV HDF5_SRC_URL   http://www.hdfgroup.org/ftp/HDF5/releases
 RUN cd /tmp                                                                                          ; \
-    echo "Getting: ${HDF5_SRC_URL}/${HDF5_MAJOR_REL}/${HDF5_MINOR_REL}/src/${HDF5_MINOR_REL}.tar.gz" ; \
     wget ${HDF5_SRC_URL}/${HDF5_MAJOR_REL}/${HDF5_MINOR_REL}/src/${HDF5_MINOR_REL}.tar.gz            ; \
     tar -xzvf ${HDF5_MINOR_REL}.tar.gz --directory /usr/local/src                                    ; \
     rm ${HDF5_MINOR_REL}.tar.gz                                                                      ; \
@@ -31,19 +30,19 @@ RUN cd /tmp                                                                     
 
 RUN pip3.6 install -U pip && pip3.6 install cassandra-driver flask
 
-RUN mkdir -p $INSTALL_PATH && mkdir -p /scripts && mkdir -p /smfr_core
-COPY ./annotator/src/. ./
-COPY ./annotator/scripts/. /scripts/
+RUN mkdir -p $INSTALL_PATH && mkdir -p /scripts && mkdir -p /smfr_core && mkdir -p /config
+
+COPY ./annotator/requirements.txt $INSTALL_PATH/
+RUN pip3.6 install -r $INSTALL_PATH/requirements.txt
+
 COPY ./smfr_core/. /smfr_core/
-
 WORKDIR /smfr_core
-RUN python3.6 setup.py install
+RUN python3.6 setup.py build && python3.6 setup.py install
 
-WORKDIR $INSTALL_PATH
-COPY ./annotator/requirements.txt ./
-RUN pip3.6 install -r requirements.txt
+COPY ./annotator/src/. $INSTALL_PATH/
+COPY ./annotator/scripts/. /scripts/
 
-
+COPY ./annotator/config/. /config/
 WORKDIR $INSTALL_PATH
 EXPOSE 5556
 

@@ -2,13 +2,16 @@ import math
 import re
 import os
 import logging
+import sys
 import threading
+import time
 
 import ujson as json
 
 import geotext
 import keras
 from kafka import KafkaProducer
+from kafka.errors import NoBrokersAvailable
 from keras.preprocessing.sequence import pad_sequences
 import sklearn
 
@@ -143,11 +146,28 @@ def create_text_for_cnn(tweet, locations):
 class Annotator:
     running = []
     stop_signals = []
-    models_path = os.path.join(os.path.dirname(__file__), '../config/classifier/models/')
+    _lock = threading.RLock()
+    models_path = os.path.join(os.path.dirname(__file__), '../config/')
     models = {'en': '20180319.relevance-cnn-init.en'}
     logger = logging.getLogger(__name__)
+    logger.setLevel(logging.getLevelName(os.environ.get('LOGGING_LEVEL', 'DEBUG')))
     kafka_bootstrap_server = '{}:9092'.format('kafka' if running_in_docker() else '127.0.0.1')
-    producer = KafkaProducer(bootstrap_servers=kafka_bootstrap_server, compression_type='gzip')
+
+    kafkaup = False
+    retries = 5
+    while (not kafkaup) and retries >= 0:
+        try:
+            producer = KafkaProducer(bootstrap_servers=kafka_bootstrap_server, compression_type='gzip')
+        except NoBrokersAvailable:
+            logger.warning('Waiting for Kafka to boot...')
+            time.sleep(5)
+            retries -= 1
+            if retries < 0:
+                sys.exit(1)
+        else:
+            kafkaup = True
+            break
+
     kafka_topic = os.environ.get('KAFKA_TOPIC', 'persister')
 
     @classmethod
@@ -173,7 +193,8 @@ class Annotator:
         for t in tweets:
             if (collection_id, lang) in cls.stop_signals:
                 cls.logger.info('Stopping annotation {} - {}'.format(collection_id, lang))
-                cls.stop_signals.remove((collection_id, lang))
+                with cls._lock:
+                    cls.stop_signals.remove((collection_id, lang))
                 break
             original_json = json.loads(t.tweet)
             text = create_text_for_cnn(original_json, [])
@@ -193,7 +214,8 @@ class Annotator:
 
     @classmethod
     def stop(cls, collection_id, lang):
-        cls.stop_signals.append((collection_id, lang))
+        with cls._lock:
+            cls.stop_signals.append((collection_id, lang))
 
     @classmethod
     def launch_in_background(cls, collection_id, lang):

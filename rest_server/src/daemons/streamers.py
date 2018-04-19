@@ -3,8 +3,9 @@ from datetime import datetime
 
 from twython import TwythonStreamer
 
-from daemons.utils import safe_langdetect, tweet_normalization_aggressive
+from smfrcore.models.sqlmodels import TwitterCollection
 
+from daemons.utils import safe_langdetect, tweet_normalization_aggressive
 from server.config import RestServerConfiguration
 
 
@@ -21,10 +22,7 @@ class CollectorStreamer(TwythonStreamer):
 
         self.kafka_topic = RestServerConfiguration.server_config['kafka_topic']
         self.quiet = quiet
-        # if self.quiet:
-        #     logging.basicConfig(level=logging.ERROR)
-
-        # A VirtualCollection object (it's a row in MySQL DB)
+        # A TwitterCollection object (it's a row in MySQL DB)
         self.collection = collection
 
         # A Kafka Producer
@@ -54,8 +52,8 @@ class CollectorStreamer(TwythonStreamer):
         self.logger.error(status_code)
         self.logger.error(str(data) or 'No data')
         self.disconnect()
-        from server.models import VirtualTwitterCollection
-        self.collection.status = VirtualTwitterCollection.INACTIVE_STATUS
+
+        self.collection.status = TwitterCollection.INACTIVE_STATUS
         self.collection.stopped_at = datetime.utcnow()
         self.collection.save()
 

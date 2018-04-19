@@ -2,7 +2,7 @@ import logging
 import os
 import re
 import sys
-from _pydecimal import Decimal
+from decimal import Decimal
 from time import sleep
 
 import numpy as np
@@ -28,6 +28,7 @@ SERVER_BOOTSTRAP = 'gunicorn' in sys.argv[0]
 LOGGER_FORMAT = '%(asctime)s: Server - <%(name)s>[%(levelname)s] (%(threadName)-10s) %(message)s'
 DATE_FORMAT = '%Y%m%d %H:%M:%S'
 CONFIG_STORE_PATH = os.environ.get('SERVER_PATH_UPLOADS', os.path.join(os.path.dirname(__file__), '../../../uploads/'))
+IN_DOCKER = running_in_docker()
 
 logging.getLogger('cassandra').setLevel(logging.ERROR)
 logging.getLogger('kafka').setLevel(logging.ERROR)
@@ -43,18 +44,13 @@ logging.getLogger('shapely').setLevel(logging.ERROR)
 os.makedirs(CONFIG_STORE_PATH, exist_ok=True)
 
 
-def _read_server_configuration():
+def _read_config_file():
 
-    in_docker = running_in_docker()
-    config_path = os.path.join(os.path.dirname(__file__), '../config/') if not in_docker else '/configuration/'
+    config_path = os.path.join(os.path.dirname(__file__), '../config/') if not IN_DOCKER else '/configuration/'
     config_file = 'config.yaml.tpl' if not os.path.exists(os.path.join(config_path, 'config.yaml')) else 'config.yaml'
 
     with open(os.path.join(config_path, config_file)) as f:
         server_config = yaml.load(f)
-    server_config['mysql_db_host'] = os.environ.get('MYSQL_HOST', '127.0.0.1') if not in_docker else 'mysql'
-    server_config['cassandra_db_host'] = os.environ.get('CASSANDRA_HOST', '127.0.0.1') if not in_docker else 'cassandra'
-    server_config['geonames_host'] = os.environ.get('GEONAMES_HOST', '127.0.0.1') if not in_docker else 'geonames'
-    server_config['kafka_host'] = os.environ.get('KAFKA_ADVERTISED_HOST', '127.0.0.1') if not in_docker else 'kafka'
     return config_path, server_config
 
 
@@ -93,9 +89,26 @@ class RestServerConfiguration(metaclass=Singleton):
     A class whose objects hold SMFR Rest Server Configuration as singletons.
     Constructor accepts a connexion app object.
     """
-    config_dir, server_config = _read_server_configuration()
+    config_dir, server_config = _read_config_file()
+    geonames_host = '127.0.0.1' if not IN_DOCKER else 'geonames'
+    kafka_host = '127.0.0.1' if not IN_DOCKER else 'kafka'
+    mysql_db_host = '127.0.0.1' if not IN_DOCKER else 'mysql'
+    cassandra_host = '127.0.0.1' if not IN_DOCKER else 'cassandra'
+    annotator_host = '127.0.0.1' if not IN_DOCKER else 'annotator'
+    geotagger_host = '127.0.0.1' if not IN_DOCKER else 'geotagger'
+
+    kafka_bootstrap_server = '{}:9092'.format(kafka_host)
+
+    mysql_db_name = '{}{}'.format(server_config['mysql_db_name'], '_test' if UNDER_TESTS else '')
+    restserver_port = server_config['restserver_port']
+    annotator_port = server_config['annotator_port']
+    geotagger_port = server_config['geotagger_port']
+
+    kafka_topic = server_config['kafka_topic']
+
     debug = not UNDER_TESTS and not server_config.get('production', True)
-    logger_level = logging.getLevelName(server_config['logger_level'].upper())
+
+    logger_level = logging.getLevelName(server_config.get('logging_level', os.environ.get('LOGGING_LEVEL', 'DEBUG')).upper())
     logger = logging.getLogger(__name__)
     logger.setLevel(logger_level)
 
@@ -108,16 +121,6 @@ class RestServerConfiguration(metaclass=Singleton):
         else:
             self.flask_app = self.set_flaskapp(connexion_app)
             self.flask_app.app_context().push()
-
-            self.geonames_host = self.server_config['geonames_host']
-            self.kafka_topic = self.server_config['kafka_topic']
-            self.kafka_bootstrap_server = '{}:9092'.format(self.server_config['kafka_host'])
-            self.restserver_port = self.server_config['restserver_port']
-            self.annotator_port = self.server_config['annotator_port']
-            self.annotator_host = '127.0.0.1' if not running_in_docker() else 'annotator'
-            self.geotagger_port = self.server_config['geotagger_port']
-            self.geotagger_host = '127.0.0.1' if not running_in_docker() else 'geotagger'
-            self.min_flood_probability = self.server_config.get('min_flood_probability', 0.59)
             self.producer = None
 
             up = False
@@ -146,15 +149,13 @@ class RestServerConfiguration(metaclass=Singleton):
             self.log_configuration()
 
     def set_flaskapp(self, connexion_app):
-        mysql_db_name = '{}{}'.format(self.server_config['mysql_db_name'], '_test' if UNDER_TESTS else '')
-        mysql_db_host = self.server_config['mysql_db_host']
         cassandra_keyspace = '{}{}'.format(self.server_config['cassandra_keyspace'], '_test' if UNDER_TESTS else '')
 
         app = connexion_app.app
         app.json_encoder = CustomJSONEncoder
-        app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:example@{}/{}'.format(mysql_db_host, mysql_db_name)
+        app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:example@{}/{}'.format(self.mysql_db_host, self.mysql_db_name)
         app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-        app.config['CASSANDRA_HOSTS'] = [self.server_config['cassandra_db_host']]
+        app.config['CASSANDRA_HOSTS'] = [self.cassandra_host]
         app.config['CASSANDRA_KEYSPACE'] = cassandra_keyspace
         return app
 
@@ -204,4 +205,10 @@ class RestServerConfiguration(metaclass=Singleton):
         self.logger.info('+++ MySQL')
         masked = re.sub(r'(?<=:)(.*)(?=@)', '******', self.flask_app.config['SQLALCHEMY_DATABASE_URI'])
         self.logger.info(' - URI: {}'.format(masked))
+        self.logger.info('+++ Annotator microservice')
+        self.logger.info(' - {}:{}'.format(self.annotator_host, self.annotator_port))
+        self.logger.info('+++ Geotagger microservice')
+        self.logger.info(' - {}:{}'.format(self.geotagger_host, self.geotagger_port))
+        self.logger.info('+++ Geonames service (used by Geotagger)')
+        self.logger.info(' - {}'.format(self.geonames_host))
         self.logger.info('======= END LOGGING Configuration =======')

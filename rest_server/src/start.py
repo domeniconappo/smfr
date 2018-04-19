@@ -1,12 +1,17 @@
+import os
 import logging
 import pathlib
 
 import connexion
 
+
 from server.config import RestServerConfiguration, LOGGER_FORMAT, DATE_FORMAT, SERVER_BOOTSTRAP
 
 logging.basicConfig(level=logging.INFO if not RestServerConfiguration.debug else logging.DEBUG,
                     format=LOGGER_FORMAT, datefmt=DATE_FORMAT)
+
+
+os.environ['NO_PROXY'] = ','.join((RestServerConfiguration.annotator_host, RestServerConfiguration.geotagger_host))
 
 
 def create_app():

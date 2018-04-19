@@ -7,5 +7,5 @@ setup(
     description='SMFR Core modules (models, utilities)',
     author='Domenico Nappo',
     author_email='domenico.nappo@ext.ec.europa.eu',
-    install_requires=['requests', 'Flask', 'sqlalchemy_utils', 'flask-sqlalchemy', 'flask-cqlalchemy'],
+    install_requires=['ujson', 'requests', 'Flask', 'sqlalchemy_utils', 'flask-sqlalchemy', 'flask-cqlalchemy'],
 )
