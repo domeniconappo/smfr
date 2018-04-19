@@ -3,16 +3,14 @@
 """
 
 import ujson as json
-import os
 import logging
 
 import requests
 from werkzeug.datastructures import FileStorage
 
-from client.conf import ServerConfiguration, DATE_FORMAT, LOGGER_FORMAT
+from smfrcore.client.conf import ServerConfiguration, DATE_FORMAT, LOGGER_FORMAT
 from smfrcore.errors import SMFRError
 
-os.environ['NO_PROXY'] = ServerConfiguration.restserver_host
 logging.basicConfig(level=logging.INFO if not ServerConfiguration.debug else logging.DEBUG,
                     format=LOGGER_FORMAT, datefmt=DATE_FORMAT)
 logger = logging.getLogger(__name__)

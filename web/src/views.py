@@ -3,7 +3,7 @@ from flask import render_template, redirect
 from start import app
 
 from smfrcore.client.api_client import ApiLocalClient, SMFRRestException
-from client.conf import LOGGER_FORMAT, DATE_FORMAT
+from smfrcore.client.conf import LOGGER_FORMAT, DATE_FORMAT
 from forms import NewCollectorForm
 from utils import MessageClass, add_message
 

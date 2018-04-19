@@ -66,6 +66,7 @@ services:
       MYSQL_ALLOW_EMPTY_PASSWORD: 'yes'
 
   annotator:
+    restart: always
     container_name: annotator
     build:
       context: ./
@@ -80,6 +81,7 @@ services:
     ports:
       - '5556:5556'
     environment:
+      LOGGING_LEVEL: ${LOGGING_LEVEL}
       PYTHONUNBUFFERED: 'true'
       RESTSERVER_PORT: 5555
       RESTSERVER_BASEPATH: '/1.0'
@@ -93,6 +95,7 @@ services:
       - cassandra
 
   geotagger:
+    restart: always
     container_name: geotagger
     build:
       context: ./
@@ -107,6 +110,7 @@ services:
     ports:
       - '5557:5557'
     environment:
+      LOGGING_LEVEL: ${LOGGING_LEVEL}
       PYTHONUNBUFFERED: 'true'
       RESTSERVER_PORT: 5555
       RESTSERVER_BASEPATH: '/1.0'
@@ -116,14 +120,13 @@ services:
       MIN_FLOOD_PROBABILITY: ${MIN_FLOOD_PROBABILITY}
       KAFKA_TOPIC: ${KAFKA_TOPIC}
       CASSANDRA_HOST: cassandra
-      http_proxy: ${http_proxy}
-      https_proxy: ${https_proxy}
     depends_on:
       - kafka
       - cassandra
       - geonames
 
   restserver:
+    restart: always
     container_name: restserver
     build:
       context: ./
@@ -133,13 +136,12 @@ services:
         https_proxy: ${https_proxy}
     working_dir: /rest_server
     environment:
+      LOGGING_LEVEL: ${LOGGING_LEVEL}
       PYTHONUNBUFFERED: 'true'
       FLASK_APP: smfr.py
       SERVER_PATH_UPLOADS: /smfr/uploads/
-      GEONAMES_HOST: geonames
       KERAS_BACKEND: tensorflow
       MYSQL_HOST: mysql
-      CASSANDRA_HOST: cassandra
       CQLENG_ALLOW_SCHEMA_MANAGEMENT: 1
       RESTSERVER_PORT: 5555
       RESTSERVER_BASEPATH: '/1.0'
@@ -159,6 +161,7 @@ services:
       - './uploads:/smfr/uploads/'
 
   web:
+    restart: always
     container_name: web
     build:
       context: ./

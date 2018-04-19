@@ -7,7 +7,6 @@ RUN apk add --no-cache g++ bash python3-dev libev-dev libev
 
 ENV INSTALL_PATH /web
 RUN mkdir -p $INSTALL_PATH && mkdir -p /smfr_core
-#RUN mkdir -p $INSTALL_PATH/client
 
 WORKDIR $INSTALL_PATH
 
@@ -16,11 +15,9 @@ RUN pip install -U pip && pip install -r requirements.txt
 
 COPY ./smfr_core/. /smfr_core/
 WORKDIR /smfr_core
-RUN python3.6 setup.py install
+RUN python3.6 setup.py build && python3.6 setup.py install
 
 COPY ./web/src/. ./
-#COPY ./client/. ./client/
-#COPY ./rest_server/src/config/config.yaml.* ./client/config/
 COPY ./web/scripts/. /scripts/
 RUN chmod a+x -R /scripts/
 

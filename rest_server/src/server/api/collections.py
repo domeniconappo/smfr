@@ -12,16 +12,14 @@ from smfrcore.models.sqlmodels import StoredCollector, TwitterCollection
 from smfrcore.models.cassandramodels import Tweet
 
 from daemons.collector import Collector
-# from daemons.annotator import Annotator
-from daemons.geotagger import Geotagger
 
 from smfrcore.errors import SMFRDBError
-from server.api.clients import AnnotatorClient
+from server.api.clients import AnnotatorClient, GeotaggerClient
 from server.config import CONFIG_STORE_PATH
 
 from server.api import utils
 
-from client.marshmallow import Collector as CollectorSchema, CollectorResponse, Collection
+from smfrcore.client.marshmallow import Collector as CollectorSchema, CollectorResponse, Collection
 
 
 logger = logging.getLogger(__name__)
@@ -212,25 +210,19 @@ def get_collection_details(collection_id):
         geotagged_table.append(Tweet.make_table_object(i, t))
 
     res = {'collection': collection_dump, 'collector': collector_dump, 'datatable': samples_table,
-           'running_annotators': AnnotatorClient.running(), 'running_geotaggers': Geotagger.running,
+           'running_annotators': AnnotatorClient.running(), 'running_geotaggers': GeotaggerClient.running(),
            'datatableannotated': annotated_table, 'datatablegeotagged': geotagged_table}
     return res, 200
 
 
 def geolocalize(collection_id, startdate=None, enddate=None):
-    from daemons.geotagger import Geotagger
-    try:
-        geotagger = Geotagger(collection_id)
-        geotagger.launch()
-    except SMFRError as e:
-        return {'error': {'description': str(e)}}, 400
-    else:
-        return {}, 204
+    res = GeotaggerClient.start(collection_id)
+    return res, 201
 
 
 def annotate(collection_id=None, lang='en', forecast_id=None, startdate=None, enddate=None):
     res = AnnotatorClient.start(collection_id, lang)
-    return res
+    return res, 201
 
 
 def start_all():

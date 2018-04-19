@@ -3,7 +3,7 @@ from tests.db import DBTest
 from smfrcore.models.sqlmodels import TwitterCollection
 
 
-class VirtualTwitterCollectionTest(DBTest):
+class TwitterCollectionTest(DBTest):
 
     def tearDown(self):
         self.addCleanup(TwitterCollection.query.delete)

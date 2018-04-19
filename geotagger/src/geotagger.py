@@ -1,8 +1,11 @@
 import logging
 import os
+import sys
 import threading
+import time
 
 from kafka import KafkaProducer
+from kafka.errors import NoBrokersAvailable
 from mordecai import Geoparser
 import fiona
 from shapely.geometry import Point, Polygon
@@ -17,7 +20,7 @@ class Nuts3Finder:
     """
     logger = logging.getLogger(__name__)
     logger.setLevel(logging.getLevelName(os.environ.get('LOGGING_LEVEL', 'DEBUG')))
-    shapefile_dir = os.path.join(os.path.dirname(__file__), '../config')
+    shapefile_dir = '/config/'
     shapefile_name = os.environ.get('NUTS3_SHAPEFILE', '2018_GlobalRegionsWGS84_CUT_WGS84Coord.shp')
     path = os.path.join(shapefile_dir, shapefile_name)
     polygons = [pol for pol in fiona.open(path)]
@@ -61,15 +64,30 @@ class Geotagger:
     """
 
     """
-
+    IN_DOCKER = running_in_docker()
     running = []
     stop_signals = []
-
+    _lock = threading.RLock()
     logger = logging.getLogger(__name__)
     logger.setLevel(logging.getLevelName(os.environ.get('LOGGING_LEVEL', 'DEBUG')))
+    geonames_host = '127.0.0.1' if not IN_DOCKER else 'geonames'
+    kafka_bootstrap_server = '{}:9092'.format('kafka' if IN_DOCKER else '127.0.0.1')
 
-    kafka_bootstrap_server = '{}:9092'.format('kafka' if running_in_docker() else '127.0.0.1')
-    producer = KafkaProducer(bootstrap_servers=kafka_bootstrap_server, compression_type='gzip')
+    kafkaup = False
+    retries = 5
+    while (not kafkaup) and retries >= 0:
+        try:
+            producer = KafkaProducer(bootstrap_servers=kafka_bootstrap_server, compression_type='gzip')
+        except NoBrokersAvailable:
+            logger.warning('Waiting for Kafka to boot...')
+            time.sleep(5)
+            retries -= 1
+            if retries < 0:
+                sys.exit(1)
+        else:
+            kafkaup = True
+            break
+
     min_flood_prob = float(os.environ.get('MIN_FLOOD_PROBABILITY', 0.59))
     kafka_topic = os.environ.get('KAFKA_TOPIC', 'persister')
 
@@ -85,7 +103,8 @@ class Geotagger:
 
     @classmethod
     def stop(cls, collection_id):
-        cls.stop_signals.append(collection_id)
+        with cls._lock:
+            cls.stop_signals.append(collection_id)
 
     @classmethod
     def start(cls, collection_id):
@@ -95,12 +114,13 @@ class Geotagger:
 
         tweets = Tweet.get_iterator(collection_id, ttype)
 
-        tagger = Geoparser('geonames')
+        tagger = Geoparser(cls.geonames_host)
         errors = 0
         for i, t in enumerate(tweets):
             if collection_id in cls.stop_signals:
                 cls.logger.info('Stopping geotagging process {}'.format(collection_id))
-                cls.stop_signals.remove(collection_id)
+                with cls._lock:
+                    cls.stop_signals.remove(collection_id)
                 break
 
             try:

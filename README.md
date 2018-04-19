@@ -136,8 +136,8 @@ docker exec restserver flask ...
 ### Generate Marshmallow schemas from smfr.yaml Swagger definitions using a Marshmallow custom driver
 
 ```bash
-$ cd rest_server/src
-$ swagger-marshmallow-codegen --driver=../../client/_marshmallow_custom.py:CustomDriver swagger/smfr.yaml > ../../client/marshmallow.py
+$ cd smfr_core
+$ swagger-marshmallow-codegen --driver=./client/_marshmallow_custom.py:CustomDriver swagger/smfr.yaml > ./client/marshmallow.py
 ```
 
 ### Free some disk space from unused 'dockers'

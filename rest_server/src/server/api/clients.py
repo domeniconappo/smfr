@@ -1,3 +1,5 @@
+import logging
+
 import requests
 
 from server.config import RestServerConfiguration
@@ -8,21 +10,51 @@ class AnnotatorClient:
     host = configuration.annotator_host
     port = configuration.annotator_port
     base_uri = 'http://{}:{}'.format(host, port)
+    logger = logging.getLogger(__name__)
 
     @classmethod
     def start(cls, collection_id, lang):
-        url = '{}/{}/{}/{}'.format(cls.base_uri, collection_id, lang, 'start')
+        url = '{}/{}/{}/start'.format(cls.base_uri, collection_id, lang)
+        cls.logger.info(url)
         res = requests.put(url)
+        cls.logger.info(res)
+        cls.logger.info(res.text)
         return res
 
     @classmethod
     def stop(cls, collection_id, lang):
-        url = '{}/{}/{}/{}'.format(cls.base_uri, collection_id, lang, 'stop')
+        url = '{}/{}/{}/stop'.format(cls.base_uri, collection_id, lang)
         res = requests.put(url)
-        return res
+        return res.json()
 
     @classmethod
     def running(cls):
-        url = '{}/{}'.format(cls.base_uri, 'running')
+        url = '{}/running'.format(cls.base_uri)
         res = requests.get(url)
-        return res
+        return res.json()
+
+
+class GeotaggerClient:
+    configuration = RestServerConfiguration()
+    host = configuration.geotagger_host
+    port = configuration.geotagger_port
+    base_uri = 'http://{}:{}'.format(host, port)
+    logger = logging.getLogger(__name__)
+
+    @classmethod
+    def start(cls, collection_id):
+        url = '{}/{}/start'.format(cls.base_uri, collection_id)
+        res = requests.put(url)
+        return res.json()
+
+    @classmethod
+    def stop(cls, collection_id):
+        url = '{}/{}/stop'.format(cls.base_uri, collection_id)
+        res = requests.put(url)
+        return res.json()
+
+    @classmethod
+    def running(cls):
+        url = '{}/running'.format(cls.base_uri)
+        res = requests.get(url)
+        return res.json()

@@ -37,7 +37,7 @@ class Consumer:
         :return:
         """
         consumer = cls()
-        t_cons = threading.Thread(target=consumer.start, name='Consumer', daemon=True)
+        t_cons = threading.Thread(target=consumer.start, name='Consumer {}'.format(id(consumer)), daemon=True)
         t_cons.start()
         assert cls.running_instance() == consumer
 
@@ -97,3 +97,6 @@ class Consumer:
         self.consumer.close()
         self.set_running(inst=None)
         self.logger.info('Consumer connection closed!')
+
+    def  __str__(self):
+        return 'Consumer ({}: {}@{}:{}'.format(id(self), self.topic, self.bootstrap_server, self.group_id)

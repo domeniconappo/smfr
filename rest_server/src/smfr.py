@@ -1,25 +1,13 @@
 """
 CLI scripts for SMFR
 """
-import os
 import sys
-import shutil
 
 import ujson as json
 import click
 import datetime
 
 from flask_migrate import upgrade
-
-from smfrcore.utils import running_in_docker
-
-# if not running_in_docker():
-#     current_dir = os.path.dirname(__file__)
-#     client_src = os.path.join(current_dir, '../../client')
-#     dst = os.path.join(current_dir, 'client/')
-#     if os.path.exists(dst):
-#         shutil.rmtree(dst)
-#     shutil.copytree(client_src, dst)
 
 from smfrcore.client.api_client import ApiLocalClient
 from start import app
@@ -103,17 +91,6 @@ def start_collector(collector):
     client = ApiLocalClient()
     res = client.start_collector(collector)
     click.echo(res)
-
-
-@app.cli.command()
-@click.option('--lat', '-l', required=True)
-@click.option('--lon', '-g', required=True)
-def check_point_in_nuts(lat, lon):
-    """Get NUTS3 code for the point"""
-    from daemons.geotagger import Nuts3Finder
-
-    res = Nuts3Finder.find_nuts3_id(lat, lon)
-    click.echo(res if res else 'No NUTS3 FOUND for point %s' % (str((lat, lon))))
 
 
 @app.cli.command()
