@@ -4,7 +4,7 @@ MAINTAINER Domenico Nappo <domenico.nappo@ext.ec.europa.eu>
 ENV http_proxy ${http_proxy}
 ENV https_proxy ${http_proxy}
 
-ENV INSTALL_PATH /geotagger
+ENV INSTALL_PATH /geocoder
 ENV LANG=C.UTF-8
 ENV NUTS3_SHAPEFILE 2018_GlobalRegionsWGS84_CUT_WGS84Coord.shp
 ENV LOGGING_LEVEL DEBUG
@@ -15,7 +15,7 @@ RUN mkdir -p $INSTALL_PATH && mkdir -p /scripts && mkdir -p /smfr_core
 
 RUN pip3.6 install spacy && python3.6 -m spacy download en_core_web_lg
 
-COPY ./geotagger/requirements.txt ./
+COPY ./geocoder/requirements.txt ./
 RUN pip3.6 install -r requirements.txt
 
 COPY ./smfr_core/. /smfr_core/
@@ -24,9 +24,9 @@ RUN python3.6 setup.py build && python3.6 setup.py install
 
 
 WORKDIR $INSTALL_PATH
-COPY ./geotagger/src/. ./
-COPY ./geotagger/scripts/. /scripts/
-COPY ./geotagger/config/. /config/
+COPY ./geocoder/src/. ./
+COPY ./geocoder/scripts/. /scripts/
+COPY ./geocoder/config/. /config/
 
 EXPOSE 5557
 

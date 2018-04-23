@@ -5,6 +5,6 @@ production: false
 base_path: "/1.0"
 restserver_port: 5555
 annotator_port: 5556
-geotagger_port: 5557
+geocoder_port: 5557
 logging_level: debug
 nut3_shapefile: 2018_GlobalRegionsWGS84_CUT_WGS84Coord.shp

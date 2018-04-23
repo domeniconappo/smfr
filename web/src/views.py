@@ -24,7 +24,7 @@ def list_collections():
     return render_template('list.html', collectors=res), 200
 
 
-@app.route('/running', methods=('GET',))
+@app.route('/_running', methods=('GET',))
 def list_active_collections():
     res = client.list_running_collectors()
     return render_template('list.html', collectors=res), 200
@@ -137,7 +137,7 @@ def geolocalize_collection(collection_id):
         add_message('An error occurred: {}'.format(e), category=MessageClass.ERROR)
         logger.error(str(e))
     else:
-        add_message('Geotagging started for collection', category=MessageClass.SUCCESS)
+        add_message('Geocoding started for collection', category=MessageClass.SUCCESS)
     finally:
         return redirect('/details/{}'.format(collection_id))
 

@@ -11,7 +11,7 @@ logging.basicConfig(level=logging.INFO if not RestServerConfiguration.debug else
                     format=LOGGER_FORMAT, datefmt=DATE_FORMAT)
 
 
-os.environ['NO_PROXY'] = ','.join((RestServerConfiguration.annotator_host, RestServerConfiguration.geotagger_host))
+os.environ['NO_PROXY'] = ','.join((RestServerConfiguration.annotator_host, RestServerConfiguration.geocoder_host))
 
 
 def create_app():
@@ -25,13 +25,12 @@ def create_app():
         # it's not executed for Flask CLI executions
 
         import signal
-        from daemons.consumer import Consumer
+        from daemons.consumer import Persister
         from daemons.collector import Collector
 
-        # with config.flask_app.app_context():
         config.init_mysql()
         config.init_cassandra()
-        Consumer.build_and_start()
+        Persister.build_and_start()
         collectors_to_resume = Collector.resume_active()
         for c in collectors_to_resume:
             logger.warning('Resuming collector %s', str(c))
@@ -42,15 +41,15 @@ def create_app():
 
         def stop_active_collectors(signum, _):
             logger.debug("Received %d", signum)
-            logger.debug("Stopping any running collector...")
+            logger.debug("Stopping any _running collector...")
             for _id, running_collector in Collector.running_instances():
                 logger.info("Stopping collector %s", str(_id))
                 running_collector.stop(reanimate=True)
 
-            running_consumer = Consumer.running_instance()
+            running_consumer = Persister.running_instance()
             if running_consumer:
                 logger.info("Stopping consumer %s", str(running_consumer))
-                Consumer.running_instance().stop()
+                Persister.running_instance().stop()
 
         signal.signal(signal.SIGINT, stop_active_collectors)
         signal.signal(signal.SIGTERM, stop_active_collectors)

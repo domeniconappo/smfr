@@ -10,20 +10,22 @@ from annotator import Annotator
 app = Flask(__name__)
 api = Api(app)
 
-LOGGER_FORMAT = '%(asctime)s: Microservice Annotator - <%(name)s>[%(levelname)s] (%(threadName)-10s) %(message)s'
+LOGGER_FORMAT = '%(asctime)s: Annotator - <%(name)s>[%(levelname)s] (%(threadName)-10s) %(message)s'
 DATE_FORMAT = '%Y%m%d %H:%M:%S'
 
 logging.basicConfig(format=LOGGER_FORMAT, datefmt=DATE_FORMAT)
 
 
 class AnnotatorApi(Resource):
+    """
+    Flask Restful API for Annotator microservice (start/stop methods)
+    """
 
     logger = logging.getLogger(__name__)
     logger.setLevel(logging.getLevelName(os.environ.get('LOGGING_LEVEL', 'DEBUG')))
 
     @marshal_with({'error': fields.Nested({'description': fields.Raw}), 'result': fields.Raw, 'action_performed': fields.Raw})
     def put(self, collection_id, lang, action):
-        self.logger.info('Called %s for %d %s' % (action, collection_id, lang))
         action = action.lower()
         if action not in ('start', 'stop'):
             return {'error': {'description': 'Unknown operation {}'.format(action)}}, 400
@@ -41,12 +43,15 @@ class AnnotatorApi(Resource):
 
 
 class RunningAnnotatorsApi(Resource):
+    """
+    Flask Restful API for Annotator microservice for `/running` endpoint
+    """
 
     logger = logging.getLogger(__name__)
 
     @marshal_with_field(fields.List(fields.List(fields.Raw)))
     def get(self):
-        return Annotator.running, 200
+        return Annotator.running(), 200
 
 
 api.add_resource(AnnotatorApi, '/<int:collection_id>/<string:lang>/<string:action>')

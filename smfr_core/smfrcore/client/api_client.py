@@ -1,9 +1,9 @@
 """
-
+Module for API client to the SMFR Rest Server
 """
 
-import ujson as json
 import logging
+from json import JSONDecodeError
 
 import requests
 from werkzeug.datastructures import FileStorage
@@ -11,15 +11,17 @@ from werkzeug.datastructures import FileStorage
 from smfrcore.client.conf import ServerConfiguration, DATE_FORMAT, LOGGER_FORMAT
 from smfrcore.errors import SMFRError
 
+from .marshmallow import CollectorPayload
+
 logging.basicConfig(level=logging.INFO if not ServerConfiguration.debug else logging.DEBUG,
                     format=LOGGER_FORMAT, datefmt=DATE_FORMAT)
-logger = logging.getLogger(__name__)
 
 
 class ApiLocalClient:
     """
-
+    Simple requests client to SMFR Rest Server
     """
+    logger = logging.getLogger(__name__)
     endpoints = {
         'list_collections': '/collections',
         'new_collection': '/collections',
@@ -57,9 +59,9 @@ class ApiLocalClient:
             res = requests.get(url)
             self._check_response(res)
         except SMFRRestException as e:
-            logger.error('REST API Error %s', str(e))
+            self.logger.error('REST API Error %s', str(e))
         except ConnectionError:
-            logger.error('SMFR REST API server is not listening...')
+            self.logger.error('SMFR REST API server is not listening...')
         else:
             return res.json()
 
@@ -103,28 +105,40 @@ class ApiLocalClient:
             res = requests.post(url, **requests_kwargs)
             self._check_response(res)
         except SMFRRestException as e:
-            logger.error('REST API Error %s', str(e))
+            self.logger.error('REST API Error %s', str(e))
             raise e
         except ConnectionError as e:
-            logger.error('SMFR REST API server is not listening...')
+            self.logger.error('SMFR REST API server is not listening...')
             raise SMFRRestException({'status': 500, 'title': 'SMFR Rest Server is not listening', 'description': url})
         else:
             try:
                 return res.json()
-            except json.decoder.JSONDecodeError:
+            except JSONDecodeError:
                 return {}
 
     def list_collections(self):
+        """
+        Get all collections defined in SMFR
+        :return: collections defined in SMFR
+        """
         return self._get('list_collections')
 
     def list_running_collectors(self):
+        """
+        Get collections that are currently fetching from Twitter Stream
+        :return: running collections
+        """
         return self._get('list_running_collectors')
 
     def list_inactive_collectors(self):
+        """
+        Get inactive collections
+        :return: Collections for whose collector was paused
+        """
         return self._get('list_inactive_collectors')
 
     def new_collection(self, input_payload):
-        from .marshmallow import CollectorPayload
+
         schema = CollectorPayload()
         formdata = schema.load(input_payload).data
 
