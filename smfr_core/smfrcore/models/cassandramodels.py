@@ -90,6 +90,8 @@ class Tweet(cqldb.Model):
 
     @classmethod
     def get_iterator(cls, collection_id, ttype, lang=None):
+        if not hasattr(cls, 'stmt'):
+            cls.generate_prepared_statements()
         results = cls.session.execute(cls.stmt, parameters=[collection_id, ttype])
         for row in results:
             if lang and row.get('lang') != lang:
@@ -137,6 +139,8 @@ class Tweet(cqldb.Model):
 
     @classmethod
     def get_samples(cls, collection_id, ttype, size=10):
+        if not hasattr(cls, 'stmt'):
+            cls.generate_prepared_statements()
         rows = cls.session.execute(cls.samples_stmt, parameters=[collection_id, ttype, size])
         return rows
 

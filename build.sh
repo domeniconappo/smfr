@@ -26,4 +26,7 @@ if [ ! -d ${SMFR_DATADIR}/geonames_index ]; then
     cd -
 fi
 
+docker build ./base_docker/.
+docker tag smfr_base efas/smfr_base
+docker push efas/smfr_base
 docker-compose build
