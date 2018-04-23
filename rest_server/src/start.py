@@ -25,7 +25,7 @@ def create_app():
         # it's not executed for Flask CLI executions
 
         import signal
-        from daemons.consumer import Persister
+        from daemons.persister import Persister
         from daemons.collector import Collector
 
         config.init_mysql()
