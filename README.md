@@ -5,78 +5,41 @@
 ### Docker configuration
 
 - Ensure to have installed Docker and Docker Compose
-- Copy _.env.tpl_ file to _.env_ and edit the last one: `cp .env.tpl .env`
-- Execute `./build.sh` (use `sudo` in case you need it to execute docker-compose commands)
+- Get the source code: `git clone https://github.com/domeniconappo/SMFR.git`
+- CD in SMFR folder and Copy _.env.tpl_ file to _.env_.
+ Edit the last one: `$ cp .env.tpl .env` by setting the following variables
+    - `SMFR_DATADIR=/DATA/smfr/data  # the folder where MySQL, Cassandra and Elasticsearch data folders will be mapped`
+    - `CASSANDRA_KEYSPACE=smfr_persistent  # keyspace name`
+    - `KAFKA_TOPIC=persister  # KAFKA topic name`
+    - `MIN_FLOOD_PROBABILITY=0.59  # minimum flood probability for which the text is considered "positive"`
+    - `LOGGING_LEVEL=DEBUG  # logging level. In production this should be WARNING or ERROR`
+- Execute `./build.sh` (use `sudo` in case you need it to execute docker-compose commands). This step can take several minutes.
 - Execute `docker-compose up -d` or `sudo docker-compose up -d`
-
-- Connect to interface by pointing your browser to http://localhost:8888
+- You will see all services starting:
+    - cassandra
+    - mysql
+    - geonames
+    - annotator
+    - geocoder
+    - restserver
+    - web
+- Wait a couple of minutes for services to get "warm" and connect to each other.
+- Connect to the web interface by pointing your browser to http://localhost:8888
 - REST Server API responds to http://localhost:5555/1.0 calls.
 - Swagger UI is available at http://localhost:5555/1.0/ui
-- Elasticsearch at http://localhost:9200
+- Elasticsearch geonames instance at http://localhost:9200
 
 ### Init and manage Databases
 
 #### Geonames
 
-##### Check that Geonames index is up in ES:
+Check that Geonames index is up in ES:
 Connect to http://localhost:9200/_cat/indices?v
 You should see something like (check __docs.count__ and __store.size__):
 
 ```
 health status index    uuid                   pri rep docs.count docs.deleted store.size pri.store.size
 yellow open   geonames 23vFz20STbudmqktmHVOLg   1   1   11139265            0      2.7gb          2.7gb
-```
-
-Troubleshooting for Elasticsearch
-
-```
-The vm_map_max_count setting should be set permanently in /etc/sysctl.conf:
-
-$ grep vm.max_map_count /etc/sysctl.conf
-vm.max_map_count=262144
-```
-
-Usage of mordecai library from restserver image:
-
-```python
-
-In [1]: import mordecai
-/DATA/virtualenvs/smfr/lib/python3.6/site-packages/h5py/__init__.py:36: FutureWarning: Conversion of the second argument of issubdtype from `float` to `np.floating` is deprecated. In future, it will be treated as `np.float64 == np.dtype(float).type`.
-  from ._conv import register_converters as _register_converters
-Using TensorFlow backend.
-
-In [2]: g=mordecai.Geoparser
-
-In [3]: g=mordecai.Geoparser()
-2018-04-04 16:15:39.099405: I tensorflow/core/platform/cpu_feature_guard.cc:140] Your CPU supports instructions that this TensorFlow binary was not compiled to use: AVX2
-
-In [4]: g.geoparse('Going from Rome to New York')
-Out[4]:
-[{'country_conf': 0.97380584,
-  'country_predicted': 'ITA',
-  'geo': {'admin1': 'Latium',
-   'country_code3': 'ITA',
-   'feature_class': 'P',
-   'feature_code': 'PPLC',
-   'geonameid': '3169070',
-   'lat': '41.89193',
-   'lon': '12.51133',
-   'place_name': 'Rome'},
-  'spans': [{'end': 4, 'start': 0}],
-  'word': 'Rome'},
- {'country_conf': 0.9998105,
-  'country_predicted': 'USA',
-  'geo': {'admin1': 'New York',
-   'country_code3': 'USA',
-   'feature_class': 'P',
-   'feature_code': 'PPL',
-   'geonameid': '5128581',
-   'lat': '40.71427',
-   'lon': '-74.00597',
-   'place_name': 'New York City'},
-  'spans': [{'end': 8, 'start': 0}],
-  'word': 'New York'}]
-
 ```
 
 
@@ -110,7 +73,6 @@ From host, connect to MySQL DB as the docker root user with `mysql -h 127.0.0.1 
 **_Note: If MySQL operations are extremely slow, this can depend on filesystem settings on the Linux OS. Follow this article to fix: http://phpforus.com/how-to-make-mysql-run-fast-with-ext4-on-ubuntu/_**
 
 
-
 #### Cassandra
 
 Table migrations (i.e. new columns) will be automatically added by CQLAlchemy.
@@ -119,33 +81,32 @@ Table migrations (i.e. new columns) will be automatically added by CQLAlchemy.
 From host, use cqlsh on docker container to connect to DB: `docker exec -it cassandra cqlsh`
 
 
-## Interfaces
+### Troubleshooting
 
-Connect to http://localhost:8888/ for SMFR web interface.
+This sections tries to address all kind of issues you can have at system level when you run SMFR suite.
+Useful commands for troubleshooting:
 
-In addition to SMFR web interface, you can use the CLI to manage SMFR services:
+```
+docker-compose logs restserver web geonames
+```
+
+#### Troubleshooting for Geonames Elasticsearch
+If you see an error/warning in Elasticsearch logs, the vm_map_max_count setting should be set permanently in /etc/sysctl.conf:
+
+```
+
+
+$ grep vm.max_map_count /etc/sysctl.conf
+vm.max_map_count=262144
+```
+
+#### Free some disk space from unused 'dockers'
 
 ```bash
-docker exec restserver flask list_collections
-docker exec restserver flask ...
-```
-
-
-## Development guide
-
-### Generate Marshmallow schemas from smfr.yaml Swagger definitions using a Marshmallow custom driver
-
-```bash
-$ cd smfr_core
-$ swagger-marshmallow-codegen --driver=./client/_marshmallow_custom.py:CustomDriver swagger/smfr.yaml > ./client/marshmallow.py
-```
-
-### Free some disk space from unused 'dockers'
-```
 docker images --no-trunc | grep '<none>' | awk '{ print $3 }' | xargs -r docker rmi
 ```
 
-```
+```bash
 docker-compose down --rmi all --remove-orphans
 ```
 
@@ -164,4 +125,37 @@ docker images --no-trunc | grep '<none>' | awk '{ print $3 }' | xargs -r docker 
 find '/var/lib/docker/volumes/' -mindepth 1 -maxdepth 1 -type d | grep -vFf <(
   docker ps -aq | xargs docker inspect | jq -r '.[] | .Mounts | .[] | .Name | select(.)'
 ) | xargs -r rm -fr
+```
+
+
+## Interfaces
+
+Connect to http://localhost:8888/ for SMFR web interface.
+
+In addition to SMFR web interface, you can use the CLI to manage SMFR services:
+
+```bash
+$ docker exec restserver flask  # to see list of available commands
+$ docker exec restserver flask list_collections
+$ docker exec restserver flask ...
+```
+
+
+## Development notes
+
+### Manage DB migrations
+
+Whenever you add new SQLAlchemy models (or add new fields to existing models), you have to create migrations:
+
+```bash
+$ flask db migrate
+$ git commit -am"added migrations"
+$ git push origin <my_branch>
+```
+
+### Generate Marshmallow schemas from smfr.yaml Swagger definitions using a Marshmallow custom driver
+
+```bash
+$ cd smfr_core
+$ swagger-marshmallow-codegen --driver=./smfrcore/client/_marshmallow_custom.py:CustomDriver ../rest_server/swagger/smfr.yaml > ./smfrcore/client/marshmallow.py
 ```

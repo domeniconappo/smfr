@@ -4,7 +4,7 @@ import logging
 from flask import Flask
 from flask_restful import Resource, Api, fields, marshal_with, marshal_with_field
 
-from geotagger import Geocoder
+from geocoder import Geocoder
 
 
 app = Flask(__name__)
