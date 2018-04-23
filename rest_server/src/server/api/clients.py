@@ -59,7 +59,7 @@ class AnnotatorClient:
         :return:
         :rtype: dict
         """
-        url = '{}/_running'.format(cls.base_uri)
+        url = '{}/running'.format(cls.base_uri)
         res = requests.get(url)
         return res.json()
 
@@ -107,6 +107,6 @@ class GeocoderClient:
         :return:
         :rtype:
         """
-        url = '{}/_running'.format(cls.base_uri)
+        url = '{}/running'.format(cls.base_uri)
         res = requests.get(url)
         return res.json()
