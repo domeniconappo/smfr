@@ -223,8 +223,8 @@ def geolocalize(collection_id, startdate=None, enddate=None):
     :param enddate:
     :return:
     """
-    res = GeocoderClient.start(collection_id)
-    return res, 201
+    res, code = GeocoderClient.start(collection_id)
+    return res, code
 
 
 def annotate(collection_id=None, lang='en', forecast_id=None, startdate=None, enddate=None):
@@ -237,8 +237,8 @@ def annotate(collection_id=None, lang='en', forecast_id=None, startdate=None, en
     :param enddate:
     :return:
     """
-    res = AnnotatorClient.start(collection_id, lang)
-    return res, 201
+    res, code = AnnotatorClient.start(collection_id, lang)
+    return res, code
 
 
 def start_all():
