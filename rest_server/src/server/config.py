@@ -95,14 +95,14 @@ class RestServerConfiguration(metaclass=Singleton):
     mysql_db_host = '127.0.0.1' if not IN_DOCKER else 'mysql'
     cassandra_host = '127.0.0.1' if not IN_DOCKER else 'cassandra'
     annotator_host = '127.0.0.1' if not IN_DOCKER else 'annotator'
-    geotagger_host = '127.0.0.1' if not IN_DOCKER else 'geotagger'
+    geocoder_host = '127.0.0.1' if not IN_DOCKER else 'geocoder'
 
     kafka_bootstrap_server = '{}:9092'.format(kafka_host)
 
     mysql_db_name = '{}{}'.format(server_config['mysql_db_name'], '_test' if UNDER_TESTS else '')
     restserver_port = server_config['restserver_port']
     annotator_port = server_config['annotator_port']
-    geotagger_port = server_config['geotagger_port']
+    geocoder_port = server_config['geocoder_port']
 
     kafka_topic = server_config['kafka_topic']
 
@@ -120,6 +120,7 @@ class RestServerConfiguration(metaclass=Singleton):
             self = self.__class__.instances[RestServerConfiguration]
         else:
             self.flask_app = self.set_flaskapp(connexion_app)
+            self.logger.debug('Pushing application context')
             self.flask_app.app_context().push()
             self.producer = None
 
@@ -207,8 +208,8 @@ class RestServerConfiguration(metaclass=Singleton):
         self.logger.info(' - URI: {}'.format(masked))
         self.logger.info('+++ Annotator microservice')
         self.logger.info(' - {}:{}'.format(self.annotator_host, self.annotator_port))
-        self.logger.info('+++ Geotagger microservice')
-        self.logger.info(' - {}:{}'.format(self.geotagger_host, self.geotagger_port))
-        self.logger.info('+++ Geonames service (used by Geotagger)')
+        self.logger.info('+++ Geocoder microservice')
+        self.logger.info(' - {}:{}'.format(self.geocoder_host, self.geocoder_port))
+        self.logger.info('+++ Geonames service (used by Geocoder/mordecai)')
         self.logger.info(' - {}'.format(self.geonames_host))
         self.logger.info('======= END LOGGING Configuration =======')

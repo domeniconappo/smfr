@@ -1,6 +1,7 @@
 import logging
 from datetime import datetime
 
+from smfrcore.models.cassandramodels import Tweet
 from twython import TwythonStreamer
 
 from smfrcore.models.sqlmodels import TwitterCollection
@@ -40,7 +41,6 @@ class CollectorStreamer(TwythonStreamer):
             lang = safe_langdetect(tweet_normalization_aggressive(data['text']))
             languages = self.collection.languages
             if lang in languages:
-                from server.models import Tweet
                 data['lang'] = lang
                 tweet = Tweet.build_from_tweet(self.collection, data)
                 # the tweet is sent immediately to kafka queue

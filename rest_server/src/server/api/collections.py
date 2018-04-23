@@ -14,7 +14,7 @@ from smfrcore.models.cassandramodels import Tweet
 from daemons.collector import Collector
 
 from smfrcore.errors import SMFRDBError
-from server.api.clients import AnnotatorClient, GeotaggerClient
+from server.api.clients import AnnotatorClient, GeocoderClient
 from server.config import CONFIG_STORE_PATH
 
 from server.api import utils
@@ -86,7 +86,7 @@ def get():
 def get_running_collectors():
     """
     GET /collections/active
-    Get running collections/collectors
+    Get _running collections/collectors
     :return:
     """
     out_schema = CollectorResponse()
@@ -99,7 +99,7 @@ def get_running_collectors():
 def get_stopped_collectors():
     """
     GET /collections/inactive
-    Get running collections/collectors
+    Get _running collections/collectors
     :return:
     """
     out_schema = CollectorResponse()
@@ -112,7 +112,7 @@ def get_stopped_collectors():
 def stop_collector(collector_id):
     """
     POST /collections/stop/{collector_id}
-    Stop an existing and running collection
+    Stop an existing and _running collection
     :param collector_id:
     :return:
     """
@@ -125,7 +125,7 @@ def stop_collector(collector_id):
             collector.stop()
             return {}, 204
 
-    # A collection is Active but its collector is not running. Update its status only.
+    # A collection is Active but its collector is not _running. Update its status only.
     try:
         collector = Collector.resume(collector_id)
         collector.collection.deactivate()
@@ -210,17 +210,33 @@ def get_collection_details(collection_id):
         geotagged_table.append(Tweet.make_table_object(i, t))
 
     res = {'collection': collection_dump, 'collector': collector_dump, 'datatable': samples_table,
-           'running_annotators': AnnotatorClient.running(), 'running_geotaggers': GeotaggerClient.running(),
+           'running_annotators': AnnotatorClient.running(), 'running_geotaggers': GeocoderClient.running(),
            'datatableannotated': annotated_table, 'datatablegeotagged': geotagged_table}
     return res, 200
 
 
 def geolocalize(collection_id, startdate=None, enddate=None):
-    res = GeotaggerClient.start(collection_id)
+    """
+
+    :param collection_id:
+    :param startdate:
+    :param enddate:
+    :return:
+    """
+    res = GeocoderClient.start(collection_id)
     return res, 201
 
 
 def annotate(collection_id=None, lang='en', forecast_id=None, startdate=None, enddate=None):
+    """
+
+    :param collection_id:
+    :param lang:
+    :param forecast_id:
+    :param startdate:
+    :param enddate:
+    :return:
+    """
     res = AnnotatorClient.start(collection_id, lang)
     return res, 201
 
@@ -240,7 +256,7 @@ def start_all():
 def stop_all():
     """
     POST /collections/stopall
-    Stop all running collections
+    Stop all _running collections
     :return:
     """
 

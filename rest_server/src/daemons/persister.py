@@ -5,10 +5,16 @@ from cassandra.cqlengine import ValidationError
 from kafka import KafkaConsumer
 from kafka.errors import CommitFailedError
 
+from smfrcore.models.cassandramodels import Tweet
+
 from server.config import RestServerConfiguration
 
 
-class Consumer:
+class Persister:
+    """
+    Persister component to save Tweet messages in Cassandra.
+    It listens to the Kafka queue, build a Tweet object from messages and save it in Cassandra.
+    """
     config = RestServerConfiguration()
     _running_instance = None
     _lock = threading.RLock()
@@ -19,27 +25,30 @@ class Consumer:
     @classmethod
     def running_instance(cls):
         """
-
-        :return:
+        The _running Persister object
+        :return: Persister instance
         """
         with cls._lock:
             return cls._running_instance
 
     @classmethod
     def set_running(cls, inst=None):
+        """
+        Set _running instance
+        :param inst: Persister object
+        """
         with cls._lock:
             cls._running_instance = inst
 
     @classmethod
     def build_and_start(cls):
         """
-
-        :return:
+        Instantiate a Persister object and call Persister.start() method in another thread
         """
-        consumer = cls()
-        t_cons = threading.Thread(target=consumer.start, name='Consumer {}'.format(id(consumer)), daemon=True)
+        persister = cls()
+        t_cons = threading.Thread(target=persister.start, name='Consumer {}'.format(id(persister)), daemon=True)
         t_cons.start()
-        assert cls.running_instance() == consumer
+        assert cls.running_instance() == persister
 
     def __init__(self, group_id='SMFR', auto_offset_reset='earliest'):
         self.topic = self.config.kafka_topic
@@ -52,17 +61,15 @@ class Consumer:
 
     def start(self):
         """
-
-        :return:
+        Main method that iterate over messages coming from Kafka queue, build a Tweet object and save it in Cassandra
         """
         with self._lock:
             if self._running_instance:
                 self._running_instance.stop()
-            self.logger.debug('Setting running instance to %s', str(self))
+            self.logger.debug('Setting _running instance to %s', str(self))
             self.set_running(inst=self)
 
         self.logger.info('Consumer started %s', str(self))
-        from smfrcore.models.cassandramodels import Tweet
 
         try:
             for i, msg in enumerate(self.consumer):
@@ -81,7 +88,7 @@ class Consumer:
                     self.logger.error(type(e))
                     self.logger.error(msg[:100])
                     self.logger.error(e)
-        except CommitFailedError as e:
+        except CommitFailedError:
             self.logger.error("Consumer was disconnected during I/O operations. Exited.")
         except ValueError:
             # tipically an I/O operation on closed epoll object
@@ -94,9 +101,12 @@ class Consumer:
             self.stop()
 
     def stop(self):
+        """
+        Stop processing messages from queue, close KafkaConsumer and unset _running instance.
+        """
         self.consumer.close()
         self.set_running(inst=None)
         self.logger.info('Consumer connection closed!')
 
-    def  __str__(self):
+    def __str__(self):
         return 'Consumer ({}: {}@{}:{}'.format(id(self), self.topic, self.bootstrap_server, self.group_id)

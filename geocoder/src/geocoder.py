@@ -14,9 +14,14 @@ from smfrcore.models.cassandramodels import Tweet
 from smfrcore.utils import running_in_docker
 
 
+IN_DOCKER = running_in_docker()
+
+
 class Nuts3Finder:
     """
-
+    Simple class with a single method that returns NUTS3 id for a Point(Long, Lat).
+    Warning: the method does not return NUTS3 code but the NUTS3 id as it's stored in EFAS NUTS3 table.
+    TODO: Evaluate if it's better to refactor to a function instead of keeping this onemethod static class
     """
     logger = logging.getLogger(__name__)
     logger.setLevel(logging.getLevelName(os.environ.get('LOGGING_LEVEL', 'DEBUG')))
@@ -28,10 +33,10 @@ class Nuts3Finder:
     @classmethod
     def find_nuts3_id(cls, lat, lon):
         """
-
-        :param lat:
-        :param lon:
-        :return:
+        Check if a point (lat, lon) is in a NUTS3 region and returns its id. None otherwise.
+        :param lat: float Latitude of a point
+        :param lon: float Longituted of a point
+        :return: int NUTS3 id as it's stored in EFAS table
         """
         lat, lon = float(lat), float(lon)
         point = Point(lon, lat)
@@ -60,12 +65,12 @@ class Nuts3Finder:
             return None
 
 
-class Geotagger:
+class Geocoder:
+    """
+    Class implementing the Geocoder component
     """
 
-    """
-    IN_DOCKER = running_in_docker()
-    running = []
+    _running = []
     stop_signals = []
     _lock = threading.RLock()
     logger = logging.getLogger(__name__)
@@ -93,24 +98,57 @@ class Geotagger:
 
     @classmethod
     def is_running_for(cls, collection_id):
-        return collection_id in cls.running
+        """
+        Return True if Geocoding is running for collection_id
+        :param collection_id: MySQL id of collection as it's stored in virtual_twitter_collection table
+        :type collection_id: int
+        :return: True if Geocoding is active for the given collection, False otherwise
+        :rtype: bool
+        """
+        return collection_id in cls._running
+
+    @classmethod
+    def running(cls):
+        """
+        Return the list of current collection ids under geocoding
+        :return: Running Geocoding processes
+        :rtype: list
+        """
+        return cls._running
 
     @classmethod
     def launch_in_background(cls, collection_id):
+        """
+        Start a new thread with main geocoding method `start` as target method
+        :param collection_id: MySQL id of collection as it's stored in virtual_twitter_collection table
+        :type collection_id: int
+        """
         t = threading.Thread(target=cls.start, args=(collection_id,),
-                             name='Geotagger collection id: {}'.format(collection_id))
+                             name='Geocoder collection id: {}'.format(collection_id))
         t.start()
 
     @classmethod
     def stop(cls, collection_id):
+        """
+        Send a stop signal for a running Geocoding process
+        :param collection_id: MySQL id of collection as it's stored in virtual_twitter_collection table
+        :type collection_id: int
+        """
         with cls._lock:
+            if not cls.is_running_for(collection_id):
+                return
             cls.stop_signals.append(collection_id)
 
     @classmethod
     def start(cls, collection_id):
+        """
+        Main Geocoder method. It's usually executed in a background thread.
+        :param collection_id: MySQL id of collection as it's stored in virtual_twitter_collection table
+        :type collection_id: int
+        """
         ttype = 'annotated'
         cls.logger.info('Starting Geotagging collection: {}'.format(collection_id))
-        cls.running.append(collection_id)
+        cls._running.append(collection_id)
 
         tweets = Tweet.get_iterator(collection_id, ttype)
 
@@ -158,6 +196,6 @@ class Geotagger:
                     tagger.query_geonames.cache_clear()
                     tagger.query_geonames_country.cache_clear()
 
-        # remove from `running` list
-        cls.running.remove(collection_id)
+        # remove from `_running` list
+        cls._running.remove(collection_id)
         cls.logger.info('Geotagging process terminated! Collection: {}'.format(collection_id))

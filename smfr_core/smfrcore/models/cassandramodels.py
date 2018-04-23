@@ -1,3 +1,7 @@
+"""
+Module for CQLAlchemy models to map to Cassandra keyspaces
+"""
+
 import os
 import time
 import datetime
@@ -26,14 +30,12 @@ def cassandra_session_factory():
 
 class Tweet(cqldb.Model):
     """
+    Object representing the `tweet` column family in Cassandra
     """
     __keyspace__ = _keyspace
 
     session = cassandra_session_factory()
     session.default_fetch_size = 1000
-    samples_stmt = session.prepare("SELECT * FROM tweet WHERE collectionid=? AND ttype=? ORDER BY tweetid DESC LIMIT ?")
-    stmt = session.prepare("SELECT * FROM tweet WHERE collectionid=? AND ttype=? ORDER BY tweetid DESC")
-    stmt_with_lang = session.prepare("SELECT * FROM tweet WHERE collectionid=? AND ttype=? AND lang=?")
 
     TYPES = [
         ('annotated', 'Annotated'),
@@ -42,8 +44,14 @@ class Tweet(cqldb.Model):
     ]
 
     tweetid = cqldb.columns.Text(primary_key=True, required=True)
+    """
+    Id of the tweet
+    """
     created_at = cqldb.columns.DateTime(index=True, required=True)
     collectionid = cqldb.columns.Integer(required=True, default=0, partition_key=True, index=True, )
+    """
+    Relation to collection id in MySQL virtual_twitter_collection table
+    """
     ttype = cqldb.columns.Text(required=True, partition_key=True)
 
     nuts3 = cqldb.columns.Text()
@@ -56,6 +64,9 @@ class Tweet(cqldb.Model):
             cqldb.columns.Decimal(9, 6)
         )
     )
+    """
+    Map column for annotations
+    """
 
     tweet = cqldb.columns.Text(required=True)
     """
@@ -70,6 +81,7 @@ class Tweet(cqldb.Model):
 
     lang = cqldb.columns.Text(index=True)
     """
+    Language of the tweet
     """
 
     def __init__(self, *args, **kwargs):

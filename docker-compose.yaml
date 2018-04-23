@@ -94,16 +94,16 @@ services:
       - kafka
       - cassandra
 
-  geotagger:
+  geocoder:
     restart: always
-    container_name: geotagger
+    container_name: geocoder
     build:
       context: ./
-      dockerfile: geotagger/Dockerfile
+      dockerfile: geocoder/Dockerfile
       args:
         http_proxy: ${http_proxy}
         https_proxy: ${https_proxy}
-    working_dir: /geotagger
+    working_dir: /geocoder
     volumes:
       - './annotator/src:/annotator'
       - './annotator/scripts:/scripts'
@@ -154,7 +154,7 @@ services:
       - kafka
       - cassandra
       - annotator
-      - geotagger
+      - geocoder
     volumes:
       - './rest_server/src:/rest_server'
       - './rest_server/scripts:/scripts'

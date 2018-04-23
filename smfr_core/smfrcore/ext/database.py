@@ -1,3 +1,8 @@
+"""
+This module serves to decouple SQLAlchemy definitions from a specified Flask app,
+in order to reuse models in other Flask apps or even outside a Flask context
+"""
+
 from flask_sqlalchemy import SQLAlchemy as SQLAlchemyBase
 
 from ..models.base import set_query_property, BaseQuery, SMFRModel
@@ -9,7 +14,7 @@ class SQLAlchemy(SQLAlchemyBase):
                  metadata=None, query_class=BaseQuery, model_class=SMFRModel):
         self.Model = SMFRModel
 
-        super().__init__(app, use_native_unicode, session_options)
+        super().__init__(app, use_native_unicode, session_options, metadata, query_class, model_class)
 
     def make_declarative_base(self, model, metadata=None):
         """Creates or extends the declarative base."""

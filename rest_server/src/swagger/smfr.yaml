@@ -56,7 +56,7 @@ paths:
     get:
       tags: [collections]
       operationId: server.api.collections.get_running_collectors
-      summary: Get running collectors
+      summary: Get _running collectors
       responses:
         200:
           description: Return collectors
@@ -103,7 +103,7 @@ paths:
           type: integer
           required: true
           description: Numeric ID of the stored collector to start.
-      summary: Stop a previously defined and running collector
+      summary: Stop a previously defined and _running collector
       responses:
         204:
           description: The collector was stopped successfully.

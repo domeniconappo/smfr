@@ -144,14 +144,17 @@ def create_text_for_cnn(tweet, locations):
 
 
 class Annotator:
-    running = []
-    stop_signals = []
+    """
+    Annotator component implementation
+    """
+    _running = []
+    _stop_signals = []
     _lock = threading.RLock()
-    models_path = os.path.join(os.path.dirname(__file__), '../config/')
-    models = {'en': '20180319.relevance-cnn-init.en'}
     logger = logging.getLogger(__name__)
     logger.setLevel(logging.getLevelName(os.environ.get('LOGGING_LEVEL', 'DEBUG')))
     kafka_bootstrap_server = '{}:9092'.format('kafka' if running_in_docker() else '127.0.0.1')
+    models_path = os.path.join(os.path.dirname(__file__), '../config/')
+    models = {'en': '20180319.relevance-cnn-init.en'}
 
     kafkaup = False
     retries = 5
@@ -171,11 +174,31 @@ class Annotator:
     kafka_topic = os.environ.get('KAFKA_TOPIC', 'persister')
 
     @classmethod
+    def running(cls):
+        """
+        Return current Annotation processes as list of (collection, lang) tuples
+        :return: List of couples (collection_id, lang) for current Annotating processes.
+        :rtype: list
+        """
+        return cls._running
+
+    @classmethod
     def is_running_for(cls, collection_id, lang):
-        return (collection_id, lang) in cls.running
+        """
+        Return True if annotation is _running for (collection_id, lang) couple. False otherwise
+        :param collection_id: int Collection Id as it's stored in MySQL virtual_twitter_collection table
+        :param lang: str two characters string denoting a language (e.g. 'en')
+        :return: bool True if annotation is _running for (collection_id, lang) couple
+        """
+        return (collection_id, lang) in cls._running
 
     @classmethod
     def start(cls, collection_id, lang):
+        """
+        Annotation process for a collection using a specified language model.
+        :param collection_id: int Collection Id as it's stored in MySQL virtual_twitter_collection table
+        :param lang: str two characters string denoting a language (e.g. 'en')
+        """
         ttype = 'collected'
         tokenizer_path = os.path.join(cls.models_path, cls.models[lang] + '.tokenizer')
         tokenizer = sklearn.externals.joblib.load(tokenizer_path)
@@ -185,16 +208,16 @@ class Annotator:
 
         cls.logger.info('Starting Annotation collection: {} {}'.format(collection_id, lang))
 
-        # add tuple (collection_id, language) to `running` list
-        cls.running.append((collection_id, lang))
+        # add tuple (collection_id, language) to `_running` list
+        cls._running.append((collection_id, lang))
 
         tweets = Tweet.get_iterator(collection_id, ttype, lang=lang)
 
         for t in tweets:
-            if (collection_id, lang) in cls.stop_signals:
+            if (collection_id, lang) in cls._stop_signals:
                 cls.logger.info('Stopping annotation {} - {}'.format(collection_id, lang))
                 with cls._lock:
-                    cls.stop_signals.remove((collection_id, lang))
+                    cls._stop_signals.remove((collection_id, lang))
                 break
             original_json = json.loads(t.tweet)
             text = create_text_for_cnn(original_json, [])
@@ -208,16 +231,28 @@ class Annotator:
             cls.logger.info('Sending annotated tweet to queue: {}'.format(message[:80]))
             cls.producer.send(cls.kafka_topic, message)
 
-        # remove from `running` list
-        cls.running.remove((collection_id, lang))
+        # remove from `_running` list
+        cls._running.remove((collection_id, lang))
         cls.logger.info('Annotation process terminated! Collection: {} for "{}" tweets'.format(collection_id, ttype))
 
     @classmethod
     def stop(cls, collection_id, lang):
+        """
+        Stop signal for a _running annotation process. If the Annotator is not _running, operation is ignored.
+        :param collection_id: int Collection Id as it's stored in MySQL virtual_twitter_collection table
+        :param lang: str two characters string denoting a language (e.g. 'en')
+        """
         with cls._lock:
-            cls.stop_signals.append((collection_id, lang))
+            if not cls.is_running_for(collection_id, lang):
+                return
+            cls._stop_signals.append((collection_id, lang))
 
     @classmethod
     def launch_in_background(cls, collection_id, lang):
+        """
+        Start Annotator for a collection in background (i.e. in a different thread)
+        :param collection_id: int Collection Id as it's stored in MySQL virtual_twitter_collection table
+        :param lang: str two characters string denoting a language (e.g. 'en')
+        """
         t = threading.Thread(target=cls.start, args=(collection_id, lang), name='{} {}'.format(collection_id, lang))
         t.start()

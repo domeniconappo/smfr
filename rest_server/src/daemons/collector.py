@@ -17,6 +17,9 @@ from smfrcore.errors import SMFRDBError
 
 
 class Collector:
+    """
+
+    """
     trigger = None
     account_keys = {'background': 'twitterbg',
                     'on-demand': 'twitterod',
@@ -120,6 +123,7 @@ class Collector:
         """
         filter_args = {k: ','.join(v) for k, v in self.query.items() if k != 'languages' and self.query[k]}
         self.logger.info('Starting twython filtering with %s', str(filter_args))
+        self.server_conf.flask_app.app_context().push()
         self.collection.activate()
 
         try:
@@ -207,7 +211,7 @@ class Collector:
     @classmethod
     def resume_active(cls):
         """
-        Resume and launch all collectors for collections that are in ACTIVE status (i.e. they were running before a shutdown)
+        Resume and launch all collectors for collections that are in ACTIVE status (i.e. they were _running before a shutdown)
         """
         collectors_active_collections = StoredCollector.query\
             .join(TwitterCollection,
