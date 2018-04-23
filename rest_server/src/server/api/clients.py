@@ -9,7 +9,30 @@ import requests
 from server.config import RestServerConfiguration
 
 
-class AnnotatorClient:
+class MicroserviceClient:
+
+    base_uri = None
+
+    @classmethod
+    def _check_response(cls, res, code):
+        if code < 400:
+            return res
+        return res, code
+
+    @classmethod
+    def running(cls):
+        """
+
+        :return:
+        :rtype:
+        """
+        url = '{}/running'.format(cls.base_uri)
+        res = requests.get(url)
+        res, status_code = res.json(), res.status_code
+        return cls._check_response(res, status_code)
+
+
+class AnnotatorClient(MicroserviceClient):
     """
 
     """
@@ -31,11 +54,9 @@ class AnnotatorClient:
         :rtype: dict
         """
         url = '{}/{}/{}/start'.format(cls.base_uri, collection_id, lang)
-        cls.logger.info(url)
         res = requests.put(url)
-        cls.logger.info(res)
-        cls.logger.info(res.text)
-        return res
+        res, status_code = res.json(), res.status_code
+        return cls._check_response(res, status_code)
 
     @classmethod
     def stop(cls, collection_id, lang):
@@ -50,21 +71,11 @@ class AnnotatorClient:
         """
         url = '{}/{}/{}/stop'.format(cls.base_uri, collection_id, lang)
         res = requests.put(url)
-        return res.json()
-
-    @classmethod
-    def running(cls):
-        """
-
-        :return:
-        :rtype: dict
-        """
-        url = '{}/running'.format(cls.base_uri)
-        res = requests.get(url)
-        return res.json()
+        res, status_code = res.json(), res.status_code
+        return cls._check_response(res, status_code)
 
 
-class GeocoderClient:
+class GeocoderClient(MicroserviceClient):
     """
 
     """
@@ -85,7 +96,8 @@ class GeocoderClient:
         """
         url = '{}/{}/start'.format(cls.base_uri, collection_id)
         res = requests.put(url)
-        return res.json()
+        res, status_code = res.json(), res.status_code
+        return cls._check_response(res, status_code)
 
     @classmethod
     def stop(cls, collection_id):
@@ -98,15 +110,5 @@ class GeocoderClient:
         """
         url = '{}/{}/stop'.format(cls.base_uri, collection_id)
         res = requests.put(url)
-        return res.json()
-
-    @classmethod
-    def running(cls):
-        """
-
-        :return:
-        :rtype:
-        """
-        url = '{}/running'.format(cls.base_uri)
-        res = requests.get(url)
-        return res.json()
+        res, status_code = res.json(), res.status_code
+        return cls._check_response(res, status_code)
