@@ -46,7 +46,7 @@ class Persister:
         Instantiate a Persister object and call Persister.start() method in another thread
         """
         persister = cls()
-        t_cons = threading.Thread(target=persister.start, name='Consumer {}'.format(id(persister)), daemon=True)
+        t_cons = threading.Thread(target=persister.start, name='Persister {}'.format(id(persister)), daemon=True)
         t_cons.start()
         assert cls.running_instance() == persister
 
@@ -69,7 +69,7 @@ class Persister:
             self.logger.debug('Setting _running instance to %s', str(self))
             self.set_running(inst=self)
 
-        self.logger.info('Consumer started %s', str(self))
+        self.logger.info('Persister started %s', str(self))
 
         try:
             for i, msg in enumerate(self.consumer):
@@ -78,23 +78,20 @@ class Persister:
                     self.logger.debug('Reading from queue: %s', msg[:120])
                     tweet = Tweet.build_from_kafka_message(msg)
                     tweet.save()
-                except ValidationError as e:
+                except (ValidationError, ValueError, TypeError) as e:
                     self.logger.error(msg[:100])
                     self.logger.error('Poison message for Cassandra: %s', str(e))
-                except (ValueError, TypeError) as e:
-                    self.logger.error(msg[:100])
-                    self.logger.error(e)
                 except Exception as e:
                     self.logger.error(type(e))
                     self.logger.error(msg[:100])
                     self.logger.error(e)
         except CommitFailedError:
-            self.logger.error("Consumer was disconnected during I/O operations. Exited.")
+            self.logger.error('Persister was disconnected during I/O operations. Exited.')
         except ValueError:
             # tipically an I/O operation on closed epoll object
             # as the consumer can be disconnected in another thread (see signal handling in start.py)
             if self.consumer._closed:
-                self.logger.info("Consumer was disconnected during I/O operations. Exited.")
+                self.logger.info('Persister was disconnected during I/O operations. Exited.')
             elif self.running_instance() and not self.consumer._closed:
                 self.running_instance().stop()
         except KeyboardInterrupt:
@@ -106,7 +103,7 @@ class Persister:
         """
         self.consumer.close()
         self.set_running(inst=None)
-        self.logger.info('Consumer connection closed!')
+        self.logger.info('Persister connection closed!')
 
     def __str__(self):
         return 'Consumer ({}: {}@{}:{}'.format(id(self), self.topic, self.bootstrap_server, self.group_id)

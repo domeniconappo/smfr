@@ -57,3 +57,4 @@ class RunningGeotaggersApi(Resource):
 
 api.add_resource(GeocoderApi, '/<int:collection_id>/<string:action>')
 api.add_resource(RunningGeotaggersApi, '/running')
+GeocoderApi.logger.info('Geocoder Microservice ready for incoming requests')

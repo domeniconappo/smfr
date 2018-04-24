@@ -6,6 +6,7 @@ import logging
 
 import requests
 
+from smfrcore.errors import SMFRRestException
 from server.config import RestServerConfiguration
 
 
@@ -15,9 +16,8 @@ class MicroserviceClient:
 
     @classmethod
     def _check_response(cls, res, code):
-        if code < 400:
-            return res
-        return res, code
+        if code >= 400:
+            raise SMFRRestException(res.json(), code)
 
     @classmethod
     def running(cls):
@@ -28,8 +28,8 @@ class MicroserviceClient:
         """
         url = '{}/running'.format(cls.base_uri)
         res = requests.get(url)
-        res, status_code = res.json(), res.status_code
-        return cls._check_response(res, status_code)
+        cls._check_response(res, res.status_code)
+        return res.json(), res.status_code
 
 
 class AnnotatorClient(MicroserviceClient):
@@ -55,8 +55,8 @@ class AnnotatorClient(MicroserviceClient):
         """
         url = '{}/{}/{}/start'.format(cls.base_uri, collection_id, lang)
         res = requests.put(url)
-        res, status_code = res.json(), res.status_code
-        return cls._check_response(res, status_code)
+        cls._check_response(res, res.status_code)
+        return res.json(), res.status_code
 
     @classmethod
     def stop(cls, collection_id, lang):
@@ -71,8 +71,8 @@ class AnnotatorClient(MicroserviceClient):
         """
         url = '{}/{}/{}/stop'.format(cls.base_uri, collection_id, lang)
         res = requests.put(url)
-        res, status_code = res.json(), res.status_code
-        return cls._check_response(res, status_code)
+        cls._check_response(res, res.status_code)
+        return res.json(), res.status_code
 
 
 class GeocoderClient(MicroserviceClient):
@@ -96,8 +96,8 @@ class GeocoderClient(MicroserviceClient):
         """
         url = '{}/{}/start'.format(cls.base_uri, collection_id)
         res = requests.put(url)
-        res, status_code = res.json(), res.status_code
-        return cls._check_response(res, status_code)
+        cls._check_response(res, res.status_code)
+        return res.json(), res.status_code
 
     @classmethod
     def stop(cls, collection_id):
@@ -110,5 +110,5 @@ class GeocoderClient(MicroserviceClient):
         """
         url = '{}/{}/stop'.format(cls.base_uri, collection_id)
         res = requests.put(url)
-        res, status_code = res.json(), res.status_code
-        return cls._check_response(res, status_code)
+        cls._check_response(res, res.status_code)
+        return res.json(), res.status_code

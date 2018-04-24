@@ -16,7 +16,7 @@ if [ ! -d ${SMFR_DATADIR} ]; then
 fi
 
 if [ ! -d ${SMFR_DATADIR}/geonames_index ]; then
-    # Download geonames indices for geotagging
+    # Download geonames indices for geocoding
     cd ${SMFR_DATADIR}
     wget https://s3.amazonaws.com/ahalterman-geo/geonames_index.tar.gz
     tar xzf geonames_index.tar.gz
@@ -26,7 +26,7 @@ if [ ! -d ${SMFR_DATADIR}/geonames_index ]; then
     cd -
 fi
 
-docker build --build-arg http_proxy=${http_proxy} --build-arg https_proxy=${http_proxy} base_docker/.
+docker build --build-arg http_proxy=${http_proxy} --build-arg https_proxy=${http_proxy} -t smfr_base base_docker/.
 docker tag smfr_base efas/smfr_base
 docker push efas/smfr_base
 docker-compose build

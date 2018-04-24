@@ -105,8 +105,8 @@ services:
         https_proxy: ${https_proxy}
     working_dir: /geocoder
     volumes:
-      - './annotator/src:/annotator'
-      - './annotator/scripts:/scripts'
+      - './geocoder/src:/geocoder'
+      - './geocoder/scripts:/scripts'
     ports:
       - '5557:5557'
     environment:
