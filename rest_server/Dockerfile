@@ -1,4 +1,4 @@
-FROM ubuntu:16.04
+FROM efas/smfr_base:latest
 MAINTAINER Domenico Nappo <domenico.nappo@ext.ec.europa.eu>
 
 ENV http_proxy ${http_proxy}
@@ -6,33 +6,14 @@ ENV https_proxy ${https_proxy}
 ENV INSTALL_PATH /rest_server
 ENV LANG=C.UTF-8
 
-RUN apt-get update
-RUN apt-get install -y software-properties-common apt-file apt-utils python-software-properties
-RUN add-apt-repository ppa:deadsnakes/ppa && \
-    add-apt-repository 'deb [arch=amd64,i386] http://nyc2.mirrors.digitalocean.com/mariadb/repo/10.3/ubuntu xenial main' && \
-    apt-key adv --keyserver-options "http-proxy=$http_proxy" --keyserver hkp://keyserver.ubuntu.com:80 --recv F1656F24C74CD1D8
 
-RUN apt-get update
-RUN apt-get install -y zlib1g-dev libmariadbclient-dev libmariadbd-dev python3.6 python3.6-dev      \
-    liblapack-dev liblapack-doc-man liblapack-doc liblapack-pic liblapack3 liblapack-test                                       \
-    liblapacke liblapacke-dev hdf5-tools libhdf5-serial-dev gfortran g++ wget                                                   \
-    libssl-dev openssl &&                                                                                                       \
-    curl https://bootstrap.pypa.io/get-pip.py | python3.6  &&                                                                   \
-    mkdir -p $INSTALL_PATH && mkdir -p /scripts && mkdir -p /configuration && mkdir -p /smfr_core
-
-
-RUN pip3.6 install --upgrade pip
-RUN pip3.6 install cassandra-driver && ln -s /usr/bin/mariadb_config /usr/bin/mysql_config
+RUN apt-get install -y mariadb-client  && mkdir -p $INSTALL_PATH && mkdir -p /scripts && mkdir -p /configuration
 
 COPY ./rest_server/requirements.txt $INSTALL_PATH/
 RUN pip3.6 install -r $INSTALL_PATH/requirements.txt
 
-RUN apt-get remove -y libmariadbclient-dev libmariadbd-dev && apt-get install -y mariadb-client && apt-get autoremove -y
+RUN apt-get install -y mariadb-client && apt-get autoremove -y
 ENV PATH=/usr/local/mysql/bin/:$PATH
-
-COPY ./smfr_core/. /smfr_core/
-WORKDIR /smfr_core
-RUN python3.6 setup.py build && python3.6 setup.py install
 
 COPY ./rest_server/src/. $INSTALL_PATH/
 COPY ./rest_server/scripts/. /scripts/

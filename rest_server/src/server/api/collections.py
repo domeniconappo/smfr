@@ -13,7 +13,7 @@ from smfrcore.models.cassandramodels import Tweet
 
 from daemons.collector import Collector
 
-from smfrcore.errors import SMFRDBError
+from smfrcore.errors import SMFRDBError, SMFRRestException
 from server.api.clients import AnnotatorClient, GeocoderClient
 from server.config import CONFIG_STORE_PATH
 
@@ -210,7 +210,7 @@ def get_collection_details(collection_id):
         geotagged_table.append(Tweet.make_table_object(i, t))
 
     res = {'collection': collection_dump, 'collector': collector_dump, 'datatable': samples_table,
-           'running_annotators': AnnotatorClient.running(), 'running_geotaggers': GeocoderClient.running(),
+           'running_annotators': AnnotatorClient.running()[0], 'running_geotaggers': GeocoderClient.running()[0],
            'datatableannotated': annotated_table, 'datatablegeotagged': geotagged_table}
     return res, 200
 
@@ -223,8 +223,12 @@ def geolocalize(collection_id, startdate=None, enddate=None):
     :param enddate:
     :return:
     """
-    res, code = GeocoderClient.start(collection_id)
-    return res, code
+    try:
+        res, code = GeocoderClient.start(collection_id)
+    except SMFRRestException as e:
+        return {'error': {'description': str(e)}}, 500
+    else:
+        return res, code
 
 
 def annotate(collection_id=None, lang='en', forecast_id=None, startdate=None, enddate=None):
@@ -237,8 +241,12 @@ def annotate(collection_id=None, lang='en', forecast_id=None, startdate=None, en
     :param enddate:
     :return:
     """
-    res, code = AnnotatorClient.start(collection_id, lang)
-    return res, code
+    try:
+        res, code = AnnotatorClient.start(collection_id, lang)
+    except SMFRRestException as e:
+        return {'error': {'description': str(e)}}, 500
+    else:
+        return res, code
 
 
 def start_all():

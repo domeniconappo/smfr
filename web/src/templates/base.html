@@ -47,6 +47,11 @@
 	    // get current URL path and assign 'active' class
         var pathname = window.location.pathname;
         $('.nav > li > a[href="'+pathname+'"]').parent().addClass('active');
+         // disable "disabled" buttons
+        $("a.btn.disabled").click(function(event) {
+            event.stopImmediatePropagation();
+            return(false);
+        });
     })
      </script>
 {% endblock %}

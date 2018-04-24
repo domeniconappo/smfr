@@ -159,3 +159,19 @@ $ git push origin <my_branch>
 $ cd smfr_core
 $ swagger-marshmallow-codegen --driver=./smfrcore/client/_marshmallow_custom.py:CustomDriver ../rest_server/swagger/smfr.yaml > ./smfrcore/client/marshmallow.py
 ```
+
+### Rebuild and push smfr_base Docker image
+
+To push the image on efas Docker space, first you need to login with Docker:
+
+```bash
+$ export DOCKER_ID_USER="ask_for_efas_docker_username"
+$ docker login
+```
+
+Then, you can push the image.
+```bash
+$ docker build --build-arg http_proxy=${http_proxy} --build-arg https_proxy=${http_proxy} -t smfr_base base_docker/.
+$ docker tag smfr_base efas/smfr_base
+$ docker push efas/smfr_base
+```

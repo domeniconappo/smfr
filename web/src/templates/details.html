@@ -105,6 +105,7 @@
                                    <div class="btn-group btn-group-justified" role="group">
                                        <div class="btn-group">
                                            {% set test = data.collection.id in data.running_geotaggers %}
+                                       <!-- {{ data.running_geotaggers }}-->
                                             <a {% if test %}title="Geotagging is currently running for this collection" class="btn btn-sm btn-default disabled"{% else %} title="Start geotagging for annotated tweets in this collection" class="btn btn-sm btn-default"{% endif %}
                                                href="/geolocalize/{{ data.collection.id }}"><em class="fas fa-globe"></em></a>
                                        </div>

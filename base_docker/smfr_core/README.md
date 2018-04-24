@@ -1,7 +1,7 @@
 # SMFR Core Module
 
-This module will be installed as a standard python package
-in containers that needs SMFR core models and tools.
+The folder contains the smfrcore python module, which will be installed
+as a standard python package in containers that needs SMFR core models and tools.
 
 - web
 - restserver
