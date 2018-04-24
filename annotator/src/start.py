@@ -57,3 +57,10 @@ class RunningAnnotatorsApi(Resource):
 api.add_resource(AnnotatorApi, '/<int:collection_id>/<string:lang>/<string:action>')
 api.add_resource(RunningAnnotatorsApi, '/running')
 AnnotatorApi.logger.info('Annotator Microservice ready for incoming requests')
+
+
+def download_cnn_models():
+    pass
+
+
+download_cnn_models()
