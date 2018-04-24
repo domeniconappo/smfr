@@ -26,7 +26,10 @@ if [ ! -d ${SMFR_DATADIR}/geonames_index ]; then
     cd -
 fi
 
-docker build --build-arg http_proxy=${http_proxy} --build-arg https_proxy=${http_proxy} -t smfr_base base_docker/.
-docker tag smfr_base efas/smfr_base
-docker push efas/smfr_base
+if [ -n "${DOCKER_ID_USER}" ]; then
+
+    docker build --build-arg http_proxy=${http_proxy} --build-arg https_proxy=${http_proxy} -t smfr_base base_docker/.
+    docker tag smfr_base efas/smfr_base
+    docker push efas/smfr_base
+fi
 docker-compose build
