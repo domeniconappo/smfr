@@ -6,13 +6,23 @@
 
 - Ensure to have installed Docker and Docker Compose
 - Get the source code: `git clone https://github.com/domeniconappo/SMFR.git`
-- CD in SMFR folder and Copy _.env.tpl_ file to _.env_.
- Edit the last one: `$ cp .env.tpl .env` by setting the following variables
-    - `SMFR_DATADIR=/DATA/smfr/data  # the folder where MySQL, Cassandra and Elasticsearch data folders will be mapped`
-    - `CASSANDRA_KEYSPACE=smfr_persistent  # keyspace name`
-    - `KAFKA_TOPIC=persister  # KAFKA topic name`
-    - `MIN_FLOOD_PROBABILITY=0.59  # minimum flood probability for which the text is considered "positive"`
-    - `LOGGING_LEVEL=DEBUG  # logging level. In production this should be WARNING or ERROR`
+- Enter into SMFR folder and copy _.env.tpl_ file to _.env_.
+  - `$ cp .env.tpl .env`
+- Edit the last one: `$ cp .env.tpl .env` by setting the following variables
+    - `SMFR_DATADIR=/DATA/smfr/data`
+      -   The server folder where MySQL, Cassandra and Elasticsearch data folders will be mapped to.
+    - `CASSANDRA_KEYSPACE=smfr_persistent`
+      -   Cassandra keyspace name
+    - `KAFKA_TOPIC=persister`
+      - The KAFKA topic name
+    - `MIN_FLOOD_PROBABILITY=0.59`
+      - minimum flood probability for which the text is considered "positive"
+    - `LOGGING_LEVEL=DEBUG`
+      - Logging level. In production this should be WARNING or ERROR
+    - `GIT_REPO_MODELS`=https://user:pass@bitbucket.org/lorinivalerio/smfr_models_data.git
+      - You have to include Bitbucket credentials of a user with read permissions to the SMFR models repository
+    - `DOCKER_ID_USER`=efas
+      - This is the Docker user that must login before to build and push the base_smfr Docker image. This must be set only for project contributors of base SMFR image.
 - Execute `./build.sh` (use `sudo` in case you need it to execute docker-compose commands). This step can take several minutes.
 - Execute `docker-compose up -d` or `sudo docker-compose up -d`
 - You will see all services starting:
