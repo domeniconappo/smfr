@@ -162,6 +162,8 @@ $ swagger-marshmallow-codegen --driver=./smfrcore/client/_marshmallow_custom.py:
 
 ### Rebuild and push smfr_base Docker image
 
+Whenever any change is made on smfr_base docker image (e.g. modifications to smfrcore.models
+code), the image must be rebuilt and pushed on docker registry.
 To push the image on efas Docker space, first you need to login with Docker:
 
 ```bash
@@ -174,4 +176,10 @@ Then, you can push the image.
 $ docker build --build-arg http_proxy=${http_proxy} --build-arg https_proxy=${http_proxy} -t smfr_base base_docker/.
 $ docker tag smfr_base efas/smfr_base
 $ docker push efas/smfr_base
+```
+
+or just launch the build shell script to build everything.
+
+```bash
+$ ./build.sh
 ```

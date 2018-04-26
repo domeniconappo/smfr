@@ -1,6 +1,9 @@
 FROM efas/smfr_base:latest
 MAINTAINER Domenico Nappo <domenico.nappo@ext.ec.europa.eu>
 
+ARG http_proxy
+ARG https_proxy
+
 ENV http_proxy ${http_proxy}
 ENV https_proxy ${http_proxy}
 

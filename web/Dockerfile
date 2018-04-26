@@ -1,7 +1,11 @@
 FROM efas/smfr_base:latest
 MAINTAINER Domenico Nappo <domenico.nappo@ext.ec.europa.eu>
+
+ARG http_proxy
+ARG https_proxy
 ENV http_proxy ${http_proxy}
 ENV https_proxy ${https_proxy}
+ENV LANG=C.UTF-8
 
 ENV INSTALL_PATH /web
 RUN mkdir -p $INSTALL_PATH

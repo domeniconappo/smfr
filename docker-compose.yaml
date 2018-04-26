@@ -74,6 +74,7 @@ services:
       args:
         http_proxy: ${http_proxy}
         https_proxy: ${https_proxy}
+        models_repo: ${GIT_REPO_MODELS}
     working_dir: /annotator
     volumes:
       - './annotator/src:/annotator'
@@ -88,6 +89,8 @@ services:
       CASSANDRA_KEYSPACE: ${CASSANDRA_KEYSPACE}
       KAFKA_TOPIC: ${KAFKA_TOPIC}
       CASSANDRA_HOST: cassandra
+      MODELS_PATH: /models
+      GIT_REPO_MODELS: ${GIT_REPO_MODELS}
       http_proxy: ${http_proxy}
       https_proxy: ${https_proxy}
     depends_on:

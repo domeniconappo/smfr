@@ -1,21 +1,31 @@
 FROM efas/smfr_base:latest
 MAINTAINER Domenico Nappo <domenico.nappo@ext.ec.europa.eu>
 
+ARG http_proxy
+ARG https_proxy
+ARG models_repo
+
 ENV http_proxy ${http_proxy}
-ENV https_proxy ${http_proxy}
+ENV https_proxy ${https_proxy}
 ENV INSTALL_PATH /annotator
+ENV GIT_REPO_MODELS ${models_repo}
+ENV MODELS_PATH /models
 ENV LANG=C.UTF-8
 
 RUN mkdir -p $INSTALL_PATH && mkdir -p /scripts && mkdir -p /config
+WORKDIR $INSTALL_PATH
+COPY ./annotator/requirements.txt ./
+RUN pip3.6 install -r requirements.txt
 
-COPY ./annotator/requirements.txt $INSTALL_PATH/
-RUN pip3.6 install -r $INSTALL_PATH/requirements.txt
+EXPOSE 5556
 
-COPY ./annotator/src/. $INSTALL_PATH/
+RUN git init ${MODELS_PATH}/ && cd ${MODELS_PATH}/ && git remote add origin ${GIT_REPO_MODELS} && \
+    git config core.sparsecheckout true && echo "models/*" >> .git/info/sparse-checkout && \
+    git pull --depth=1 origin master && cd -
+
+COPY ./annotator/src/. ./
 COPY ./annotator/scripts/. /scripts/
 COPY ./annotator/config/. /config/
-WORKDIR $INSTALL_PATH
-EXPOSE 5556
 
 RUN ["chmod", "a+x", "/scripts/wait_for_it.sh"]
 ENTRYPOINT ["/scripts/wait_for_it.sh", "cassandra:9042"]

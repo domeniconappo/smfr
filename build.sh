@@ -10,6 +10,8 @@ function getProperty {
 
 
 SMFR_DATADIR=$(getProperty "SMFR_DATADIR")
+GIT_REPO_MODELS=$(getProperty "GIT_REPO_MODELS")
+DOCKER_ID_USER=$(getProperty "DOCKER_ID_USER")
 
 if [ ! -d ${SMFR_DATADIR} ]; then
     mkdir -p ${SMFR_DATADIR}
@@ -32,4 +34,5 @@ if [ -n "${DOCKER_ID_USER}" ]; then
     docker tag smfr_base efas/smfr_base
     docker push efas/smfr_base
 fi
+
 docker-compose build

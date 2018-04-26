@@ -233,11 +233,12 @@ class Tweet(cqldb.Model):
             if status in tweet:
                 nature = status.split('_')[0].title()
                 extended = tweet[status].get('extended_tweet', {})
+                if not (extended.get('full_text') or extended.get('text')):
+                    continue
                 full_text = '{} - {}'.format(nature, extended.get('full_text') or extended.get('text', ''))
                 break
 
         if not full_text:
-            full_text = tweet.get('full_text') or tweet.get('extended_tweet', {}).get('full_text', '') \
-                        or tweet.get('text', '')
+            full_text = tweet.get('full_text') or tweet.get('extended_tweet', {}).get('full_text', '') or tweet.get('text', '')
 
         return full_text
