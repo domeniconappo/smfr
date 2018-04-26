@@ -6,7 +6,6 @@ from flask_restful import Resource, Api, marshal_with, fields, marshal_with_fiel
 
 from annotator import Annotator
 
-
 app = Flask(__name__)
 api = Api(app)
 
@@ -56,11 +55,6 @@ class RunningAnnotatorsApi(Resource):
 
 api.add_resource(AnnotatorApi, '/<int:collection_id>/<string:lang>/<string:action>')
 api.add_resource(RunningAnnotatorsApi, '/running')
+Annotator.download_cnn_models()
 AnnotatorApi.logger.info('Annotator Microservice ready for incoming requests')
-
-
-def download_cnn_models():
-    pass
-
-
-download_cnn_models()
+Annotator.log_config()
