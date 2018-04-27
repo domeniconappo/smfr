@@ -10,6 +10,7 @@ rest_server/src/config/*.yaml
 # common source files ignore config
 # dirs mirrored from client/
 uploads/
+docker-compose-parsed.yaml
 *geonames_index*
 # Byte-compiled / optimized / DLL files
 __pycache__/
