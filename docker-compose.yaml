@@ -18,6 +18,9 @@ services:
       ES_JAVA_OPTS: "-Xms2g -Xmx2g"
     volumes:
       - '${SMFR_DATADIR}/geonames_index:/var/lib/elasticsearch/elasticsearch:rw'
+    deploy:
+      placement:
+        constraints: [node.role == manager]
 
   cassandra:
     image: cassandra:latest
@@ -35,6 +38,9 @@ services:
     environment:
       MAX_HEAP_SIZE: 4G
       HEAP_NEWSIZE: 256M
+    deploy:
+      placement:
+        constraints: [node.role == manager]
 
   kafka:
     restart: always
@@ -49,6 +55,9 @@ services:
     ports:
       - '9092:9092'
       - '2181:2181'
+    deploy:
+      placement:
+        constraints: [node.id == ${NODE1}]
 
   mysql:
     image: mysql:latest
@@ -64,6 +73,9 @@ services:
       MYSQL_ROOT_PASSWORD: example
       MYSQL_DATABASE: smfr
       MYSQL_ALLOW_EMPTY_PASSWORD: 'yes'
+    deploy:
+      placement:
+        constraints: [node.role == manager]
 
   annotator:
     restart: always
@@ -96,6 +108,9 @@ services:
     depends_on:
       - kafka
       - cassandra
+    deploy:
+      placement:
+        constraints: [node.id == ${NODE2}]
 
   geocoder:
     restart: always
@@ -127,6 +142,9 @@ services:
       - kafka
       - cassandra
       - geonames
+    deploy:
+      placement:
+        constraints: [node.id == ${NODE1}]
 
   restserver:
     restart: always
@@ -162,6 +180,9 @@ services:
       - './rest_server/src:/rest_server'
       - './rest_server/scripts:/scripts'
       - './uploads:/smfr/uploads/'
+    deploy:
+      placement:
+        constraints: [node.id == ${NODE1}]
 
   web:
     restart: always
@@ -183,3 +204,6 @@ services:
       - restserver
     volumes:
       - './web/src:/web'
+    deploy:
+      placement:
+        constraints: [node.id == ${NODE2}]

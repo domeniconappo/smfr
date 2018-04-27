@@ -1,5 +1,26 @@
 # SMFR
 
+## Introduction
+
+Social Media Flood Risk (SMFR) is a platform to monitor specific flood events
+on social media (currently, only Twitter).
+
+Current version is based on:
+  - Twitter Stream API to filter tweets using keywords and/or bounding box criteria
+  - ML algorithms and models for classification of tweets (flood relevance)
+  - Geonames index for geocoding of relevant tweets
+  - Cassandra to keep raw tweets data
+  - Kafka and MySQL as infrastructure elements
+
+When a potential catastrofic flood event is recorded in EFAS, SMFR is notified and will start to:
+
+  - Collect tweets with Twitter Stream API
+  - An operator will access to the web interface to manually start annotation.
+  - When annotation is completed, an operator will manually start geocoding.
+
+Final product of SMFR is a event-related map reporting relevant tweets.
+
+
 ## Installation and Configuration
 
 ### Docker configuration
@@ -148,48 +169,4 @@ In addition to SMFR web interface, you can use the CLI to manage SMFR services:
 $ docker exec restserver flask  # to see list of available commands
 $ docker exec restserver flask list_collections
 $ docker exec restserver flask ...
-```
-
-
-## Development notes
-
-### Manage DB migrations
-
-Whenever you add new SQLAlchemy models (or add new fields to existing models), you have to create migrations:
-
-```bash
-$ flask db migrate
-$ git commit -am"added migrations"
-$ git push origin <my_branch>
-```
-
-### Generate Marshmallow schemas from smfr.yaml Swagger definitions using a Marshmallow custom driver
-
-```bash
-$ cd smfr_core
-$ swagger-marshmallow-codegen --driver=./smfrcore/client/_marshmallow_custom.py:CustomDriver ../rest_server/swagger/smfr.yaml > ./smfrcore/client/marshmallow.py
-```
-
-### Rebuild and push smfr_base Docker image
-
-Whenever any change is made on smfr_base docker image (e.g. modifications to smfrcore.models
-code), the image must be rebuilt and pushed on docker registry.
-To push the image on efas Docker space, first you need to login with Docker:
-
-```bash
-$ export DOCKER_ID_USER="ask_for_efas_docker_username"
-$ docker login
-```
-
-Then, you can push the image.
-```bash
-$ docker build --build-arg http_proxy=${http_proxy} --build-arg https_proxy=${http_proxy} -t smfr_base base_docker/.
-$ docker tag smfr_base efas/smfr_base
-$ docker push efas/smfr_base
-```
-
-or just launch the build shell script to build everything.
-
-```bash
-$ ./build.sh
 ```

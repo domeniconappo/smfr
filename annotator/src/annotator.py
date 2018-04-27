@@ -124,7 +124,7 @@ class Annotator:
             t.annotations = {'flood_probability': ('yes', prediction)}
             t.ttype = 'annotated'
             message = t.serialize()
-            cls.logger.info('Sending annotated tweet to queue: {}'.format(message[:80]))
+            cls.logger.debug('Sending annotated tweet to queue: {}'.format(message[:80]))
             cls.producer.send(cls.kafka_topic, message)
 
         # remove from `_running` list

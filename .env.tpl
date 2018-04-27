@@ -5,3 +5,6 @@ MIN_FLOOD_PROBABILITY=0.59
 LOGGING_LEVEL=DEBUG
 GIT_REPO_MODELS=https://user:pass@bitbucket.org/lorinivalerio/smfr_models_data.git
 DOCKER_ID_USER=efas
+NODE0=crl690adjge5ckezkkyg7cnk7
+NODE1=lduv1m62pwgbk3925snj8b164
+NODE2=dr0k79jxagxt5kf4mdqmyfhb5
