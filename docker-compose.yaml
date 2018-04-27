@@ -111,6 +111,9 @@ services:
     depends_on:
       - kafka
       - cassandra
+    links:
+      - kafka
+      - cassandra
     deploy:
       placement:
         constraints:
@@ -144,6 +147,10 @@ services:
       KAFKA_TOPIC: ${KAFKA_TOPIC}
       CASSANDRA_HOST: cassandra
     depends_on:
+      - kafka
+      - cassandra
+      - geonames
+    links:
       - kafka
       - cassandra
       - geonames
@@ -183,6 +190,12 @@ services:
       - cassandra
       - annotator
       - geocoder
+    links:
+      - mysql
+      - kafka
+      - cassandra
+      - annotator
+      - geocoder
     volumes:
       - './rest_server/src:/rest_server'
       - './rest_server/scripts:/scripts'
@@ -209,6 +222,8 @@ services:
       RESTSERVER_BASEPATH: '/1.0'
     ports:
       - '8888:8888'
+    links:
+      - restserver
     depends_on:
       - restserver
     volumes:
