@@ -75,3 +75,9 @@ NODE0=crl690adjge5ckezkkyg7cnk7
 NODE1=lduv1m62pwgbk3925snj8b164
 NODE2=dr0k79jxagxt5kf4mdqmyfhb5
 ```
+
+To deploy:
+
+```bash
+$  ./deploy.sh
+```

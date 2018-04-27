@@ -9,6 +9,7 @@ services:
       args:
         http_proxy: ${http_proxy}
         https_proxy: ${https_proxy}
+    image: efas/geonames
     working_dir: /geonames
     container_name: geonames
     ports:
@@ -57,7 +58,8 @@ services:
       - '2181:2181'
     deploy:
       placement:
-        constraints: [node.id == ${NODE1}]
+        constraints:
+          - node.id == ${NODE1}
 
   mysql:
     image: mysql:latest
@@ -80,6 +82,7 @@ services:
   annotator:
     restart: always
     container_name: annotator
+    image: efas/annotator
     build:
       context: ./
       dockerfile: annotator/Dockerfile
@@ -110,11 +113,13 @@ services:
       - cassandra
     deploy:
       placement:
-        constraints: [node.id == ${NODE2}]
+        constraints:
+          - node.id == ${NODE2}
 
   geocoder:
     restart: always
     container_name: geocoder
+    image: efas/geocoder
     build:
       context: ./
       dockerfile: geocoder/Dockerfile
@@ -144,11 +149,13 @@ services:
       - geonames
     deploy:
       placement:
-        constraints: [node.id == ${NODE1}]
+        constraints:
+          - node.id == ${NODE1}
 
   restserver:
     restart: always
     container_name: restserver
+    image: efas/restserver
     build:
       context: ./
       dockerfile: rest_server/Dockerfile
@@ -182,11 +189,13 @@ services:
       - './uploads:/smfr/uploads/'
     deploy:
       placement:
-        constraints: [node.id == ${NODE1}]
+        constraints:
+          - node.id == ${NODE1}
 
   web:
     restart: always
     container_name: web
+    image: efas/web
     build:
       context: ./
       dockerfile: web/Dockerfile
@@ -206,4 +215,5 @@ services:
       - './web/src:/web'
     deploy:
       placement:
-        constraints: [node.id == ${NODE2}]
+        constraints:
+          - node.id == ${NODE2}
