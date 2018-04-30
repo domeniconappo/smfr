@@ -11,7 +11,7 @@ from cassandra.cluster import Cluster
 from cassandra.query import dict_factory
 from flask_cqlalchemy import CQLAlchemy
 
-from smfrcore.utils import running_in_docker
+from smfrcore.utils import RUNNING_IN_DOCKER
 
 cqldb = CQLAlchemy()
 
@@ -21,7 +21,11 @@ _hosts = [os.environ.get('CASSANDRA_HOST', 'cassandra')]
 
 
 def cassandra_session_factory():
-    cluster = Cluster(_hosts) if running_in_docker() else Cluster()
+    # Remote access to Cassandra is via its thrift port for Cassandra 2.0.
+    # In Cassandra 2.0.x, the default cqlsh listen port is 9160
+    # which is defined in cassandra.yaml by the rpc_port parameter.
+    # https://stackoverflow.com/questions/36133127/how-to-configure-cassandra-for-remote-connection
+    cluster = Cluster(_hosts, port=9042) if RUNNING_IN_DOCKER else Cluster()
     session = cluster.connect()
     session.row_factory = dict_factory
     session.execute("USE {}".format(_keyspace))

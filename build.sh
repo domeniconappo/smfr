@@ -36,3 +36,7 @@ if [ -n "${DOCKER_ID_USER}" ]; then
 fi
 
 docker-compose build
+
+if [ -n "${DOCKER_ID_USER}" ]; then
+    docker-compose push
+fi
