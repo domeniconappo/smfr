@@ -97,9 +97,6 @@ services:
         https_proxy: ${https_proxy}
         models_repo: ${GIT_REPO_MODELS}
     working_dir: /annotator
-#    volumes:
-#      - './annotator/src:/annotator'
-#      - './annotator/scripts:/scripts'
     ports:
       - '5556:5556'
     environment:
@@ -133,9 +130,6 @@ services:
         http_proxy: ${http_proxy}
         https_proxy: ${https_proxy}
     working_dir: /geocoder
-#    volumes:
-#      - './geocoder/src:/geocoder'
-#      - './geocoder/scripts:/scripts'
     ports:
       - '5557:5557'
     environment:
@@ -189,10 +183,6 @@ services:
       - cassandra
       - annotator
       - geocoder
-#    volumes:
-#      - './rest_server/src:/rest_server'
-#      - './rest_server/scripts:/scripts'
-#      - './uploads:/smfr/uploads/'
     deploy:
       placement:
         constraints:
@@ -217,8 +207,6 @@ services:
       - '8888:8888'
     depends_on:
       - restserver
-#    volumes:
-#      - './web/src:/web'
     deploy:
       placement:
         constraints:
