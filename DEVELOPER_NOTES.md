@@ -82,9 +82,10 @@ To deploy:
 $  ./deploy.sh
 ```
 
-### SWARM Trouble shooting
+### SWARM Troubleshooting
 
 Need to open ports on all hosts participating in a Swarm cluster.
+Also, Cassandra ports must be open as well.
 
 On manager node
 
@@ -95,6 +96,16 @@ sudo iptables -A INPUT -p tcp --dport 2377 -j ACCEPT
 sudo iptables -A INPUT -p tcp --dport 7946 -j ACCEPT
 sudo iptables -A INPUT -p udp --dport 7946 -j ACCEPT
 sudo iptables -A INPUT -p udp --dport 4789 -j ACCEPT
+sudo iptables -A INPUT -p tcp --dport 9042 -j ACCEPT
+sudo iptables -A INPUT -p tcp --dport 9160 -j ACCEPT
+sudo iptables -A INPUT -p tcp --dport 7000 -j ACCEPT
+sudo iptables -A INPUT -p tcp --dport 7001 -j ACCEPT
+sudo iptables -A INPUT -p tcp --dport 7199 -j ACCEPT
+sudo iptables -A INPUT -p udp --dport 9042 -j ACCEPT
+sudo iptables -A INPUT -p udp --dport 9160 -j ACCEPT
+sudo iptables -A INPUT -p udp --dport 7000 -j ACCEPT
+sudo iptables -A INPUT -p udp --dport 7001 -j ACCEPT
+sudo iptables -A INPUT -p udp --dport 7199 -j ACCEPT
 sudo netfilter-persistent save
 sudo systemctl restart docker
 ```
@@ -107,6 +118,16 @@ sudo iptables -A INPUT -p tcp --dport 2376 -j ACCEPT
 sudo iptables -A INPUT -p tcp --dport 7946 -j ACCEPT
 sudo iptables -A INPUT -p udp --dport 7946 -j ACCEPT
 sudo iptables -A INPUT -p udp --dport 4789 -j ACCEPT
+sudo iptables -A INPUT -p udp --dport 9042 -j ACCEPT
+sudo iptables -A INPUT -p udp --dport 9160 -j ACCEPT
+sudo iptables -A INPUT -p udp --dport 7000 -j ACCEPT
+sudo iptables -A INPUT -p udp --dport 7001 -j ACCEPT
+sudo iptables -A INPUT -p udp --dport 7199 -j ACCEPT
+sudo iptables -A INPUT -p tcp --dport 9042 -j ACCEPT
+sudo iptables -A INPUT -p tcp --dport 9160 -j ACCEPT
+sudo iptables -A INPUT -p tcp --dport 7000 -j ACCEPT
+sudo iptables -A INPUT -p tcp --dport 7001 -j ACCEPT
+sudo iptables -A INPUT -p tcp --dport 7199 -j ACCEPT
 sudo netfilter-persistent save
 sudo systemctl restart docker
 ```
