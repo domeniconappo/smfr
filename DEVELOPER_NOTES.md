@@ -81,3 +81,32 @@ To deploy:
 ```bash
 $  ./deploy.sh
 ```
+
+### SWARM Trouble shooting
+
+Need to open ports on all hosts participating in a Swarm cluster.
+
+On manager node
+
+```bash
+sudo iptables -A INPUT -p tcp --dport 22 -j ACCEPT
+sudo iptables -A INPUT -p tcp --dport 2376 -j ACCEPT
+sudo iptables -A INPUT -p tcp --dport 2377 -j ACCEPT
+sudo iptables -A INPUT -p tcp --dport 7946 -j ACCEPT
+sudo iptables -A INPUT -p udp --dport 7946 -j ACCEPT
+sudo iptables -A INPUT -p udp --dport 4789 -j ACCEPT
+sudo netfilter-persistent save
+sudo systemctl restart docker
+```
+
+On all worker nodes
+
+```
+sudo iptables -A INPUT -p tcp --dport 22 -j ACCEPT
+sudo iptables -A INPUT -p tcp --dport 2376 -j ACCEPT
+sudo iptables -A INPUT -p tcp --dport 7946 -j ACCEPT
+sudo iptables -A INPUT -p udp --dport 7946 -j ACCEPT
+sudo iptables -A INPUT -p udp --dport 4789 -j ACCEPT
+sudo netfilter-persistent save
+sudo systemctl restart docker
+```

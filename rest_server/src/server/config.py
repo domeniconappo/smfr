@@ -13,7 +13,7 @@ from cassandra.util import OrderedMapSerializedKey
 from flask.json import JSONEncoder
 from kafka import KafkaProducer
 from kafka.errors import NoBrokersAvailable
-from smfrcore.utils import running_in_docker
+from smfrcore.utils import RUNNING_IN_DOCKER
 
 from sqlalchemy import create_engine
 from sqlalchemy.exc import OperationalError
@@ -28,7 +28,6 @@ SERVER_BOOTSTRAP = 'gunicorn' in sys.argv[0]
 LOGGER_FORMAT = '%(asctime)s: Server - <%(name)s>[%(levelname)s] (%(threadName)-10s) %(message)s'
 DATE_FORMAT = '%Y%m%d %H:%M:%S'
 CONFIG_STORE_PATH = os.environ.get('SERVER_PATH_UPLOADS', os.path.join(os.path.dirname(__file__), '../../../uploads/'))
-IN_DOCKER = running_in_docker()
 
 logging.getLogger('cassandra').setLevel(logging.ERROR)
 logging.getLogger('kafka').setLevel(logging.ERROR)
@@ -46,7 +45,7 @@ os.makedirs(CONFIG_STORE_PATH, exist_ok=True)
 
 def _read_config_file():
 
-    config_path = os.path.join(os.path.dirname(__file__), '../config/') if not IN_DOCKER else '/configuration/'
+    config_path = os.path.join(os.path.dirname(__file__), '../config/') if not RUNNING_IN_DOCKER else '/configuration/'
     config_file = 'config.yaml.tpl' if not os.path.exists(os.path.join(config_path, 'config.yaml')) else 'config.yaml'
 
     with open(os.path.join(config_path, config_file)) as f:
@@ -90,12 +89,12 @@ class RestServerConfiguration(metaclass=Singleton):
     Constructor accepts a connexion app object.
     """
     config_dir, server_config = _read_config_file()
-    geonames_host = '127.0.0.1' if not IN_DOCKER else 'geonames'
-    kafka_host = '127.0.0.1' if not IN_DOCKER else 'kafka'
-    mysql_db_host = '127.0.0.1' if not IN_DOCKER else 'mysql'
-    cassandra_host = '127.0.0.1' if not IN_DOCKER else 'cassandra'
-    annotator_host = '127.0.0.1' if not IN_DOCKER else 'annotator'
-    geocoder_host = '127.0.0.1' if not IN_DOCKER else 'geocoder'
+    geonames_host = '127.0.0.1' if not RUNNING_IN_DOCKER else 'geonames'
+    kafka_host = '127.0.0.1' if not RUNNING_IN_DOCKER else 'kafka'
+    mysql_db_host = '127.0.0.1' if not RUNNING_IN_DOCKER else 'mysql'
+    cassandra_host = '127.0.0.1' if not RUNNING_IN_DOCKER else 'cassandra'
+    annotator_host = '127.0.0.1' if not RUNNING_IN_DOCKER else 'annotator'
+    geocoder_host = '127.0.0.1' if not RUNNING_IN_DOCKER else 'geocoder'
 
     kafka_bootstrap_server = '{}:9092'.format(kafka_host)
 

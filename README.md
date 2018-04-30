@@ -124,11 +124,9 @@ docker-compose logs restserver web geonames
 #### Troubleshooting for Geonames Elasticsearch
 If you see an error/warning in Elasticsearch logs, the vm_map_max_count setting should be set permanently in /etc/sysctl.conf:
 
-```
-
-
+```bash
 $ grep vm.max_map_count /etc/sysctl.conf
-vm.max_map_count=262144
+vm.max_map_count=1048575
 ```
 
 #### Free some disk space from unused 'dockers'

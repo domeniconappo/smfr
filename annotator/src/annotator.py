@@ -14,7 +14,7 @@ from keras.preprocessing.sequence import pad_sequences
 import sklearn
 
 from smfrcore.models.cassandramodels import Tweet
-from smfrcore.utils import running_in_docker
+from smfrcore.utils import RUNNING_IN_DOCKER
 
 from utils import CNN_MAX_SEQUENCE_LENGTH, create_text_for_cnn, get_models_language_dict
 
@@ -28,7 +28,7 @@ class Annotator:
     _lock = threading.RLock()
     logger = logging.getLogger(__name__)
     logger.setLevel(logging.getLevelName(os.environ.get('LOGGING_LEVEL', 'DEBUG')))
-    kafka_bootstrap_server = '{}:9092'.format('kafka' if running_in_docker() else '127.0.0.1')
+    kafka_bootstrap_server = '{}:9092'.format('kafka' if RUNNING_IN_DOCKER else '127.0.0.1')
     models_path = os.path.join(os.environ.get('MODELS_PATH', '/'), 'models')
     models = get_models_language_dict(models_path)
 

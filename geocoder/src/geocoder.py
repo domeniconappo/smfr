@@ -11,10 +11,7 @@ import fiona
 from shapely.geometry import Point, Polygon
 
 from smfrcore.models.cassandramodels import Tweet
-from smfrcore.utils import running_in_docker
-
-
-IN_DOCKER = running_in_docker()
+from smfrcore.utils import RUNNING_IN_DOCKER
 
 
 class Nuts3Finder:
@@ -75,8 +72,8 @@ class Geocoder:
     _lock = threading.RLock()
     logger = logging.getLogger(__name__)
     logger.setLevel(logging.getLevelName(os.environ.get('LOGGING_LEVEL', 'DEBUG')))
-    geonames_host = '127.0.0.1' if not IN_DOCKER else 'geonames'
-    kafka_bootstrap_server = '{}:9092'.format('kafka' if IN_DOCKER else '127.0.0.1')
+    geonames_host = '127.0.0.1' if not RUNNING_IN_DOCKER else 'geonames'
+    kafka_bootstrap_server = '{}:9092'.format('kafka' if RUNNING_IN_DOCKER else '127.0.0.1')
 
     kafkaup = False
     retries = 5
