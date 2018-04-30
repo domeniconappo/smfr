@@ -26,10 +26,10 @@ Final product of SMFR is a event-related map reporting relevant tweets.
 ### Docker configuration
 
 - Ensure to have installed Docker and Docker Compose
-- Get the source code: `git clone https://github.com/domeniconappo/SMFR.git`
+- Get the source code: `$ git clone https://github.com/domeniconappo/SMFR.git`
 - Enter into SMFR folder and copy _.env.tpl_ file to _.env_.
   - `$ cp .env.tpl .env`
-- Edit the last one: `$ cp .env.tpl .env` by setting the following variables
+- Edit the file `.env` and set the following variables:
     - `SMFR_DATADIR=/DATA/smfr/data`
       -   The server folder where MySQL, Cassandra and Elasticsearch data folders will be mapped to.
     - `CASSANDRA_KEYSPACE=smfr_persistent`
@@ -40,12 +40,17 @@ Final product of SMFR is a event-related map reporting relevant tweets.
       - minimum flood probability for which the text is considered "positive"
     - `LOGGING_LEVEL=DEBUG`
       - Logging level. In production this should be WARNING or ERROR
-    - `GIT_REPO_MODELS`=https://user:pass@bitbucket.org/lorinivalerio/smfr_models_data.git
+    - `GIT_REPO_MODELS=https://user:pass@bitbucket.org/lorinivalerio/smfr_models_data.git`
       - You have to include Bitbucket credentials of a user with read permissions to the SMFR models repository
-    - `DOCKER_ID_USER`=efas
+    - `DOCKER_ID_USER=efas`
       - This is the Docker user that must login before to build and push the base_smfr Docker image. This must be set only for project contributors of base SMFR image.
-- Execute `./build.sh` (use `sudo` in case you need it to execute docker-compose commands). This step can take several minutes.
-- Execute `docker-compose up -d` or `sudo docker-compose up -d`
+    - `NODE0=xxx000yyyyy0zzzzzzzz0kkk0`
+    - `NODE1=xxx000yyyyy0zzzzzzzz0kkk1`
+    - `NODE2=xxx000yyyyy0zzzzzzzz0kkk2`
+      - Docker swarm node ids to set up for swarm deploy. Check [Developer Notes](DEVELOPER_NOTES.md) for more info.
+- Execute `./build.sh` if you need to rebuild images. This step can take several minutes and will also push updates to Docker registry in case the DOCKER_ID_USER is set and it's got rights to push.
+In this case, you must login to Docker Hub (just issue `$ docker login` before to build).
+- Execute `docker-compose up -d` for local testing or `$ ./deploy.sh` script if you deploy to a Docker Swarm cluster
 - You will see all services starting:
     - cassandra
     - mysql
@@ -121,8 +126,8 @@ Useful commands for troubleshooting:
 docker-compose logs restserver web geonames
 ```
 
-#### Troubleshooting for Geonames Elasticsearch
-If you see an error/warning in Elasticsearch logs, the vm_map_max_count setting should be set permanently in /etc/sysctl.conf:
+#### Issues with Geonames Elasticsearch and/or Cassandra
+If you see an error/warning about vm.max_map_count variable in Elasticsearch logs of Geonames docker image, or in Cassandra docker image, the `vm.map_max_count` setting should be set permanently in /etc/sysctl.conf of the host machine:
 
 ```bash
 $ grep vm.max_map_count /etc/sysctl.conf
