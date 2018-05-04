@@ -85,6 +85,18 @@ services:
       placement:
         constraints: [node.role == manager]
 
+  myadmin:
+    image: phpmyadmin/phpmyadmin:latest
+    ports:
+      - '8080:8080'
+    environment:
+      MYSQL_ROOT_PASSWORD: example
+      MYSQL_DATABASE: smfr
+      MYSQL_ALLOW_EMPTY_PASSWORD: 'yes'
+    deploy:
+      placement:
+        constraints: [node.role == manager]
+
   annotator:
     restart: always
     container_name: annotator
