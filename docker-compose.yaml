@@ -10,6 +10,7 @@ services:
         http_proxy: ${http_proxy}
         https_proxy: ${https_proxy}
     image: efas/geonames
+    restart: always
     working_dir: /geonames
     container_name: geonames
     ports:
@@ -87,8 +88,10 @@ services:
 
   myadmin:
     image: phpmyadmin/phpmyadmin:latest
+    restart: always
+    container_name: myadmin
     ports:
-      - '8080:8080'
+      - '8383:8080'
     environment:
       MYSQL_ROOT_PASSWORD: example
       MYSQL_DATABASE: smfr
