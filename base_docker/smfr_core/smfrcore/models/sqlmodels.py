@@ -73,7 +73,7 @@ class TwitterCollection(SMFRModel):
         )
         kwargs = {}
         for k, v in vars(collection).items():
-            if k in ('_sa_instance_state', 'id'):
+            if k in ('_sa_instance_state', 'id') or not v or (isinstance(v, ChoiceType) and not v.value):
                 continue
             kwargs[k] = v if not isinstance(v, ChoiceType) else v.value
 

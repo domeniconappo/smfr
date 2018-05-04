@@ -183,6 +183,8 @@ services:
       - cassandra
       - annotator
       - geocoder
+    volumes:
+      - /restserver/uploads:/smfr/uploads/
     deploy:
       placement:
         constraints:

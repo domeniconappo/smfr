@@ -11,6 +11,7 @@ rest_server/src/config/*.yaml
 # dirs mirrored from client/
 uploads/
 docker-compose-parsed.yaml
+docker-compose-4deploy.yaml
 *geonames_index*
 # Byte-compiled / optimized / DLL files
 __pycache__/
