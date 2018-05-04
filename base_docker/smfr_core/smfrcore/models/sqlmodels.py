@@ -1,5 +1,7 @@
 import datetime
 
+from passlib.apps import custom_app_context as pwd_context
+
 from sqlalchemy import Column, Integer, String, TIMESTAMP, Float, ForeignKey
 from sqlalchemy_utils import ChoiceType, ScalarListType, JSONType
 
@@ -8,6 +10,26 @@ from ..ext.database import SQLAlchemy
 
 
 sqldb = SQLAlchemy(metadata=metadata, session_options={'expire_on_commit': False})
+
+
+class User(SMFRModel):
+    __tablename__ = 'users'
+    id = Column(Integer, primary_key=True)
+    username = Column(String(32), index=True)
+    password_hash = Column(String(128))
+
+    def hash_password(self, password):
+        self.password_hash = pwd_context.encrypt(password)
+
+    def verify_password(self, password):
+        return pwd_context.verify(password, self.password_hash)
+
+    def save(self):
+        # we need 'merge' method because objects can be attached to db sessions in different threads
+        attached_obj = sqldb.session.merge(self)
+        sqldb.session.add(attached_obj)
+        sqldb.session.commit()
+        self.id = attached_obj.id
 
 
 class TwitterCollection(SMFRModel):

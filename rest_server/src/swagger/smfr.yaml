@@ -10,6 +10,27 @@ produces:
 
 paths:
 
+  /users:
+    post:
+      tags: [users]
+      operationId: server.api.users.new_user
+      summary: Register an user
+      parameters:
+        - in: body
+          name: username
+          type: string
+          description: Username
+        - in: body
+          name: password
+          type: string
+          description: Password
+      responses:
+        201:
+          description: Return registered user
+          schema:
+            type: object
+
+
   /collections:
     post:
       tags: [collections]

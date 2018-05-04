@@ -4,7 +4,7 @@ from start import app
 
 from smfrcore.client.api_client import ApiLocalClient, SMFRRestException
 from smfrcore.client.conf import LOGGER_FORMAT, DATE_FORMAT
-from forms import NewCollectorForm
+from forms import NewCollectorForm, ExportForm
 from utils import MessageClass, add_message
 
 
@@ -36,6 +36,18 @@ def list_inactive_collections():
     return render_template('list.html', collectors=res), 200
 
 
+@app.route('/export/<int:collection_id>', methods=('GET', 'POST',))
+def export_tweets(collection_id):
+    form = ExportForm(collection_id=collection_id)
+    if form.validate_on_submit():
+        payload = {
+            'config': form.config.data, 'kwfile': form.kwfile.data, 'locfile': form.locfile.data,
+            'runtime': form.runtime.data, 'trigger': form.trigger.data, 'nuts3': form.nuts3.data,
+            'forecast': form.forecast_id.data, 'nuts3source': form.nuts3source.data, 'tzclient': form.tzclient.data,
+        }
+    return render_template('export.html', form=form), 200
+
+
 @app.route('/new', methods=('GET', 'POST',))
 def new_collection():
     form = NewCollectorForm()
@@ -47,7 +59,7 @@ def new_collection():
         }
         try:
             res = client.new_collection(payload)
-            logger.info(res)
+            logger.debug('New Collection: %s', str(res))
             add_message('A new collection was added.', category=MessageClass.SUCCESS)
             return redirect('/list')
         except SMFRRestException as e:

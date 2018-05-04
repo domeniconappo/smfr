@@ -25,6 +25,8 @@ def cassandra_session_factory():
     # In Cassandra >= 2.0.x, the default cqlsh listen port is 9160
     # which is defined in cassandra.yaml by the rpc_port parameter.
     # https://stackoverflow.com/questions/36133127/how-to-configure-cassandra-for-remote-connection
+    # Anyway, when using the cassandra-driver Cluster object, the port to use is still 9042.
+    # Just ensure to open 9042 and 9160 ports on all nodes of the Swarm cluster.
     cluster = Cluster(_hosts, port=9042) if RUNNING_IN_DOCKER else Cluster()
     session = cluster.connect()
     session.row_factory = dict_factory
@@ -128,9 +130,9 @@ class Tweet(cqldb.Model):
         tweet_dict['tweet']['full_text'] = full_text
         user_name = tweet_dict['tweet']['user']['screen_name']
         profile_img = tweet_dict['tweet']['user']['profile_image_url'] or ''
-
+        twid = tweet_dict['tweetid']
         obj = {'rownum': numrow, 'Full Text': full_text,
-               'Tweet id': '<a href="https://twitter.com/statuses/{}"'.format(tweet_dict['tweetid']),
+               'Tweet id': '<a href="https://twitter.com/statuses/{}">{}</a>'.format(twid, twid),
                'original_tweet': tweet_obj.original_tweet_as_string,
                'Profile': '<a href="https://twitter.com/{}"><img src="{}"/></a>'.format(user_name, profile_img),
                'Name': '<a href="https://twitter.com/{}">{}</a>'.format(user_name, user_name),

@@ -35,6 +35,7 @@ class ApiLocalClient:
         'collection_details': '/collections/{id}/details',
         'annotate_collection': '/collections/{id}/annotate',
         'geotag_collection': '/collections/{id}/geo',
+        'signup_user': '/users',
     }
 
     def __init__(self):
@@ -138,15 +139,24 @@ class ApiLocalClient:
         return self._get('list_inactive_collectors')
 
     def new_collection(self, input_payload):
-
         schema = CollectorPayload()
         formdata = schema.load(input_payload).data
-
         formdata['kwfile_file'] = input_payload.get('kwfile')
         formdata['locfile_file'] = input_payload.get('locfile')
         formdata['config_file'] = input_payload.get('config')
         formdata['tzclient'] = input_payload.get('tzclient')
         return self._post('new_collection', formdata=formdata)
+
+    def signup_user(self, input_payload):
+        data = {'username': input_payload['username'], 'password': input_payload['password']}
+        return self._post('signup_user', data)
+
+    def login_user(self, input_payload):
+        data = {'username': input_payload['username'], 'password': input_payload['password']}
+        return self._post('login_user', data)
+
+    def logout_user(self, user_id):
+        return self._post('logout_user', path_kwargs={'id': user_id})
 
     def remove_collection(self, collection_id):
         return self._post('remove_collection', path_kwargs={'id': collection_id})
