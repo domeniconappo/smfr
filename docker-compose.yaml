@@ -91,11 +91,12 @@ services:
     restart: always
     container_name: myadmin
     ports:
-      - '8383:8080'
+      - '8383:80'
     environment:
       MYSQL_ROOT_PASSWORD: example
       MYSQL_DATABASE: smfr
       MYSQL_ALLOW_EMPTY_PASSWORD: 'yes'
+      PMA_ARBITRARY: 1
     deploy:
       placement:
         constraints: [node.role == manager]
