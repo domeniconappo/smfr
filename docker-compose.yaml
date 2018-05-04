@@ -111,6 +111,8 @@ services:
       GIT_REPO_MODELS: ${GIT_REPO_MODELS}
       http_proxy: ${http_proxy}
       https_proxy: ${https_proxy}
+    volumes:
+      - './annotator/src:/annotator'
     depends_on:
       - kafka
       - cassandra
@@ -130,6 +132,8 @@ services:
         http_proxy: ${http_proxy}
         https_proxy: ${https_proxy}
     working_dir: /geocoder
+    volumes:
+      - './geocoder/src:/geocoder'
     ports:
       - '5557:5557'
     environment:
@@ -177,6 +181,8 @@ services:
       https_proxy: ${http_proxy}
     ports:
       - '5555:5555'
+    volumes:
+      - './rest_server/src:/rest_server'
     depends_on:
       - mysql
       - kafka
@@ -199,6 +205,8 @@ services:
         http_proxy: ${http_proxy}
         https_proxy: ${http_proxy}
     working_dir: /web
+    volumes:
+      - './web/src:/web'
     environment:
       PYTHONUNBUFFERED: 'true'
       RESTSERVER_PORT: 5555

@@ -17,3 +17,12 @@ class NewCollectorForm(FlaskForm):
     nuts3 = StringField('NUTS3 Code')
     nuts3source = StringField('NUTS3 Source')
     tzclient = HiddenField('tzclient')
+
+
+class ExportForm(FlaskForm):
+    collection_id = HiddenField('Collection Id')
+    ttype = RadioField('Tweet Status', default='collected',
+                       choices=[('collected', 'Collected'), ('annotated', 'Annotated'), ('geotagged', 'Geotagged')],
+                       )
+    from_ts = DateTimeField('From...', format='%Y-%m-%d %H:%M', validators=(Optional(),))
+    to_ts = DateTimeField('Until...', format='%Y-%m-%d %H:%M', validators=(Optional(),))

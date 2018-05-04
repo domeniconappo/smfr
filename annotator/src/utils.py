@@ -147,7 +147,8 @@ def get_models_language_dict(path):
         date, *_, lang = f.split('.')
         if lang in res:
             current_model_date = res[lang].split('.')[0]
-            if current_model_date > date:
+            # string comparison works well here
+            if current_model_date >= date:
                 continue
         res[lang] = f
     return res

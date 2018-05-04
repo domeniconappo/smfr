@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-
+{% block title %}Collection dashboard{% endblock %}
 {% block app_content %}
   <article class="wrapper">
 	    <section class="main">
@@ -91,6 +91,11 @@
                                        </div>
                                        <div class="btn-group">
                                         <a class="btn btn-sm btn-danger" href="/remove/{{ data.collection.id }}"><em class="fas fa-trash"></em></a>
+                                       </div>
+                                       <div class="btn-group">
+                                        <a class="btn btn-sm btn-default" href="/export/{{ data.collector.id }}">
+                                            <em class="fas fa-download"></em>
+                                        </a>
                                        </div>
                                    </div>
                                </div>

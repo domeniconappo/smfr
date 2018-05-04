@@ -7,10 +7,14 @@ rest_server/src/config/*.yaml
 
 !rest_server/src/config/*.tpl
 
+# parsed docker-composer.yaml files for `docker stack deploy`
+docker-compose-parsed.yaml
+docker-compose-4deploy.yaml
+
 # common source files ignore config
 # dirs mirrored from client/
 uploads/
-docker-compose-parsed.yaml
+
 *geonames_index*
 # Byte-compiled / optimized / DLL files
 __pycache__/
