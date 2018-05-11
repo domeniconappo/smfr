@@ -17,7 +17,7 @@ cqldb = CQLAlchemy()
 
 
 _keyspace = os.environ.get('CASSANDRA_KEYSPACE', 'smfr_persistent')
-_hosts = [os.environ.get('CASSANDRA_HOST', 'cassandra')]
+_hosts = [os.environ.get('CASSANDRA_HOST', 'cassandrasmfr')]
 
 
 def cassandra_session_factory():
