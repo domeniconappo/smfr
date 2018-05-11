@@ -17,5 +17,4 @@ RUN mkdir -p /smfr_core/
 
 COPY ./smfr_core/. /smfr_core/
 
-WORKDIR /smfr_core
-RUN python3.6 setup.py build && python3.6 setup.py install
+RUN pip3.6 install /smfr_core/

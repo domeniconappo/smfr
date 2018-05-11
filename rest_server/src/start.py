@@ -11,7 +11,7 @@ logging.basicConfig(level=logging.INFO if not RestServerConfiguration.debug else
                     format=LOGGER_FORMAT, datefmt=DATE_FORMAT)
 
 
-os.environ['NO_PROXY'] = ','.join((RestServerConfiguration.annotator_host, RestServerConfiguration.geocoder_host))
+os.environ['NO_PROXY'] = ','.join((RestServerConfiguration.restserver_host, RestServerConfiguration.annotator_host, RestServerConfiguration.geocoder_host))
 
 
 def create_app():

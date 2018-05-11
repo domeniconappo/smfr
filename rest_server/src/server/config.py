@@ -1,6 +1,7 @@
 import logging
 import os
 import re
+import socket
 import sys
 from decimal import Decimal
 from time import sleep
@@ -35,10 +36,6 @@ logging.getLogger('connexion').setLevel(logging.ERROR)
 logging.getLogger('swagger_spec_validator').setLevel(logging.ERROR)
 logging.getLogger('urllib3').setLevel(logging.ERROR)
 logging.getLogger('requests_oauthlib').setLevel(logging.ERROR)
-logging.getLogger('elasticsearch').setLevel(logging.ERROR)
-logging.getLogger('fiona').setLevel(logging.ERROR)
-logging.getLogger('Fiona').setLevel(logging.ERROR)
-logging.getLogger('shapely').setLevel(logging.ERROR)
 
 os.makedirs(CONFIG_STORE_PATH, exist_ok=True)
 
@@ -92,10 +89,10 @@ class RestServerConfiguration(metaclass=Singleton):
     geonames_host = '127.0.0.1' if not RUNNING_IN_DOCKER else 'geonames'
     kafka_host = '127.0.0.1' if not RUNNING_IN_DOCKER else 'kafka'
     mysql_db_host = '127.0.0.1' if not RUNNING_IN_DOCKER else 'mysql'
-    cassandra_host = '127.0.0.1' if not RUNNING_IN_DOCKER else 'cassandra'
+    cassandra_host = '127.0.0.1' if not RUNNING_IN_DOCKER else os.environ.get('CASSANDRA_HOST', 'cassandrasmfr')
     annotator_host = '127.0.0.1' if not RUNNING_IN_DOCKER else 'annotator'
     geocoder_host = '127.0.0.1' if not RUNNING_IN_DOCKER else 'geocoder'
-
+    restserver_host = '127.0.0.1' if not RUNNING_IN_DOCKER else 'restserver'
     kafka_bootstrap_server = '{}:9092'.format(kafka_host)
 
     mysql_db_name = '{}{}'.format(server_config['mysql_db_name'], '_test' if UNDER_TESTS else '')
@@ -136,8 +133,8 @@ class RestServerConfiguration(metaclass=Singleton):
                         # Flask apps are setup when issuing CLI commands as well.
                         # This code is executed in case of launching REST Server
                         self.producer = KafkaProducer(bootstrap_servers=self.kafka_bootstrap_server, compression_type='gzip')
-                except (NoHostAvailable, OperationalError, NoBrokersAvailable):
-                    self.logger.warning('Cassandra/Mysql/Kafka were not up...waiting')
+                except (NoHostAvailable, OperationalError, NoBrokersAvailable, socket.gaierror):
+                    self.logger.warning('Cassandra/Mysql/Kafka were not up...wait 5 seconds before retrying')
                     sleep(5)
                     retries += 1
                 else:
