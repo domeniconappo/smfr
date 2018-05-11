@@ -159,9 +159,10 @@ class Geocoder:
                 break
 
             try:
-                flood_prob = t.annotations.get('flood_probability', ('', 0.0))[1]
-                if flood_prob <= cls.min_flood_prob:
-                    continue
+                # we will geolocate everything
+                # flood_prob = t.annotations.get('flood_probability', ('', 0.0))[1]
+                # if flood_prob <= cls.min_flood_prob:
+                #     continue
 
                 t.ttype = 'geotagged'
                 res = tagger.geoparse(t.full_text)
