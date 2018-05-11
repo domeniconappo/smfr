@@ -7,6 +7,7 @@ import time
 import ujson as json
 from subprocess import Popen, PIPE
 
+import tensorflow as tf
 import keras
 from kafka import KafkaProducer
 from kafka.errors import NoBrokersAvailable
@@ -96,36 +97,39 @@ class Annotator:
         :param lang: str two characters string denoting a language (e.g. 'en')
         """
         ttype = 'collected'
-        tokenizer_path = os.path.join(cls.models_path, cls.models[lang] + '.tokenizer')
-        tokenizer = sklearn.externals.joblib.load(tokenizer_path)
-        tokenizer.oov_token = None
-        model_path = os.path.join(cls.models_path, cls.models[lang] + '.model.h5')
-        model = keras.models.load_model(model_path)
+        graph = tf.Graph()
+        with graph.as_default():
+            tokenizer_path = os.path.join(cls.models_path, cls.models[lang] + '.tokenizer')
+            tokenizer = sklearn.externals.joblib.load(tokenizer_path)
+            tokenizer.oov_token = None
+            model_path = os.path.join(cls.models_path, cls.models[lang] + '.model.h5')
+            model = keras.models.load_model(model_path)
 
-        cls.logger.info('Starting Annotation collection: {} {}'.format(collection_id, lang))
+            cls.logger.info('Starting Annotation collection: {} {}'.format(collection_id, lang))
 
-        # add tuple (collection_id, language) to `_running` list
-        cls._running.append((collection_id, lang))
+            # add tuple (collection_id, language) to `_running` list
+            with cls._lock:
+                cls._running.append((collection_id, lang))
 
-        tweets = Tweet.get_iterator(collection_id, ttype, lang=lang)
+            tweets = Tweet.get_iterator(collection_id, ttype, lang=lang)
 
-        for t in tweets:
-            if (collection_id, lang) in cls._stop_signals:
-                cls.logger.info('Stopping annotation {} - {}'.format(collection_id, lang))
-                with cls._lock:
-                    cls._stop_signals.remove((collection_id, lang))
-                break
-            original_json = json.loads(t.tweet)
-            text = create_text_for_cnn(original_json, [])
-            sequences = tokenizer.texts_to_sequences([text])
-            data = pad_sequences(sequences, maxlen=CNN_MAX_SEQUENCE_LENGTH)
-            predictions_list = model.predict(data)
-            prediction = 1. * predictions_list[:, 1][0]
-            t.annotations = {'flood_probability': ('yes', prediction)}
-            t.ttype = 'annotated'
-            message = t.serialize()
-            cls.logger.debug('Sending annotated tweet to queue: {}'.format(message[:80]))
-            cls.producer.send(cls.kafka_topic, message)
+            for t in tweets:
+                if (collection_id, lang) in cls._stop_signals:
+                    cls.logger.info('Stopping annotation {} - {}'.format(collection_id, lang))
+                    with cls._lock:
+                        cls._stop_signals.remove((collection_id, lang))
+                    break
+                original_json = json.loads(t.tweet)
+                text = create_text_for_cnn(original_json, [])
+                sequences = tokenizer.texts_to_sequences([text])
+                data = pad_sequences(sequences, maxlen=CNN_MAX_SEQUENCE_LENGTH)
+                predictions_list = model.predict(data)
+                prediction = 1. * predictions_list[:, 1][0]
+                t.annotations = {'flood_probability': ('yes', prediction)}
+                t.ttype = 'annotated'
+                message = t.serialize()
+                cls.logger.debug('Sending annotated tweet to queue: {}'.format(message[:80]))
+                cls.producer.send(cls.kafka_topic, message)
 
         # remove from `_running` list
         cls._running.remove((collection_id, lang))
