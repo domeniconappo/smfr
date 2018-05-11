@@ -129,7 +129,7 @@ services:
       https_proxy: ${https_proxy}
     depends_on:
       - kafka
-      - cassandra
+      - cassandrasmfr
     deploy:
       placement:
         constraints:
@@ -161,7 +161,7 @@ services:
       CASSANDRA_HOST: cassandrasmfr
     depends_on:
       - kafka
-      - cassandra
+      - cassandrasmfr
       - geonames
     deploy:
       placement:
@@ -197,7 +197,7 @@ services:
     depends_on:
       - mysql
       - kafka
-      - cassandra
+      - cassandrasmfr
       - annotator
       - geocoder
     volumes:
