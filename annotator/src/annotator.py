@@ -114,7 +114,7 @@ class Annotator:
                     cls._running.append((collection_id, lang))
 
                 tweets = Tweet.get_iterator(collection_id, ttype, lang=lang)
-
+                i = 0
                 for t in tweets:
                     if (collection_id, lang) in cls._stop_signals:
                         cls.logger.info('Stopping annotation {} - {}'.format(collection_id, lang))
@@ -130,8 +130,11 @@ class Annotator:
                     t.annotations = {'flood_probability': ('yes', prediction)}
                     t.ttype = 'annotated'
                     message = t.serialize()
-                    cls.logger.debug('Sending annotated tweet to queue: {}'.format(message[:80]))
+                    cls.logger.debug('Sending annotated tweet to queue: %s', str(message[:80]))
                     cls.producer.send(cls.kafka_topic, message)
+                    i += 1
+                    if not (i % 1000):
+                        cls.logger.info('Annotated so far.... %d', i)
 
         # remove from `_running` list
         cls._running.remove((collection_id, lang))

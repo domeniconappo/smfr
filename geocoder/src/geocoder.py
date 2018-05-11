@@ -151,7 +151,8 @@ class Geocoder:
 
         tagger = Geoparser(cls.geonames_host)
         errors = 0
-        for i, t in enumerate(tweets):
+        i = 0
+        for x, t in enumerate(tweets):
             if collection_id in cls.stop_signals:
                 cls.logger.info('Stopping geotagging process {}'.format(collection_id))
                 with cls._lock:
@@ -159,14 +160,13 @@ class Geocoder:
                 break
 
             try:
-                # we will geolocate everything
+                # COMMENT OUT CODE BELOW: we will geolocate everything for the moment
                 # flood_prob = t.annotations.get('flood_probability', ('', 0.0))[1]
                 # if flood_prob <= cls.min_flood_prob:
                 #     continue
 
                 t.ttype = 'geotagged'
                 res = tagger.geoparse(t.full_text)
-
                 for result in res:
                     if result.get('country_conf', 0) < 0.5 or 'lat' not in result.get('geo', {}):
                         continue
@@ -178,6 +178,7 @@ class Geocoder:
                     cls.logger.debug('Sending to queue: %s', str(message[:120]))
 
                     cls.producer.send(cls.kafka_topic, message)
+                    i += 1
                     # we just take the first available result
                     break
             except Exception as e:
@@ -188,7 +189,8 @@ class Geocoder:
                     break
                 continue
             finally:
-                if not (i % 250):
+                if not (x % 250):
+                    cls.logger.info('Geotagged so far.... %d', i)
                     # workaround for lru_cache "memory leak" problems
                     # https://benbernardblog.com/tracking-down-a-freaky-python-memory-leak/
                     tagger.query_geonames.cache_clear()
