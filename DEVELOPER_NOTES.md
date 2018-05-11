@@ -112,7 +112,7 @@ sudo systemctl restart docker
 
 On all worker nodes
 
-```
+```bash
 sudo iptables -A INPUT -p tcp --dport 22 -j ACCEPT
 sudo iptables -A INPUT -p tcp --dport 2376 -j ACCEPT
 sudo iptables -A INPUT -p tcp --dport 7946 -j ACCEPT
