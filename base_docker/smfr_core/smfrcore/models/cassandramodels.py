@@ -18,6 +18,7 @@ cqldb = CQLAlchemy()
 
 _keyspace = os.environ.get('CASSANDRA_KEYSPACE', 'smfr_persistent')
 _hosts = [os.environ.get('CASSANDRA_HOST', 'cassandrasmfr')]
+_port = os.environ.get('CASSANDRA_PORT', 9042)
 
 
 def cassandra_session_factory():
@@ -25,7 +26,7 @@ def cassandra_session_factory():
     # In Cassandra >= 2.0.x, the default cqlsh listen port is 9160
     # which is defined in cassandra.yaml by the rpc_port parameter.
     # https://stackoverflow.com/questions/36133127/how-to-configure-cassandra-for-remote-connection
-    cluster = Cluster(_hosts, port=9042) if RUNNING_IN_DOCKER else Cluster()
+    cluster = Cluster(_hosts, port=_port) if RUNNING_IN_DOCKER else Cluster()
     session = cluster.connect()
     session.row_factory = dict_factory
     session.execute("USE {}".format(_keyspace))

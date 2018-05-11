@@ -131,3 +131,12 @@ sudo iptables -A INPUT -p tcp --dport 7199 -j ACCEPT
 sudo netfilter-persistent save
 sudo systemctl restart docker
 ```
+
+# Docker upgrade
+
+Resolve cgroup issue with
+
+```bash
+sudo mkdir /sys/fs/cgroup/systemd
+sudo mount -t cgroup -o none,name=systemd cgroup /sys/fs/cgroup/systemd
+```
