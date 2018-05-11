@@ -26,6 +26,6 @@ COPY ./geocoder/config/. /config/
 
 EXPOSE 5557
 
-RUN chmod a+x /scripts/wait_for_it.sh
+RUN ["chmod", "a+x", "/scripts/wait_for_it.sh"]
 ENTRYPOINT ["/scripts/wait_for_it.sh", "cassandrasmfr:9160"]
 CMD ["--", "gunicorn", "-b", "0.0.0.0:5557", "--workers", "1", "--log-level", "warning", "--timeout", "240", "--threads", "4", "--worker-class", "gthread", "--reload", "--access-logfile", "-", "--name", "geotagger", "start:app"]
