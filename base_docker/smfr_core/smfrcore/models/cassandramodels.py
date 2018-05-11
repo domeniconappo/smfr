@@ -9,6 +9,7 @@ import datetime
 import ujson as json
 from cassandra.cluster import Cluster
 from cassandra.query import dict_factory
+from cassandra.auth import PlainTextAuthProvider
 from flask_cqlalchemy import CQLAlchemy
 
 from smfrcore.utils import RUNNING_IN_DOCKER
@@ -26,7 +27,8 @@ def cassandra_session_factory():
     # In Cassandra >= 2.0.x, the default cqlsh listen port is 9160
     # which is defined in cassandra.yaml by the rpc_port parameter.
     # https://stackoverflow.com/questions/36133127/how-to-configure-cassandra-for-remote-connection
-    cluster = Cluster(_hosts, port=_port) if RUNNING_IN_DOCKER else Cluster()
+    auth_provider = PlainTextAuthProvider(username='cassandra', password='cassandra')
+    cluster = Cluster(_hosts, port=_port, auth_provider=auth_provider) if RUNNING_IN_DOCKER else Cluster()
     session = cluster.connect()
     session.row_factory = dict_factory
     session.execute("USE {}".format(_keyspace))
