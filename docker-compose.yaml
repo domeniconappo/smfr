@@ -59,7 +59,7 @@ services:
       ADVERTISED_PORT: 9092
       ADVERTISED_HOST: kafka
     depends_on:
-      - cassandra
+      - cassandrasmfr
     ports:
       - '9092:9092'
       - '2181:2181'
