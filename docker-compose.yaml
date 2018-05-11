@@ -30,7 +30,7 @@ services:
     # From host, connect to DB with `docker exec -it cassandra cqlsh`
     volumes:
       - '${SMFR_DATADIR}/cassandra:/var/lib/cassandra:rw'
-    container_name: cassandra
+    container_name: cassandrasmfr
     ports:
       - '9042:9042'
       - '9160:9160'
@@ -123,6 +123,7 @@ services:
       CASSANDRA_KEYSPACE: ${CASSANDRA_KEYSPACE}
       KAFKA_TOPIC: ${KAFKA_TOPIC}
       CASSANDRA_HOST: cassandrasmfr
+      CASSANDRA_PORT: ${CASSANDRA_PORT}
       MODELS_PATH: /models
       GIT_REPO_MODELS: ${GIT_REPO_MODELS}
       http_proxy: ${http_proxy}
@@ -159,6 +160,7 @@ services:
       MIN_FLOOD_PROBABILITY: ${MIN_FLOOD_PROBABILITY}
       KAFKA_TOPIC: ${KAFKA_TOPIC}
       CASSANDRA_HOST: cassandrasmfr
+      CASSANDRA_PORT: ${CASSANDRA_PORT}
     depends_on:
       - kafka
       - cassandrasmfr
@@ -181,6 +183,7 @@ services:
     working_dir: /rest_server
     environment:
       CASSANDRA_HOST: cassandrasmfr
+      CASSANDRA_PORT: ${CASSANDRA_PORT}
       LOGGING_LEVEL: ${LOGGING_LEVEL}
       PYTHONUNBUFFERED: 'true'
       FLASK_APP: smfr.py
