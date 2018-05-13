@@ -192,7 +192,7 @@ class Geocoder:
                 continue
             finally:
                 if not (x % 250):
-                    cls.logger.info('Geotagged so far.... %d. Examinated %d: %s', i, sum(c.values(), str(c)))
+                    cls.logger.info('Geotagged so far.... %d. Examinated %d: %s', i, sum(c.values()), str(c))
                     # workaround for lru_cache "memory leak" problems
                     # https://benbernardblog.com/tracking-down-a-freaky-python-memory-leak/
                     tagger.query_geonames.cache_clear()
