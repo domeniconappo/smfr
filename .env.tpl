@@ -1,5 +1,6 @@
 SMFR_DATADIR=/DATA/smfr/data
 CASSANDRA_KEYSPACE=smfr_persistent
+CASSANDRA_PORT=9042
 KAFKA_TOPIC=persister
 MIN_FLOOD_PROBABILITY=0.59
 LOGGING_LEVEL=DEBUG
@@ -8,3 +9,4 @@ DOCKER_ID_USER=efas
 NODE0=xxx000yyyyy0zzzzzzzz0kkk0
 NODE1=xxx000yyyyy0zzzzzzzz0kkk1
 NODE2=xxx000yyyyy0zzzzzzzz0kkk2
+CASSANDRA_HOST: cassandrasmfr

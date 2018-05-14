@@ -9,6 +9,7 @@ import datetime
 import ujson as json
 from cassandra.cluster import Cluster
 from cassandra.query import dict_factory
+from cassandra.auth import PlainTextAuthProvider
 from flask_cqlalchemy import CQLAlchemy
 
 from smfrcore.utils import RUNNING_IN_DOCKER
@@ -17,7 +18,8 @@ cqldb = CQLAlchemy()
 
 
 _keyspace = os.environ.get('CASSANDRA_KEYSPACE', 'smfr_persistent')
-_hosts = [os.environ.get('CASSANDRA_HOST', 'cassandra')]
+_hosts = [os.environ.get('CASSANDRA_HOST', 'cassandrasmfr')]
+_port = os.environ.get('CASSANDRA_PORT', 9042)
 
 
 def cassandra_session_factory():
@@ -27,7 +29,8 @@ def cassandra_session_factory():
     # https://stackoverflow.com/questions/36133127/how-to-configure-cassandra-for-remote-connection
     # Anyway, when using the cassandra-driver Cluster object, the port to use is still 9042.
     # Just ensure to open 9042 and 9160 ports on all nodes of the Swarm cluster.
-    cluster = Cluster(_hosts, port=9042) if RUNNING_IN_DOCKER else Cluster()
+    auth_provider = PlainTextAuthProvider(username='cassandra', password='cassandra')
+    cluster = Cluster(_hosts, port=_port, auth_provider=auth_provider) if RUNNING_IN_DOCKER else Cluster()
     session = cluster.connect()
     session.row_factory = dict_factory
     session.execute("USE {}".format(_keyspace))
