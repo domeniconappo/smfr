@@ -10,6 +10,7 @@ services:
         http_proxy: ${http_proxy}
         https_proxy: ${https_proxy}
     image: efas/geonames
+    restart: always
     working_dir: /geonames
     container_name: geonames
     ports:
@@ -23,13 +24,13 @@ services:
       placement:
         constraints: [node.role == manager]
 
-  cassandra:
-    image: cassandra:latest
+  cassandrasmfr:
+    image: alexcheng/cassandra:latest
     restart: always
     # From host, connect to DB with `docker exec -it cassandra cqlsh`
     volumes:
       - '${SMFR_DATADIR}/cassandra:/var/lib/cassandra:rw'
-    container_name: cassandra
+    container_name: cassandrasmfr
     ports:
       - '9042:9042'
       - '9160:9160'
@@ -58,7 +59,7 @@ services:
       ADVERTISED_PORT: 9092
       ADVERTISED_HOST: kafka
     depends_on:
-      - cassandra
+      - cassandrasmfr
     ports:
       - '9092:9092'
       - '2181:2181'
@@ -85,6 +86,23 @@ services:
       placement:
         constraints: [node.role == manager]
 
+  myadmin:
+    image: phpmyadmin/phpmyadmin:latest
+    restart: always
+    container_name: myadmin
+    ports:
+      - '8383:80'
+    environment:
+      MYSQL_ROOT_PASSWORD: example
+      MYSQL_DATABASE: smfr
+      MYSQL_ALLOW_EMPTY_PASSWORD: 'yes'
+      PMA_ARBITRARY: 1
+    deploy:
+      placement:
+        constraints: [node.role == manager]
+    depends_on:
+      - mysql
+
   annotator:
     restart: always
     container_name: annotator
@@ -106,7 +124,8 @@ services:
       RESTSERVER_BASEPATH: '/1.0'
       CASSANDRA_KEYSPACE: ${CASSANDRA_KEYSPACE}
       KAFKA_TOPIC: ${KAFKA_TOPIC}
-      CASSANDRA_HOST: cassandra
+      CASSANDRA_HOST: ${CASSANDRA_HOST}
+      CASSANDRA_PORT: ${CASSANDRA_PORT}
       MODELS_PATH: /models
       GIT_REPO_MODELS: ${GIT_REPO_MODELS}
       http_proxy: ${http_proxy}
@@ -115,7 +134,7 @@ services:
       - './annotator/src:/annotator'
     depends_on:
       - kafka
-      - cassandra
+      - cassandrasmfr
     deploy:
       placement:
         constraints:
@@ -146,10 +165,11 @@ services:
       CASSANDRA_KEYSPACE: ${CASSANDRA_KEYSPACE}
       MIN_FLOOD_PROBABILITY: ${MIN_FLOOD_PROBABILITY}
       KAFKA_TOPIC: ${KAFKA_TOPIC}
-      CASSANDRA_HOST: cassandra
+      CASSANDRA_HOST: ${CASSANDRA_HOST}
+      CASSANDRA_PORT: ${CASSANDRA_PORT}
     depends_on:
       - kafka
-      - cassandra
+      - cassandrasmfr
       - geonames
     deploy:
       placement:
@@ -168,6 +188,8 @@ services:
         https_proxy: ${https_proxy}
     working_dir: /rest_server
     environment:
+      CASSANDRA_HOST: ${CASSANDRA_HOST}
+      CASSANDRA_PORT: ${CASSANDRA_PORT}
       LOGGING_LEVEL: ${LOGGING_LEVEL}
       PYTHONUNBUFFERED: 'true'
       FLASK_APP: smfr.py
@@ -186,9 +208,11 @@ services:
     depends_on:
       - mysql
       - kafka
-      - cassandra
+      - cassandrasmfr
       - annotator
       - geocoder
+    volumes:
+      - /restserver/uploads:/smfr/uploads/
     deploy:
       placement:
         constraints:

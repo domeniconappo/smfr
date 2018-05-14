@@ -3,6 +3,7 @@ import os
 import sys
 import threading
 import time
+from collections import Counter
 
 from kafka import KafkaProducer
 from kafka.errors import NoBrokersAvailable
@@ -151,21 +152,23 @@ class Geocoder:
 
         tagger = Geoparser(cls.geonames_host)
         errors = 0
-        for i, t in enumerate(tweets):
+        i = 0
+        c = Counter()
+        for x, t in enumerate(tweets, start=1):
             if collection_id in cls.stop_signals:
                 cls.logger.info('Stopping geotagging process {}'.format(collection_id))
                 with cls._lock:
                     cls.stop_signals.remove(collection_id)
                 break
-
+            c[t.lang] += 1
             try:
-                flood_prob = t.annotations.get('flood_probability', ('', 0.0))[1]
-                if flood_prob <= cls.min_flood_prob:
-                    continue
+                # COMMENT OUT CODE BELOW: we will geolocate everything for the moment
+                # flood_prob = t.annotations.get('flood_probability', ('', 0.0))[1]
+                # if flood_prob <= cls.min_flood_prob:
+                #     continue
 
                 t.ttype = 'geotagged'
                 res = tagger.geoparse(t.full_text)
-
                 for result in res:
                     if result.get('country_conf', 0) < 0.5 or 'lat' not in result.get('geo', {}):
                         continue
@@ -177,6 +180,7 @@ class Geocoder:
                     cls.logger.debug('Sending to queue: %s', str(message[:120]))
 
                     cls.producer.send(cls.kafka_topic, message)
+                    i += 1
                     # we just take the first available result
                     break
             except Exception as e:
@@ -187,7 +191,8 @@ class Geocoder:
                     break
                 continue
             finally:
-                if not (i % 250):
+                if not (x % 250):
+                    cls.logger.info('Geotagged so far.... %d. Examinated %d: %s', i, sum(c.values()), str(c))
                     # workaround for lru_cache "memory leak" problems
                     # https://benbernardblog.com/tracking-down-a-freaky-python-memory-leak/
                     tagger.query_geonames.cache_clear()
