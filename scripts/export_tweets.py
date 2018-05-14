@@ -1,6 +1,11 @@
 """
 Export tweets for SMFR
 When running this script, the cassandrasmfr service must be running.
+
+Usage:
+
+    python scripts/export_tweets.py -c 0 -t geotagged -n 1000
+
 """
 
 import sys
