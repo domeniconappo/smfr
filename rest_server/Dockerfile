@@ -15,7 +15,6 @@ RUN apt-get install -y mariadb-client  && mkdir -p $INSTALL_PATH && mkdir -p /sc
 COPY ./rest_server/requirements.txt $INSTALL_PATH/
 RUN pip3.6 install -r $INSTALL_PATH/requirements.txt
 
-RUN apt-get install -y mariadb-client && apt-get autoremove -y
 ENV PATH=/usr/local/mysql/bin/:$PATH
 
 COPY ./rest_server/src/. $INSTALL_PATH/
@@ -25,7 +24,7 @@ COPY ./rest_server/src/config/. /configuration/
 RUN ["chmod", "a+x", "/scripts/wait_for_it.sh"]
 
 # Clean up APT
-RUN apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+RUN apt-get autoremove -y && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 WORKDIR $INSTALL_PATH
 EXPOSE 5555

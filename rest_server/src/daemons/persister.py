@@ -75,9 +75,9 @@ class Persister:
             for i, msg in enumerate(self.consumer):
                 try:
                     msg = msg.value.decode('utf-8')
-                    self.logger.debug('Reading from queue: %s', msg[:120])
                     tweet = Tweet.build_from_kafka_message(msg)
                     tweet.save()
+                    self.logger.debug('Read from queue: %s', str(tweet))
                 except (ValidationError, ValueError, TypeError) as e:
                     self.logger.error(msg[:100])
                     self.logger.error('Poison message for Cassandra: %s', str(e))

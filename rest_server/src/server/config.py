@@ -21,8 +21,6 @@ from sqlalchemy.exc import OperationalError
 from sqlalchemy_utils import database_exists, create_database
 from flask_migrate import Migrate
 
-from smfrcore.models.sqlmodels import sqldb
-from smfrcore.models.cassandramodels import cqldb
 
 UNDER_TESTS = any('nose2' in x for x in sys.argv)
 SERVER_BOOTSTRAP = 'gunicorn' in sys.argv[0]
@@ -96,6 +94,8 @@ class RestServerConfiguration(metaclass=Singleton):
     kafka_bootstrap_server = '{}:9092'.format(kafka_host)
 
     mysql_db_name = '{}{}'.format(server_config['mysql_db_name'], '_test' if UNDER_TESTS else '')
+    mysql_user = 'root'
+    mysql_pass = os.environ.get('MYSQL_PASSWORD', 'password')
     restserver_port = server_config['restserver_port']
     annotator_port = server_config['annotator_port']
     geocoder_port = server_config['geocoder_port']
@@ -124,6 +124,8 @@ class RestServerConfiguration(metaclass=Singleton):
             retries = 1
             while not up and retries <= 5:
                 try:
+                    from smfrcore.models.sqlmodels import sqldb
+                    from smfrcore.models.cassandramodels import cqldb
                     sqldb.init_app(self.flask_app)
                     cqldb.init_app(self.flask_app)
                     self.db_mysql = sqldb
@@ -134,6 +136,7 @@ class RestServerConfiguration(metaclass=Singleton):
                         # This code is executed in case of launching REST Server
                         self.producer = KafkaProducer(bootstrap_servers=self.kafka_bootstrap_server, compression_type='gzip')
                 except (NoHostAvailable, OperationalError, NoBrokersAvailable, socket.gaierror):
+                    self.logger.error('Missing link with a db server.')
                     self.logger.warning('Cassandra/Mysql/Kafka were not up...wait 5 seconds before retrying')
                     sleep(5)
                     retries += 1

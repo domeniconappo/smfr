@@ -93,7 +93,7 @@ services:
     ports:
       - '8383:80'
     environment:
-      MYSQL_ROOT_PASSWORD: example
+      MYSQL_ROOT_PASSWORD: ${MYSQL_PASSWORD}
       MYSQL_DATABASE: smfr
       MYSQL_ALLOW_EMPTY_PASSWORD: 'yes'
       PMA_ARBITRARY: 1
@@ -196,6 +196,7 @@ services:
       SERVER_PATH_UPLOADS: /smfr/uploads/
       KERAS_BACKEND: tensorflow
       MYSQL_HOST: mysql
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
       CQLENG_ALLOW_SCHEMA_MANAGEMENT: 1
       RESTSERVER_PORT: 5555
       RESTSERVER_BASEPATH: '/1.0'

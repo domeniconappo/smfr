@@ -130,7 +130,7 @@ class Annotator:
                     t.annotations = {'flood_probability': ('yes', prediction)}
                     t.ttype = 'annotated'
                     message = t.serialize()
-                    cls.logger.debug('Sending annotated tweet to queue: %s', str(message[:80]))
+                    cls.logger.debug('Sending annotated tweet to queue: %s', str(t))
                     cls.producer.send(cls.kafka_topic, message)
                     i += 1
                     if not (i % 1000):

@@ -152,7 +152,6 @@ class Geocoder:
 
         tagger = Geoparser(cls.geonames_host)
         errors = 0
-        i = 0
         c = Counter()
         for x, t in enumerate(tweets, start=1):
             if collection_id in cls.stop_signals:
@@ -160,7 +159,7 @@ class Geocoder:
                 with cls._lock:
                     cls.stop_signals.remove(collection_id)
                 break
-            c[t.lang] += 1
+
             try:
                 # COMMENT OUT CODE BELOW: we will geolocate everything for the moment
                 # flood_prob = t.annotations.get('flood_probability', ('', 0.0))[1]
@@ -177,10 +176,10 @@ class Geocoder:
                     nuts3_id = Nuts3Finder.find_nuts3_id(*latlong)
                     t.nuts3 = str(nuts3_id) if nuts3_id else None
                     message = t.serialize()
-                    cls.logger.debug('Sending to queue: %s', str(message[:120]))
+                    cls.logger.debug('Sending to queue: %s', str(t))
 
                     cls.producer.send(cls.kafka_topic, message)
-                    i += 1
+                    c[t.lang] += 1
                     # we just take the first available result
                     break
             except Exception as e:
@@ -192,7 +191,7 @@ class Geocoder:
                 continue
             finally:
                 if not (x % 250):
-                    cls.logger.info('Geotagged so far.... %d. Examinated %d: %s', i, sum(c.values()), str(c))
+                    cls.logger.info('\nExaminated: %d \n===========\nGeotagged so far: %d\n %s', sum(x, c.values()), str(c))
                     # workaround for lru_cache "memory leak" problems
                     # https://benbernardblog.com/tracking-down-a-freaky-python-memory-leak/
                     tagger.query_geonames.cache_clear()
