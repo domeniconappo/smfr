@@ -9,3 +9,4 @@ DOCKER_ID_USER=efas
 NODE0=xxx000yyyyy0zzzzzzzz0kkk0
 NODE1=xxx000yyyyy0zzzzzzzz0kkk1
 NODE2=xxx000yyyyy0zzzzzzzz0kkk2
+CASSANDRA_HOST: cassandrasmfr

@@ -124,7 +124,7 @@ services:
       RESTSERVER_BASEPATH: '/1.0'
       CASSANDRA_KEYSPACE: ${CASSANDRA_KEYSPACE}
       KAFKA_TOPIC: ${KAFKA_TOPIC}
-      CASSANDRA_HOST: cassandrasmfr
+      CASSANDRA_HOST: ${CASSANDRA_HOST}
       CASSANDRA_PORT: ${CASSANDRA_PORT}
       MODELS_PATH: /models
       GIT_REPO_MODELS: ${GIT_REPO_MODELS}
@@ -161,7 +161,7 @@ services:
       CASSANDRA_KEYSPACE: ${CASSANDRA_KEYSPACE}
       MIN_FLOOD_PROBABILITY: ${MIN_FLOOD_PROBABILITY}
       KAFKA_TOPIC: ${KAFKA_TOPIC}
-      CASSANDRA_HOST: cassandrasmfr
+      CASSANDRA_HOST: ${CASSANDRA_HOST}
       CASSANDRA_PORT: ${CASSANDRA_PORT}
     depends_on:
       - kafka
@@ -184,7 +184,7 @@ services:
         https_proxy: ${https_proxy}
     working_dir: /rest_server
     environment:
-      CASSANDRA_HOST: cassandrasmfr
+      CASSANDRA_HOST: ${CASSANDRA_HOST}
       CASSANDRA_PORT: ${CASSANDRA_PORT}
       LOGGING_LEVEL: ${LOGGING_LEVEL}
       PYTHONUNBUFFERED: 'true'
