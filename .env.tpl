@@ -10,3 +10,5 @@ NODE0=xxx000yyyyy0zzzzzzzz0kkk0
 NODE1=xxx000yyyyy0zzzzzzzz0kkk1
 NODE2=xxx000yyyyy0zzzzzzzz0kkk2
 CASSANDRA_HOST: cassandrasmfr
+MYSQL_PASSWORD=pass
+CASSANDRA_PORT=9042

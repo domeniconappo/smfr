@@ -97,15 +97,18 @@ class Tweet(cqldb.Model):
         super().__init__(*args, **kwargs)
         Tweet.generate_prepared_statements()
 
+    def __str__(self):
+        return '{o.created_at} - {o.lang}: {o.full_text:.80}'.format(o=self)
+
     @classmethod
-    def get_iterator(cls, collection_id, ttype, lang=None):
+    def get_iterator(cls, collection_id, ttype, lang=None, to_obj=True):
         if not hasattr(cls, 'stmt'):
             cls.generate_prepared_statements()
         results = cls.session.execute(cls.stmt, parameters=[collection_id, ttype])
         for row in results:
             if lang and row.get('lang') != lang:
                 continue
-            yield cls(**row)
+            yield cls(**row) if to_obj else row
 
     @classmethod
     def generate_prepared_statements(cls):
