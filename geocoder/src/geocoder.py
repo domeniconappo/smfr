@@ -168,20 +168,23 @@ class Geocoder:
 
                 t.ttype = 'geotagged'
                 res = tagger.geoparse(t.full_text)
-                for result in res:
-                    if result.get('country_conf', 0) < 0.5 or 'lat' not in result.get('geo', {}):
-                        continue
-                    latlong = (float(result['geo']['lat']), float(result['geo']['lon']))
-                    t.latlong = latlong
-                    nuts3_id = Nuts3Finder.find_nuts3_id(*latlong)
-                    t.nuts3 = str(nuts3_id) if nuts3_id else None
-                    message = t.serialize()
-                    cls.logger.debug('Sending to queue: %s', str(t))
+                if not res:
+                    pass
+                else:
+                    for result in res:
+                        if result.get('country_conf', 0) < 0.5 or 'lat' not in result.get('geo', {}):
+                            continue
+                        latlong = (float(result['geo']['lat']), float(result['geo']['lon']))
+                        t.latlong = latlong
+                        nuts3_id = Nuts3Finder.find_nuts3_id(*latlong)
+                        t.nuts3 = str(nuts3_id) if nuts3_id else None
+                        message = t.serialize()
+                        cls.logger.debug('Sending to queue: %s', str(t))
 
-                    cls.producer.send(cls.kafka_topic, message)
-                    c[t.lang] += 1
-                    # we just take the first available result
-                    break
+                        cls.producer.send(cls.kafka_topic, message)
+                        c[t.lang] += 1
+                        # we just take the first available result
+                        break
             except Exception as e:
                 cls.logger.error('An error occured during geotagging: %s', str(e))
                 errors += 1

@@ -16,19 +16,23 @@ paths:
       operationId: server.api.users.new_user
       summary: Register an user
       parameters:
-        - in: body
-          name: username
-          type: string
-          description: Username
-        - in: body
-          name: password
-          type: string
-          description: Password
+        - name: body
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/User'
+          description: The user account to create
       responses:
         201:
-          description: Return registered user
+          description: New user was created successfully
           schema:
-            type: object
+            $ref: '#/definitions/User'
+          headers:
+            Location:
+              type: string
+              description: The Server returns the URL of the new user
+        400:
+          description: Bad JSON formatting in the request
 
 
   /collections:
@@ -380,3 +384,32 @@ definitions:
         type: array
         items:
           $ref: '#/definitions/CollectionTweetSample'
+
+  # A simple username/password combo for logging in
+  Login:
+    required: [username, password]
+    properties:
+      username:
+        type: string
+        minLength: 1
+      password:
+        type: string
+        minLength: 1
+
+  # The user schema is defined in the "user.yaml" file.
+  # Swagger-Server will automatically convert the user.yaml
+  # file to JSON format
+  User:
+    description: a registered user
+    required: [username, password]
+    properties:
+      username:
+        type: string
+        minLength: 4
+        maxLength: 20
+        pattern: "^\\w+$"   # only allows alphanumeric characters
+        description: username must be unique
+      password:
+        type: string
+        minLength: 8
+        description: Password
