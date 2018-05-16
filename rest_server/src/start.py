@@ -25,12 +25,12 @@ def create_app():
         # it's not executed for Flask CLI executions
 
         import signal
-        from daemons.persister import Persister
+        # from daemons.persister import Persister
         from daemons.collector import Collector
 
         config.init_mysql()
         config.init_cassandra()
-        Persister.build_and_start()
+        # Persister.build_and_start()
         collectors_to_resume = Collector.resume_active()
         for c in collectors_to_resume:
             logger.warning('Resuming collector %s', str(c))
@@ -46,10 +46,10 @@ def create_app():
                 logger.info("Stopping collector %s", str(_id))
                 running_collector.stop(reanimate=True)
 
-            running_consumer = Persister.running_instance()
-            if running_consumer:
-                logger.info("Stopping consumer %s", str(running_consumer))
-                Persister.running_instance().stop()
+            # running_consumer = Persister.running_instance()
+            # if running_consumer:
+            #     logger.info("Stopping consumer %s", str(running_consumer))
+            #     Persister.running_instance().stop()
 
         signal.signal(signal.SIGINT, stop_active_collectors)
         signal.signal(signal.SIGTERM, stop_active_collectors)

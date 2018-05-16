@@ -103,6 +103,38 @@ services:
     depends_on:
       - mysql
 
+  persister:
+    restart: always
+    container_name: persister
+    image: efas/persister
+    build:
+      context: ./
+      dockerfile: persister/Dockerfile
+      args:
+        http_proxy: ${http_proxy}
+        https_proxy: ${https_proxy}
+        models_repo: ${GIT_REPO_MODELS}
+    working_dir: /persister
+    environment:
+      LOGGING_LEVEL: ${LOGGING_LEVEL}
+      PYTHONUNBUFFERED: 'true'
+      CASSANDRA_KEYSPACE: ${CASSANDRA_KEYSPACE}
+      KAFKA_TOPIC: ${KAFKA_TOPIC}
+      KAFKA_BOOTSTRAP_SERVER: ${KAFKA_BOOTSTRAP_SERVER}
+      CASSANDRA_HOST: ${CASSANDRA_HOST}
+      CASSANDRA_PORT: ${CASSANDRA_PORT}
+      http_proxy: ${http_proxy}
+      https_proxy: ${https_proxy}
+    volumes:
+      - './persister/src:/persister'
+    depends_on:
+      - kafka
+      - cassandrasmfr
+    deploy:
+      placement:
+        constraints:
+          - node.id == ${NODE2}
+
   annotator:
     restart: always
     container_name: annotator
@@ -124,6 +156,7 @@ services:
       RESTSERVER_BASEPATH: '/1.0'
       CASSANDRA_KEYSPACE: ${CASSANDRA_KEYSPACE}
       KAFKA_TOPIC: ${KAFKA_TOPIC}
+      KAFKA_BOOTSTRAP_SERVER: ${KAFKA_BOOTSTRAP_SERVER}
       CASSANDRA_HOST: ${CASSANDRA_HOST}
       CASSANDRA_PORT: ${CASSANDRA_PORT}
       MODELS_PATH: /models
@@ -212,6 +245,7 @@ services:
       - cassandrasmfr
       - annotator
       - geocoder
+      - persister
     volumes:
       - /restserver/uploads:/smfr/uploads/
     deploy:

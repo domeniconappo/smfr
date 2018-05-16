@@ -1,7 +1,10 @@
 SMFR_DATADIR=/DATA/smfr/data
+MYSQL_PASSWORD=example
 CASSANDRA_KEYSPACE=smfr_persistent
+CASSANDRA_HOST=cassandrasmfr
 CASSANDRA_PORT=9042
 KAFKA_TOPIC=persister
+KAFKA_BOOTSTRAP_SERVER=kafka:9092
 MIN_FLOOD_PROBABILITY=0.59
 LOGGING_LEVEL=DEBUG
 GIT_REPO_MODELS=https://user:pass@bitbucket.org/lorinivalerio/smfr_models_data.git
@@ -9,6 +12,3 @@ DOCKER_ID_USER=efas
 NODE0=xxx000yyyyy0zzzzzzzz0kkk0
 NODE1=xxx000yyyyy0zzzzzzzz0kkk1
 NODE2=xxx000yyyyy0zzzzzzzz0kkk2
-CASSANDRA_HOST: cassandrasmfr
-MYSQL_PASSWORD=pass
-CASSANDRA_PORT=9042
