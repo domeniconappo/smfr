@@ -8,6 +8,7 @@ from sqlalchemy_utils import ChoiceType, ScalarListType, JSONType
 from .base import SMFRModel, metadata
 from ..ext.database import SQLAlchemy
 
+from .utils import jwt_token, jwt_decode
 
 sqldb = SQLAlchemy(metadata=metadata, session_options={'expire_on_commit': False})
 
@@ -15,11 +16,21 @@ sqldb = SQLAlchemy(metadata=metadata, session_options={'expire_on_commit': False
 class User(SMFRModel):
     __tablename__ = 'users'
     id = Column(Integer, primary_key=True)
-    username = Column(String(32), index=True)
+    name = Column(String(200))
+    email = Column(String(100), index=True, unique=True)
     password_hash = Column(String(128))
 
-    def hash_password(self, password):
-        self.password_hash = pwd_context.encrypt(password)
+    @classmethod
+    def create(cls, name='', email=None, password=None):
+        if not email or not password:
+            raise ValueError('Email and Password are required')
+        user = cls(name=name, email=email, password_hash=cls.hash_password(password))
+        user.save()
+        return user
+
+    @classmethod
+    def hash_password(cls, password):
+        return pwd_context.encrypt(password)
 
     def verify_password(self, password):
         return pwd_context.verify(password, self.password_hash)
@@ -30,6 +41,34 @@ class User(SMFRModel):
         sqldb.session.add(attached_obj)
         sqldb.session.commit()
         self.id = attached_obj.id
+
+    def generate_auth_token(self, app, expires=10):
+        """
+        Generate a JWT Token for user. Default expire is 10 minutes
+        :return: bytes representing the JWT token
+        :raise: JWT encoding exceptions
+        """
+        payload = {
+            'type': 'access',
+            'exp': datetime.datetime.utcnow() + datetime.timedelta(minutes=expires),
+            'iat': datetime.datetime.utcnow(),
+            'sub': self.id,
+            'identity': self.email,
+            'jti': '{}==={}'.format(self.email, self.id),
+            'fresh': '',
+        }
+        return jwt_token(app, payload)
+
+    @classmethod
+    def decode_auth_token(cls, app, auth_token):
+        """
+        Decode the auth token
+        :param auth_token:
+        :return: user id
+        :raise jwt.ExpiredSignatureError, jwt.InvalidTokenError
+        """
+        payload = jwt_decode(app, auth_token)
+        return payload['sub']
 
 
 class TwitterCollection(SMFRModel):

@@ -14,13 +14,18 @@ from cassandra.util import OrderedMapSerializedKey
 from flask.json import JSONEncoder
 from kafka import KafkaProducer
 from kafka.errors import NoBrokersAvailable
-from smfrcore.utils import RUNNING_IN_DOCKER
 
 from sqlalchemy import create_engine
 from sqlalchemy.exc import OperationalError
 from sqlalchemy_utils import database_exists, create_database
 from flask_migrate import Migrate
+from flask_jwt_extended import (
+    JWTManager, jwt_required, create_access_token,
+    get_jwt_identity
+)
 
+from smfrcore.auth import authenticate, identity
+from smfrcore.utils import RUNNING_IN_DOCKER
 
 UNDER_TESTS = any('nose2' in x for x in sys.argv)
 SERVER_BOOTSTRAP = 'gunicorn' in sys.argv[0]
@@ -104,7 +109,7 @@ class RestServerConfiguration(metaclass=Singleton):
 
     debug = not UNDER_TESTS and not server_config.get('production', True)
 
-    logger_level = logging.getLevelName(server_config.get('logging_level', os.environ.get('LOGGING_LEVEL', 'DEBUG')).upper())
+    logger_level = logging.ERROR if UNDER_TESTS else logging.getLevelName(server_config.get('logging_level', os.environ.get('LOGGING_LEVEL', 'DEBUG')).upper())
     logger = logging.getLogger(__name__)
     logger.setLevel(logger_level)
 
@@ -116,6 +121,8 @@ class RestServerConfiguration(metaclass=Singleton):
             self = self.__class__.instances[RestServerConfiguration]
         else:
             self.flask_app = self.set_flaskapp(connexion_app)
+            self.flask_app.config['JWT_SECRET_KEY'] = os.environ.get('SECRET_KEY', 'super-secret')
+            self.jwt = JWTManager(self.flask_app)
             self.logger.debug('Pushing application context')
             self.flask_app.app_context().push()
             self.producer = None

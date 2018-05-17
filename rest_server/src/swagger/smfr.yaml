@@ -11,12 +11,25 @@ produces:
 paths:
 
   /users:
+    get:
+      tags: [users]
+      operationId: server.api.users.get_users
+      summary: Get all users
+      responses:
+        200:
+          description: Users
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/User'
+        400:
+          description: Bad JSON formatting in the request
     post:
       tags: [users]
-      operationId: server.api.users.new_user
+      operationId: server.api.users.signup
       summary: Register an user
       parameters:
-        - name: body
+        - name: payload
           in: body
           required: true
           schema:
@@ -31,6 +44,46 @@ paths:
             Location:
               type: string
               description: The Server returns the URL of the new user
+        400:
+          description: Bad JSON formatting in the request
+
+  /users/{email}:
+    get:
+      tags: [users]
+      operationId: server.api.users.get_user
+      summary: Get an user by email
+      parameters:
+        - in: path
+          name: email
+          type: string
+          required: true
+          description: Numeric ID of the stored collector to start.
+      responses:
+        200:
+          description: User
+          schema:
+            type: object
+            $ref: '#/definitions/User'
+        400:
+          description: Bad JSON formatting in the request
+
+  /users/signin:
+    post:
+      tags: [users]
+      operationId: server.api.users.signin
+      summary: Login an user
+      parameters:
+        - name: payload
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/Login'
+          description: The user account to login
+      responses:
+        201:
+          description: User was logged successfully
+          schema:
+            $ref: '#/definitions/User'
         400:
           description: Bad JSON formatting in the request
 
@@ -387,9 +440,9 @@ definitions:
 
   # A simple username/password combo for logging in
   Login:
-    required: [username, password]
+    required: [email, password]
     properties:
-      username:
+      email:
         type: string
         minLength: 1
       password:
@@ -401,15 +454,18 @@ definitions:
   # file to JSON format
   User:
     description: a registered user
-    required: [username, password]
+    required: [email]
     properties:
-      username:
+      id:
+        type: integer
+      name:
         type: string
-        minLength: 4
-        maxLength: 20
-        pattern: "^\\w+$"   # only allows alphanumeric characters
-        description: username must be unique
-      password:
+      email:
         type: string
         minLength: 8
-        description: Password
+        maxLength: 200
+        pattern: "^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+.[a-zA-Z0-9-.]+$"
+        description: username must be unique
+      password_hash:
+        type: string
+        description: Hashed Password

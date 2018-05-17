@@ -1,7 +1,14 @@
-sqlalchemy_utils
+kafka-python
+cassandra-driver
+gunicorn
+numpy
+cython
+tensorflow
 flask
 flask-sqlalchemy
 flask-cqlalchemy
+sqlalchemy_utils
 ujson
 requests
 PassLib
+PyJWT
