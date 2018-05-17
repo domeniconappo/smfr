@@ -7,6 +7,7 @@ import uuid
 from functools import partial
 
 import connexion
+from flask_jwt_extended import jwt_required
 
 from smfrcore.models.sqlmodels import StoredCollector, TwitterCollection
 from smfrcore.models.cassandramodels import Tweet
@@ -25,6 +26,7 @@ from smfrcore.client.marshmallow import Collector as CollectorSchema, CollectorR
 logger = logging.getLogger(__name__)
 
 
+@jwt_required
 def add_collection(payload):
     """
     POST /collections
@@ -109,6 +111,7 @@ def get_stopped_collectors():
     return res, 200
 
 
+@jwt_required
 def stop_collector(collector_id):
     """
     POST /collections/stop/{collector_id}
@@ -134,6 +137,7 @@ def stop_collector(collector_id):
         return {'error': {'description': 'No collector with this id was found'}}, 404
 
 
+@jwt_required
 def start_collector(collector_id):
     """
     POST /collections/{collector_id}/start
@@ -153,6 +157,7 @@ def start_collector(collector_id):
     return {}, 204
 
 
+@jwt_required
 def remove_collection(collection_id):
     """
     POST /collections/{collection_id}/remove
@@ -215,6 +220,7 @@ def get_collection_details(collection_id):
     return res, 200
 
 
+@jwt_required
 def geolocalize(collection_id, startdate=None, enddate=None):
     """
 
@@ -231,6 +237,7 @@ def geolocalize(collection_id, startdate=None, enddate=None):
         return res, code
 
 
+@jwt_required
 def annotate(collection_id=None, lang='en', forecast_id=None, startdate=None, enddate=None):
     """
 
@@ -249,6 +256,7 @@ def annotate(collection_id=None, lang='en', forecast_id=None, startdate=None, en
         return res, code
 
 
+@jwt_required
 def start_all():
     """
     POST /collections/startall
@@ -261,6 +269,7 @@ def start_all():
     return {}, 204
 
 
+@jwt_required
 def stop_all():
     """
     POST /collections/stopall

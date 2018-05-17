@@ -10,6 +10,7 @@ ENV https_proxy ${http_proxy}
 ENV INSTALL_PATH /geocoder
 ENV LANG=C.UTF-8
 ENV NUTS3_SHAPEFILE 2018_GlobalRegionsWGS84_CUT_WGS84Coord.shp
+ENV NUTS3_GEOJSON GlobalRegions_052018.geojson
 ENV LOGGING_LEVEL DEBUG
 
 RUN mkdir -p $INSTALL_PATH && mkdir -p /scripts
@@ -23,6 +24,7 @@ WORKDIR $INSTALL_PATH
 COPY ./geocoder/src/. ./
 COPY ./geocoder/scripts/. /scripts/
 COPY ./geocoder/config/. /config/
+RUN tar xzf /config/${NUTS3_GEOJSON}.tar.gz
 
 EXPOSE 5557
 

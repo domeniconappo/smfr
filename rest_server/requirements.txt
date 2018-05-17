@@ -1,5 +1,4 @@
 pytz
-kafka-python
 mysqlclient
 
 Flask
@@ -11,6 +10,7 @@ flask-migrate
 sqlalchemy_utils
 flask-cqlalchemy
 flask-marshmallow
+flask-jwt-extended
 
 swagger-marshmallow-codegen
 

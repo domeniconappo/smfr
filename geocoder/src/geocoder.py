@@ -23,10 +23,14 @@ class Nuts3Finder:
     """
     logger = logging.getLogger(__name__)
     logger.setLevel(logging.getLevelName(os.environ.get('LOGGING_LEVEL', 'DEBUG')))
-    shapefile_dir = '/config/'
+    config_dir = '/config/'
     shapefile_name = os.environ.get('NUTS3_SHAPEFILE', '2018_GlobalRegionsWGS84_CUT_WGS84Coord.shp')
-    path = os.path.join(shapefile_dir, shapefile_name)
+    geojson_name = os.environ.get('NUTS3_GEOJSON', 'GlobalRegions_052018.geojson')
+
+    path = os.path.join(config_dir, shapefile_name)
     polygons = [pol for pol in fiona.open(path)]
+    path2 = os.path.join(config_dir, geojson_name)
+    polygons2 = [pol for pol in fiona.open(path)]
 
     @classmethod
     def find_nuts3_id(cls, lat, lon):

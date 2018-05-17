@@ -26,4 +26,4 @@ class CustomDriver(Driver):
     """
     swagger_marshmallow_codegen Driver to use the custom marshmallow schema
     """
-    codegen_factory = Driver.codegen_factory.override(schema_class_path="client._marshmallow_custom:BaseSchema")
+    codegen_factory = Driver.codegen_factory.override(schema_class_path="smfrcore.client._marshmallow_custom:BaseSchema")
