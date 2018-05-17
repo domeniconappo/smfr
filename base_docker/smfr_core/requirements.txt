@@ -12,3 +12,4 @@ ujson
 requests
 PassLib
 PyJWT
+PyYAML

@@ -9,5 +9,5 @@ setup(
     author_email='domenico.nappo@ext.ec.europa.eu',
     install_requires=['ujson', 'requests', 'Flask',
                       'sqlalchemy_utils', 'flask-sqlalchemy', 'flask-cqlalchemy',
-                      'PassLib', 'PyJWT'],
+                      'PassLib', 'pyyaml', 'PyJWT'],
 )
