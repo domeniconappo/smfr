@@ -109,6 +109,8 @@ class TwitterCollection(SMFRModel):
     started_at = Column(TIMESTAMP, nullable=True)
     stopped_at = Column(TIMESTAMP, nullable=True)
     runtime = Column(TIMESTAMP, nullable=True)
+    user_id = Column(Integer, ForeignKey('users.id'))
+    collection = sqldb.relationship('User', backref=sqldb.backref('users', uselist=False))
 
     def __str__(self):
         return 'TwitterCollection<{o.id}: {o.forecast_id} - {o.trigger.value}/{o.ctype.value}>'.format(o=self)
@@ -174,8 +176,8 @@ class StoredCollector(SMFRModel):
 
     id = Column(Integer, primary_key=True, autoincrement=True, nullable=False)
     collection_id = Column(Integer, ForeignKey('virtual_twitter_collection.id'))
-    collection = sqldb.relationship("TwitterCollection",
-                                    backref=sqldb.backref("virtual_twitter_collection", uselist=False))
+    collection = sqldb.relationship('TwitterCollection',
+                                    backref=sqldb.backref('virtual_twitter_collection', uselist=False))
     parameters = Column(JSONType, nullable=False)
 
     def save(self):
