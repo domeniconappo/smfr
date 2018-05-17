@@ -16,7 +16,6 @@ from smfrcore.utils import RUNNING_IN_DOCKER
 
 cqldb = CQLAlchemy()
 
-
 _keyspace = os.environ.get('CASSANDRA_KEYSPACE', 'smfr_persistent')
 _hosts = [os.environ.get('CASSANDRA_HOST', 'cassandrasmfr')]
 _port = os.environ.get('CASSANDRA_PORT', 9042)
@@ -130,23 +129,21 @@ class Tweet(cqldb.Model):
         """
         tweet_obj = cls(**tweet_dict)
         tweet_dict['tweet'] = json.loads(tweet_dict['tweet'])
-
         full_text = tweet_obj.full_text
-
         tweet_dict['tweet']['full_text'] = full_text
-        user_name = tweet_dict['tweet']['user']['screen_name']
-        profile_img = tweet_dict['tweet']['user']['profile_image_url'] or ''
         twid = tweet_dict['tweetid']
-        obj = {'rownum': numrow, 'Full Text': full_text,
-               'Tweet id': '<a href="https://twitter.com/statuses/{}">{}</a>'.format(twid, twid),
-               'original_tweet': tweet_obj.original_tweet_as_string,
-               'Profile': '<a href="https://twitter.com/{}"><img src="{}"/></a>'.format(user_name, profile_img),
-               'Name': '<a href="https://twitter.com/{}">{}</a>'.format(user_name, user_name),
-               'Type': tweet_dict['ttype'], 'Lang': tweet_dict['lang'] or '-',
-               'Annotations': tweet_obj.pretty_annotations,
-               'LatLon': tweet_obj.latlong or '-',
-               'Collected at': tweet_dict['created_at'] or '',
-               'Tweeted at': tweet_dict['tweet']['created_at'] or ''}
+        obj = {
+            'rownum': numrow,
+            'Full Text': full_text,
+            'Tweet id': '<a href="https://twitter.com/statuses/{}">{}</a>'.format(twid, twid),
+            'original_tweet': tweet_obj.original_tweet_as_string,
+            'Type': tweet_dict['ttype'],
+            'Lang': tweet_dict['lang'] or '-',
+            'Annotations': tweet_obj.pretty_annotations,
+            'LatLon': tweet_obj.latlong or '-',
+            'Collected at': tweet_dict['created_at'] or '',
+            'Tweeted at': tweet_dict['tweet']['created_at'] or ''
+        }
         return obj
 
     @classmethod
@@ -231,7 +228,9 @@ class Tweet(cqldb.Model):
         obj = cls()
         for k, v in values.items():
             if k == 'created_at':
-                v = datetime.datetime.strptime(v.partition('.')[0], '%Y-%m-%dT%H:%M:%S') if v is not None else datetime.datetime.now().replace(microsecond=0)
+                v = datetime.datetime.strptime(v.partition('.')[0],
+                                               '%Y-%m-%dT%H:%M:%S') if v is not None else datetime.datetime.now().replace(
+                    microsecond=0)
             setattr(obj, k, v)
         return obj
 
@@ -251,6 +250,7 @@ class Tweet(cqldb.Model):
                 break
 
         if not full_text:
-            full_text = tweet.get('full_text') or tweet.get('extended_tweet', {}).get('full_text', '') or tweet.get('text', '')
+            full_text = tweet.get('full_text') or tweet.get('extended_tweet', {}).get('full_text', '') or tweet.get(
+                'text', '')
 
         return full_text
