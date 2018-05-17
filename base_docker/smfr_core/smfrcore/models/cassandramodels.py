@@ -125,18 +125,18 @@ class Tweet(cqldb.Model):
         """
         tweet_obj = cls(**tweet_dict)
         tweet_dict['tweet'] = json.loads(tweet_dict['tweet'])
-
+        twid = tweet_dict['tweetid']
         full_text = tweet_obj.full_text
 
         tweet_dict['tweet']['full_text'] = full_text
-        user_name = tweet_dict['tweet']['user']['screen_name']
-        profile_img = tweet_dict['tweet']['user']['profile_image_url'] or ''
+        # user_name = tweet_dict['tweet']['user']['screen_name']
+        # profile_img = tweet_dict['tweet']['user']['profile_image_url'] or ''
 
         obj = {'rownum': numrow, 'Full Text': full_text,
-               'Tweet id': '<a href="https://twitter.com/statuses/{}"'.format(tweet_dict['tweetid']),
+               'Tweet id': '<a href="https://twitter.com/statuses/{}">{}</a>'.format(twid, twid),
                'original_tweet': tweet_obj.original_tweet_as_string,
-               'Profile': '<a href="https://twitter.com/{}"><img src="{}"/></a>'.format(user_name, profile_img),
-               'Name': '<a href="https://twitter.com/{}">{}</a>'.format(user_name, user_name),
+               # 'Profile': '<a href="https://twitter.com/{}"><img src="{}"/></a>'.format(user_name, profile_img),
+               # 'Name': '<a href="https://twitter.com/{}">{}</a>'.format(user_name, user_name),
                'Type': tweet_dict['ttype'], 'Lang': tweet_dict['lang'] or '-',
                'Annotations': tweet_obj.pretty_annotations,
                'LatLon': tweet_obj.latlong or '-',
