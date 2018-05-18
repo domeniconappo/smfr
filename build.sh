@@ -8,7 +8,7 @@ function getProperty {
    echo ${PROP_VALUE}
 }
 
-
+current_branch=`git rev-parse --symbolic-full-name --abbrev-ref HEAD`
 SMFR_DATADIR=$(getProperty "SMFR_DATADIR")
 GIT_REPO_MODELS=$(getProperty "GIT_REPO_MODELS")
 DOCKER_ID_USER=$(getProperty "DOCKER_ID_USER")
@@ -30,13 +30,23 @@ fi
 
 if [ -n "${DOCKER_ID_USER}" ]; then
 
-    docker build --build-arg http_proxy=${http_proxy} --build-arg https_proxy=${http_proxy} -t smfr_base base_docker/.
-    docker tag smfr_base efas/smfr_base
-    docker push efas/smfr_base
+    docker build --build-arg http_proxy=${http_proxy} --build-arg https_proxy=${http_proxy} -t smfr_base:${current_branch} base_docker/.
+    docker tag smfr_base:${current_branch} efas/smfr_base:${current_branch}
+    docker push efas/smfr_base:${current_branch}
 fi
 
 docker-compose build
 
 if [ -n "${DOCKER_ID_USER}" ]; then
-    docker-compose push
+    docker tag efas/persister:${current_branch} efas/persister:${current_branch}
+    docker tag efas/annotator:${current_branch} efas/annotator:${current_branch}
+    docker tag efas/geocoder:${current_branch} efas/geocoder:${current_branch}
+    docker tag efas/restserver:${current_branch} efas/restserver:${current_branch}
+    docker tag efas/web:${current_branch} efas/web:${current_branch}
+
+    docker push efas/persister:${current_branch}
+    docker push efas/annotator:${current_branch}
+    docker push efas/geocoder:${current_branch}
+    docker push efas/restserver:${current_branch}
+    docker push efas/web:${current_branch}
 fi

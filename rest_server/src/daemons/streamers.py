@@ -45,7 +45,7 @@ class CollectorStreamer(TwythonStreamer):
                 tweet = Tweet.build_from_tweet(self.collection, data)
                 # the tweet is sent immediately to kafka queue
                 message = tweet.serialize()
-                self.logger.info('Sending to queue: {}'.format(message[:120]))
+                self.logger.debug('Sending to queue: %s', str(tweet))
                 self.producer.send(self.kafka_topic, message)
 
     def on_error(self, status_code, data):

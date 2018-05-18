@@ -7,15 +7,17 @@ import uuid
 from functools import partial
 
 import connexion
-from flask_jwt_extended import jwt_required
+from flask import abort
+from flask_jwt_extended import jwt_required, get_jwt_identity
 
-from smfrcore.models.sqlmodels import StoredCollector, TwitterCollection
+from smfrcore.models.sqlmodels import StoredCollector, TwitterCollection, User
 from smfrcore.models.cassandramodels import Tweet
 
 from daemons.collector import Collector
 
 from smfrcore.errors import SMFRDBError, SMFRRestException
 from server.api.clients import AnnotatorClient, GeocoderClient
+from server.api.decorators import check_identity
 from server.config import CONFIG_STORE_PATH
 
 from server.api import utils
@@ -26,6 +28,7 @@ from smfrcore.client.marshmallow import Collector as CollectorSchema, CollectorR
 logger = logging.getLogger(__name__)
 
 
+@check_identity
 @jwt_required
 def add_collection(payload):
     """
@@ -34,8 +37,11 @@ def add_collection(payload):
     :param payload: a CollectorPayload object
     :return:
     """
+    identity = get_jwt_identity()
+    user = User.query.filter_by(email=identity).first()
+    if user.email != identity:
+        abort(403)
     payload = connexion.request.form.to_dict()
-    logger.debug(payload)
     if not payload.get('forecast'):
         payload['forecast'] = 123456789
 
@@ -111,6 +117,7 @@ def get_stopped_collectors():
     return res, 200
 
 
+@check_identity
 @jwt_required
 def stop_collector(collector_id):
     """
@@ -137,6 +144,7 @@ def stop_collector(collector_id):
         return {'error': {'description': 'No collector with this id was found'}}, 404
 
 
+@check_identity
 @jwt_required
 def start_collector(collector_id):
     """
@@ -157,6 +165,7 @@ def start_collector(collector_id):
     return {}, 204
 
 
+@check_identity
 @jwt_required
 def remove_collection(collection_id):
     """
@@ -180,6 +189,8 @@ def remove_collection(collection_id):
     return {}, 204
 
 
+@check_identity
+@jwt_required
 def get_collection_details(collection_id):
     """
     GET /collections/{collection_id}/details
@@ -220,6 +231,7 @@ def get_collection_details(collection_id):
     return res, 200
 
 
+@check_identity
 @jwt_required
 def geolocalize(collection_id, startdate=None, enddate=None):
     """
@@ -237,6 +249,7 @@ def geolocalize(collection_id, startdate=None, enddate=None):
         return res, code
 
 
+@check_identity
 @jwt_required
 def annotate(collection_id=None, lang='en', forecast_id=None, startdate=None, enddate=None):
     """
@@ -256,6 +269,7 @@ def annotate(collection_id=None, lang='en', forecast_id=None, startdate=None, en
         return res, code
 
 
+@check_identity
 @jwt_required
 def start_all():
     """
@@ -269,6 +283,7 @@ def start_all():
     return {}, 204
 
 
+@check_identity
 @jwt_required
 def stop_all():
     """
