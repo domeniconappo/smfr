@@ -40,7 +40,7 @@ class Collector:
     def __init__(self, config_file,
                  keywords_file=None, locations_file=None,
                  running_time=None, forecast_id=None,
-                 nuts3=None, nuts3source=None, tz=None):
+                 nuts3=None, nuts3source=None, tz=None, user=None):
 
         self.forecast_id = forecast_id
         self.config = config_file
@@ -65,7 +65,7 @@ class Collector:
         # Build a query from a keywords or locations file containing pairs lang, keyword or a list of bounding boxes
         self.query = self.build_query()
 
-        self.collection = TwitterCollection.build_from_collector(self)
+        self.collection = TwitterCollection.build_from_collector(self, user)
         tw_api_account = collector_config[self.account_keys[self.trigger]]
         self.streamer = CollectorStreamer(
             tw_api_account['consumer_key'],
@@ -84,12 +84,12 @@ class Collector:
         return getattr(sys.modules[__name__], clazz)
 
     @classmethod
-    def from_payload(cls, payload):
+    def from_payload(cls, payload, user):
         return cls(config_file=payload['config'], keywords_file=payload.get('kwfile'),
                    locations_file=payload.get('locfile'),
                    running_time=payload.get('runtime'), tz=payload.get('tzclient'),
                    forecast_id=payload.get('forecast'),
-                   nuts3=payload.get('nuts3'), nuts3source=payload.get('nuts3source'))
+                   nuts3=payload.get('nuts3'), nuts3source=payload.get('nuts3source'), user=user)
 
     def build_query(self):
         """

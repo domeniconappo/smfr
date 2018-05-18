@@ -11,7 +11,6 @@ ENV INSTALL_PATH /geocoder
 ENV LANG=C.UTF-8
 ENV NUTS3_SHAPEFILE 2018_GlobalRegionsWGS84_CUT_WGS84Coord.shp
 ENV NUTS3_GEOJSON GlobalRegions_052018.geojson
-ENV LOGGING_LEVEL DEBUG
 
 RUN mkdir -p $INSTALL_PATH && mkdir -p /scripts
 

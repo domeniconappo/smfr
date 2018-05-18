@@ -116,9 +116,10 @@ class TwitterCollection(SMFRModel):
         return 'TwitterCollection<{o.id}: {o.forecast_id} - {o.trigger.value}/{o.ctype.value}>'.format(o=self)
 
     @classmethod
-    def build_from_collector(cls, collector):
+    def build_from_collector(cls, collector, user=None):
         """
         Construct a TwitterCollection object mapped to a row in MySQL
+        :param user: User object
         :param collector: A :class:`daemons.collector.Collector` object
         :return: A :class:`TwitterCollection` object
         """
@@ -133,6 +134,7 @@ class TwitterCollection(SMFRModel):
             languages=query['languages'],
             locations=query['locations'],
             runtime=collector.runtime,
+            user_id=user.id
         )
         kwargs = {}
         for k, v in vars(collection).items():

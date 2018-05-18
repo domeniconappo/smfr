@@ -62,9 +62,12 @@ class Tweet(cqldb.Model):
     """
     ttype = cqldb.columns.Text(required=True, partition_key=True)
 
-    nuts3 = cqldb.columns.Text()
-    nuts3source = cqldb.columns.Text()
+    # nuts3 = cqldb.columns.Text()
+    # nuts3source = cqldb.columns.Text()
 
+    geo = cqldb.columns.Map(
+        cqldb.columns.Text, cqldb.columns.Text,
+    )
     annotations = cqldb.columns.Map(
         cqldb.columns.Text,
         cqldb.columns.Tuple(
@@ -228,9 +231,9 @@ class Tweet(cqldb.Model):
         obj = cls()
         for k, v in values.items():
             if k == 'created_at':
-                v = datetime.datetime.strptime(v.partition('.')[0],
-                                               '%Y-%m-%dT%H:%M:%S') if v is not None else datetime.datetime.now().replace(
-                    microsecond=0)
+                v = datetime.datetime.strptime(
+                    v.partition('.')[0], '%Y-%m-%dT%H:%M:%S') if v is not None else datetime.datetime.now()\
+                    .replace(microsecond=0)
             setattr(obj, k, v)
         return obj
 

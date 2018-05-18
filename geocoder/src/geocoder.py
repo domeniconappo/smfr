@@ -8,11 +8,12 @@ from collections import Counter
 from kafka import KafkaProducer
 from kafka.errors import NoBrokersAvailable
 from mordecai import Geoparser
-import fiona
 from shapely.geometry import Point, Polygon
 
 from smfrcore.models.cassandramodels import Tweet
 from smfrcore.utils import RUNNING_IN_DOCKER
+
+from utils import read_geojson
 
 
 class Nuts3Finder:
@@ -27,39 +28,38 @@ class Nuts3Finder:
     shapefile_name = os.environ.get('NUTS3_SHAPEFILE', '2018_GlobalRegionsWGS84_CUT_WGS84Coord.shp')
     geojson_name = os.environ.get('NUTS3_GEOJSON', 'GlobalRegions_052018.geojson')
 
-    path = os.path.join(config_dir, shapefile_name)
-    polygons = [pol for pol in fiona.open(path)]
-    path2 = os.path.join(config_dir, geojson_name)
-    polygons2 = [pol for pol in fiona.open(path)]
+    # path = os.path.join(config_dir, shapefile_name)
+    # polygons = [pol for pol in fiona.open(path)]
+    path = os.path.join(config_dir, geojson_name)
+    nutsitems = read_geojson(path)
 
     @classmethod
-    def find_nuts3_id(cls, lat, lon):
+    def find_nuts3(cls, lat, lon):
         """
         Check if a point (lat, lon) is in a NUTS3 region and returns its id. None otherwise.
         :param lat: float Latitude of a point
         :param lon: float Longituted of a point
         :return: int NUTS3 id as it's stored in EFAS table
         """
-        lat, lon = float(lat), float(lon)
-        point = Point(lon, lat)
-        p = None
+        point = Point(float(lon), float(lat))
+        nuts = None
         geo = None
         try:
-            for p in cls.polygons:
+            for nuts in cls.nutsitems:
                 geo = None
-                for geo in p['geometry']['coordinates']:
+                for geo in nuts.geometry:
                     if isinstance(geo[0], tuple):
                         poly = Polygon(geo)
                         if point.within(poly):
-                            return p['properties'].get('ID') or p.get('id', '')
+                            return nuts
                     else:
                         for ggeo in geo:
                             poly = Polygon(ggeo)
                             if point.within(poly):
-                                return p['properties'].get('ID') or p.get('id', '')
+                                return nuts
         except (KeyError, IndexError) as e:
             cls.logger.error('An error occured %s %s', type(e), str(e))
-            cls.logger.error(p)
+            cls.logger.error(nuts)
             cls.logger.error(geo)
             return None
         except Exception as e:
@@ -97,6 +97,7 @@ class Geocoder:
 
     min_flood_prob = float(os.environ.get('MIN_FLOOD_PROBABILITY', 0.59))
     kafka_topic = os.environ.get('KAFKA_TOPIC', 'persister')
+    tagger = Geoparser(geonames_host)
 
     @classmethod
     def is_running_for(cls, collection_id):
@@ -142,6 +143,63 @@ class Geocoder:
             cls.stop_signals.append(collection_id)
 
     @classmethod
+    def geoparse_tweet(cls, tweet):
+        """
+
+        :param tweet:
+        :return:
+        """
+        # try to geoparse
+        latlong_list = []
+        res = cls.tagger.geoparse(tweet.full_text)
+        for result in res:
+            if result.get('country_conf', 0) < 0.5 or 'lat' not in result.get('geo', {}):
+                continue
+            latlong_list.append((float(result['geo']['lat']), float(result['geo']['lon'])))
+        return latlong_list
+
+    @classmethod
+    def get_coordinates_from_tweet(cls, tweet):
+        """
+
+        :param tweet:
+        :return:
+        """
+        t = tweet.original_tweet_as_dict
+        latlong = None
+        if 'coordinates' in t or t.get('geo'):
+            coords = t['coordinates'].get('coordinates') or t['geo'].get('coordinates')
+            if coords:
+                latlong = coords[1], coords[0]
+        return latlong
+
+    @classmethod
+    def find_nuts_heuristic(cls, tweet):
+        """
+
+        :param tweet:
+        :return:
+        """
+        latlong_list = cls.geoparse_tweet(tweet)
+        latlong_from_tweet = cls.get_coordinates_from_tweet(tweet)
+        if not latlong_list and latlong_from_tweet:
+            nuts3 = Nuts3Finder.find_nuts3(*latlong_from_tweet)
+            if nuts3:
+                nutsr_source = 'coordinates'
+                return nuts3, nutsr_source, latlong_from_tweet
+        elif latlong_list and latlong_from_tweet:
+            pass
+        elif len(latlong_list) == 1:
+            nuts3 = Nuts3Finder.find_nuts3(*latlong_list[0])
+        for latlong in latlong_list:
+            # checking the list of mentioned places coordinates
+            nuts3 = Nuts3Finder.find_nuts3(*latlong)
+            if nuts3:
+                nutsr_source = 'mentions'
+                return nuts3, nutsr_source, latlong
+        return None, None, None
+
+    @classmethod
     def start(cls, collection_id):
         """
         Main Geocoder method. It's usually executed in a background thread.
@@ -154,7 +212,6 @@ class Geocoder:
 
         tweets = Tweet.get_iterator(collection_id, ttype)
 
-        tagger = Geoparser(cls.geonames_host)
         errors = 0
         c = Counter()
         for x, t in enumerate(tweets, start=1):
@@ -171,24 +228,20 @@ class Geocoder:
                 #     continue
 
                 t.ttype = 'geotagged'
-                res = tagger.geoparse(t.full_text)
-                if not res:
-                    pass
-                else:
-                    for result in res:
-                        if result.get('country_conf', 0) < 0.5 or 'lat' not in result.get('geo', {}):
-                            continue
-                        latlong = (float(result['geo']['lat']), float(result['geo']['lon']))
-                        t.latlong = latlong
-                        nuts3_id = Nuts3Finder.find_nuts3_id(*latlong)
-                        t.nuts3 = str(nuts3_id) if nuts3_id else None
-                        message = t.serialize()
-                        cls.logger.debug('Sending to queue: %s', str(t))
+                nuts3_id, nuts3_source, latlong = cls.find_nuts_heuristic(t)
 
-                        cls.producer.send(cls.kafka_topic, message)
-                        c[t.lang] += 1
-                        # we just take the first available result
-                        break
+                if not latlong:
+                    continue
+
+                t.latlong = latlong
+                t.nuts3 = str(nuts3_id) if nuts3_id else None
+                t.nuts3source = nuts3_source
+                message = t.serialize()
+                cls.logger.debug('Send geocoded tweet to persister: %s', str(t))
+
+                cls.producer.send(cls.kafka_topic, message)
+                c[t.lang] += 1
+
             except Exception as e:
                 cls.logger.error('An error occured during geotagging: %s', str(e))
                 errors += 1
@@ -201,8 +254,8 @@ class Geocoder:
                     cls.logger.info('\nExaminated: %d \n===========\nGeotagged so far: %d\n %s', sum(x, c.values()), str(c))
                     # workaround for lru_cache "memory leak" problems
                     # https://benbernardblog.com/tracking-down-a-freaky-python-memory-leak/
-                    tagger.query_geonames.cache_clear()
-                    tagger.query_geonames_country.cache_clear()
+                    cls.tagger.query_geonames.cache_clear()
+                    cls.tagger.query_geonames_country.cache_clear()
 
         # remove from `_running` list
         cls._running.remove(collection_id)
