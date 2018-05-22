@@ -49,16 +49,23 @@ Final product of SMFR is a event-related map reporting relevant tweets.
     - `NODE2=xxx000yyyyy0zzzzzzzz0kkk2`
       - Docker swarm node ids to set up for swarm deploy. Check [Developer Notes](DEVELOPER_NOTES.md) for more info.
 - Execute `./build.sh` if you need to rebuild images. This step can take several minutes and will also push updates to Docker registry in case the DOCKER_ID_USER is set and it's got rights to push.
+    - __Note__: It's not possible to build images with `docker-compose build` command
+     as there are some variables substitution to perform (e.g. current branch name giving the image tag).
 In this case, you must login to Docker Hub (just issue `$ docker login` before to build).
-- Execute `docker-compose up -d` for local testing or `$ ./deploy.sh` script if you deploy to a Docker Swarm cluster
+- Execute `$ ./dev_up.sh` for local testing or `$ ./up.sh` script if you deploy to a Docker Swarm cluster
+
 - You will see all services starting:
-    - cassandra
+    - cassandrasmfr
     - mysql
-    - geonames
+    - phpmyadmin
+    - kafka
+    - geonames (Gazzetter)
+    - persister
     - annotator
     - geocoder
     - restserver
     - web
+
 - Wait a couple of minutes for services to get "warm" and connect to each other.
 - Connect to the web interface by pointing your browser to http://localhost:8888
 - REST Server API responds to http://localhost:5555/1.0 calls.

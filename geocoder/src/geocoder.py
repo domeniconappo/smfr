@@ -3,8 +3,9 @@ import os
 import sys
 import threading
 import time
-from collections import Counter
+from collections import Counter, namedtuple
 
+import ujson as json
 from kafka import KafkaProducer
 from kafka.errors import NoBrokersAvailable
 from mordecai import Geoparser
@@ -13,7 +14,29 @@ from shapely.geometry import Point, Polygon
 from smfrcore.models.cassandramodels import Tweet
 from smfrcore.utils import RUNNING_IN_DOCKER
 
-from utils import read_geojson
+
+NutsItem = namedtuple('NutsItem', 'id, nuts_id, properties, geometry')
+
+
+def read_geojson(path):
+    items = []
+    try:
+        with open(path) as f:
+            data = json.load(f, precise_float=True)
+    except FileNotFoundError:
+        data = {'features': []}
+        Nuts3Finder.logger.error('File not found: %s', path)
+
+    for feat in data['features']:
+        items.append(
+            NutsItem(
+                feat['properties']['ObjectID'],
+                feat['properties']['NUTS_ID'],
+                feat['properties'],
+                feat['geometry']['coordinates']
+            )
+        )
+    return items
 
 
 class Nuts3Finder:
@@ -24,7 +47,7 @@ class Nuts3Finder:
     """
     logger = logging.getLogger(__name__)
     logger.setLevel(logging.getLevelName(os.environ.get('LOGGING_LEVEL', 'DEBUG')))
-    config_dir = '/config/'
+    config_dir = '/config/' if RUNNING_IN_DOCKER else './config'
     shapefile_name = os.environ.get('NUTS3_SHAPEFILE', '2018_GlobalRegionsWGS84_CUT_WGS84Coord.shp')
     geojson_name = os.environ.get('NUTS3_GEOJSON', 'GlobalRegions_052018.geojson')
 
@@ -176,27 +199,49 @@ class Geocoder:
     @classmethod
     def find_nuts_heuristic(cls, tweet):
         """
+        The following heuristic is applied:
+        First, a gazetteer is run on the tweet to find location mentions
+        If no location mention is found:
+            If the tweet contains (longitude, latitude): the NUTS3 area containing that (longitude, latitude) is returned (nuts3source="coordinates")
+            Otherwise, NULL is returned
+        If location mentions mapping to a list of NUTS3 areas are found:
+            If the tweet contains (longitude, latitude), then if any of the NUTS3 areas contain that point, that NUTS3 area is returned (nuts3source="coordinates-and-mentions")
+            Otherwise
+                If there is a single NUTS3 area in the list, that NUTS3 area is returned (nuts3source="mentions")
+                Otherwise, NULL is returned
 
         :param tweet:
-        :return:
+        :return: tuple (nuts3, nuts_source, coordinates)
         """
+        nuts3, nuts_source, coordinates = None, None, None
         latlong_list = cls.geoparse_tweet(tweet)
         latlong_from_tweet = cls.get_coordinates_from_tweet(tweet)
+
         if not latlong_list and latlong_from_tweet:
+            # No location mention is found and the tweet has coordinates
             nuts3 = Nuts3Finder.find_nuts3(*latlong_from_tweet)
             if nuts3:
-                nutsr_source = 'coordinates'
-                return nuts3, nutsr_source, latlong_from_tweet
-        elif latlong_list and latlong_from_tweet:
-            pass
-        elif len(latlong_list) == 1:
-            nuts3 = Nuts3Finder.find_nuts3(*latlong_list[0])
-        for latlong in latlong_list:
-            # checking the list of mentioned places coordinates
-            nuts3 = Nuts3Finder.find_nuts3(*latlong)
-            if nuts3:
-                nutsr_source = 'mentions'
-                return nuts3, nutsr_source, latlong
+                coordinates = latlong_from_tweet
+                nuts_source = 'coordinates'
+            return nuts3, nuts_source, coordinates
+        elif len(latlong_list) > 1 and latlong_from_tweet:
+            nuts3_from_tweet = Nuts3Finder.find_nuts3(*latlong_from_tweet)
+            for latlong in latlong_list:
+                # checking the list of mentioned places coordinates
+                nuts3 = Nuts3Finder.find_nuts3(*latlong)
+                if nuts3 == nuts3_from_tweet:
+                    coordinates = latlong
+                    nuts_source = 'coordinates-and-mentions'
+                    break
+            return nuts3, nuts_source, coordinates
+        elif len(latlong_list) == 1 and not latlong_from_tweet:
+            # returning the only mention that is found
+            coordinates = latlong_list[0]
+            nuts3 = Nuts3Finder.find_nuts3(*coordinates)
+            nuts_source = 'mentions'
+            return nuts3, nuts_source, coordinates
+        elif len(latlong_list) > 1 and not latlong_from_tweet:
+            return None, None, None
         return None, None, None
 
     @classmethod

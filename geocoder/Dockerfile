@@ -1,4 +1,4 @@
-FROM efas/smfr_base:latest
+FROM efas/smfr_base:${IMAGE_TAG}
 MAINTAINER Domenico Nappo <domenico.nappo@ext.ec.europa.eu>
 
 ARG http_proxy
@@ -12,18 +12,17 @@ ENV LANG=C.UTF-8
 ENV NUTS3_SHAPEFILE 2018_GlobalRegionsWGS84_CUT_WGS84Coord.shp
 ENV NUTS3_GEOJSON GlobalRegions_052018.geojson
 
-RUN mkdir -p $INSTALL_PATH && mkdir -p /scripts
+RUN mkdir -p $INSTALL_PATH && mkdir -p /scripts && mkdir -p /config
 
 RUN pip3.6 install spacy && python3.6 -m spacy download en_core_web_lg
 
 COPY ./geocoder/requirements.txt ./
 RUN pip3.6 install -r requirements.txt
 
-WORKDIR $INSTALL_PATH
-COPY ./geocoder/src/. ./
+COPY ./geocoder/src/. ${INSTALL_PATH}
 COPY ./geocoder/scripts/. /scripts/
-COPY ./geocoder/config/. /config/
-RUN tar xzf /config/${NUTS3_GEOJSON}.tar.gz
+ADD ./geocoder/config/${NUTS3_GEOJSON}.tar.gz /config/
+RUN chmod a+r /config/${NUTS3_GEOJSON}
 
 EXPOSE 5557
 
