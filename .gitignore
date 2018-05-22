@@ -4,7 +4,7 @@
 .idea
 rest_server/src/config/*.yaml
 .env
-
+Dockerfile.ready
 !rest_server/src/config/*.tpl
 
 # parsed docker-composer.yaml files for `docker stack deploy`

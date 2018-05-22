@@ -8,7 +8,7 @@ function getProperty {
    echo ${PROP_VALUE}
 }
 
-current_branch=`git rev-parse --symbolic-full-name --abbrev-ref HEAD`
+export current_branch=`git rev-parse --symbolic-full-name --abbrev-ref HEAD`
 SMFR_DATADIR=$(getProperty "SMFR_DATADIR")
 GIT_REPO_MODELS=$(getProperty "GIT_REPO_MODELS")
 DOCKER_ID_USER=$(getProperty "DOCKER_ID_USER")
@@ -35,6 +35,8 @@ if [ -n "${DOCKER_ID_USER}" ]; then
     docker push efas/smfr_base:${current_branch}
 fi
 
+
+python compose4build.py ${current_branch}
 docker-compose build
 
 if [ -n "${DOCKER_ID_USER}" ]; then

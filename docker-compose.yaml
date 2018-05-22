@@ -107,10 +107,10 @@ services:
   persister:
     restart: always
     container_name: persister
-    image: efas/persister:${branch}
+    image: efas/persister:${current_branch}
     build:
       context: ./
-      dockerfile: persister/Dockerfile
+      dockerfile: persister/Dockerfile.ready
       args:
         http_proxy: ${http_proxy}
         https_proxy: ${https_proxy}
@@ -138,10 +138,10 @@ services:
   annotator:
     restart: always
     container_name: annotator
-    image: efas/annotator:${branch}
+    image: efas/annotator:${current_branch}
     build:
       context: ./
-      dockerfile: annotator/Dockerfile
+      dockerfile: annotator/Dockerfile.ready
       args:
         http_proxy: ${http_proxy}
         https_proxy: ${https_proxy}
@@ -176,10 +176,10 @@ services:
   geocoder:
     restart: always
     container_name: geocoder
-    image: efas/geocoder:${branch}
+    image: efas/geocoder:${current_branch}
     build:
       context: ./
-      dockerfile: geocoder/Dockerfile
+      dockerfile: geocoder/Dockerfile.ready
       args:
         http_proxy: ${http_proxy}
         https_proxy: ${https_proxy}
@@ -200,6 +200,7 @@ services:
       KAFKA_TOPIC: ${KAFKA_TOPIC}
       CASSANDRA_HOST: ${CASSANDRA_HOST}
       CASSANDRA_PORT: ${CASSANDRA_PORT}
+      NUTS3_GEOJSON: GlobalRegions_052018.geojson
     depends_on:
       - kafka
       - cassandrasmfr
@@ -212,10 +213,10 @@ services:
   restserver:
     restart: always
     container_name: restserver
-    image: efas/restserver:${branch}
+    image: efas/restserver:${current_branch}
     build:
       context: ./
-      dockerfile: rest_server/Dockerfile
+      dockerfile: rest_server/Dockerfile.ready
       args:
         http_proxy: ${http_proxy}
         https_proxy: ${https_proxy}
@@ -256,10 +257,10 @@ services:
   web:
     restart: always
     container_name: web
-    image: efas/web:${branch}
+    image: efas/web:${current_branch}
     build:
       context: ./
-      dockerfile: web/Dockerfile
+      dockerfile: web/Dockerfile.ready
       args:
         http_proxy: ${http_proxy}
         https_proxy: ${http_proxy}

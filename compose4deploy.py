@@ -13,7 +13,7 @@ class ParserHelpOnError(argparse.ArgumentParser):
 
     def add_args(self):
         self.add_argument('-i', '--input', required=True, default='./docker-compose-parsed.yaml',
-                                    help='Path to input docker-compose file', metavar='input')
+                          help='Path to input docker-compose file', metavar='input')
         self.add_argument('-o', '--output',
                           help='Path to the output docker-compose file, cleaned for docker stack deploy command.',
                           default='./docker-compose-4deploy.yaml', metavar='output')
