@@ -14,6 +14,7 @@ docker-compose-4deploy.yaml
 # common source files ignore config
 # dirs mirrored from client/
 uploads/
+GlobalRegions_052018.geojson
 *geonames_index*
 # Byte-compiled / optimized / DLL files
 __pycache__/

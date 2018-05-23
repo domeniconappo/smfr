@@ -68,6 +68,10 @@ class Tweet(cqldb.Model):
     geo = cqldb.columns.Map(
         cqldb.columns.Text, cqldb.columns.Text,
     )
+    """
+    Map column for geo information
+    """
+
     annotations = cqldb.columns.Map(
         cqldb.columns.Text,
         cqldb.columns.Tuple(

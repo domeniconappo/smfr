@@ -121,7 +121,7 @@ From host, connect to MySQL DB as the docker root user with `mysql -h 127.0.0.1 
 Table migrations (i.e. new columns) will be automatically added by CQLAlchemy.
 **_Note: New columns are added by CQLAlchemy but you have to manually drop or alter types of existing columns using cqlsh._**
 
-From host, use cqlsh on docker container to connect to DB: `docker exec -it cassandra cqlsh`
+From host, use cqlsh on docker container to connect to DB: `docker exec -it cassandrasmfr cqlsh`
 
 
 ### Troubleshooting
