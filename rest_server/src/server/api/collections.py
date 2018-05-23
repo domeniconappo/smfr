@@ -17,7 +17,7 @@ from daemons.collector import Collector
 
 from smfrcore.errors import SMFRDBError, SMFRRestException
 from server.api.clients import AnnotatorClient, GeocoderClient
-from server.api.decorators import check_identity
+from server.api.decorators import check_identity, check_role
 from server.config import CONFIG_STORE_PATH
 
 from server.api import utils
@@ -28,8 +28,7 @@ from smfrcore.client.marshmallow import Collector as CollectorSchema, CollectorR
 logger = logging.getLogger(__name__)
 
 
-@check_identity
-@jwt_required
+# @jwt_required
 def add_collection(payload):
     """
     POST /collections
@@ -37,10 +36,6 @@ def add_collection(payload):
     :param payload: a CollectorPayload object
     :return:
     """
-    identity = get_jwt_identity()
-    user = User.query.filter_by(email=identity).first()
-    if user.email != identity:
-        abort(403)
     payload = connexion.request.form.to_dict()
     if not payload.get('forecast'):
         payload['forecast'] = 123456789
@@ -60,7 +55,7 @@ def add_collection(payload):
             payload[keyname] = path
 
     payload = utils.normalize_payload(payload)
-    collector = CollectorClass.from_payload(payload)
+    collector = CollectorClass.from_payload(payload, user)
 
     # # The collector/collection objects are only instantiated at this point,
     # there are no processes starting here, unless it's a collector process with runtime
@@ -189,8 +184,8 @@ def remove_collection(collection_id):
     return {}, 204
 
 
-@check_identity
-@jwt_required
+# @check_identity
+# @jwt_required
 def get_collection_details(collection_id):
     """
     GET /collections/{collection_id}/details
@@ -231,8 +226,8 @@ def get_collection_details(collection_id):
     return res, 200
 
 
-@check_identity
-@jwt_required
+# @check_identity
+# @jwt_required
 def geolocalize(collection_id, startdate=None, enddate=None):
     """
 
@@ -249,8 +244,8 @@ def geolocalize(collection_id, startdate=None, enddate=None):
         return res, code
 
 
-@check_identity
-@jwt_required
+# @check_identity
+# @jwt_required
 def annotate(collection_id=None, lang='en', forecast_id=None, startdate=None, enddate=None):
     """
 
@@ -269,8 +264,8 @@ def annotate(collection_id=None, lang='en', forecast_id=None, startdate=None, en
         return res, code
 
 
-@check_identity
-@jwt_required
+# @check_role
+# @jwt_required
 def start_all():
     """
     POST /collections/startall
@@ -283,8 +278,8 @@ def start_all():
     return {}, 204
 
 
-@check_identity
-@jwt_required
+# @check_role
+# @jwt_required
 def stop_all():
     """
     POST /collections/stopall

@@ -20,4 +20,9 @@ COPY ./web/scripts/. /scripts/
 RUN chmod a+x -R /scripts/
 
 EXPOSE 8888
+
+RUN mkdir -p /smfr_core
+COPY ./shared_libs/smfr_core/. /smfr_core/
+RUN pip3.6 install /smfr_core/
+
 CMD ["/scripts/start.sh"]

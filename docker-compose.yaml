@@ -107,7 +107,7 @@ services:
     image: efas/persister:${current_branch}
     build:
       context: ./
-      dockerfile: persister/Dockerfile.ready
+      dockerfile: Dockerfile.persister.ready
     working_dir: /persister
     environment:
       LOGGING_LEVEL: ${LOGGING_LEVEL}
@@ -135,7 +135,7 @@ services:
     image: efas/annotator:${current_branch}
     build:
       context: ./
-      dockerfile: annotator/Dockerfile.ready
+      dockerfile: Dockerfile.annotator.ready
       args:
         http_proxy: ${http_proxy}
         https_proxy: ${https_proxy}
@@ -162,6 +162,7 @@ services:
     depends_on:
       - kafka
       - cassandrasmfr
+      - persister
     deploy:
       placement:
         constraints:
@@ -173,7 +174,7 @@ services:
     image: efas/geocoder:${current_branch}
     build:
       context: ./
-      dockerfile: geocoder/Dockerfile.ready
+      dockerfile: Dockerfile.geocoder.ready
       args:
         http_proxy: ${http_proxy}
         https_proxy: ${https_proxy}
@@ -199,6 +200,7 @@ services:
       - kafka
       - cassandrasmfr
       - geonames
+      - persister
     deploy:
       placement:
         constraints:
@@ -210,7 +212,7 @@ services:
     image: efas/restserver:${current_branch}
     build:
       context: ./
-      dockerfile: rest_server/Dockerfile.ready
+      dockerfile: Dockerfile.restserver.ready
       args:
         http_proxy: ${http_proxy}
         https_proxy: ${https_proxy}
@@ -254,7 +256,7 @@ services:
     image: efas/web:${current_branch}
     build:
       context: ./
-      dockerfile: web/Dockerfile.ready
+      dockerfile: Dockerfile.web.ready
       args:
         http_proxy: ${http_proxy}
         https_proxy: ${http_proxy}

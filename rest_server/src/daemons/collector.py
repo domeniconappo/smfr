@@ -84,7 +84,7 @@ class Collector:
         return getattr(sys.modules[__name__], clazz)
 
     @classmethod
-    def from_payload(cls, payload, user):
+    def from_payload(cls, payload, user=None):
         return cls(config_file=payload['config'], keywords_file=payload.get('kwfile'),
                    locations_file=payload.get('locfile'),
                    running_time=payload.get('runtime'), tz=payload.get('tzclient'),

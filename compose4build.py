@@ -1,11 +1,10 @@
 import sys
-import os
 
 
 def do(image_tag):
-    for folder in ('annotator', 'geocoder', 'persister', 'rest_server', 'web'):
-        docker_in = os.path.join(folder, 'Dockerfile')
-        docker_out = os.path.join(folder, 'Dockerfile.ready')
+    for component in ('annotator', 'geocoder', 'persister', 'restserver', 'web'):
+        docker_in = 'Dockerfile.{}'.format(component)
+        docker_out = 'Dockerfile.{}.ready'.format(component)
         with open(docker_out, 'w') as f, open(docker_in) as i:
             read = i.read()
             wrote = read.replace('${IMAGE_TAG}', image_tag)
