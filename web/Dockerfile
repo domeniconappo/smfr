@@ -1,10 +1,6 @@
 FROM efas/smfr_base:${IMAGE_TAG}
 MAINTAINER Domenico Nappo <domenico.nappo@ext.ec.europa.eu>
 
-ARG http_proxy
-ARG https_proxy
-ENV http_proxy ${http_proxy}
-ENV https_proxy ${https_proxy}
 ENV LANG=C.UTF-8
 
 ENV INSTALL_PATH /web
@@ -13,6 +9,10 @@ RUN mkdir -p $INSTALL_PATH
 WORKDIR $INSTALL_PATH
 
 COPY ./web/requirements.txt ./
+
+ARG http_proxy
+ARG https_proxy
+
 RUN pip install -U pip && pip install -r requirements.txt
 
 COPY ./web/src/. ./

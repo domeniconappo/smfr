@@ -5,8 +5,6 @@ ARG http_proxy
 ARG https_proxy
 ARG models_repo
 
-ENV http_proxy ${http_proxy}
-ENV https_proxy ${https_proxy}
 ENV INSTALL_PATH /annotator
 ENV GIT_REPO_MODELS ${models_repo}
 ENV MODELS_PATH /models
@@ -15,6 +13,7 @@ ENV LANG=C.UTF-8
 RUN mkdir -p $INSTALL_PATH && mkdir -p /scripts && mkdir -p /config
 WORKDIR $INSTALL_PATH
 COPY ./annotator/requirements.txt ./
+
 RUN pip3.6 install -r requirements.txt
 
 EXPOSE 5556

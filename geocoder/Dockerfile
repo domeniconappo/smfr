@@ -1,11 +1,6 @@
 FROM efas/smfr_base:${IMAGE_TAG}
 MAINTAINER Domenico Nappo <domenico.nappo@ext.ec.europa.eu>
 
-ARG http_proxy
-ARG https_proxy
-
-ENV http_proxy ${http_proxy}
-ENV https_proxy ${http_proxy}
 
 ENV INSTALL_PATH /geocoder
 ENV LANG=C.UTF-8
@@ -13,6 +8,9 @@ ENV NUTS3_SHAPEFILE 2018_GlobalRegionsWGS84_CUT_WGS84Coord.shp
 ENV NUTS3_GEOJSON GlobalRegions_052018.geojson
 
 RUN mkdir -p $INSTALL_PATH && mkdir -p /scripts && mkdir -p /config
+
+ARG http_proxy
+ARG https_proxy
 
 RUN pip3.6 install spacy && python3.6 -m spacy download en_core_web_lg
 

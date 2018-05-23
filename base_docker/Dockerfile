@@ -1,11 +1,10 @@
 FROM python:3.6
 MAINTAINER Domenico Nappo <domenico.nappo@ext.ec.europa.eu>
 
-ENV http_proxy ${http_proxy}
-ENV https_proxy ${http_proxy}
+ARG http_proxy
+ARG https_proxy
 
-RUN apt-get update
-RUN apt-get install -y software-properties-common apt-file apt-utils python-software-properties
+RUN apt-get update && apt-get install -y software-properties-common apt-file apt-utils python-software-properties
 RUN apt-file update
 
 RUN apt-get install -y liblapack-dev liblapack-pic liblapack3 liblapack-test  \
