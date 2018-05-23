@@ -6,9 +6,6 @@ services:
     build:
       context: ./
       dockerfile: geonames/Dockerfile
-      args:
-        http_proxy: ${http_proxy}
-        https_proxy: ${https_proxy}
     image: efas/geonames
     restart: always
     working_dir: /geonames
@@ -111,9 +108,6 @@ services:
     build:
       context: ./
       dockerfile: persister/Dockerfile.ready
-      args:
-        http_proxy: ${http_proxy}
-        https_proxy: ${https_proxy}
     working_dir: /persister
     environment:
       LOGGING_LEVEL: ${LOGGING_LEVEL}
@@ -193,14 +187,14 @@ services:
       PYTHONUNBUFFERED: 'true'
       RESTSERVER_PORT: 5555
       RESTSERVER_BASEPATH: '/1.0'
-      http_proxy: ${http_proxy}
-      https_proxy: ${https_proxy}
       CASSANDRA_KEYSPACE: ${CASSANDRA_KEYSPACE}
       MIN_FLOOD_PROBABILITY: ${MIN_FLOOD_PROBABILITY}
       KAFKA_TOPIC: ${KAFKA_TOPIC}
       CASSANDRA_HOST: ${CASSANDRA_HOST}
       CASSANDRA_PORT: ${CASSANDRA_PORT}
       NUTS3_GEOJSON: GlobalRegions_052018.geojson
+      http_proxy: ${http_proxy}
+      https_proxy: ${https_proxy}
     depends_on:
       - kafka
       - cassandrasmfr
@@ -271,6 +265,8 @@ services:
       PYTHONUNBUFFERED: 'true'
       RESTSERVER_PORT: 5555
       RESTSERVER_BASEPATH: '/1.0'
+      http_proxy: ${http_proxy}
+      https_proxy: ${https_proxy}
     ports:
       - '8888:8888'
     depends_on:

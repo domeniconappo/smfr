@@ -1,8 +1,6 @@
 FROM elasticsearch:5.5.2
 MAINTAINER Domenico Nappo <domenico.nappo@ext.ec.europa.eu>
 
-ENV http_proxy ${http_proxy}
-ENV https_proxy ${https_proxy}
 ENV LANG=C.UTF-8
 ENV INSTALL_PATH /geonames
 

@@ -96,7 +96,7 @@ flask db migrate
 flask db upgrade
 ```
 
-On dockerized server, once the migrations are under SCM:
+On dockerized server, once the migrations are under SCM and the service `restserver` has started:
 
 ```bash
 docker exec restserver flask db upgrade

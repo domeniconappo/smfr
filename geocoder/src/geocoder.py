@@ -190,8 +190,8 @@ class Geocoder:
         """
         t = tweet.original_tweet_as_dict
         latlong = None
-        if 'coordinates' in t or t.get('geo'):
-            coords = t['coordinates'].get('coordinates') or t['geo'].get('coordinates')
+        if t.get('coordinates') or t.get('geo'):
+            coords = t.get('coordinates', {}).get('coordinates') or t.get('geo', {}).get('coordinates')
             if coords:
                 latlong = coords[1], coords[0]
         return latlong

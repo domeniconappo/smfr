@@ -4,13 +4,11 @@ MAINTAINER Domenico Nappo <domenico.nappo@ext.ec.europa.eu>
 ARG http_proxy
 ARG https_proxy
 
-ENV http_proxy ${http_proxy}
-ENV https_proxy ${https_proxy}
 ENV INSTALL_PATH /rest_server
 ENV LANG=C.UTF-8
 
 
-RUN apt-get install -y mariadb-client  && mkdir -p $INSTALL_PATH && mkdir -p /scripts && mkdir -p /configuration
+RUN apt-get update && apt-get install -y mariadb-client  && mkdir -p $INSTALL_PATH && mkdir -p /scripts && mkdir -p /configuration
 
 COPY ./rest_server/requirements.txt $INSTALL_PATH/
 RUN pip3.6 install -r $INSTALL_PATH/requirements.txt
