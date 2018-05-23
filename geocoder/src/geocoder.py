@@ -3,9 +3,8 @@ import os
 import sys
 import threading
 import time
-from collections import Counter, namedtuple
+from collections import Counter
 
-import ujson as json
 from kafka import KafkaProducer
 from kafka.errors import NoBrokersAvailable
 from mordecai import Geoparser
@@ -14,29 +13,7 @@ from shapely.geometry import Point, Polygon
 from smfrcore.models.cassandramodels import Tweet
 from smfrcore.utils import RUNNING_IN_DOCKER
 
-
-NutsItem = namedtuple('NutsItem', 'id, nuts_id, properties, geometry')
-
-
-def read_geojson(path):
-    items = []
-    try:
-        with open(path) as f:
-            data = json.load(f, precise_float=True)
-    except FileNotFoundError:
-        data = {'features': []}
-        Nuts3Finder.logger.error('File not found: %s', path)
-
-    for feat in data['features']:
-        items.append(
-            NutsItem(
-                feat['properties']['ObjectID'],
-                feat['properties']['NUTS_ID'],
-                feat['properties'],
-                feat['geometry']['coordinates']
-            )
-        )
-    return items
+from utils import read_geojson
 
 
 class Nuts3Finder:
@@ -47,12 +24,9 @@ class Nuts3Finder:
     """
     logger = logging.getLogger(__name__)
     logger.setLevel(logging.getLevelName(os.environ.get('LOGGING_LEVEL', 'DEBUG')))
-    config_dir = '/config/' if RUNNING_IN_DOCKER else './config'
+    config_dir = '/config/' if RUNNING_IN_DOCKER else os.path.join(os.path.dirname(__file__), '../config')
     shapefile_name = os.environ.get('NUTS3_SHAPEFILE', '2018_GlobalRegionsWGS84_CUT_WGS84Coord.shp')
     geojson_name = os.environ.get('NUTS3_GEOJSON', 'GlobalRegions_052018.geojson')
-
-    # path = os.path.join(config_dir, shapefile_name)
-    # polygons = [pol for pol in fiona.open(path)]
     path = os.path.join(config_dir, geojson_name)
     nutsitems = read_geojson(path)
 
@@ -62,7 +36,10 @@ class Nuts3Finder:
         Check if a point (lat, lon) is in a NUTS3 region and returns its id. None otherwise.
         :param lat: float Latitude of a point
         :param lon: float Longituted of a point
-        :return: int NUTS3 id as it's stored in EFAS table
+        :return: NutsItem object with object_id, nuts_id, polygon geometry and other properties
+                like ('COUNTRY': 'Benin', 'ISO_CODE': 'BJBO', 'ISO_CC': 'BJ', 'ISO_SUB': 'BO', 'NUTS_ID': None,
+                      'CNTR_CODE': None, 'EFAS_name': 'Borgou', 'AREA_GEO': 26714565260.2)
+
         """
         point = Point(float(lon), float(lat))
         nuts = None
@@ -273,14 +250,27 @@ class Geocoder:
                 #     continue
 
                 t.ttype = 'geotagged'
-                nuts3_id, nuts3_source, latlong = cls.find_nuts_heuristic(t)
+                nutsitem, nuts3_source, latlong = cls.find_nuts_heuristic(t)
 
                 if not latlong:
                     continue
 
                 t.latlong = latlong
-                t.nuts3 = str(nuts3_id) if nuts3_id else None
+                t.nuts3 = nutsitem.id if nutsitem else None,
                 t.nuts3source = nuts3_source
+
+                t.geo = {
+                    'nuts_efas_id': nutsitem.id if nutsitem else None,
+                    'nuts_id': nutsitem.nuts_id if nutsitem else None,
+                    'nuts_source': nuts3_source,
+                    'latitude': str(latlong[0]),
+                    'longitude': str(latlong[1]),
+                    'country': nutsitem.properties.get('COUNTRY'),
+                    'iso_code': nutsitem.properties.get('ISO_CODE'),
+                    'iso_cc': nutsitem.properties.get('ISO_CC'),
+                    'efas_name': nutsitem.properties.get('EFAS_name'),
+                }
+
                 message = t.serialize()
                 cls.logger.debug('Send geocoded tweet to persister: %s', str(t))
 
