@@ -4,6 +4,8 @@ from flask_jwt_extended import jwt_required, create_access_token, current_user, 
 from smfrcore.models.sqlmodels import User
 from smfrcore.client.marshmallow import User as UserSchema
 
+from server.api.decorators import check_identity, check_role
+
 
 def signup():
     email = request.json.get('email')
@@ -34,6 +36,7 @@ def signin():
     return res, 200
 
 
+@check_role
 @jwt_required
 def get_users():
     users = User.query.limit(100).all()
@@ -42,6 +45,7 @@ def get_users():
     return {'users': res}, 200
 
 
+@check_identity
 @jwt_required
 def get_user(email):
     identity = get_jwt_identity()

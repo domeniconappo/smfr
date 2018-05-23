@@ -52,7 +52,7 @@ Final product of SMFR is a event-related map reporting relevant tweets.
     - __Note__: It's not possible to build images with `docker-compose build` command
      as there are some variables substitution to perform (e.g. current branch name giving the image tag).
 In this case, you must login to Docker Hub (just issue `$ docker login` before to build).
-- Execute `$ ./dev_up.sh` for local testing or `$ ./up.sh` script if you deploy to a Docker Swarm cluster
+- Execute `$ ./singlenode_up.sh` for local testing or `$ ./swarm_up.sh` script if you deploy to a Docker Swarm cluster
 
 - You will see all services starting:
     - cassandrasmfr

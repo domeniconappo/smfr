@@ -36,6 +36,7 @@ class ApiLocalClient:
         'annotate_collection': '/collections/{id}/annotate',
         'geotag_collection': '/collections/{id}/geo',
         'signup_user': '/users',
+        'signin_user': '/users/signin',
     }
 
     def __init__(self):

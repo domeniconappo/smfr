@@ -11,6 +11,10 @@ WORKDIR $INSTALL_PATH
 COPY ./persister/src/. ./
 COPY ./persister/scripts/. /scripts/
 
+RUN mkdir -p /smfr_core
+COPY ./shared_libs/smfr_core/. /smfr_core/
+RUN pip3.6 install /smfr_core/
+
 RUN ["chmod", "a+x", "/scripts/wait_for_it.sh"]
 ENTRYPOINT ["/scripts/wait_for_it.sh", "cassandrasmfr:9160"]
 CMD ["--", "python3.6", "start.py"]
