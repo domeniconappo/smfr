@@ -177,49 +177,76 @@ class Geocoder:
     def find_nuts_heuristic(cls, tweet):
         """
         The following heuristic is applied:
-        First, a gazetteer is run on the tweet to find location mentions
-        If no location mention is found:
+        #1 First, a gazetteer is run on the tweet to find location mentions
+
+        #2 If no location mention is found:
             If the tweet contains (longitude, latitude): the NUTS3 area containing that (longitude, latitude) is returned (nuts3source="coordinates")
             Otherwise, NULL is returned
-        If location mentions mapping to a list of NUTS3 areas are found:
+        #3 If location mentions mapping to a list of NUTS3 areas are found:
             If the tweet contains (longitude, latitude), then if any of the NUTS3 areas contain that point, that NUTS3 area is returned (nuts3source="coordinates-and-mentions")
             Otherwise
                 If there is a single NUTS3 area in the list, that NUTS3 area is returned (nuts3source="mentions")
-                Otherwise, NULL is returned
+                Otherwise, check if user location is in one of the NUTS list and return it. If not, NULL is returned
 
-        :param tweet:
+        :param tweet: Tweet object
         :return: tuple (nuts3, nuts_source, coordinates)
         """
-        nuts3, nuts_source, coordinates = None, None, None
-        latlong_list = cls.geoparse_tweet(tweet)
-        latlong_from_tweet = cls.get_coordinates_from_tweet(tweet)
+        no_results = (None, None, None)
+        mentions = cls.geoparse_tweet(tweet)
+        tweet_coords = cls.get_coordinates_from_tweet(tweet)
 
-        if not latlong_list and latlong_from_tweet:
-            # No location mention is found and the tweet has coordinates
-            nuts3 = Nuts3Finder.find_nuts3(*latlong_from_tweet)
-            if nuts3:
-                coordinates = latlong_from_tweet
-                nuts_source = 'coordinates'
-            return nuts3, nuts_source, coordinates
-        elif len(latlong_list) > 1 and latlong_from_tweet:
-            nuts3_from_tweet = Nuts3Finder.find_nuts3(*latlong_from_tweet)
-            for latlong in latlong_list:
-                # checking the list of mentioned places coordinates
-                nuts3 = Nuts3Finder.find_nuts3(*latlong)
-                if nuts3 == nuts3_from_tweet:
-                    coordinates = latlong
-                    nuts_source = 'coordinates-and-mentions'
-                    break
-            return nuts3, nuts_source, coordinates
-        elif len(latlong_list) == 1 and not latlong_from_tweet:
-            # returning the only mention that is found
-            coordinates = latlong_list[0]
-            nuts3 = Nuts3Finder.find_nuts3(*coordinates)
-            nuts_source = 'mentions'
-            return nuts3, nuts_source, coordinates
-        elif len(latlong_list) > 1 and not latlong_from_tweet:
-            return None, None, None
-        return None, None, None
+        if not mentions:
+            if tweet_coords:
+                nuts3 = Nuts3Finder.find_nuts3(*tweet_coords)
+                if nuts3:
+                    coordinates = tweet_coords
+                    nuts_source = 'coordinates'
+                    cls.logger.debug('Found Nuts from tweet geo... - coordinates')
+                    return nuts3, nuts_source, coordinates
+            cls.logger.debug('No NUTS found: no mentions, tweet coords: %s', str(tweet_coords))
+            return no_results
+        else:
+            if tweet_coords and len(mentions) > 1:
+                nuts3_from_tweet = Nuts3Finder.find_nuts3(*tweet_coords)
+                for latlong in mentions:
+                    # checking the list of mentioned places coordinates
+                    nuts3 = Nuts3Finder.find_nuts3(*latlong)
+                    if nuts3 == nuts3_from_tweet:
+                        coordinates = latlong
+                        nuts_source = 'coordinates-and-mentions'
+                        cls.logger.debug('Found Nuts from tweet geo and mentions... - coordinates-and-mentions')
+                        return nuts3, nuts_source, coordinates
+                cls.logger.debug('No NUTS found: mentions: %s, tweet coords: %s', str(mentions), str(tweet_coords))
+                return no_results
+            else:
+                if len(mentions) == 1:
+                    coordinates = mentions[0]
+                    nuts3 = Nuts3Finder.find_nuts3(*coordinates)
+                    if nuts3:
+                        nuts_source = 'mentions'
+                        cls.logger.debug('Found Nuts... - Exactly one mention')
+                        return nuts3, nuts_source, coordinates
+
+                    cls.logger.debug('No NUTS found: mentions: %s, tweet coords: %s', str(mentions), str(tweet_coords))
+                    return no_results
+                else:
+                    # no geolocated tweet and more than one mention
+                    user_location = tweet.original_tweet_as_dict['user'].get('location')
+                    res = cls.tagger.geoparse(user_location) if user_location else None
+                    if res and res[0] and 'lat' in res[0].get('geo', {}):
+                        res = res[0]
+                        user_coordinates = (float(res['geo']['lat']), float(res['geo']['lon']))
+                        user_nuts3 = Nuts3Finder.find_nuts3(*user_coordinates)
+                        for latlong in mentions:
+                            # checking the list of mentioned places coordinates
+                            nuts3 = Nuts3Finder.find_nuts3(*latlong)
+                            if nuts3 == user_nuts3:
+                                coordinates = latlong
+                                nuts_source = 'mentions-and-user'
+                                cls.logger.debug('Found Nuts... - User location')
+                                return nuts3, nuts_source, coordinates
+                    cls.logger.debug('No NUTS found: mentions: %s, tweet coords: %s', str(mentions), str(tweet_coords))
+                    return no_results
 
     @classmethod
     def start(cls, collection_id):
@@ -286,7 +313,7 @@ class Geocoder:
                 continue
             finally:
                 if not (x % 250):
-                    cls.logger.info('\nExaminated: %d \n===========\nGeotagged so far: %d\n %s', sum(x, c.values()), str(c))
+                    cls.logger.info('\nExaminated: %d \n===========\nGeotagged so far: %d\n %s', x, sum(c.values()), str(c))
                     # workaround for lru_cache "memory leak" problems
                     # https://benbernardblog.com/tracking-down-a-freaky-python-memory-leak/
                     cls.tagger.query_geonames.cache_clear()

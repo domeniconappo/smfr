@@ -13,20 +13,20 @@ ARG http_proxy
 ARG https_proxy
 
 RUN pip3.6 install spacy && python3.6 -m spacy download en_core_web_lg
+ADD ./geocoder/config/${NUTS3_GEOJSON}.tar.gz /config/
+RUN chmod a+r /config/${NUTS3_GEOJSON}
 
 COPY ./geocoder/requirements.txt ./
 RUN pip3.6 install -r requirements.txt
 
-COPY ./geocoder/src/. ${INSTALL_PATH}
-COPY ./geocoder/scripts/. /scripts/
-ADD ./geocoder/config/${NUTS3_GEOJSON}.tar.gz /config/
-RUN chmod a+r /config/${NUTS3_GEOJSON}
-
-EXPOSE 5557
-
 RUN mkdir -p /smfr_core
 COPY ./shared_libs/smfr_core/. /smfr_core/
 RUN pip3.6 install /smfr_core/
+
+COPY ./geocoder/src/. ${INSTALL_PATH}
+COPY ./geocoder/scripts/. /scripts/
+
+EXPOSE 5557
 
 RUN ["chmod", "a+x", "/scripts/wait_for_it.sh"]
 ENTRYPOINT ["/scripts/wait_for_it.sh", "cassandrasmfr:9160"]

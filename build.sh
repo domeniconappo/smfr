@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+command=${1:-1}
+
 PROPERTY_FILE=.env
 
 function getProperty {
@@ -28,10 +30,10 @@ if [ ! -d ${SMFR_DATADIR}/geonames_index ]; then
     cd -
 fi
 
-if [ -n "${DOCKER_ID_USER}" ]; then
+docker build --build-arg http_proxy=${http_proxy} --build-arg https_proxy=${http_proxy} -t smfr_base:${current_branch} base_docker/.
+docker tag smfr_base:${current_branch} efas/smfr_base:${current_branch}
 
-    docker build --build-arg http_proxy=${http_proxy} --build-arg https_proxy=${http_proxy} -t smfr_base:${current_branch} base_docker/.
-    docker tag smfr_base:${current_branch} efas/smfr_base:${current_branch}
+if [ -n "${DOCKER_ID_USER}" ] && [ ${command} == "push" ]; then
     docker push efas/smfr_base:${current_branch}
 fi
 
@@ -39,7 +41,7 @@ fi
 python compose4build.py ${current_branch}
 docker-compose build
 
-if [ -n "${DOCKER_ID_USER}" ]; then
+if [ -n "${DOCKER_ID_USER}" ] && [ ${command} == "push" ]; then
     docker tag efas/persister:${current_branch} efas/persister:${current_branch}
     docker tag efas/annotator:${current_branch} efas/annotator:${current_branch}
     docker tag efas/geocoder:${current_branch} efas/geocoder:${current_branch}
