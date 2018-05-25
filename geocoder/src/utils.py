@@ -5,6 +5,8 @@ import ujson as json
 
 class NutsItem(namedtuple('NutsItem', 'id, nuts_id, properties, geometry')):
     def __eq__(self, other):
+        if not other:
+            return False
         return self.id == other.id
 
 
