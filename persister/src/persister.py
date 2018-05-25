@@ -1,13 +1,10 @@
 import os
 import logging
-import sys
 import threading
-import time
-
-import ujson as json
 from collections import namedtuple
 
-from cassandra.cqlengine import ValidationError
+from cassandra import InvalidRequest
+from cassandra.cqlengine import ValidationError, CQLEngineException
 from kafka import KafkaConsumer
 from kafka.errors import CommitFailedError
 
@@ -23,7 +20,7 @@ class Persister:
         It listens to the Kafka queue, build a Tweet object from messages and save it in Cassandra.
         """
     config = PersisterConfiguration(logger_level=os.environ.get('LOGGING_LEVEL', 'DEBUG'),
-                                    kafka_topic=os.environ.get('KAFKA_TOPIC', 'smfr_persistent'),
+                                    kafka_topic=os.environ.get('KAFKA_TOPIC', 'persister'),
                                     kafka_bootstrap_server=os.environ.get('KAFKA_BOOTSTRAP_SERVER', 'kafka:9092'))
     _running_instance = None
     _lock = threading.RLock()
@@ -78,18 +75,22 @@ class Persister:
 
         try:
             for i, msg in enumerate(self.consumer):
+                tweet = None
                 try:
                     msg = msg.value.decode('utf-8')
                     tweet = Tweet.build_from_kafka_message(msg)
-                    tweet.save()
                     self.logger.debug('Read from queue: %s', str(tweet))
-                except (ValidationError, ValueError, TypeError) as e:
-                    self.logger.error(msg[:100])
-                    self.logger.error('Poison message for Cassandra: %s', str(e))
+                    tweet.save()
+                except (ValidationError, ValueError, TypeError, InvalidRequest) as e:
+                    self.logger.error(e)
+                    self.logger.error('Poison message for Cassandra: %s', str(tweet) if tweet else msg)
+                except CQLEngineException as e:
+                    self.logger.error(e)
                 except Exception as e:
                     self.logger.error(type(e))
-                    self.logger.error(msg[:100])
                     self.logger.error(e)
+                    self.logger.error(msg)
+
         except CommitFailedError:
             self.logger.error('Persister was disconnected during I/O operations. Exited.')
         except ValueError:
@@ -111,4 +112,4 @@ class Persister:
         self.logger.info('Persister connection closed!')
 
     def __str__(self):
-        return 'Consumer ({}: {}@{}:{}'.format(id(self), self.topic, self.bootstrap_server, self.group_id)
+        return 'Consumer ({}): {}@{}:{}'.format(id(self), self.topic, self.bootstrap_server, self.group_id)

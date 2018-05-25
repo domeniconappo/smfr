@@ -97,7 +97,6 @@ class Geocoder:
 
     min_flood_prob = float(os.environ.get('MIN_FLOOD_PROBABILITY', 0.59))
     kafka_topic = os.environ.get('KAFKA_TOPIC', 'persister')
-    tagger = Geoparser(geonames_host)
 
     @classmethod
     def is_running_for(cls, collection_id):
@@ -143,15 +142,15 @@ class Geocoder:
             cls.stop_signals.append(collection_id)
 
     @classmethod
-    def geoparse_tweet(cls, tweet):
+    def geoparse_tweet(cls, tweet, tagger):
         """
-
-        :param tweet:
-        :return:
+        Mordecai geoparsing
+        :param tweet: smfrcore.models.cassandramodels.Tweet object
+        :return: list of tuples of lat/lon coordinates
         """
         # try to geoparse
         latlong_list = []
-        res = cls.tagger.geoparse(tweet.full_text)
+        res = tagger.geoparse(tweet.full_text)
         for result in res:
             if result.get('country_conf', 0) < 0.5 or 'lat' not in result.get('geo', {}):
                 continue
@@ -174,7 +173,7 @@ class Geocoder:
         return latlong
 
     @classmethod
-    def find_nuts_heuristic(cls, tweet):
+    def find_nuts_heuristic(cls, tweet, tagger):
         """
         The following heuristic is applied:
         #1 First, a gazetteer is run on the tweet to find location mentions
@@ -188,11 +187,12 @@ class Geocoder:
                 If there is a single NUTS3 area in the list, that NUTS3 area is returned (nuts3source="mentions")
                 Otherwise, check if user location is in one of the NUTS list and return it. If not, NULL is returned
 
+        :param tagger:
         :param tweet: Tweet object
         :return: tuple (nuts3, nuts_source, coordinates)
         """
         no_results = (None, None, None)
-        mentions = cls.geoparse_tweet(tweet)
+        mentions = cls.geoparse_tweet(tweet, tagger)
         tweet_coords = cls.get_coordinates_from_tweet(tweet)
 
         if not mentions:
@@ -203,7 +203,6 @@ class Geocoder:
                     nuts_source = 'coordinates'
                     cls.logger.debug('Found Nuts from tweet geo... - coordinates')
                     return nuts3, nuts_source, coordinates
-            cls.logger.debug('No NUTS found: no mentions, tweet coords: %s', str(tweet_coords))
             return no_results
         else:
             if tweet_coords and len(mentions) > 1:
@@ -216,7 +215,6 @@ class Geocoder:
                         nuts_source = 'coordinates-and-mentions'
                         cls.logger.debug('Found Nuts from tweet geo and mentions... - coordinates-and-mentions')
                         return nuts3, nuts_source, coordinates
-                cls.logger.debug('No NUTS found: mentions: %s, tweet coords: %s', str(mentions), str(tweet_coords))
                 return no_results
             else:
                 if len(mentions) == 1:
@@ -227,12 +225,11 @@ class Geocoder:
                         cls.logger.debug('Found Nuts... - Exactly one mention')
                         return nuts3, nuts_source, coordinates
 
-                    cls.logger.debug('No NUTS found: mentions: %s, tweet coords: %s', str(mentions), str(tweet_coords))
                     return no_results
                 else:
                     # no geolocated tweet and more than one mention
                     user_location = tweet.original_tweet_as_dict['user'].get('location')
-                    res = cls.tagger.geoparse(user_location) if user_location else None
+                    res = tagger.geoparse(user_location) if user_location else None
                     if res and res[0] and 'lat' in res[0].get('geo', {}):
                         res = res[0]
                         user_coordinates = (float(res['geo']['lat']), float(res['geo']['lon']))
@@ -245,7 +242,6 @@ class Geocoder:
                                 nuts_source = 'mentions-and-user'
                                 cls.logger.debug('Found Nuts... - User location')
                                 return nuts3, nuts_source, coordinates
-                    cls.logger.debug('No NUTS found: mentions: %s, tweet coords: %s', str(mentions), str(tweet_coords))
                     return no_results
 
     @classmethod
@@ -263,6 +259,7 @@ class Geocoder:
 
         errors = 0
         c = Counter()
+        tagger = Geoparser(cls.geonames_host)
         for x, t in enumerate(tweets, start=1):
             if collection_id in cls.stop_signals:
                 cls.logger.info('Stopping geotagging process {}'.format(collection_id))
@@ -277,34 +274,37 @@ class Geocoder:
                 #     continue
 
                 t.ttype = 'geotagged'
-                nutsitem, nuts3_source, latlong = cls.find_nuts_heuristic(t)
+                nutsitem, nuts3_source, latlong = cls.find_nuts_heuristic(t, tagger)
 
                 if not latlong:
                     continue
 
                 t.latlong = latlong
-                t.nuts3 = nutsitem.id if nutsitem else None,
+                t.nuts3 = str(nutsitem.id) if nutsitem and nutsitem.id is not None else None
                 t.nuts3source = nuts3_source
+                nuts_properties = nutsitem.properties if nutsitem else {}
 
                 t.geo = {
-                    'nuts_efas_id': nutsitem.id if nutsitem else None,
-                    'nuts_id': nutsitem.nuts_id if nutsitem else None,
-                    'nuts_source': nuts3_source,
+                    'nuts_efas_id': str(nutsitem.id) if nutsitem and nutsitem.id is not None else '',
+                    'nuts_id': str(nutsitem.nuts_id) if nutsitem and nutsitem.nuts_id is not None else '',
+                    'nuts_source': nuts3_source or '',
                     'latitude': str(latlong[0]),
                     'longitude': str(latlong[1]),
-                    'country': nutsitem.properties.get('COUNTRY'),
-                    'iso_code': nutsitem.properties.get('ISO_CODE'),
-                    'iso_cc': nutsitem.properties.get('ISO_CC'),
-                    'efas_name': nutsitem.properties.get('EFAS_name'),
+                    'country': nuts_properties.get('COUNTRY') or '',
+                    'iso_code': nuts_properties.get('ISO_CODE') or '',
+                    'iso_cc': nuts_properties.get('ISO_CC') or '',
+                    'efas_name': nuts_properties.get('EFAS_name') or '',
                 }
 
                 message = t.serialize()
                 cls.logger.debug('Send geocoded tweet to persister: %s', str(t))
 
                 cls.producer.send(cls.kafka_topic, message)
-                c[t.lang] += 1
+                counter_key = '{}#{}'.format(t.lang, nuts3_source)
+                c[counter_key] += 1
 
             except Exception as e:
+                cls.logger.error(type(e))
                 cls.logger.error('An error occured during geotagging: %s', str(e))
                 errors += 1
                 if errors >= 100:
@@ -316,8 +316,8 @@ class Geocoder:
                     cls.logger.info('\nExaminated: %d \n===========\nGeotagged so far: %d\n %s', x, sum(c.values()), str(c))
                     # workaround for lru_cache "memory leak" problems
                     # https://benbernardblog.com/tracking-down-a-freaky-python-memory-leak/
-                    cls.tagger.query_geonames.cache_clear()
-                    cls.tagger.query_geonames_country.cache_clear()
+                    tagger.query_geonames.cache_clear()
+                    tagger.query_geonames_country.cache_clear()
 
         # remove from `_running` list
         cls._running.remove(collection_id)
