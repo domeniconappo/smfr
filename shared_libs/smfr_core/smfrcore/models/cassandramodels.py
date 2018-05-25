@@ -8,6 +8,7 @@ import datetime
 
 import ujson as json
 from cassandra.cluster import Cluster
+from cassandra.cqlengine.connection import register_connection, set_default_connection
 from cassandra.query import dict_factory
 from cassandra.auth import PlainTextAuthProvider
 from flask_cqlalchemy import CQLAlchemy
@@ -36,13 +37,18 @@ def cassandra_session_factory():
     return session
 
 
+_session = cassandra_session_factory()
+register_connection(str(_session), session=_session)
+set_default_connection(str(_session))
+
+
 class Tweet(cqldb.Model):
     """
     Object representing the `tweet` column family in Cassandra
     """
     __keyspace__ = _keyspace
 
-    session = cassandra_session_factory()
+    session = _session
     session.default_fetch_size = 1000
 
     TYPES = [
@@ -62,8 +68,8 @@ class Tweet(cqldb.Model):
     """
     ttype = cqldb.columns.Text(required=True, partition_key=True)
 
-    # nuts3 = cqldb.columns.Text()
-    # nuts3source = cqldb.columns.Text()
+    nuts3 = cqldb.columns.Text()
+    nuts3source = cqldb.columns.Text()
 
     geo = cqldb.columns.Map(
         cqldb.columns.Text, cqldb.columns.Text,
@@ -104,7 +110,9 @@ class Tweet(cqldb.Model):
         Tweet.generate_prepared_statements()
 
     def __str__(self):
-        return '{o.created_at} - {o.lang}: {o.full_text:.80}'.format(o=self)
+        return '\nTweet\n{o.nuts3} - {o.nuts3source}\n' \
+               '{o.created_at} - {o.lang}: {o.full_text:.80}' \
+               '\n{o.geo}\n{o.annotations}'.format(o=self)
 
     @classmethod
     def get_iterator(cls, collection_id, ttype, lang=None, to_obj=True):
@@ -220,7 +228,7 @@ class Tweet(cqldb.Model):
             ttype=ttype,
             nuts3=collection.nuts3,
             nuts3source=collection.nuts3source,
-            annotations={}, lang=tweet['lang'],
+            annotations={}, lang=tweet['lang'], geo={},
             tweet=json.dumps(tweet, ensure_ascii=False),
         )
 
@@ -257,7 +265,6 @@ class Tweet(cqldb.Model):
                 break
 
         if not full_text:
-            full_text = tweet.get('full_text') or tweet.get('extended_tweet', {}).get('full_text', '') or tweet.get(
-                'text', '')
+            full_text = tweet.get('full_text') or tweet.get('extended_tweet', {}).get('full_text', '') or tweet.get('text', '')
 
         return full_text

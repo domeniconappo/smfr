@@ -3,7 +3,9 @@ from collections import namedtuple
 import ujson as json
 
 
-NutsItem = namedtuple('NutsItem', 'id, nuts_id, properties, geometry')
+class NutsItem(namedtuple('NutsItem', 'id, nuts_id, properties, geometry')):
+    def __eq__(self, other):
+        return self.id == other.id
 
 
 def read_geojson(path):
@@ -16,12 +18,14 @@ def read_geojson(path):
         print('File not found: ', path)
 
     for feat in data['features']:
+        properties = feat['properties']
+        geometry = feat['geometry']
         items.append(
             NutsItem(
-                feat['properties']['ObjectID'],
-                feat['properties']['NUTS_ID'],
-                feat['properties'],
-                feat['geometry']['coordinates']
+                properties['ObjectID'],
+                properties['NUTS_ID'],
+                properties,
+                geometry['coordinates']
             )
         )
     return items
