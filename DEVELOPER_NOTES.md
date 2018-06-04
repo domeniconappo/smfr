@@ -140,3 +140,12 @@ Resolve cgroup issue with
 sudo mkdir /sys/fs/cgroup/systemd
 sudo mount -t cgroup -o none,name=systemd cgroup /sys/fs/cgroup/systemd
 ```
+
+
+# Internal Docker Swarm cluster EFAS Groups
+
+
+ID                            HOSTNAME            STATUS              AVAILABILITY        MANAGER STATUS      ENGINE VERSION
+5xvoosrucfqumbzzzie3incea     D01RI1000318        Ready               Active                                  18.03.1-ce
+3jvsn4my7acqzjhvb09nfa6l0     D01RI1303461        Ready               Active                                  18.03.1-ce
+to5yzzql1ok0dr6x8r9lfn1rm *   D01RI1303463        Ready               Active              Leader              18.03.1-ce
