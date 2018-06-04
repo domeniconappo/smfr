@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+export current_branch=`git rev-parse --symbolic-full-name --abbrev-ref HEAD`
 docker-compose config > docker-compose-parsed.yaml
 python3 compose4deploy.py -i docker-compose-parsed.yaml -o docker-compose-4deploy.yaml
 docker stack deploy -c ./docker-compose-4deploy.yaml SMFR

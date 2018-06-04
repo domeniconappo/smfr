@@ -4,7 +4,7 @@ MAINTAINER Domenico Nappo <domenico.nappo@ext.ec.europa.eu>
 ARG http_proxy
 ARG https_proxy
 
-RUN apt-get update && apt-get install -y software-properties-common apt-file apt-utils python-software-properties
+RUN apt-get update && apt-get install -y software-properties-common apt-file apt-utils
 RUN apt-file update
 
 RUN apt-get install -y liblapack-dev liblapack-pic liblapack3 liblapack-test  \
