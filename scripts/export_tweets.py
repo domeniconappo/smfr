@@ -14,6 +14,8 @@ from datetime import datetime
 from decimal import Decimal
 import json
 
+import ujson
+
 import numpy as np
 from cassandra.util import OrderedMapSerializedKey
 
@@ -34,7 +36,13 @@ class CustomJSONEncoder(json.JSONEncoder):
         elif isinstance(obj, OrderedMapSerializedKey):
             res = {}
             for k, v in obj.items():
-                res[k] = (v[0], float(v[1]))
+                if isinstance(v, tuple):
+                    try:
+                        res[k] = (v[0], float(v[1])) if len(v) == 2 else (v[0], None)
+                    except ValueError:
+                        res[k] = (v[0], v[1])
+                else:
+                    res[k] = v
             return res
         return super().default(obj)
 
@@ -66,7 +74,7 @@ def main(args):
     tweets = Tweet.get_iterator(conf.collection_id, conf.ttype, conf.lang, to_obj=False)
     out = []
     for i, t in enumerate(tweets, start=1):
-        t['tweet'] = json.loads(t['tweet'])
+        t['tweet'] = ujson.loads(t['tweet'])
         out.append(t)
         if conf.maxnum and i >= conf.maxnum:
             break

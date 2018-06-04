@@ -14,7 +14,7 @@ services:
       - '9200:9200'
       - '9300:9300'
     environment:
-      ES_JAVA_OPTS: "-Xms1g -Xmx4g"
+      ES_JAVA_OPTS: "-Xms4g -Xmx4g"
     volumes:
       - '${SMFR_DATADIR}/geonames_index:/var/lib/elasticsearch/elasticsearch:rw'
     deploy:
