@@ -97,7 +97,8 @@ services:
       PMA_ARBITRARY: 1
     deploy:
       placement:
-        constraints: [node.role == manager]
+        constraints:
+          - node.id == ${NODE2}
     depends_on:
       - mysql
 
@@ -127,7 +128,7 @@ services:
     deploy:
       placement:
         constraints:
-          - node.id == ${NODE2}
+          - node.id == ${NODE1}
 
   annotator:
     restart: always
