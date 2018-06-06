@@ -166,8 +166,7 @@ services:
       - persister
     deploy:
       placement:
-        constraints:
-          - node.id == ${NODE2}
+        constraints: [node.role == manager]
 
   geocoder:
     restart: always
