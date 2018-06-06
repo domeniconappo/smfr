@@ -113,8 +113,6 @@ From host, connect to MySQL DB as the docker root user with `mysql -h 127.0.0.1 
 
 **_Note: You have to create migrations in development and push them to GIT repo. Then you have to apply migrations on all systems where SMFR runs (dev, test, prod etc.)_**
 
-**_Note: If MySQL operations are extremely slow, this can depend on filesystem settings on the Linux OS. Follow this article to fix: http://phpforus.com/how-to-make-mysql-run-fast-with-ext4-on-ubuntu/_**
-
 
 #### Cassandra
 
@@ -127,11 +125,13 @@ From host, use cqlsh on docker container to connect to DB: `docker exec -it cass
 ### Troubleshooting
 
 This sections tries to address all kind of issues you can have at system level when you run SMFR suite.
-Useful commands for troubleshooting:
 
-```
-docker-compose logs restserver web geonames
-```
+#### MySQL is slow
+
+MySQL seems to have some problems with ext4 filesystem.
+If you are in Ubuntu and MySQL operations are extremely slow, this can depend on filesystem settings.
+Follow this article to fix: http://phpforus.com/how-to-make-mysql-run-fast-with-ext4-on-ubuntu/_**
+
 
 #### Issues with Geonames Elasticsearch and/or Cassandra
 If you see an error/warning about vm.max_map_count variable in Elasticsearch logs of Geonames docker image, or in Cassandra docker image, the `vm.map_max_count` setting should be set permanently in /etc/sysctl.conf of the host machine:

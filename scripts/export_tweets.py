@@ -38,7 +38,7 @@ class CustomJSONEncoder(json.JSONEncoder):
             for k, v in obj.items():
                 if isinstance(v, tuple):
                     try:
-                        res[k] = (v[0], float(v[1])) if len(v) == 2 else (v[0], None)
+                        res[k] = dict((v,))
                     except ValueError:
                         res[k] = (v[0], v[1])
                 else:

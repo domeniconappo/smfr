@@ -10,3 +10,4 @@ sqlalchemy_utils
 swagger-marshmallow-codegen
 flask-marshmallow
 gunicorn
+gevent
