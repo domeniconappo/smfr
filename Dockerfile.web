@@ -15,14 +15,12 @@ ARG https_proxy
 
 RUN pip install -U pip && pip install -r requirements.txt
 
-COPY ./web/src/. ./
-# COPY ./web/scripts/. /scripts/
-# RUN chmod a+x -R /scripts/
-ENV LISTEN_PORT 8888
-EXPOSE 8888
-
 RUN mkdir -p /smfr_core
 COPY ./shared_libs/smfr_core/. /smfr_core/
 RUN pip3.6 install /smfr_core/
 
-# CMD ["/scripts/start.sh"]
+ENV LISTEN_PORT 8888
+EXPOSE 8888
+
+COPY ./web/conf/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+COPY ./web/src/. ./
