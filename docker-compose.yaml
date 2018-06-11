@@ -260,9 +260,9 @@ services:
       args:
         http_proxy: ${http_proxy}
         https_proxy: ${http_proxy}
-    working_dir: /web
+    working_dir: /app
     volumes:
-      - './web/src:/web'
+      - './web/src:/app'
     environment:
       PYTHONUNBUFFERED: 'true'
       RESTSERVER_PORT: 5555

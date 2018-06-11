@@ -18,6 +18,12 @@ def index():
     return render_template('index.html')
 
 
+@app.route('/admin', methods=('GET',))
+def admin():
+    # res = client.list_collections()
+    return render_template('admin.html'), 200
+
+
 @app.route('/list', methods=('GET',))
 def list_collections():
     res = client.list_collections()
