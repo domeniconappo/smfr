@@ -39,6 +39,7 @@ logging.getLogger('connexion').setLevel(logging.ERROR)
 logging.getLogger('swagger_spec_validator').setLevel(logging.ERROR)
 logging.getLogger('urllib3').setLevel(logging.ERROR)
 logging.getLogger('requests_oauthlib').setLevel(logging.ERROR)
+logging.getLogger('paramiko').setLevel(logging.ERROR)
 
 os.makedirs(CONFIG_STORE_PATH, exist_ok=True)
 

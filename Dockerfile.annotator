@@ -26,9 +26,12 @@ COPY ./annotator/src/. ./
 COPY ./annotator/scripts/. /scripts/
 COPY ./annotator/config/. /config/
 
-RUN mkdir -p /smfr_core
-COPY ./shared_libs/smfr_core/. /smfr_core/
-RUN pip3.6 install /smfr_core/
+RUN mkdir -p /smfr_models
+COPY ./shared_libs/smfr_models/. /smfr_models/
+RUN pip3.6 install /smfr_models/
+RUN mkdir -p /smfr_utils
+COPY ./shared_libs/smfr_utils/. /smfr_utils/
+RUN pip3.6 install /smfr_utils/
 
 RUN ["chmod", "a+x", "/scripts/wait_for_it.sh"]
 ENTRYPOINT ["/scripts/wait_for_it.sh", "cassandrasmfr:9160"]

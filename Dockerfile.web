@@ -1,26 +1,28 @@
 FROM tiangolo/uwsgi-nginx-flask:python3.6
 MAINTAINER Domenico Nappo <domenico.nappo@ext.ec.europa.eu>
 
-ENV LANG=C.UTF-8
-
-ENV INSTALL_PATH /app
-RUN mkdir -p $INSTALL_PATH
-
-WORKDIR $INSTALL_PATH
-
-COPY ./web/requirements.txt ./
-
 ARG http_proxy
 ARG https_proxy
 
-RUN pip install -U pip && pip install -r requirements.txt
+ENV LANG=C.UTF-8
 
-RUN mkdir -p /smfr_core
-COPY ./shared_libs/smfr_core/. /smfr_core/
-RUN pip3.6 install /smfr_core/
+COPY ./web/requirements.txt /requirements.txt
+RUN pip install -U pip && pip install -r /requirements.txt
+
+RUN mkdir -p /smfr_clients
+COPY ./shared_libs/smfr_clients/. /smfr_clients/
+RUN pip3.6 install /smfr_clients/
+RUN mkdir -p /smfr_utils
+COPY ./shared_libs/smfr_utils/. /smfr_utils/
+RUN pip3.6 install /smfr_utils/
 
 ENV LISTEN_PORT 8888
 EXPOSE 8888
 
+ENV INSTALL_PATH /app
+RUN mkdir -p $INSTALL_PATH
 COPY ./web/conf/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
-COPY ./web/src/. ./
+COPY ./web/src/. $INSTALL_PATH/
+
+# Clean up APT
+RUN apt-get autoremove -y && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*

@@ -6,8 +6,9 @@ ENV INSTALL_PATH /geonames
 
 WORKDIR $INSTALL_PATH
 
-RUN chmod -R a+w /var/lib/elasticsearch/
-RUN chmod -R g+w /var/lib/elasticsearch/
+RUN chown -R elasticsearch /var/lib/elasticsearch/
+RUN chown -R elasticsearch /var/log/elasticsearch/
+
 COPY geonames/elasticsearch.yml /usr/share/elasticsearch/config/
 COPY geonames/log4j2.properties /usr/share/elasticsearch/config/
 COPY geonames/jvm.options /usr/share/elasticsearch/config/

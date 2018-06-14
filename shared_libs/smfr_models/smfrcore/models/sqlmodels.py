@@ -15,16 +15,23 @@ sqldb = SQLAlchemy(metadata=metadata, session_options={'expire_on_commit': False
 
 class User(SMFRModel):
     __tablename__ = 'users'
+
+    ROLES = [
+        ('admin', 'Admin'),
+        ('user', 'Normal User'),
+    ]
+
     id = Column(Integer, primary_key=True)
     name = Column(String(200))
     email = Column(String(100), index=True, unique=True)
     password_hash = Column(String(128))
+    role = Column(ChoiceType(ROLES), nullable=False, default='user')
 
     @classmethod
-    def create(cls, name='', email=None, password=None):
+    def create(cls, name='', email=None, password=None, role=None):
         if not email or not password:
             raise ValueError('Email and Password are required')
-        user = cls(name=name, email=email, password_hash=cls.hash_password(password))
+        user = cls(name=name, email=email, password_hash=cls.hash_password(password), role=role)
         user.save()
         return user
 

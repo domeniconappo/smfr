@@ -126,7 +126,6 @@ def empty_dbs():
 @click.option('--collectionid', '-c', required=True)
 @click.option('--ttype', '-t', required=True)
 def set_language(collectionid, ttype):
-
     from daemons.utils import safe_langdetect, tweet_normalization_aggressive
     from smfrcore.models.cassandramodels import Tweet
 
@@ -142,3 +141,13 @@ def set_language(collectionid, ttype):
             t.created_at = datetime.datetime.strptime(original_json['created_at'], '%a %b %d %H:%M:%S +0000 %Y')
         click.echo('Saving lang {} for {}'.format(lang, t.tweetid))
         t.save()
+
+
+@app.cli.command()
+@click.option('--name', '-n', required=True)
+@click.option('--email', '-e', required=True)
+@click.option('--password', '-p', required=True)
+def add_admin(name, email, password):
+    from smfrcore.models.sqlmodels import User
+    user = User.create(name=name, email=email, password=password, role='admin')
+    click.echo('User created {}'.format(user))

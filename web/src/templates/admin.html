@@ -11,10 +11,17 @@
         </div>
         <div class="panel-body">
             <div class="col col-xs-6 text-right">
-                <a href="/fetch_efas" class="btn btn-primary btn-create">
-                    <em class="fas fa-plus-circle"></em>
-                    ??...Fetch EFAS...!
-                </a>
+                {% if fetched_events and fetched_events|length > 0 %}
+                    {% for e, v in fetched_events.items() %}
+                        <em class="fas fa-plus-circle"></em>
+                        {{ e }} - {{ v }}
+                    {% endfor %}
+                {%  else %}
+                    <a href="/fetch_efas" class="btn btn-primary btn-create">
+                        <em class="fas fa-plus-circle"></em>
+                        Fetch last EFAS detected events
+                    </a>
+                {% endif %}
             </div>
         </div>
     </div>

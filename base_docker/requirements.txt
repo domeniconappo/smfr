@@ -13,3 +13,6 @@ requests
 PassLib
 PyJWT
 PyYAML
+flask-marshmallow
+flask-jwt-extended
+swagger-marshmallow-codegen

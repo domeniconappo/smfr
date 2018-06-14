@@ -312,7 +312,7 @@ class Geocoder:
                     break
                 continue
             finally:
-                if not (x % 250):
+                if not (x % 500):
                     cls.logger.info('\nExaminated: %d \n===========\nGeotagged so far: %d\n %s', x, sum(c.values()), str(c))
                     # workaround for lru_cache "memory leak" problems
                     # https://benbernardblog.com/tracking-down-a-freaky-python-memory-leak/
