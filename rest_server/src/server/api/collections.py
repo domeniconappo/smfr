@@ -12,17 +12,19 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 
 from smfrcore.models.sqlmodels import StoredCollector, TwitterCollection, User
 from smfrcore.models.cassandramodels import Tweet
+from smfrcore.client.marshmallow import Collector as CollectorSchema, CollectorResponse, Collection
+from smfrcore.client.ftp import FTPEfas
 
 from daemons.collector import Collector
 
 from smfrcore.errors import SMFRDBError, SMFRRestException
+
 from server.api.clients import AnnotatorClient, GeocoderClient
 from server.api.decorators import check_identity, check_role
+from server.api.utils import Event
 from server.config import CONFIG_STORE_PATH
 
 from server.api import utils
-
-from smfrcore.client.marshmallow import Collector as CollectorSchema, CollectorResponse, Collection
 
 
 logger = logging.getLogger(__name__)
@@ -32,9 +34,9 @@ logger = logging.getLogger(__name__)
 def add_collection(payload):
     """
     POST /collections
-    Create a new Collection and start the relative Collector
+    Create a new Collection and start the associated Collector if runtime is specified.
     :param payload: a CollectorPayload object
-    :return:
+    :return: the created collection as a dict, 201
     """
     payload = connexion.request.form.to_dict()
     if not payload.get('forecast'):
@@ -55,7 +57,7 @@ def add_collection(payload):
             payload[keyname] = path
 
     payload = utils.normalize_payload(payload)
-    collector = CollectorClass.from_payload(payload, user)
+    collector = CollectorClass.from_payload(payload, user=None)
 
     # # The collector/collection objects are only instantiated at this point,
     # there are no processes starting here, unless it's a collector process with runtime
@@ -291,3 +293,22 @@ def stop_all():
     for _, collector in res:
         collector.stop()
     return {}, 204
+
+
+def fetch_efas(since='latest'):
+    """
+
+    :param since:
+    :return:
+    """
+    ftp_client = FTPEfas(since)
+    ftp_client.download_json()
+    ftp_client.close()
+    if os.path.getsize(ftp_client.localfilepath) > 0:
+        # TODO create ondemand collections from EFAS events
+        events_to_create = Event.preview(ftp_client.localfilepath)
+        return {'result': events_to_create}, 200
+    return {'error': 'Something went wrong'}
+
+
+# def confirm_events

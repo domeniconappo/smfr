@@ -13,3 +13,6 @@ RUN apt-get install -y liblapack-dev liblapack-pic liblapack3 liblapack-test  \
 
 COPY requirements.txt /
 RUN pip3.6 install -U pip && pip3.6 install -r requirements.txt
+
+# Clean up APT
+RUN apt-get autoremove -y && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*

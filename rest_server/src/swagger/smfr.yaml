@@ -297,6 +297,22 @@ paths:
         204:
           description: Collectors were stopped successfully
 
+  /collections/fetch_efas:
+    get:
+      tags: [collections]
+      operationId: server.api.collections.fetch_efas
+      parameters:
+        - in: query
+          name: since
+          type: string
+          description: fetch EFAS events since <from>
+          required: true
+          default: latest
+      summary: Fetch efas results
+      responses:
+        200:
+          description: Fetched OK
+
 
 definitions:
 

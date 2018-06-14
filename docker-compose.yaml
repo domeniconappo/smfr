@@ -108,6 +108,9 @@ services:
     image: efas/persister:${current_branch}
     build:
       context: ./
+      args:
+        http_proxy: ${http_proxy}
+        https_proxy: ${https_proxy}
       dockerfile: Dockerfile.persister.ready
     working_dir: /persister
     environment:
@@ -216,26 +219,35 @@ services:
       args:
         http_proxy: ${http_proxy}
         https_proxy: ${https_proxy}
+        ftp_host: ${FTP_HOST}
+        download_folder: ${DOWNLOAD_FOLDER}
     working_dir: /rest_server
     environment:
-      CASSANDRA_HOST: ${CASSANDRA_HOST}
-      CASSANDRA_PORT: ${CASSANDRA_PORT}
       LOGGING_LEVEL: ${LOGGING_LEVEL}
-      PYTHONUNBUFFERED: 'true'
       FLASK_APP: smfr.py
       SERVER_PATH_UPLOADS: /smfr/uploads/
       KERAS_BACKEND: tensorflow
-      MYSQL_HOST: mysql
-      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
       CQLENG_ALLOW_SCHEMA_MANAGEMENT: 1
       RESTSERVER_PORT: 5555
       RESTSERVER_BASEPATH: '/1.0'
+      MYSQL_HOST: mysql
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      CASSANDRA_HOST: ${CASSANDRA_HOST}
+      CASSANDRA_PORT: ${CASSANDRA_PORT}
+      FTP_USER: ${FTP_USER}
+      FTP_PASS: ${FTP_PASS}
+      FTP_HOST: ${FTP_HOST}
+      FTP_PATH: ${FTP_PATH}
+      DOWNLOAD_FOLDER: ${DOWNLOAD_FOLDER}
+      PYTHONUNBUFFERED: 'true'
       http_proxy: ${http_proxy}
       https_proxy: ${http_proxy}
     ports:
       - '5555:5555'
     volumes:
       - './rest_server/src:/rest_server'
+      - './uploads:/smfr/uploads/'
+      - './downloaded:/smfr/downloaded/'
     depends_on:
       - mysql
       - kafka
@@ -243,8 +255,6 @@ services:
       - annotator
       - geocoder
       - persister
-    volumes:
-      - /restserver/uploads:/smfr/uploads/
     deploy:
       placement:
         constraints:

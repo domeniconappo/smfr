@@ -1,5 +1,5 @@
 import logging
-from flask import render_template, redirect
+from flask import render_template, redirect, request
 from start import app
 
 from smfrcore.client.api_client import ApiLocalClient, SMFRRestException
@@ -20,8 +20,21 @@ def index():
 
 @app.route('/admin', methods=('GET',))
 def admin():
-    # res = client.list_collections()
     return render_template('admin.html'), 200
+
+
+@app.route('/fetch_efas', methods=('GET',))
+def fetch_efas():
+    res = None
+    try:
+        since = request.args.get('since') or 'latest'
+        res = client.fetch_efas(since)
+        logger.info('>>>>>>>>>>>>>>>>>>>>>>>>>>>>FETCHED!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
+        logger.info(res)
+    except SMFRRestException as e:
+        add_message('An error occurred: {}'.format(e), category=MessageClass.ERROR)
+    finally:
+        return render_template('admin.html', fetched_events=res['result']), 200
 
 
 @app.route('/list', methods=('GET',))
@@ -44,6 +57,7 @@ def list_inactive_collections():
 
 @app.route('/export/<int:collection_id>', methods=('GET', 'POST',))
 def export_tweets(collection_id):
+    # TODO
     form = ExportForm(collection_id=collection_id)
     if form.validate_on_submit():
         payload = {

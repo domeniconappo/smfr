@@ -37,6 +37,7 @@ class ApiLocalClient:
         'geotag_collection': '/collections/{id}/geo',
         'signup_user': '/users',
         'signin_user': '/users/signin',
+        'fetch_efas': '/collections/fetch_efas'
     }
 
     def __init__(self):
@@ -55,13 +56,17 @@ class ApiLocalClient:
         if code >= 400:
             raise SMFRRestException(res.json(), code)
 
-    def _get(self, endpoint, path_kwargs=None):
+    def _get(self, endpoint, path_kwargs=None, query_params=None):
         try:
             url = self._build_url(endpoint, path_kwargs)
-            res = requests.get(url)
+            requests_kwargs = {}
+            if query_params:
+                requests_kwargs['params'] = query_params
+            res = requests.get(url, **requests_kwargs)
             self._check_response(res)
         except SMFRRestException as e:
             self.logger.error('REST API Error %s', str(e))
+            raise e
         except ConnectionError:
             self.logger.error('SMFR REST API server is not listening...')
         else:
@@ -183,9 +188,17 @@ class ApiLocalClient:
     def start_geotagging(self, collection_id):
         return self._post('geotag_collection', path_kwargs={'id': collection_id})
 
+    def fetch_efas(self, since='latest'):
+        return self._get('fetch_efas', query_params={'since': since})
+
 
 class SMFRRestException(SMFRError):
     def __init__(self, response, status_code):
         err = response.get('error', {})
-        message = '{}: ({})'.format(status_code, err.get('description', 'No details.'))
+        message = err.get('description', 'No details.')
+        self.status_code = status_code
+        self.message = message
         super().__init__(message)
+
+    def __str__(self):
+        return '<{o.status_code}: {o.message}>'.format(o=self)

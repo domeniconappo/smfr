@@ -12,7 +12,11 @@ from server.config import RestServerConfiguration
 
 class MicroserviceClient:
 
+    configuration = RestServerConfiguration()
     base_uri = None
+    host = None
+    port = None
+    logger = logging.getLogger(__name__)
 
     @classmethod
     def _check_response(cls, res, code):
@@ -36,11 +40,9 @@ class AnnotatorClient(MicroserviceClient):
     """
 
     """
-    configuration = RestServerConfiguration()
-    host = configuration.annotator_host
-    port = configuration.annotator_port
+    host = MicroserviceClient.configuration.annotator_host
+    port = MicroserviceClient.configuration.annotator_port
     base_uri = 'http://{}:{}'.format(host, port)
-    logger = logging.getLogger(__name__)
 
     @classmethod
     def start(cls, collection_id, lang):
@@ -79,11 +81,9 @@ class GeocoderClient(MicroserviceClient):
     """
 
     """
-    configuration = RestServerConfiguration()
-    host = configuration.geocoder_host
-    port = configuration.geocoder_port
+    host = MicroserviceClient.configuration.geocoder_host
+    port = MicroserviceClient.configuration.geocoder_port
     base_uri = 'http://{}:{}'.format(host, port)
-    logger = logging.getLogger(__name__)
 
     @classmethod
     def start(cls, collection_id):
