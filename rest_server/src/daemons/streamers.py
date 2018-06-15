@@ -21,7 +21,7 @@ class CollectorStreamer(TwythonStreamer):
     def __init__(self, app_key, app_secret, oauth_token, oauth_token_secret,
                  client_args, collection, producer, quiet=False):
 
-        self.kafka_topic = RestServerConfiguration.server_config['kafka_topic']
+        self.kafka_topic = RestServerConfiguration.kafka_topic
         self.quiet = quiet
         # A TwitterCollection object (it's a row in MySQL DB)
         self.collection = collection

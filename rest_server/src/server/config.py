@@ -7,14 +7,12 @@ from decimal import Decimal
 from time import sleep
 
 import numpy as np
-import yaml
 from cassandra.cluster import NoHostAvailable
 from cassandra.cqlengine import connection
 from cassandra.util import OrderedMapSerializedKey
 from flask.json import JSONEncoder
 from kafka import KafkaProducer
 from kafka.errors import NoBrokersAvailable
-
 from sqlalchemy import create_engine
 from sqlalchemy.exc import OperationalError
 from sqlalchemy_utils import database_exists, create_database
@@ -42,16 +40,6 @@ logging.getLogger('requests_oauthlib').setLevel(logging.ERROR)
 logging.getLogger('paramiko').setLevel(logging.ERROR)
 
 os.makedirs(CONFIG_STORE_PATH, exist_ok=True)
-
-
-def _read_config_file():
-
-    config_path = os.path.join(os.path.dirname(__file__), '../config/') if not RUNNING_IN_DOCKER else '/configuration/'
-    config_file = 'config.yaml.tpl' if not os.path.exists(os.path.join(config_path, 'config.yaml')) else 'config.yaml'
-
-    with open(os.path.join(config_path, config_file)) as f:
-        server_config = yaml.load(f)
-    return config_path, server_config
 
 
 class CustomJSONEncoder(JSONEncoder):
@@ -89,7 +77,6 @@ class RestServerConfiguration(metaclass=Singleton):
     A class whose objects hold SMFR Rest Server Configuration as singletons.
     Constructor accepts a connexion app object.
     """
-    config_dir, server_config = _read_config_file()
     geonames_host = '127.0.0.1' if not RUNNING_IN_DOCKER else 'geonames'
     kafka_host = '127.0.0.1' if not RUNNING_IN_DOCKER else 'kafka'
     mysql_db_host = '127.0.0.1' if not RUNNING_IN_DOCKER else 'mysql'
@@ -99,18 +86,18 @@ class RestServerConfiguration(metaclass=Singleton):
     restserver_host = '127.0.0.1' if not RUNNING_IN_DOCKER else 'restserver'
     kafka_bootstrap_server = '{}:9092'.format(kafka_host)
 
-    mysql_db_name = '{}{}'.format(server_config['mysql_db_name'], '_test' if UNDER_TESTS else '')
+    cassandra_keyspace = '{}{}'.format(os.environ.get('CASSANDRA_KEYSPACE', 'smfr_persistent'), '_test' if UNDER_TESTS else '')
     mysql_user = 'root'
+    mysql_db_name = '{}{}'.format(os.environ.get('MYSQL_DBNAME', 'smfr'), '_test' if UNDER_TESTS else '')
     mysql_pass = os.environ.get('MYSQL_PASSWORD', 'password')
-    restserver_port = server_config['restserver_port']
-    annotator_port = server_config['annotator_port']
-    geocoder_port = server_config['geocoder_port']
+    restserver_port = os.environ.get('RESTSERVER_PORT', 5555)
+    annotator_port = os.environ.get('ANNOTATOR_PORT', 5556)
+    geocoder_port = os.environ.get('GEOCODER_PORT', 5557)
+    kafka_topic = os.environ.get('KAFKA_TOPIC', 'persister')
 
-    kafka_topic = server_config['kafka_topic']
+    debug = not UNDER_TESTS and not os.environ.get('PRODUCTION', True)
 
-    debug = not UNDER_TESTS and not server_config.get('production', True)
-
-    logger_level = logging.ERROR if UNDER_TESTS else logging.getLevelName(server_config.get('logging_level', os.environ.get('LOGGING_LEVEL', 'DEBUG')).upper())
+    logger_level = logging.ERROR if UNDER_TESTS else logging.getLevelName(os.environ.get('LOGGING_LEVEL', 'DEBUG').upper())
     logger = logging.getLogger(__name__)
     logger.setLevel(logger_level)
 
@@ -157,19 +144,17 @@ class RestServerConfiguration(metaclass=Singleton):
             self.log_configuration()
 
     def set_flaskapp(self, connexion_app):
-        cassandra_keyspace = '{}{}'.format(self.server_config['cassandra_keyspace'], '_test' if UNDER_TESTS else '')
-
         app = connexion_app.app
         app.json_encoder = CustomJSONEncoder
         app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:example@{}/{}'.format(self.mysql_db_host, self.mysql_db_name)
         app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
         app.config['CASSANDRA_HOSTS'] = [self.cassandra_host]
-        app.config['CASSANDRA_KEYSPACE'] = cassandra_keyspace
+        app.config['CASSANDRA_KEYSPACE'] = self.cassandra_keyspace
         return app
 
     @property
     def base_path(self):
-        return self.server_config['base_path']
+        return os.environ.get('RESTSERVER_BASEPATH', '/1.0')
 
     def init_cassandra(self):
         """
@@ -179,7 +164,7 @@ class RestServerConfiguration(metaclass=Singleton):
         session = connection._connections[connection.DEFAULT_CONNECTION].session
         session.execute(
             "CREATE KEYSPACE IF NOT EXISTS %s WITH replication = {'class':'SimpleStrategy','replication_factor':'1'};" %
-            self.server_config['cassandra_keyspace']
+            self.cassandra_keyspace
         )
 
         # do not remove the import below
@@ -211,7 +196,9 @@ class RestServerConfiguration(metaclass=Singleton):
         self.logger.info(' - Host: {}'.format(self.flask_app.config['CASSANDRA_HOSTS']))
         self.logger.info(' - Keyspace: {}'.format(self.flask_app.config['CASSANDRA_KEYSPACE']))
         self.logger.info('+++ MySQL')
+
         masked = re.sub(r'(?<=:)(.*)(?=@)', '******', self.flask_app.config['SQLALCHEMY_DATABASE_URI'])
+
         self.logger.info(' - URI: {}'.format(masked))
         self.logger.info('+++ Annotator microservice')
         self.logger.info(' - {}:{}'.format(self.annotator_host, self.annotator_port))

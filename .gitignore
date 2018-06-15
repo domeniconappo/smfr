@@ -14,6 +14,7 @@ docker-compose-4deploy.yaml
 uploads/
 downloaded/
 GlobalRegions_052018.geojson
+rest_server/src/tests/data/CostPopEst2018061300.json
 *geonames_index*
 # Byte-compiled / optimized / DLL files
 __pycache__/
