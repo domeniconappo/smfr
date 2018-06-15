@@ -228,9 +228,15 @@ services:
       SERVER_PATH_UPLOADS: /smfr/uploads/
       KERAS_BACKEND: tensorflow
       CQLENG_ALLOW_SCHEMA_MANAGEMENT: 1
-      RESTSERVER_PORT: 5555
+      RESTSERVER_PORT: ${RESTSERVER_PORT}
+      ANNOTATOR_PORT: ${ANNOTATOR_PORT}
+      GEOCODER_PORT: ${GEOCODER_PORT}
+      CASSANDRA_KEYSPACE: ${CASSANDRA_KEYSPACE}
+      PRODUCTION: ${PRODUCTION}
+      KAFKA_TOPIC: ${KAFKA_TOPIC}
       RESTSERVER_BASEPATH: '/1.0'
       MYSQL_HOST: mysql
+      MYSQL_DBNAME: ${MYSQL_DBNAME}
       MYSQL_PASSWORD: ${MYSQL_PASSWORD}
       CASSANDRA_HOST: ${CASSANDRA_HOST}
       CASSANDRA_PORT: ${CASSANDRA_PORT}
@@ -275,7 +281,7 @@ services:
       - './web/src:/app'
     environment:
       PYTHONUNBUFFERED: 'true'
-      RESTSERVER_PORT: 5555
+      RESTSERVER_PORT: ${RESTSERVER_PORT}
       RESTSERVER_BASEPATH: '/1.0'
       http_proxy: ${http_proxy}
       https_proxy: ${https_proxy}

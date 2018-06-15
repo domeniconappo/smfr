@@ -15,7 +15,7 @@ client = ApiLocalClient()
 
 @app.route('/', methods=('GET',))
 def index():
-    return render_template('index.html')
+    return render_template('index.html'), 200
 
 
 @app.route('/admin', methods=('GET',))
@@ -23,14 +23,17 @@ def admin():
     return render_template('admin.html'), 200
 
 
-@app.route('/fetch_efas', methods=('GET',))
+@app.route('/fetch_efas', methods=('GET', 'POST'))
 def fetch_efas():
     res = None
+    if request.method == "POST":
+        selected_events = request.form.getlist("events")
+        client.add_ondemand_collections(selected_events)
+        add_message(selected_events, category=MessageClass.SUCCESS)
+        return redirect('/list')
     try:
         since = request.args.get('since') or 'latest'
         res = client.fetch_efas(since)
-        logger.info('>>>>>>>>>>>>>>>>>>>>>>>>>>>>FETCHED!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
-        logger.info(res)
     except SMFRRestException as e:
         add_message('An error occurred: {}'.format(e), category=MessageClass.ERROR)
     finally:

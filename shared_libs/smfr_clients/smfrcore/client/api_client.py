@@ -191,6 +191,12 @@ class ApiLocalClient:
     def fetch_efas(self, since='latest'):
         return self._get('fetch_efas', query_params={'since': since})
 
+    def add_ondemand_collections(self, events):
+        for e in events:
+            self.logger.info(e)
+        return None, 200
+        # return self._post('add_ondemand_collections', payload=events)
+
 
 class SMFRRestException(SMFRError):
     def __init__(self, response, status_code):

@@ -12,10 +12,15 @@
         <div class="panel-body">
             <div class="col col-xs-6 text-right">
                 {% if fetched_events and fetched_events|length > 0 %}
+                    <form method="post">
+
                     {% for e, v in fetched_events.items() %}
                         <em class="fas fa-plus-circle"></em>
-                        {{ e }} - {{ v }}
+                        <input type="checkbox" id="id_{{v.location}}" name="events" value="{{v.location}}" />
+                        <label for="id_{{v.location}}">{{v.location}}</label>
                     {% endfor %}
+                    <input type="submit"/>
+                    </form>
                 {%  else %}
                     <a href="/fetch_efas" class="btn btn-primary btn-create">
                         <em class="fas fa-plus-circle"></em>
