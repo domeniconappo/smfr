@@ -3,7 +3,7 @@
 
 cmdname=$(basename $0)
 
-echoerr() { if [[ $QUIET -ne 1 ]]; then echo "$@" 1>&2; fi }
+echoerr() { if [[ ${QUIET} -ne 1 ]]; then echo "$@" 1>&2; fi }
 
 usage()
 {
@@ -24,7 +24,7 @@ USAGE
 
 wait_for()
 {
-    if [[ $TIMEOUT -gt 0 ]]; then
+    if [[ ${TIMEOUT} -gt 0 ]]; then
         echoerr "$cmdname: waiting $TIMEOUT seconds for $HOST:$PORT"
     else
         echoerr "$cmdname: waiting for $HOST:$PORT without a timeout"
@@ -32,11 +32,11 @@ wait_for()
     start_ts=$(date +%s)
     while :
     do
-        if [[ $ISBUSY -eq 1 ]]; then
-            nc -z $HOST $PORT
+        if [[ ${ISBUSY} -eq 1 ]]; then
+            nc -z ${HOST} ${PORT}
             result=$?
         else
-            (echo > /dev/tcp/$HOST/$PORT) >/dev/null 2>&1
+            (echo > /dev/tcp/${HOST}/${PORT}) >/dev/null 2>&1
             result=$?
         fi
         if [[ $result -eq 0 ]]; then
@@ -152,7 +152,7 @@ else
         BUSYTIMEFLAG=""
 fi
 
-if [[ $CHILD -gt 0 ]]; then
+if [[ ${CHILD} -gt 0 ]]; then
     wait_for
     RESULT=$?
     exit $RESULT

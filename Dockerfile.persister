@@ -12,7 +12,7 @@ RUN mkdir -p $INSTALL_PATH && mkdir -p /scripts && mkdir -p /config
 WORKDIR $INSTALL_PATH
 
 COPY ./persister/src/. ./
-COPY ./persister/scripts/. /scripts/
+COPY ./shared_libs/scripts/wait_for_it.sh /scripts/
 
 RUN mkdir -p /smfr_models
 COPY ./shared_libs/smfr_models/. /smfr_models/

@@ -217,7 +217,7 @@ class NutsBoundingBox(SMFRModel):
     max_lat = Column(Float)
 
     @classmethod
-    def nuts3_bbox(cls, id_nuts):
+    def nuts2_bbox(cls, id_nuts):
         """
 
         :param id_nuts:
@@ -226,3 +226,11 @@ class NutsBoundingBox(SMFRModel):
         row = cls.query.filter_by(id=id_nuts).first()
         bbox = {'min_lat': row.min_lat, 'max_lat': row.max_lat, 'min_lon': row.min_lon, 'max_lon': row.max_lon}
         return bbox
+
+
+class Nuts2Items(SMFRModel):
+    """
+    
+    """
+    __tablename__ = 'nuts3'
+

@@ -20,7 +20,7 @@ COPY ./geocoder/requirements.txt ./
 RUN pip3.6 install -r requirements.txt
 
 COPY ./geocoder/src/. ${INSTALL_PATH}
-COPY ./geocoder/scripts/. /scripts/
+COPY ./shared_libs/scripts/wait_for_it.sh /scripts/
 
 RUN mkdir -p /smfr_models
 COPY ./shared_libs/smfr_models/. /smfr_models/
