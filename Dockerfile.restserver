@@ -20,7 +20,7 @@ RUN apt-get autoremove -y && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/*
 ENV PATH=/usr/local/mysql/bin/:$PATH
 
 COPY ./rest_server/src/. $INSTALL_PATH/
-COPY ./rest_server/scripts/. /scripts/
+COPY ./shared_libs/scripts/wait_for_it.sh /scripts/
 COPY ./rest_server/src/config/. /configuration/
 
 RUN mkdir -p ~/.ssh/
