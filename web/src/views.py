@@ -37,7 +37,7 @@ def fetch_efas():
     except SMFRRestException as e:
         add_message('An error occurred: {}'.format(e), category=MessageClass.ERROR)
     finally:
-        return render_template('admin.html', fetched_events=res['result']), 200
+        return render_template('admin.html', fetched_events=res['results']), 200
 
 
 @app.route('/list', methods=('GET',))

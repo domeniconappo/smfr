@@ -1,3 +1,4 @@
+import codecs
 import logging
 import os
 import re
@@ -40,6 +41,8 @@ logging.getLogger('requests_oauthlib').setLevel(logging.ERROR)
 logging.getLogger('paramiko').setLevel(logging.ERROR)
 
 os.makedirs(CONFIG_STORE_PATH, exist_ok=True)
+
+codecs.register(lambda name: codecs.lookup('utf8') if name.lower() == 'utf8mb4' else None)
 
 
 class CustomJSONEncoder(JSONEncoder):
@@ -177,7 +180,7 @@ class RestServerConfiguration(metaclass=Singleton):
         :return:
         """
         with self.flask_app.app_context():
-            engine = create_engine(self.flask_app.config['SQLALCHEMY_DATABASE_URI'])
+            engine = create_engine(self.flask_app.config['SQLALCHEMY_DATABASE_URI'], encoding='UTF8MB4')
             if not database_exists(engine.url):
                 create_database(engine.url)
 
