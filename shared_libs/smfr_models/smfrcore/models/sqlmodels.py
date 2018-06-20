@@ -32,7 +32,9 @@ class User(SMFRModel):
     def create(cls, name='', email=None, password=None, role=None):
         if not email or not password:
             raise ValueError('Email and Password are required')
-        user = cls(name=name, email=email, password_hash=cls.hash_password(password), role=role)
+        user = cls(name=name, email=email,
+                   password_hash=cls.hash_password(password),
+                   role=role)
         user.save()
         return user
 
@@ -221,13 +223,13 @@ class NutsBoundingBox(SMFRModel):
     max_lat = Column(Float)
 
     @classmethod
-    def nuts2_bbox(cls, id_nuts):
+    def nuts2_bbox(cls, efas_id):
         """
 
-        :param id_nuts:
+        :param efas_id:
         :return:
         """
-        row = cls.query.filter_by(id=id_nuts).first()
+        row = cls.query.filter_by(id=efas_id).first()
         bbox = {'min_lat': row.min_lat, 'max_lat': row.max_lat, 'min_lon': row.min_lon, 'max_lon': row.max_lon}
         return bbox
 

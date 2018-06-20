@@ -248,6 +248,7 @@ services:
       FTP_HOST: ${FTP_HOST}
       FTP_PATH: ${FTP_PATH}
       DOWNLOAD_FOLDER: ${DOWNLOAD_FOLDER}
+      RRA_ONDEMAND_FILENAME: ${RRA_ONDEMAND_FILENAME}
       PYTHONUNBUFFERED: 'true'
       http_proxy: ${http_proxy}
       https_proxy: ${http_proxy}

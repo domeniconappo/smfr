@@ -4,13 +4,14 @@ Module to handle /collections API
 import os
 import logging
 import uuid
+import csv
 from functools import partial
 
 import connexion
 from flask import abort
 from flask_jwt_extended import jwt_required, get_jwt_identity
 
-from smfrcore.models.sqlmodels import StoredCollector, TwitterCollection, User
+from smfrcore.models.sqlmodels import StoredCollector, TwitterCollection, User, Nuts3, NutsBoundingBox
 from smfrcore.models.cassandramodels import Tweet
 from smfrcore.client.marshmallow import Collector as CollectorSchema, CollectorResponse, Collection
 from smfrcore.client.ftp import FTPEfas
@@ -21,9 +22,7 @@ from smfrcore.errors import SMFRDBError, SMFRRestException
 
 from server.api.clients import AnnotatorClient, GeocoderClient
 from server.api.decorators import check_identity, check_role
-from server.api.utils import Event
 from server.config import CONFIG_STORE_PATH
-
 from server.api import utils
 
 
@@ -114,8 +113,8 @@ def get_stopped_collectors():
     return res, 200
 
 
-@check_identity
-@jwt_required
+# @check_identity
+# @jwt_required
 def stop_collector(collector_id):
     """
     POST /collections/stop/{collector_id}
@@ -141,8 +140,8 @@ def stop_collector(collector_id):
         return {'error': {'description': 'No collector with this id was found'}}, 404
 
 
-@check_identity
-@jwt_required
+# @check_identity
+# @jwt_required
 def start_collector(collector_id):
     """
     POST /collections/{collector_id}/start
@@ -162,8 +161,8 @@ def start_collector(collector_id):
     return {}, 204
 
 
-@check_identity
-@jwt_required
+# @check_identity
+# @jwt_required
 def remove_collection(collection_id):
     """
     POST /collections/{collection_id}/remove
@@ -295,6 +294,8 @@ def stop_all():
     return {}, 204
 
 
+# @check_role
+# @jwt_required
 def fetch_efas(since='latest'):
     """
 
@@ -302,13 +303,21 @@ def fetch_efas(since='latest'):
     :return:
     """
     ftp_client = FTPEfas(since)
-    ftp_client.download_json()
+    ftp_client.download_rra()
     ftp_client.close()
+    results = []
     if os.path.getsize(ftp_client.localfilepath) > 0:
         # TODO create ondemand collections from EFAS events
-        events_to_create = Event.preview(ftp_client.localfilepath)
-        return {'result': events_to_create}, 200
-    return {'error': 'Something went wrong'}
+        with open(ftp_client.localfilepath) as f:
+            reader = csv.DictReader(f, delimiter=',')
+            next(reader)  # skip header
 
-
-# def confirm_events
+            for event in reader:
+                efas_id = int(float(event['ID']))
+                cities = event.get('Cities') or event.get('1Cities') or []
+                bbox = NutsBoundingBox.nuts2_bbox(efas_id)
+                if not cities:
+                    cities = list(Nuts3.query.with_entities(Nuts3.name_ascii).filter_by(efas_id=efas_id))
+                results.append({'efas_id': efas_id, 'trigger': 'on_demand', 'keywords': cities, 'bbox': bbox})
+    logger.info(results)
+    return {'results': results}

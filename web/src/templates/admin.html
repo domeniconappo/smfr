@@ -10,17 +10,18 @@
             </div>
         </div>
         <div class="panel-body">
-            <div class="col col-xs-6 text-right">
+            <div class="col col-xs-12">
                 {% if fetched_events and fetched_events|length > 0 %}
-                    <form method="post">
 
-                    {% for e, v in fetched_events.items() %}
-                        <em class="fas fa-plus-circle"></em>
-                        <input type="checkbox" id="id_{{v.location}}" name="events" value="{{v.location}}" />
-                        <label for="id_{{v.location}}">{{v.location}}</label>
+                    {% for event in fetched_events %}
+                        <div class="col col-xs-6 text-right">
+                            <pre>Event: {{ event.efas_id }}</pre>
+                            {% for k, v in event.items() %}
+                                <em class="fas fa-plus-circle"></em>
+                                <pre>{{ k }}: {{ v }}</pre>
+                            {% endfor %}
+                        </div>
                     {% endfor %}
-                    <input type="submit"/>
-                    </form>
                 {%  else %}
                     <a href="/fetch_efas" class="btn btn-primary btn-create">
                         <em class="fas fa-plus-circle"></em>
