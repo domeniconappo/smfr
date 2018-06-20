@@ -2,7 +2,7 @@ import datetime
 
 from passlib.apps import custom_app_context as pwd_context
 
-from sqlalchemy import Column, Integer, String, TIMESTAMP, Float, ForeignKey
+from sqlalchemy import Column, Integer, String, TIMESTAMP, Float, ForeignKey, inspect
 from sqlalchemy_utils import ChoiceType, ScalarListType, JSONType
 
 from .base import SMFRModel, metadata
@@ -15,6 +15,7 @@ sqldb = SQLAlchemy(metadata=metadata, session_options={'expire_on_commit': False
 
 class User(SMFRModel):
     __tablename__ = 'users'
+    __table_args__ = {'mysql_engine': 'InnoDB', 'mysql_charset': 'utf8mb4', 'mysql_collate': 'utf8mb4_general_ci'}
 
     ROLES = [
         ('admin', 'Admin'),
@@ -83,6 +84,7 @@ class TwitterCollection(SMFRModel):
 
     """
     __tablename__ = 'virtual_twitter_collection'
+    __table_args__ = {'mysql_engine': 'InnoDB', 'mysql_charset': 'utf8mb4', 'mysql_collate': 'utf8mb4_general_ci'}
 
     ACTIVE_STATUS = 'active'
     INACTIVE_STATUS = 'inactive'
@@ -182,6 +184,7 @@ class StoredCollector(SMFRModel):
 
     """
     __tablename__ = 'stored_collector'
+    __table_args__ = {'mysql_engine': 'InnoDB', 'mysql_charset': 'utf8mb4', 'mysql_collate': 'utf8mb4_general_ci'}
 
     id = Column(Integer, primary_key=True, autoincrement=True, nullable=False)
     collection_id = Column(Integer, ForeignKey('virtual_twitter_collection.id'))
@@ -210,6 +213,7 @@ class NutsBoundingBox(SMFRModel):
     """
 
     __tablename__ = 'nuts_bounding_box'
+    __table_args__ = {'mysql_engine': 'InnoDB', 'mysql_charset': 'utf8mb4', 'mysql_collate': 'utf8mb4_general_ci'}
     id = Column(Integer, primary_key=True, nullable=False, autoincrement=False)
     min_lon = Column(Float)
     max_lon = Column(Float)
@@ -228,9 +232,52 @@ class NutsBoundingBox(SMFRModel):
         return bbox
 
 
-class Nuts2Items(SMFRModel):
+class Nuts3(SMFRModel):
     """
     
     """
     __tablename__ = 'nuts3'
+    __table_args__ = {'mysql_engine': 'InnoDB', 'mysql_charset': 'utf8mb4', 'mysql_collate': 'utf8mb4_general_ci'}
+    id = Column(Integer, primary_key=True, nullable=False, autoincrement=False)
+    efas_id = Column(Integer, nullable=False, index=True)
+    name = Column(String(500), nullable=False)
+    name_ascii = Column(String(500), nullable=False, index=True)
+    latitude = Column(Float, nullable=False)
+    longitude = Column(Float, nullable=False)
+    names = Column(JSONType, nullable=False)
+    properties = Column(JSONType, nullable=False)
+    country_name = Column(String(500), nullable=False)
+    nuts_id = Column(String(10), nullable=True)
+    country_code = Column(String(5), nullable=False)
+
+    @classmethod
+    def from_feature(cls, feature):
+        """
+
+        :param feature:
+        :return:
+        """
+        properties = feature['properties']
+        names_by_lang = {lang.split('_')[1]: cityname for lang, cityname in properties.items() if lang.startswith('name_')}
+        additional_props = {
+            'is_megacity': bool(properties['MEGACITY']),
+            'is_worldcity': bool(properties['WORLDCITY']),
+            'is_admcap': bool(properties['ADM0CAP']),
+        }
+
+        return cls(id=feature['id'],
+                   efas_id=properties['ID'],
+                   name=properties['NAME'] or properties['NUTS_NAME'],
+                   name_ascii=properties['NAMEASCII'] or properties['NAME_ASCI'],
+                   nuts_id=properties['NUTS_ID'],
+                   country_name=properties['SOV0NAME'],
+                   country_code=properties['ISO_A2'] or properties['CNTR_CODE'],
+                   latitude=properties['LAT'],
+                   longitude=properties['LON'],
+                   names=names_by_lang,
+                   properties=additional_props,
+                   )
+
+    def to_dict(self):
+        return {c.key: getattr(self, c.key) for c in inspect(self).mapper.column_attrs}
 

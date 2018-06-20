@@ -146,7 +146,7 @@ class RestServerConfiguration(metaclass=Singleton):
     def set_flaskapp(self, connexion_app):
         app = connexion_app.app
         app.json_encoder = CustomJSONEncoder
-        app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:example@{}/{}'.format(self.mysql_db_host, self.mysql_db_name)
+        app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:example@{}/{}?charset=utf8mb4'.format(self.mysql_db_host, self.mysql_db_name)
         app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
         app.config['CASSANDRA_HOSTS'] = [self.cassandra_host]
         app.config['CASSANDRA_KEYSPACE'] = self.cassandra_keyspace

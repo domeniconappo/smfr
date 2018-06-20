@@ -67,7 +67,10 @@ services:
           - node.id == ${NODE1}
 
   mysql:
-    image: mysql:latest
+    build:
+      context: ./
+      dockerfile: mysql/Dockerfile
+    image: efas/mysql
     restart: always
     container_name: mysql
     # From host, connect to DB with `mysql -h 127.0.0.1 -p` (if you have mysql client installed)
