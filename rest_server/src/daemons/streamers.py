@@ -38,9 +38,9 @@ class CollectorStreamer(TwythonStreamer):
     def on_success(self, data):
 
         if 'text' in data:
-            lang = safe_langdetect(tweet_normalization_aggressive(data['text']))
+            lang = safe_langdetect(tweet_normalization_aggressive(data['text'])) if not self.collection.is_ondemand else None
             languages = self.collection.languages
-            if lang in languages:
+            if self.collection.is_ondemand or lang in languages:
                 data['lang'] = lang
                 tweet = Tweet.build_from_tweet(self.collection, data)
                 # the tweet is sent immediately to kafka queue

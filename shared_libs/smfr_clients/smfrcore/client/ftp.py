@@ -31,6 +31,12 @@ class FTPEfas:
     def localfilepath(self):
         return os.path.join(self.local_folder, self.filename)
 
+    @property
+    def filename_date(self):
+        if not self.filename:
+            self.filename = self._get_filename()
+        return self.date_from_filename(self.filename)
+
     def _get_filename(self):
         if self.dated == 'latest':
             remote_filelist = self.connection.listdir(self.server_folder)
@@ -52,7 +58,8 @@ class FTPEfas:
         :param force:
         :return:
         """
-        self.filename = self._get_filename()
+        if not self.filename:
+            self.filename = self._get_filename()
         self.remote_path = os.path.join(self.server_folder, self.filename)
         localfile_path = os.path.join(self.local_folder, os.path.basename(self.filename))
         if not os.path.exists(localfile_path) or force:

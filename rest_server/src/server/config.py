@@ -31,6 +31,7 @@ SERVER_BOOTSTRAP = 'gunicorn' in sys.argv[0]
 LOGGER_FORMAT = '%(asctime)s: Server - <%(name)s>[%(levelname)s] (%(threadName)-10s) %(message)s'
 DATE_FORMAT = '%Y%m%d %H:%M:%S'
 CONFIG_STORE_PATH = os.environ.get('SERVER_PATH_UPLOADS', os.path.join(os.path.dirname(__file__), '../../../uploads/'))
+CONFIG_FOLDER = '/configuration/' if RUNNING_IN_DOCKER else os.path.join(os.path.dirname(__file__), '../config/')
 
 logging.getLogger('cassandra').setLevel(logging.ERROR)
 logging.getLogger('kafka').setLevel(logging.ERROR)

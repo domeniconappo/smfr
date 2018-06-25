@@ -13,7 +13,7 @@ $ git push origin <my_branch>
 ## Generate Marshmallow schemas from smfr.yaml Swagger definitions using a Marshmallow custom driver
 
 ```bash
-$ cd base_docker/smfr_core
+$ cd shared_libs/smfr_clients
 $ swagger-marshmallow-codegen --driver=./smfrcore/client/_marshmallow_custom.py:CustomDriver ../../rest_server/src/swagger/smfr.yaml > ./smfrcore/client/marshmallow.py
 ```
 

@@ -313,6 +313,25 @@ paths:
         200:
           description: Fetched OK
 
+  /collections/add_ondemand:
+    post:
+      tags: [collections]
+      operationId: server.api.collections.add_ondemand
+      parameters:
+        - name: payload
+          in: body
+          required: true
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/OnDemandPayload'
+
+          description: The on demand collection to create
+      summary: Fetch efas results
+      responses:
+        201:
+          description: Added collections
+
 
 definitions:
 
@@ -380,6 +399,21 @@ definitions:
         $ref: '#/definitions/Collection'
       id:
         type: integer
+
+  OnDemandPayload:
+    type: object
+    properties:
+      efas_id:
+        type: integer
+      forecast:
+        type: string
+      keywords:
+        type: string
+      trigger:
+        type: string
+        enum: [background, on-demand, manual]
+      bbox:
+        type: object
 
   Collector:
     type: object

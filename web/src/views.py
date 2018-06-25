@@ -1,11 +1,14 @@
 import logging
+
+import ujson as json
 from flask import render_template, redirect, request
-from start import app
 
 from smfrcore.client.api_client import ApiLocalClient, SMFRRestException
 from smfrcore.client.conf import LOGGER_FORMAT, DATE_FORMAT
+
 from forms import NewCollectorForm, ExportForm
 from utils import MessageClass, add_message
+from start import app
 
 
 logging.basicConfig(level=logging.INFO, format=LOGGER_FORMAT, datefmt=DATE_FORMAT)
@@ -25,11 +28,12 @@ def admin():
 
 @app.route('/fetch_efas', methods=('GET', 'POST'))
 def fetch_efas():
-    res = None
+    res = {}
     if request.method == "POST":
         selected_events = request.form.getlist("events")
-        client.add_ondemand_collections(selected_events)
-        add_message(selected_events, category=MessageClass.SUCCESS)
+        selected_events = [json.loads(e.replace('\'', '"')) for e in selected_events]
+        res = client.add_ondemand_collections(selected_events)
+        add_message(res, category=MessageClass.SUCCESS)
         return redirect('/list')
     try:
         since = request.args.get('since') or 'latest'
@@ -37,7 +41,7 @@ def fetch_efas():
     except SMFRRestException as e:
         add_message('An error occurred: {}'.format(e), category=MessageClass.ERROR)
     finally:
-        return render_template('admin.html', fetched_events=res['results']), 200
+        return render_template('admin.html', fetched_events=res.get('results')), 200
 
 
 @app.route('/list', methods=('GET',))
@@ -94,8 +98,9 @@ def new_collection():
 @app.route('/start/<int:collector_id>', methods=('GET',))
 def start_collector(collector_id):
     try:
-        res = client.start_collector(collector_id)
-        add_message('The collection was started (collector id {})'.format(res), category=MessageClass.SUCCESS)
+        _ = client.start_collector(collector_id)
+        add_message('The collection was started (collector id {})'.format(collector_id),
+                    category=MessageClass.SUCCESS)
     except SMFRRestException as e:
         add_message('An error occurred: {}'.format(e), category=MessageClass.ERROR)
         logger.error(str(e))

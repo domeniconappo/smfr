@@ -5,6 +5,8 @@ import sys
 import threading
 
 import time
+import uuid
+
 import yaml
 
 from dateutil import parser
@@ -12,7 +14,7 @@ from dateutil import parser
 from smfrcore.models.sqlmodels import TwitterCollection, StoredCollector
 
 from daemons.streamers import CollectorStreamer
-from server.config import RestServerConfiguration
+from server.config import RestServerConfiguration, CONFIG_STORE_PATH, CONFIG_FOLDER
 from smfrcore.errors import SMFRDBError
 
 
@@ -29,6 +31,43 @@ class Collector:
     logger = logging.getLogger(__name__)
     logger.setLevel(RestServerConfiguration.logger_level)
     server_conf = RestServerConfiguration()
+
+    @classmethod
+    def keywords_file_from_keywords(cls, keywords, forecast_id):
+        """
+
+        :param keywords:
+        :param forecast_id:
+        :return:
+        """
+        iden = uuid.uuid4()
+        filename = '{}_{}_kwfile.yaml'.format(forecast_id, iden)
+        fullpath = os.path.join(CONFIG_STORE_PATH, filename)
+        content = {'no_language': keywords.split(',')}
+        with open(fullpath, 'w') as f:
+            yaml.dump(content, f)
+        return fullpath
+
+    @classmethod
+    def locations_file_from_bbox(cls, bbox, forecast_id):
+        """
+
+        :param bbox: {'max_lat': 40.6587, 'max_lon': -1.14236, 'min_lat': 39.2267, 'min_lon': -3.16142}
+        :param forecast_id:
+        :return:
+        """
+        iden = uuid.uuid4()
+        filename = '{}_{}_locfile.yaml'.format(forecast_id, iden)
+        fullpath = os.path.join(CONFIG_STORE_PATH, filename)
+        content = {'bbox1': '{}, {}, {}, {}'.format(bbox['min_lon'], bbox['min_lat'], bbox['max_lon'], bbox['max_lat'])}
+        with open(fullpath, 'w') as f:
+            yaml.dump(content, f)
+        return fullpath
+
+    @classmethod
+    def user_collector_config_file(cls, user=None):
+        # TODO return collector config based on user object
+        return os.path.join(CONFIG_FOLDER, 'admin_collector.yaml')
 
     @classmethod
     def running_instances(cls):
@@ -237,8 +276,7 @@ class Collector:
 
         :return: Generator of Collector instances resumed based on StoredCollector db items stored in MySQL
         """
-        stored_collectors = StoredCollector.query\
-            .join(TwitterCollection, StoredCollector.collection_id == TwitterCollection.id)
+        stored_collectors = StoredCollector.query.join(TwitterCollection, StoredCollector.collection_id == TwitterCollection.id)
         return (cls.resume(c) for c in stored_collectors)
 
 
@@ -248,6 +286,23 @@ class BackgroundCollector(Collector):
 
 class OndemandCollector(Collector):
     trigger = 'on-demand'
+
+    @classmethod
+    def create_from_event(cls, event, user=None):
+        """
+
+        :param event: {'bbox': {'max_lat': 40.6587, 'max_lon': -1.14236, 'min_lat': 39.2267, 'min_lon': -3.16142},
+                       'trigger': 'on-demand', 'forecast': '2018061500', 'keywords': 'Cuenca', 'efas_id': 1436}
+        :type: dict
+        :return: Collector object
+        """
+        keywords_file = cls.keywords_file_from_keywords(event['keywords'], event['forecast'])
+        locations_file = cls.locations_file_from_bbox(event['bbox'], event['forecast'])
+        config_file = cls.user_collector_config_file(user)
+        forecast_id = event['forecast']
+        nuts3 = event['efas_id']
+        return cls(config_file, keywords_file=keywords_file, locations_file=locations_file,
+                   forecast_id=forecast_id, nuts3=nuts3)
 
 
 class ManualCollector(Collector):

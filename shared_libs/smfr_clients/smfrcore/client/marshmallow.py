@@ -43,6 +43,14 @@ class CollectorResponse(BaseSchema):
     id = fields.Integer()
 
 
+class OnDemandPayload(BaseSchema):
+    efas_id = fields.Integer()
+    forecast = fields.String()
+    keywords = fields.String()
+    trigger = fields.String(validate=[OneOf(choices=['background', 'on-demand', 'manual'], labels=[])])
+    bbox = fields.Field()
+
+
 class Collector(BaseSchema):
     id = fields.Integer()
     collection_id = fields.Integer()
