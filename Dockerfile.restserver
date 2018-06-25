@@ -39,6 +39,8 @@ RUN mkdir -p /smfr_clients
 COPY ./shared_libs/smfr_clients/. /smfr_clients/
 RUN pip3.6 install /smfr_clients/
 
+RUN mkdir -p /smfr/uploads/
+
 EXPOSE 5555
 RUN ["chmod", "a+x", "/scripts/wait_for_it.sh"]
 ENTRYPOINT ["/scripts/wait_for_it.sh", "cassandrasmfr:9160"]

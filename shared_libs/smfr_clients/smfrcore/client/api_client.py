@@ -11,7 +11,7 @@ from werkzeug.datastructures import FileStorage
 from smfrcore.client.conf import ServerConfiguration, DATE_FORMAT, LOGGER_FORMAT
 from smfrcore.errors import SMFRError
 
-from .marshmallow import CollectorPayload
+from .marshmallow import CollectorPayload, OnDemandPayload
 
 logging.basicConfig(level=logging.INFO if not ServerConfiguration.debug else logging.DEBUG,
                     format=LOGGER_FORMAT, datefmt=DATE_FORMAT)
@@ -37,7 +37,8 @@ class ApiLocalClient:
         'geotag_collection': '/collections/{id}/geo',
         'signup_user': '/users',
         'signin_user': '/users/signin',
-        'fetch_efas': '/collections/fetch_efas'
+        'fetch_efas': '/collections/fetch_efas',
+        'add_ondemand': '/collections/add_ondemand',
     }
 
     def __init__(self):
@@ -83,6 +84,8 @@ class ApiLocalClient:
         :return: JSON text
         """
         requests_kwargs = {'json': payload} if payload else {}
+        self.logger.info(payload)
+
         if query_params:
             requests_kwargs['params'] = query_params
 
@@ -115,7 +118,7 @@ class ApiLocalClient:
             self.logger.error('REST API Error %s', str(e))
             raise e
         except ConnectionError as e:
-            self.logger.error('SMFR REST API server is not listening...')
+            self.logger.error('SMFR REST API server is not listening...%s', str(e))
             raise SMFRRestException({'status': 500, 'title': 'SMFR Rest Server is not listening', 'description': url})
         else:
             try:
@@ -192,10 +195,10 @@ class ApiLocalClient:
         return self._get('fetch_efas', query_params={'since': since})
 
     def add_ondemand_collections(self, events):
-        for e in events:
-            self.logger.info(e)
-        return None, 200
-        # return self._post('add_ondemand_collections', payload=events)
+        payload = OnDemandPayload().load(events, many=True).data
+        self.logger.info(type(payload))
+        self.logger.info(type(payload[0]))
+        return self._post('add_ondemand', payload=payload), 201
 
 
 class SMFRRestException(SMFRError):

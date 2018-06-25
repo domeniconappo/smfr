@@ -22,7 +22,7 @@ from smfrcore.errors import SMFRDBError, SMFRRestException
 
 from server.api.clients import AnnotatorClient, GeocoderClient
 from server.api.decorators import check_identity, check_role
-from server.config import CONFIG_STORE_PATH
+from server.config import CONFIG_STORE_PATH, CONFIG_FOLDER
 from server.api import utils
 
 
@@ -305,7 +305,7 @@ def fetch_efas(since='latest'):
     ftp_client = FTPEfas(since)
     ftp_client.download_rra()
     ftp_client.close()
-    results = []
+    results = {}
     if os.path.getsize(ftp_client.localfilepath) > 0:
         # TODO create ondemand collections from EFAS events
         with open(ftp_client.localfilepath) as f:
@@ -313,11 +313,53 @@ def fetch_efas(since='latest'):
             next(reader)  # skip header
 
             for event in reader:
+                date = ftp_client.filename_date
+                event_id = event['ID'].rstrip('.0')
                 efas_id = int(float(event['ID']))
-                cities = event.get('Cities') or event.get('1Cities') or []
                 bbox = NutsBoundingBox.nuts2_bbox(efas_id)
+                cities = event.get('Cities') or event.get('1Cities') or ''
+                # from EFAS RRA, cities come as '[Bassens/0.28%] [Bordeaux/1.7%]' strings
+                cities = ','.join(c.replace('[', '').replace(']', '').split('/')[0] for c in cities.split())
                 if not cities:
                     cities = list(Nuts3.query.with_entities(Nuts3.name_ascii).filter_by(efas_id=efas_id))
-                results.append({'efas_id': efas_id, 'trigger': 'on_demand', 'keywords': cities, 'bbox': bbox})
-    logger.info(results)
-    return {'results': results}
+                    cities = ','.join(c[0] for c in cities if c and c[0])
+                if not cities:
+                    continue
+                if event_id not in results:
+                    results[event_id] = {'efas_id': efas_id, 'trigger': 'on-demand',
+                                         'keywords': cities, 'bbox': bbox, 'forecast': date}
+                else:
+                    results[event_id].update({'keywords': cities})
+    return {'results': results}, 200
+
+
+# @check_role
+# @jwt_required
+def add_ondemand(payload):
+    """
+
+    :param payload: list of dict with following format
+    {'bbox': {'max_lat': 40.6587, 'max_lon': -1.14236, 'min_lat': 39.2267, 'min_lon': -3.16142},
+     'trigger': 'on-demand', 'forecast': '2018061500', 'keywords': 'Cuenca', 'efas_id': 1436
+     }
+    :type: list
+    :return:
+    """
+    from daemons.collector import OndemandCollector
+    collectors = []
+    for event in payload:
+        collector = OndemandCollector.create_from_event(event)
+        collectors.append(str(collector))
+        # params for stored collector is in the form of a dict:
+        # {"trigger": "manual", "tzclient": "+02:00", "forecast": 123456789,
+        #     "kwfile": "/path/c78e0f08-98c9-4553-b8ee-a41f15a34110_kwfile.yaml",
+        #     "locfile": "/path/c78e0f08-98c9-4553-b8ee-a41f15a34110_locfile.yaml",
+        #     "config": "/path/c78e0f08-98c9-4553-b8ee-a41f15a34110_config.yaml"}
+        params = {'trigger': 'on-demand', 'forecast': event['forecast'],
+                  'tzclient': '+00:00',
+                  'kwfile': collector.kwfile, 'locfile': collector.locfile,
+                  'config': collector.config}
+        stored = StoredCollector(collection_id=collector.collection.id, parameters=params)
+        stored.save()
+        collector.stored_instance = stored
+    return {'results': collectors}, 201

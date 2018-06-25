@@ -1,16 +1,13 @@
-# SMFR Core Module
+# SMFR Core Client Module
 
-The folder contains the smfrcore python module, which will be installed
+The folder contains the smfrcore client modules, which will be installed
 as a standard python package in containers that needs SMFR core models and tools.
 
-- web
-- restserver
-- annotator
-- geocoder
+How to create new marshamallow models (whenever you add new definitions models in swagger configuration):
 
-Example of usage:
 
-```python
-from smfrcore.models.sqlmodels import TwitterCollection
-tweets = Tweet.get_iterator(collection_id=0, ttype='collected')
+```bash
+$ cd shared_libs/smfr_clients
+$ swagger-marshmallow-codegen --driver=./smfrcore/client/_marshmallow_custom.py:CustomDriver ../../rest_server/src/swagger/smfr.yaml > ./smfrcore/client/marshmallow.py
 ```
+

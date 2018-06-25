@@ -10,25 +10,24 @@
             </div>
         </div>
         <div class="panel-body">
-            <div class="col col-xs-12">
-                {% if fetched_events and fetched_events|length > 0 %}
-
-                    {% for event in fetched_events %}
-                        <div class="col col-xs-6 text-right">
-                            <pre>Event: {{ event.efas_id }}</pre>
-                            {% for k, v in event.items() %}
-                                <em class="fas fa-plus-circle"></em>
-                                <pre>{{ k }}: {{ v }}</pre>
-                            {% endfor %}
-                        </div>
-                    {% endfor %}
-                {%  else %}
-                    <a href="/fetch_efas" class="btn btn-primary btn-create">
-                        <em class="fas fa-plus-circle"></em>
-                        Fetch last EFAS detected events
-                    </a>
-                {% endif %}
-            </div>
+            {% if fetched_events and fetched_events|length > 0 %}
+                <form class="form_box" method="post" action="/fetch_efas">
+                <fieldset>
+                <legend>Select events to add on-demand collections</legend>
+                {% for event_id, result in fetched_events.items() %}
+                    <div class="form-group">
+                        <input class="form-check-input" type="checkbox" id="id_{{event_id}}" name="events" value="{{ result }}">
+                        <label class="form-check-label" for="id_{{event_id}}">{{event_id}} - {{ result.keywords }}</label>
+                    </div>
+                {% endfor %}
+                    <input class="form-control form-control-lg btn-info" type="submit" value="Add Events" />
+                </fieldset>
+                </form>
+            {%  else %}
+                <a href="/fetch_efas" class="btn btn-primary btn-create">
+                    <em class="fas fa-plus-circle"></em>Fetch last EFAS detected events
+                </a>
+            {% endif %}
         </div>
     </div>
 {% endblock app_content %}

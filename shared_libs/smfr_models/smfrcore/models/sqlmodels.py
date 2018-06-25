@@ -95,11 +95,14 @@ class TwitterCollection(SMFRModel):
         ('keywords', 'Keywords'),
         ('geo', 'Geotagged'),
     ]
+    TRIGGER_ONDEMAND = 'on-demand'
+    TRIGGER_BACKGROUND = 'background'
+    TRIGGER_MANUAL = 'on-manual'
 
     TRIGGERS = [
-        ('background', 'Background'),
-        ('on-demand', 'On Demand'),
-        ('manual', 'Manual'),
+        (TRIGGER_BACKGROUND, 'Background'),
+        (TRIGGER_ONDEMAND, 'On Demand'),
+        (TRIGGER_MANUAL, 'Manual'),
     ]
 
     STATUSES = [
@@ -145,7 +148,7 @@ class TwitterCollection(SMFRModel):
             languages=query['languages'],
             locations=query['locations'],
             runtime=collector.runtime,
-            user_id=user.id
+            user_id=user.id if user else 1
         )
         kwargs = {}
         for k, v in vars(collection).items():
@@ -180,6 +183,10 @@ class TwitterCollection(SMFRModel):
         self.started_at = datetime.datetime.utcnow()
         self.save()
 
+    @property
+    def is_ondemand(self):
+        return self.trigger == self.TRIGGER_ONDEMAND
+
 
 class StoredCollector(SMFRModel):
     """
@@ -193,6 +200,12 @@ class StoredCollector(SMFRModel):
     collection = sqldb.relationship('TwitterCollection',
                                     backref=sqldb.backref('virtual_twitter_collection', uselist=False))
     parameters = Column(JSONType, nullable=False)
+    """
+    parameters = {"trigger": "manual", "tzclient": "+02:00", "forecast": 123456789, 
+    "kwfile": "/path/c78e0f08-98c9-4553-b8ee-a41f15a34110_kwfile.yaml", 
+    "locfile": "/path/c78e0f08-98c9-4553-b8ee-a41f15a34110_locfile.yaml", 
+    "config": "/path/c78e0f08-98c9-4553-b8ee-a41f15a34110_config.yaml"}
+    """
 
     def save(self):
         # we need 'merge' method because objects can be attached to db sessions in different threads
