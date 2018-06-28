@@ -1,7 +1,7 @@
 from math import ceil
 
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy import orm, MetaData
+from sqlalchemy import orm, MetaData, inspect
 
 
 class Pagination:
@@ -102,6 +102,9 @@ class ModelBase:
     #: an instance of `query_class`. Can be used to query the
     #: database for instances of this model.
     query = None
+
+    def to_dict(self):
+        return {c.key: getattr(self, c.key) for c in inspect(self).mapper.column_attrs}
 
 
 class QueryProperty:

@@ -97,7 +97,7 @@ class TwitterCollection(SMFRModel):
     ]
     TRIGGER_ONDEMAND = 'on-demand'
     TRIGGER_BACKGROUND = 'background'
-    TRIGGER_MANUAL = 'on-manual'
+    TRIGGER_MANUAL = 'manual'
 
     TRIGGERS = [
         (TRIGGER_BACKGROUND, 'Background'),
@@ -222,14 +222,46 @@ class StoredCollector(SMFRModel):
         return 'Collector stored ID: {} (collection: {})'.format(self.id, self.collection_id)
 
 
-class NutsBoundingBox(SMFRModel):
+# class NutsBoundingBox(SMFRModel):
+#     """
+#
+#     """
+#
+#     __tablename__ = 'nuts_bounding_box'
+#     __table_args__ = {'mysql_engine': 'InnoDB', 'mysql_charset': 'utf8mb4', 'mysql_collate': 'utf8mb4_general_ci'}
+#     id = Column(Integer, primary_key=True, nullable=False, autoincrement=False)
+#     min_lon = Column(Float)
+#     max_lon = Column(Float)
+#     min_lat = Column(Float)
+#     max_lat = Column(Float)
+#
+#     @classmethod
+#     def nuts2_bbox(cls, efas_id):
+#         """
+#
+#         :param efas_id:
+#         :return:
+#         """
+#         row = cls.query.filter_by(id=efas_id).first()
+#         bbox = {'min_lat': row.min_lat, 'max_lat': row.max_lat, 'min_lon': row.min_lon, 'max_lon': row.max_lon}
+#         return bbox
+
+
+class Nuts2(SMFRModel):
     """
 
     """
 
-    __tablename__ = 'nuts_bounding_box'
+    __tablename__ = 'nuts2'
     __table_args__ = {'mysql_engine': 'InnoDB', 'mysql_charset': 'utf8mb4', 'mysql_collate': 'utf8mb4_general_ci'}
     id = Column(Integer, primary_key=True, nullable=False, autoincrement=False)
+    efas_id = Column(Integer, nullable=False, index=True)
+    efas_name = Column(String(1000))
+    nuts_id = Column(String(10))
+    country = Column(String(500))
+    mean_pl = Column(Float)
+    geometry = Column(JSONType, nullable=False)
+    country_code = Column(String(5))
     min_lon = Column(Float)
     max_lon = Column(Float)
     min_lat = Column(Float)
@@ -242,9 +274,29 @@ class NutsBoundingBox(SMFRModel):
         :param efas_id:
         :return:
         """
-        row = cls.query.filter_by(id=efas_id).first()
+        row = cls.query.filter_by(efas_id=efas_id).first()
         bbox = {'min_lat': row.min_lat, 'max_lat': row.max_lat, 'min_lon': row.min_lon, 'max_lon': row.max_lon}
         return bbox
+
+    @classmethod
+    def from_feature(cls, feature):
+        """
+
+        :param feature:
+        :return:
+        """
+        properties = feature['properties']
+        efas_id = feature['id']
+        geometry = feature['geometry']
+        return cls(id=properties['ID'],
+                   efas_id=efas_id,
+                   efas_name=properties['EFAS_name'],
+                   nuts_id=properties['NUTS_ID'],
+                   country=properties['COUNTRY'],
+                   mean_pl=properties['meanPL'],
+                   geometry=geometry,
+                   country_code=properties['CNTR_CODE'],
+                   )
 
 
 class Nuts3(SMFRModel):
@@ -253,7 +305,8 @@ class Nuts3(SMFRModel):
     """
     __tablename__ = 'nuts3'
     __table_args__ = {'mysql_engine': 'InnoDB', 'mysql_charset': 'utf8mb4', 'mysql_collate': 'utf8mb4_general_ci'}
-    id = Column(Integer, primary_key=True, nullable=False, autoincrement=False)
+    id = Column(Integer, primary_key=True, nullable=False, autoincrement=True)
+    join_id = Column(Integer, nullable=False, index=True)
     efas_id = Column(Integer, nullable=False, index=True)
     name = Column(String(500), nullable=False)
     name_ascii = Column(String(500), nullable=False, index=True)
@@ -280,8 +333,7 @@ class Nuts3(SMFRModel):
             'is_admcap': bool(properties['ADM0CAP']),
         }
 
-        return cls(id=feature['id'],
-                   efas_id=properties['ID'],
+        return cls(join_id=properties['ID'],
                    name=properties['NAME'] or properties['NUTS_NAME'],
                    name_ascii=properties['NAMEASCII'] or properties['NAME_ASCI'],
                    nuts_id=properties['NUTS_ID'],
@@ -292,7 +344,3 @@ class Nuts3(SMFRModel):
                    names=names_by_lang,
                    properties=additional_props,
                    )
-
-    def to_dict(self):
-        return {c.key: getattr(self, c.key) for c in inspect(self).mapper.column_attrs}
-

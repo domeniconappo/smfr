@@ -353,7 +353,9 @@ definitions:
         items:
           type: string
       locations:
-        type: string
+        type: array
+        items:
+          type: string
       languages:
         type: array
         items:

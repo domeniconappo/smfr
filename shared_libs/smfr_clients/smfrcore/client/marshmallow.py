@@ -20,7 +20,7 @@ class Collection(BaseSchema):
     ctype = fields.String(validate=[OneOf(choices=['keywords', 'geo'], labels=[])])
     forecast_id = fields.String()
     tracking_keywords = fields.List(fields.String())
-    locations = fields.String()
+    locations = fields.List(fields.String())
     languages = fields.List(fields.String())
     runtime = DateTime()
     nuts3 = fields.String()

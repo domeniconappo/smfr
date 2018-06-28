@@ -24,7 +24,6 @@ RUN git init ${MODELS_PATH}/ && cd ${MODELS_PATH}/ && git remote add origin ${GI
 
 COPY ./annotator/src/. ./
 COPY ./shared_libs/scripts/wait_for_it.sh /scripts/
-COPY ./annotator/config/. /config/
 
 RUN mkdir -p /smfr_models
 COPY ./shared_libs/smfr_models/. /smfr_models/
