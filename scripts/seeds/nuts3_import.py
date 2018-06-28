@@ -27,7 +27,7 @@ def main(args):
     add_args(parser)
     conf = parser.parse_args(args)
     res = []
-    with open(os.path.join(current_dir, 'nuts2_join_efas_id.json')) as f:
+    with open(os.path.join(current_dir, 'nuts2_join_efasids.json')) as f:
         nuts2 = json.load(f)
     nuts2s = {e['id']: e['efas_id'] for e in nuts2}
     with fiona.open(conf.shapefile) as shp:
