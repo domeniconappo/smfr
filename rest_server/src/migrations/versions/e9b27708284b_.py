@@ -6,6 +6,7 @@ Create Date: 2018-06-28 11:44:05.169322
 
 """
 import os
+import tarfile
 
 import ujson as json
 import sqlalchemy_utils
@@ -46,17 +47,21 @@ def upgrade():
                                   mysql_engine='InnoDB'
                                   )
     op.create_index(op.f('ix_nuts2_efas_id'), 'nuts2', ['efas_id'], unique=False)
-    path = os.path.join(os.path.dirname(__file__), './nuts2wgs84.json')
-    with open(path) as init_f:
+    path = os.path.join(os.path.dirname(__file__), './nuts2wgs84.json.tar.gz')
+    with tarfile.open(path, 'r:gz') as tar:
+        archive = tar.getmembers()[0]
+        init_f = tar.extractfile(archive)
         init_data = json.load(init_f, precise_float=True)
         op.bulk_insert(nuts2_table, init_data)
 
     op.add_column('nuts3', sa.Column('join_id', sa.Integer(), nullable=False))
     op.create_index(op.f('ix_nuts3_join_id'), 'nuts3', ['join_id'], unique=False)
     # ### end Alembic commands ###
-    path = os.path.join(os.path.dirname(__file__), './nuts3.json')
+    path = os.path.join(os.path.dirname(__file__), './nuts3.json.tar.gz')
     nuts3_table = Nuts3.__table__
-    with open(path) as init_f:
+    with tarfile.open(path, 'r:gz') as tar:
+        archive = tar.getmembers()[0]
+        init_f = tar.extractfile(archive)
         init_data = json.load(init_f, precise_float=True)
         for e in init_data:
             del e['id']

@@ -8427,4 +8427,271 @@
   {
     "id": 1708,
     "efas_id": "1685",
-    
+    "efas_name": "Blekinge lan"
+  },
+  {
+    "id": 1709,
+    "efas_id": "1686",
+    "efas_name": "Skane lan"
+  },
+  {
+    "id": 1710,
+    "efas_id": "1687",
+    "efas_name": "Hallands lan"
+  },
+  {
+    "id": 1711,
+    "efas_id": "1688",
+    "efas_name": "Vastra Gotalands lan"
+  },
+  {
+    "id": 1712,
+    "efas_id": "1689",
+    "efas_name": "Varmlands lan"
+  },
+  {
+    "id": 1713,
+    "efas_id": "1690",
+    "efas_name": "Dalarnas lan"
+  },
+  {
+    "id": 1714,
+    "efas_id": "1691",
+    "efas_name": "Gavleborgs lan"
+  },
+  {
+    "id": 1715,
+    "efas_id": "1692",
+    "efas_name": "Vasternorrlands lan"
+  },
+  {
+    "id": 1716,
+    "efas_id": "1693",
+    "efas_name": "Jamtlands lan"
+  },
+  {
+    "id": 1717,
+    "efas_id": "1694",
+    "efas_name": "Vasterbottens lan"
+  },
+  {
+    "id": 1718,
+    "efas_id": "1695",
+    "efas_name": "Norrbottens lan"
+  },
+  {
+    "id": 1719,
+    "efas_id": "1696",
+    "efas_name": "Pomurska"
+  },
+  {
+    "id": 1720,
+    "efas_id": "1697",
+    "efas_name": "Podravska"
+  },
+  {
+    "id": 1721,
+    "efas_id": "1698",
+    "efas_name": "Koroska"
+  },
+  {
+    "id": 1722,
+    "efas_id": "1699",
+    "efas_name": "Savinjska"
+  },
+  {
+    "id": 1723,
+    "efas_id": "1700",
+    "efas_name": "Zasavska"
+  },
+  {
+    "id": 1724,
+    "efas_id": "1701",
+    "efas_name": "Spodnjeposavska"
+  },
+  {
+    "id": 1725,
+    "efas_id": "1702",
+    "efas_name": "Jugovzhodna Slovenija"
+  },
+  {
+    "id": 1726,
+    "efas_id": "1703",
+    "efas_name": "Notranjsko-kraska"
+  },
+  {
+    "id": 1727,
+    "efas_id": "1704",
+    "efas_name": "Osrednjeslovenska"
+  },
+  {
+    "id": 1728,
+    "efas_id": "1705",
+    "efas_name": "Gorenjska"
+  },
+  {
+    "id": 1729,
+    "efas_id": "1706",
+    "efas_name": "Goriska"
+  },
+  {
+    "id": 1730,
+    "efas_id": "1707",
+    "efas_name": "Obalno-kraska"
+  },
+  {
+    "id": 1731,
+    "efas_id": "1708",
+    "efas_name": "Bratislavsky kraj"
+  },
+  {
+    "id": 1732,
+    "efas_id": "1709",
+    "efas_name": "Trnavsky kraj"
+  },
+  {
+    "id": 1733,
+    "efas_id": "1710",
+    "efas_name": "Trenciansky kraj"
+  },
+  {
+    "id": 1734,
+    "efas_id": "1711",
+    "efas_name": "Nitriansky kraj"
+  },
+  {
+    "id": 1735,
+    "efas_id": "1712",
+    "efas_name": "Zilinsky kraj"
+  },
+  {
+    "id": 1736,
+    "efas_id": "1713",
+    "efas_name": "Banskobystricky kraj"
+  },
+  {
+    "id": 1737,
+    "efas_id": "1714",
+    "efas_name": "Presovsky kraj"
+  },
+  {
+    "id": 1738,
+    "efas_id": "1715",
+    "efas_name": "Kosicky kraj"
+  },
+  {
+    "id": 1358,
+    "efas_id": "1716",
+    "efas_name": "Freiburg"
+  },
+  {
+    "id": 1373,
+    "efas_id": "1717",
+    "efas_name": "Luzern"
+  },
+  {
+    "id": 1374,
+    "efas_id": "1718",
+    "efas_name": "Uri"
+  },
+  {
+    "id": 1375,
+    "efas_id": "1719",
+    "efas_name": "Schwyz"
+  },
+  {
+    "id": 1376,
+    "efas_id": "1720",
+    "efas_name": "Obwalden"
+  },
+  {
+    "id": 1377,
+    "efas_id": "1721",
+    "efas_name": "Nidwalden"
+  },
+  {
+    "id": 1378,
+    "efas_id": "1722",
+    "efas_name": "Zug"
+  },
+  {
+    "id": 1460,
+    "efas_id": "1723",
+    "efas_name": "Ceuta"
+  },
+  {
+    "id": 1461,
+    "efas_id": "1724",
+    "efas_name": "Melilla"
+  },
+  {
+    "id": 1607,
+    "efas_id": "1725",
+    "efas_name": "Severoistochen"
+  },
+  {
+    "id": 1608,
+    "efas_id": "1726",
+    "efas_name": "Skopski"
+  },
+  {
+    "id": 1609,
+    "efas_id": "1727",
+    "efas_name": "Oslo"
+  },
+  {
+    "id": 1610,
+    "efas_id": "1728",
+    "efas_name": "Akershus"
+  },
+  {
+    "id": 1612,
+    "efas_id": "1729",
+    "efas_name": "Oppland"
+  },
+  {
+    "id": 1614,
+    "efas_id": "1730",
+    "efas_name": "Buskerud"
+  },
+  {
+    "id": 1615,
+    "efas_id": "1731",
+    "efas_name": "Vestfold"
+  },
+  {
+    "id": 1616,
+    "efas_id": "1732",
+    "efas_name": "Telemark"
+  },
+  {
+    "id": 1617,
+    "efas_id": "1733",
+    "efas_name": "Aust-Agder"
+  },
+  {
+    "id": 1618,
+    "efas_id": "1734",
+    "efas_name": "Vest-Agder"
+  },
+  {
+    "id": 1619,
+    "efas_id": "1735",
+    "efas_name": "Rogaland"
+  },
+  {
+    "id": 1620,
+    "efas_id": "1736",
+    "efas_name": "Hordaland"
+  },
+  {
+    "id": 1621,
+    "efas_id": "1737",
+    "efas_name": "Sogn og Fjordane"
+  },
+  {
+    "id": 1622,
+    "efas_id": "1738",
+    "efas_name": "More og Romsdal"
+  }
+]
