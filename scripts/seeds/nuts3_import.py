@@ -21,11 +21,11 @@ def add_args(parser):
                         metavar='outfile', required=False, default='nuts3.json')
 
 
-def main(args):
+def main():
     parser = ParserHelpOnError(description='Build Nuts3 JSON out of a shapefile for import during DB migration')
 
     add_args(parser)
-    conf = parser.parse_args(args)
+    conf = parser.parse_args()
     res = []
     with open(os.path.join(current_dir, 'nuts2_join_efasids.json')) as f:
         nuts2 = json.load(f)
@@ -41,4 +41,4 @@ def main(args):
 
 
 if __name__ == '__main__':
-    sys.exit(main(sys.argv[1:]))
+    sys.exit(main())

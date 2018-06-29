@@ -222,31 +222,6 @@ class StoredCollector(SMFRModel):
         return 'Collector stored ID: {} (collection: {})'.format(self.id, self.collection_id)
 
 
-# class NutsBoundingBox(SMFRModel):
-#     """
-#
-#     """
-#
-#     __tablename__ = 'nuts_bounding_box'
-#     __table_args__ = {'mysql_engine': 'InnoDB', 'mysql_charset': 'utf8mb4', 'mysql_collate': 'utf8mb4_general_ci'}
-#     id = Column(Integer, primary_key=True, nullable=False, autoincrement=False)
-#     min_lon = Column(Float)
-#     max_lon = Column(Float)
-#     min_lat = Column(Float)
-#     max_lat = Column(Float)
-#
-#     @classmethod
-#     def nuts2_bbox(cls, efas_id):
-#         """
-#
-#         :param efas_id:
-#         :return:
-#         """
-#         row = cls.query.filter_by(id=efas_id).first()
-#         bbox = {'min_lat': row.min_lat, 'max_lat': row.max_lat, 'min_lon': row.min_lon, 'max_lon': row.max_lon}
-#         return bbox
-
-
 class Nuts2(SMFRModel):
     """
 
@@ -259,7 +234,6 @@ class Nuts2(SMFRModel):
     efas_name = Column(String(1000))
     nuts_id = Column(String(10))
     country = Column(String(500))
-    mean_pl = Column(Float)
     geometry = Column(JSONType, nullable=False)
     country_code = Column(String(5))
     min_lon = Column(Float)
@@ -287,13 +261,12 @@ class Nuts2(SMFRModel):
         """
         properties = feature['properties']
         efas_id = feature['id']
-        geometry = feature['geometry']
+        geometry = feature['geometry']['coordinates']
         return cls(id=properties['ID'],
                    efas_id=efas_id,
                    efas_name=properties['EFAS_name'],
                    nuts_id=properties['NUTS_ID'],
                    country=properties['COUNTRY'],
-                   mean_pl=properties['meanPL'],
                    geometry=geometry,
                    country_code=properties['CNTR_CODE'],
                    )

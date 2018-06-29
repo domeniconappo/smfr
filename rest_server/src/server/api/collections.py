@@ -11,7 +11,7 @@ import connexion
 from flask import abort
 from flask_jwt_extended import jwt_required, get_jwt_identity
 
-from smfrcore.models.sqlmodels import StoredCollector, TwitterCollection, User, Nuts3, NutsBoundingBox
+from smfrcore.models.sqlmodels import StoredCollector, TwitterCollection, User, Nuts3, Nuts2
 from smfrcore.models.cassandramodels import Tweet
 from smfrcore.client.marshmallow import Collector as CollectorSchema, CollectorResponse, Collection
 from smfrcore.client.ftp import FTPEfas
@@ -22,7 +22,7 @@ from smfrcore.errors import SMFRDBError, SMFRRestException
 
 from server.api.clients import AnnotatorClient, GeocoderClient
 from server.api.decorators import check_identity, check_role
-from server.config import CONFIG_STORE_PATH, CONFIG_FOLDER
+from server.config import CONFIG_STORE_PATH
 from server.api import utils
 
 
@@ -316,7 +316,7 @@ def fetch_efas(since='latest'):
                 date = ftp_client.filename_date
                 event_id = event['ID'].rstrip('.0')
                 efas_id = int(float(event['ID']))
-                bbox = NutsBoundingBox.nuts2_bbox(efas_id)
+                bbox = Nuts2.nuts2_bbox(efas_id)
                 cities = event.get('Cities') or event.get('1Cities') or ''
                 # from EFAS RRA, cities come as '[Bassens/0.28%] [Bordeaux/1.7%]' strings
 

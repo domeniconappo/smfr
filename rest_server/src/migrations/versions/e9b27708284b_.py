@@ -46,11 +46,9 @@ def upgrade():
                                   mysql_engine='InnoDB'
                                   )
     op.create_index(op.f('ix_nuts2_efas_id'), 'nuts2', ['efas_id'], unique=False)
-    path = os.path.join(os.path.dirname(__file__), './nuts2.json')
+    path = os.path.join(os.path.dirname(__file__), './nuts2wgs84.json')
     with open(path) as init_f:
         init_data = json.load(init_f, precise_float=True)
-        for e in init_data:
-            e['geometry'] = e['geometry']['coordinates']
         op.bulk_insert(nuts2_table, init_data)
 
     op.add_column('nuts3', sa.Column('join_id', sa.Integer(), nullable=False))

@@ -20,7 +20,7 @@ from cassandra.util import OrderedMapSerializedKey
 
 from smfrcore.models.cassandramodels import Tweet
 
-from .utils import ParserHelpOnError
+from scripts.utils import ParserHelpOnError
 
 
 class CustomJSONEncoder(json.JSONEncoder):
