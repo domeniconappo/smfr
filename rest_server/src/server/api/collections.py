@@ -264,7 +264,6 @@ def annotate(collection_id=None, lang='en', forecast_id=None, startdate=None, en
     else:
         return res, code
 
-
 # @check_role
 # @jwt_required
 def start_all():
