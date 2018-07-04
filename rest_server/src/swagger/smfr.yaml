@@ -376,6 +376,8 @@ definitions:
       stopped_at:
         type: string
         format: date-time
+      bboxfinder:
+        type: string
 
   CollectorPayload:
     type: object

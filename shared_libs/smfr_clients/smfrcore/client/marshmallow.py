@@ -28,6 +28,7 @@ class Collection(BaseSchema):
     status = fields.String(validate=[OneOf(choices=['active', 'inactive'], labels=[])])
     started_at = DateTime()
     stopped_at = DateTime()
+    bboxfinder = fields.String()
 
 
 class CollectorPayload(BaseSchema):

@@ -30,15 +30,10 @@
                                            <td>{{ data.collection.ctype }}</td>
                                        </tr>
                                        <tr>
-                                           {% if data.collection.ctype == 'Keywords' %}
-                                               <th colspan="2">Keywords</th>
-                                               <td colspan="2">
-                                               {{ data.collection.tracking_keywords|join(', ') }}
-                                               </td>
-                                           {% else %}
-                                               <th colspan="2">Locations</th>
-                                               <td colspan="2">{{ data.collection.locations }}</td>
-                                           {% endif %}
+                                           <th>Keywords</th>
+                                           <td>{{ data.collection.tracking_keywords|join(', ') }}</td>
+                                           <th>Locations</th>
+                                           <td><a href="{{ data.collection.bboxfinder }}">({{ data.collection.locations|join(', ') }})</a></td>
                                        </tr>
                                        <tr>
                                            <th>Status</th>
