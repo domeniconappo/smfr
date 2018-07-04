@@ -11,7 +11,7 @@ import connexion
 from flask import abort
 from flask_jwt_extended import jwt_required, get_jwt_identity
 
-from smfrcore.models.sqlmodels import StoredCollector, TwitterCollection, User, Nuts3, NutsBoundingBox
+from smfrcore.models.sqlmodels import StoredCollector, TwitterCollection, User, Nuts3, Nuts2
 from smfrcore.models.cassandramodels import Tweet
 from smfrcore.client.marshmallow import Collector as CollectorSchema, CollectorResponse, Collection
 from smfrcore.client.ftp import FTPEfas
@@ -22,7 +22,7 @@ from smfrcore.errors import SMFRDBError, SMFRRestException
 
 from server.api.clients import AnnotatorClient, GeocoderClient
 from server.api.decorators import check_identity, check_role
-from server.config import CONFIG_STORE_PATH, CONFIG_FOLDER
+from server.config import CONFIG_STORE_PATH
 from server.api import utils
 
 
@@ -39,7 +39,7 @@ def add_collection(payload):
     """
     payload = connexion.request.form.to_dict()
     if not payload.get('forecast'):
-        payload['forecast'] = 123456789
+        payload['forecast'] = ''
 
     CollectorClass = Collector.get_collector_class(payload['trigger'])
 
@@ -264,7 +264,6 @@ def annotate(collection_id=None, lang='en', forecast_id=None, startdate=None, en
     else:
         return res, code
 
-
 # @check_role
 # @jwt_required
 def start_all():
@@ -306,8 +305,8 @@ def fetch_efas(since='latest'):
     ftp_client.download_rra()
     ftp_client.close()
     results = {}
+
     if os.path.getsize(ftp_client.localfilepath) > 0:
-        # TODO create ondemand collections from EFAS events
         with open(ftp_client.localfilepath) as f:
             reader = csv.DictReader(f, delimiter=',')
             next(reader)  # skip header
@@ -316,17 +315,20 @@ def fetch_efas(since='latest'):
                 date = ftp_client.filename_date
                 event_id = event['ID'].rstrip('.0')
                 efas_id = int(float(event['ID']))
-                bbox = NutsBoundingBox.nuts2_bbox(efas_id)
+                bbox = Nuts2.nuts2_bbox(efas_id)
                 cities = event.get('Cities') or event.get('1Cities') or ''
                 # from EFAS RRA, cities come as '[Bassens/0.28%] [Bordeaux/1.7%]' strings
+
+                nuts3_data = list(Nuts3.query.with_entities(Nuts3.name_ascii, Nuts3.country_name, Nuts3.nuts_id).filter_by(efas_id=efas_id))
+                country_name = nuts3_data[0][1] if nuts3_data else ''
+                nuts_id = nuts3_data[0][2] if nuts3_data else ''
                 cities = ','.join(c.replace('[', '').replace(']', '').split('/')[0] for c in cities.split())
                 if not cities:
-                    cities = list(Nuts3.query.with_entities(Nuts3.name_ascii).filter_by(efas_id=efas_id))
-                    cities = ','.join(c[0] for c in cities if c and c[0])
-                if not cities:
-                    continue
+                    cities = ','.join(c[0] for c in nuts3_data if c and c[0])
+
                 if event_id not in results:
                     results[event_id] = {'efas_id': efas_id, 'trigger': 'on-demand',
+                                         'nuts': nuts_id, 'country': country_name,
                                          'keywords': cities, 'bbox': bbox, 'forecast': date}
                 else:
                     results[event_id].update({'keywords': cities})

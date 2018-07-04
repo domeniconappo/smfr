@@ -17,6 +17,7 @@ from utils import read_geojson
 
 
 class Nuts3Finder:
+    # TODO Use nuts2 and nuts3 tables instead of globalregions.geojson
     """
     Simple class with a single method that returns NUTS3 id for a Point(Long, Lat).
     Warning: the method does not return NUTS3 code but the NUTS3 id as it's stored in EFAS NUTS3 table.

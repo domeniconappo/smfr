@@ -48,9 +48,9 @@
                                            </td>
                                        </tr>
                                        <tr>
-                                           <th>Started at</th>
+                                           <th>Last started</th>
                                            <td>{{ data.collection.started_at|datetimeformat('%Y-%m-%d %H:%M:%S') }}</td>
-                                           <th>Stopped at</th>
+                                           <th>Last stopped</th>
                                            <td>{{ data.collection.stopped_at|datetimeformat('%Y-%m-%d %H:%M:%S') }}</td>
                                        </tr>
                                        {% if data.collection.runtime %}

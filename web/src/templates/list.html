@@ -18,17 +18,17 @@
               <thead>
                 <tr>
                     <th>#</th>
-                    <th><em class="fa fa-cog"></em></th>
-                    <th>Id</th>
-                    <th>Collector Id</th>
+                    <th><em class="fa fa-cogs"></em></th>
+                    <th>Collection Id - Collector Id</th>
                     <th>Trigger</th>
+                    <th>Forecast Id</th>
                     <th>Type</th>
                     <th>Status</th>
                     <th>Languages</th>
-                    <th>Locations</th>
-                    <th>Run until... (local time)</th>
-                    <th>Started at (UTC)</th>
-                    <th>Stopped at (UTC)</th>
+                    <th>Bounding Box</th>
+                    <th>Run until (local time)</th>
+                    <th>Last started (UTC)</th>
+                    <th>Last stopped (UTC)</th>
                 </tr>
               </thead>
               <tbody>
@@ -52,14 +52,14 @@
                         </div>
                     </td>
 
-                    <td>{{c.collection.id}}</td>
-                    <td>{{c.id}}</td>
+                    <td>{{c.collection.id}} - {{c.id}}</td>
                     <td>{{c.collection.trigger}}</td>
+                    <td>{{c.collection.forecast_id}}</td>
                     <td data-toggle="tooltip" data-placement="top" title="{{c.collection.tracking_keywords|join(', ')}}"><u><b>{{c.collection.ctype}}</b></u></td>
                     <td>{{c.collection.status}}</td>
                     <td>{{c.collection.languages|join(', ')}}</td>
-                    <td>{{c.collection.locations}}</td>
-                    <td>{{c.collection.runtime|datetimeformat}}</td>
+                    <td>{{c.collection.locations|join(', ')}}</td>
+                    <td> {% if c.collection.runtime %} {{c.collection.runtime|datetimeformat|datetimeformat('%Y-%m-%d %H:%M:%S')}} {% endif %}</td>
                     <td>{{c.collection.started_at|datetimeformat('%Y-%m-%d %H:%M:%S')}}</td>
                     <td>{{c.collection.stopped_at|datetimeformat('%Y-%m-%d %H:%M:%S')}}</td>
                 </tr>

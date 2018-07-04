@@ -17,7 +17,7 @@
                 {% for event_id, result in fetched_events.items() %}
                     <div class="form-group">
                         <input class="form-check-input" type="checkbox" id="id_{{event_id}}" name="events" value="{{ result }}">
-                        <label class="form-check-label" for="id_{{event_id}}">{{event_id}} - {{ result.keywords }}</label>
+                        <label class="form-check-label" for="id_{{event_id}}">{{ result.forecast }}: {{ result.country }} {{result.nuts_id}} / {{ result.keywords }} [{{ result.bbox }}]</label>
                     </div>
                 {% endfor %}
                     <input class="form-control form-control-lg btn-info" type="submit" value="Add Events" />
