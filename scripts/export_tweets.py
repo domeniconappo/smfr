@@ -9,43 +9,13 @@ Usage:
 """
 
 import sys
-from datetime import datetime
-from decimal import Decimal
 import json
 
 import ujson
 
-import numpy as np
-from cassandra.util import OrderedMapSerializedKey
-
 from smfrcore.models.cassandramodels import Tweet
 
-from scripts.utils import ParserHelpOnError
-
-
-class CustomJSONEncoder(json.JSONEncoder):
-    """
-
-    """
-    def default(self, obj):
-        if isinstance(obj, (np.float32, np.float64, Decimal)):
-            return float(obj)
-        elif isinstance(obj, (np.int32, np.int64)):
-            return int(obj)
-        elif isinstance(obj, datetime):
-            return obj.isoformat()
-        elif isinstance(obj, OrderedMapSerializedKey):
-            res = {}
-            for k, v in obj.items():
-                if isinstance(v, tuple):
-                    try:
-                        res[k] = dict((v,))
-                    except ValueError:
-                        res[k] = (v[0], v[1])
-                else:
-                    res[k] = v
-            return res
-        return super().default(obj)
+from scripts.utils import ParserHelpOnError, CustomJSONEncoder
 
 
 def add_args(parser):
@@ -61,11 +31,11 @@ def add_args(parser):
                         metavar='output_file', default=None)
 
 
-def main(args):
+def main():
     parser = ParserHelpOnError(description='Export tweets for SMFR')
 
     add_args(parser)
-    conf = parser.parse_args(args)
+    conf = parser.parse_args()
     tweets = Tweet.get_iterator(conf.collection_id, conf.ttype, conf.lang, to_obj=False)
     out = []
     for i, t in enumerate(tweets, start=1):
@@ -78,4 +48,4 @@ def main(args):
 
 
 if __name__ == '__main__':
-    sys.exit(main(sys.argv[1:]))
+    sys.exit(main())

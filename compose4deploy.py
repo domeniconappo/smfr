@@ -32,7 +32,7 @@ def do():
                                            '`docker stack deploy`')
 
     parser.add_args()
-    parsed_args = parser.parse_args(sys.argv[1:])
+    parsed_args = parser.parse_args()
     input_path = parsed_args.input
     output_path = parsed_args.output
     with open(input_path) as inp:
