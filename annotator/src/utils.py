@@ -145,8 +145,12 @@ def get_models_language_dict(path):
         f = rchop(f, '.model.h5')
         f = rchop(f, '.tokenizer')
         date, *_, lang = f.split('.')
-        lang = lang if len(lang) == 2 else lang[-2:]
+        lang = lang if len(lang) == 2 or lang == 'multilang' else lang[-2:]
         if lang in res:
+            current_model = res[lang]
+            if 'U_' in current_model and 'U_' not in f:
+                res[lang] = f
+                continue
             current_model_date = res[lang].split('.')[0]
             # string comparison works well here
             if current_model_date >= date:

@@ -264,6 +264,7 @@ def annotate(collection_id=None, lang='en', forecast_id=None, startdate=None, en
     else:
         return res, code
 
+
 # @check_role
 # @jwt_required
 def start_all():
@@ -314,12 +315,18 @@ def fetch_efas(since='latest'):
             for event in reader:
                 date = ftp_client.filename_date
                 event_id = event['ID'].rstrip('.0')
-                efas_id = int(float(event['ID']))
-                bbox = Nuts2.nuts2_bbox(efas_id)
+                rra_event_id = int(float(event['ID']))
+
                 cities = event.get('Cities') or event.get('1Cities') or ''
                 # from EFAS RRA, cities come as '[Bassens/0.28%] [Bordeaux/1.7%]' strings
-
-                nuts3_data = list(Nuts3.query.with_entities(Nuts3.name_ascii, Nuts3.country_name, Nuts3.nuts_id).filter_by(efas_id=efas_id))
+                logger.info('Fetched event id %d', rra_event_id)
+                nuts3_data = list(Nuts3.query.with_entities(Nuts3.name_ascii, Nuts3.country_name, Nuts3.nuts_id, Nuts3.efas_id).filter_by(join_id=rra_event_id))
+                if not nuts3_data:
+                    logger.info('No NUTS3 data found for RRA event id %d', rra_event_id)
+                    continue
+                # logger.info(nuts3_data[0])
+                efas_id = nuts3_data[0][3]
+                bbox = Nuts2.nuts2_bbox(efas_id)
                 country_name = nuts3_data[0][1] if nuts3_data else ''
                 nuts_id = nuts3_data[0][2] if nuts3_data else ''
                 cities = ','.join(c.replace('[', '').replace(']', '').split('/')[0] for c in cities.split())

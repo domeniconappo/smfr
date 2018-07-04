@@ -129,6 +129,14 @@ class TwitterCollection(SMFRModel):
     def __str__(self):
         return 'TwitterCollection<{o.id}: {o.forecast_id} - {o.trigger.value}/{o.ctype.value}>'.format(o=self)
 
+    @property
+    def bboxfinder(self):
+        bbox = ''
+        if self.locations:
+            coords = self.locations[0].split(', ')
+            bbox = '{},{},{},{}'.format(coords[1], coords[0], coords[3], coords[2])
+        return '' if not bbox else 'http://bboxfinder.com/#{}'.format(bbox)
+
     @classmethod
     def build_from_collector(cls, collector, user=None):
         """
@@ -249,7 +257,11 @@ class Nuts2(SMFRModel):
         :return:
         """
         row = cls.query.filter_by(efas_id=efas_id).first()
-        bbox = {'min_lat': row.min_lat, 'max_lat': row.max_lat, 'min_lon': row.min_lon, 'max_lon': row.max_lon}
+        plain_bbox = '({}, {}, {}, {})'.format(row.min_lon, row.min_lat, row.max_lon, row.max_lat)
+        bbox = {'min_lat': row.min_lat, 'max_lat': row.max_lat,
+                'min_lon': row.min_lon, 'max_lon': row.max_lon,
+                'plain': plain_bbox,
+                'bboxfinder': 'http://bboxfinder.com/#{},{},{},{}'.format(row.min_lat, row.min_lon, row.max_lat, row.max_lon)}
         return bbox
 
     @classmethod

@@ -291,6 +291,7 @@ class OndemandCollector(Collector):
     def create_from_event(cls, event, user=None):
         """
 
+        :param user:
         :param event: {'bbox': {'max_lat': 40.6587, 'max_lon': -1.14236, 'min_lat': 39.2267, 'min_lon': -3.16142},
                        'trigger': 'on-demand', 'forecast': '2018061500', 'keywords': 'Cuenca', 'efas_id': 1436}
         :type: dict

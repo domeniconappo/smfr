@@ -14,6 +14,8 @@ from cassandra.auth import PlainTextAuthProvider
 from flask_cqlalchemy import CQLAlchemy
 
 from smfrcore.utils import RUNNING_IN_DOCKER
+from smfrcore.models.sqlmodels import TwitterCollection
+
 
 cqldb = CQLAlchemy()
 
@@ -223,11 +225,11 @@ class Tweet(cqldb.Model):
         """
         return cls(
             tweetid=tweet['id_str'],
-            collectionid=collection.id,
+            collectionid=collection.id if isinstance(collection, TwitterCollection) else int(collection),
             created_at=time.mktime(time.strptime(tweet['created_at'], '%a %b %d %H:%M:%S +0000 %Y')),
             ttype=ttype,
-            nuts3=collection.nuts3,
-            nuts3source=collection.nuts3source,
+            nuts3=collection.nuts3 if isinstance(collection, TwitterCollection) else '',
+            nuts3source=collection.nuts3source if isinstance(collection, TwitterCollection) else '',
             annotations={}, lang=tweet['lang'], geo={},
             tweet=json.dumps(tweet, ensure_ascii=False),
         )

@@ -28,7 +28,9 @@ class AnnotatorApi(Resource):
         action = action.lower()
         if action not in ('start', 'stop'):
             return {'error': {'description': 'Unknown operation {}'.format(action)}}, 400
-        if lang not in Annotator.models:
+        if lang in ('no_language', 'multilanguage'):
+            lang = 'multilang'
+        if lang not in Annotator.models and lang not in ('no_language', 'multilang', 'multilanguage'):
             return {'error': {'description': 'No models for language {}'.format(lang)}}, 400
 
         if action == 'start':

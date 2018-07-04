@@ -17,7 +17,7 @@ import sklearn
 from smfrcore.models.cassandramodels import Tweet
 from smfrcore.utils import RUNNING_IN_DOCKER
 
-from utils import CNN_MAX_SEQUENCE_LENGTH, create_text_for_cnn, get_models_language_dict
+from utils import create_text_for_cnn, get_models_language_dict
 
 
 class Annotator:
@@ -114,7 +114,8 @@ class Annotator:
                 with cls._lock:
                     cls._running.append((collection_id, lang))
 
-                tweets = Tweet.get_iterator(collection_id, ttype, lang=lang)
+                filter_by_lang = lang if lang not in ('no_language', 'multilanguage', 'multilang') else None
+                tweets = Tweet.get_iterator(collection_id, ttype, lang=filter_by_lang)
                 i = 0
                 for t in tweets:
                     if (collection_id, lang) in cls._stop_signals:
@@ -125,7 +126,7 @@ class Annotator:
                     original_json = json.loads(t.tweet)
                     text = create_text_for_cnn(original_json, [])
                     sequences = tokenizer.texts_to_sequences([text])
-                    data = pad_sequences(sequences, maxlen=CNN_MAX_SEQUENCE_LENGTH)
+                    data = pad_sequences(sequences, maxlen=model.layers[0].input_shape[1])
                     predictions_list = model.predict(data)
                     prediction = 1. * predictions_list[:, 1][0]
                     t.annotations = {'flood_probability': ('yes', prediction)}
