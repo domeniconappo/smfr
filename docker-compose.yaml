@@ -210,7 +210,7 @@ services:
     deploy:
       placement:
         constraints:
-          - node.id == ${NODE1}
+          - node.id == ${NODE3}
 
   restserver:
     restart: always
