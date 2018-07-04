@@ -7,6 +7,7 @@ rest_server/src/config/*.yaml
 Dockerfile.*.ready
 !rest_server/src/config/*.tpl
 
+
 # parsed docker-composer.yaml files for `docker stack deploy`
 docker-compose-parsed.yaml
 docker-compose-4deploy.yaml

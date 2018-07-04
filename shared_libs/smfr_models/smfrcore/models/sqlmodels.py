@@ -141,7 +141,7 @@ class TwitterCollection(SMFRModel):
         collection = cls(
             trigger=collector.trigger,
             ctype=collector.ctype,
-            forecast_id=collector.forecast_id,
+            forecast_id=collector.forecast_id or 123456789,
             nuts3=collector.nuts3,
             nuts3source=collector.nuts3source,
             tracking_keywords=query['track'],
