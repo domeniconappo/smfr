@@ -38,7 +38,7 @@ if [ -n "${DOCKER_ID_USER}" ] && [ ${command} == "push" ]; then
 fi
 
 
-python compose4build.py ${current_branch}
+python3 compose4build.py ${current_branch}
 docker-compose build
 
 if [ -n "${DOCKER_ID_USER}" ] && [ ${command} == "push" ]; then

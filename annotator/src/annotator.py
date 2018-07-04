@@ -95,6 +95,7 @@ class Annotator:
         Annotation process for a collection using a specified language model.
         :param collection_id: int Collection Id as it's stored in MySQL virtual_twitter_collection table
         :param lang: str two characters string denoting a language (e.g. 'en')
+                     or 'multilang' for multilanguage annotations
         """
         ttype = 'collected'
         graph = tf.Graph()
