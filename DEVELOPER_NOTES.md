@@ -178,3 +178,4 @@ ID                            HOSTNAME            STATUS              AVAILABILI
 5xvoosrucfqumbzzzie3incea     D01RI1000318        Ready               Active                                  18.03.1-ce
 3jvsn4my7acqzjhvb09nfa6l0     D01RI1303461        Ready               Active                                  18.03.1-ce
 to5yzzql1ok0dr6x8r9lfn1rm *   D01RI1303463        Ready               Active              Leader              18.03.1-ce
+cjpbop0od87ouh7twov42ffhr     srv-floodsrisk      Ready               Active                                  18.03.1-ce

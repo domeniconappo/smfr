@@ -17,6 +17,7 @@ DOCKER_ID_USER=efas
 NODE0=xxx000yyyyy0zzzzzzzz0kkk0
 NODE1=xxx000yyyyy0zzzzzzzz0kkk1
 NODE2=xxx000yyyyy0zzzzzzzz0kkk2
+NODE3=xxx000yyyyy0zzzzzzzz0kkk3
 FTP_HOST=123.213.021.101
 FTP_USER=user
 FTP_PASS=pass
