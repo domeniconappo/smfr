@@ -70,7 +70,7 @@ services:
     build:
       context: ./
       dockerfile: mysql/Dockerfile
-    image: efas/mysql
+    image: efas/mysql:latest
     restart: always
     container_name: mysql
     # From host, connect to DB with `mysql -h 127.0.0.1 -p` (if you have mysql client installed)
@@ -210,7 +210,7 @@ services:
     deploy:
       placement:
         constraints:
-          - node.id == ${NODE3}
+          - node.id == ${NODE1}
 
   restserver:
     restart: always
@@ -267,8 +267,7 @@ services:
       - persister
     deploy:
       placement:
-        constraints:
-          - node.id == ${NODE1}
+        constraints: [node.role == manager]
 
   web:
     restart: always
