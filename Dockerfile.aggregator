@@ -3,24 +3,18 @@ MAINTAINER Domenico Nappo <domenico.nappo@ext.ec.europa.eu>
 
 ARG http_proxy
 ARG https_proxy
-ARG models_repo
 
-ENV INSTALL_PATH /annotator
-ENV GIT_REPO_MODELS ${models_repo}
-ENV MODELS_PATH /models
+ENV INSTALL_PATH /aggregator
 ENV LANG=C.UTF-8
 
 RUN mkdir -p $INSTALL_PATH && mkdir -p /scripts && mkdir -p /config
 WORKDIR $INSTALL_PATH
-COPY ./annotator/requirements.txt ./
+COPY ./aggregator/requirements.txt ./
 
 RUN pip3.6 install -r requirements.txt
 
-RUN git init ${MODELS_PATH}/ && cd ${MODELS_PATH}/ && git remote add origin ${GIT_REPO_MODELS} && \
-    git config core.sparsecheckout true && echo "models/*" >> .git/info/sparse-checkout && \
-    git pull --depth=1 origin master && cd -
 
-COPY ./annotator/src/. ./
+COPY ./aggregator/src/. ./
 COPY ./shared_libs/scripts/wait_for_it.sh /scripts/
 
 RUN mkdir -p /smfr_models
@@ -30,7 +24,7 @@ RUN mkdir -p /smfr_utils
 COPY ./shared_libs/smfr_utils/. /smfr_utils/
 RUN pip3.6 install /smfr_utils/
 
-EXPOSE 5556
+EXPOSE 5558
 RUN ["chmod", "a+x", "/scripts/wait_for_it.sh"]
 ENTRYPOINT ["/scripts/wait_for_it.sh", "cassandrasmfr:9160"]
-CMD ["--", "gunicorn", "-b", "0.0.0.0:5556", "--workers", "1", "--log-level", "warning", "--timeout", "240", "--threads", "4", "--worker-class", "gthread", "--reload", "--access-logfile", "-", "--name", "annotator", "start:app"]
+CMD ["--", "gunicorn", "-b", "0.0.0.0:5556", "--workers", "1", "--log-level", "warning", "--timeout", "240", "--threads", "4", "--worker-class", "gthread", "--reload", "--access-logfile", "-", "--name", "aggregator", "start:app"]

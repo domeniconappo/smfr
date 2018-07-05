@@ -1,3 +1,4 @@
 # Geocoder Component
 
-SMFR Geocoder microservice
+SMFR Geocoder microservice.
+Refer to Dockerfile.geocoder
