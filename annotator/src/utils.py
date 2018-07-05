@@ -1,8 +1,8 @@
-import glob
 import math
-import os
 import re
+import os
 
+import ujson
 import geotext
 
 CNN_MAX_SEQUENCE_LENGTH = 100
@@ -135,25 +135,10 @@ def rchop(str_, ending):
     return str_
 
 
-def get_models_language_dict(path):
-
+def models_by_language(path):
     res = {}
-    ls = sorted([os.path.basename(f) for f in glob.glob('{}/*'.format(path.rstrip('/')))], reverse=True)
-    for f in ls:
-        if not (f.endswith('.model.h5') or f.endswith('.tokenizer')):
-            continue
-        f = rchop(f, '.model.h5')
-        f = rchop(f, '.tokenizer')
-        date, *_, lang = f.split('.')
-        lang = lang if len(lang) == 2 or lang == 'multilang' else lang[-2:]
-        if lang in res:
-            current_model = res[lang]
-            if 'U_' in current_model and 'U_' not in f:
-                res[lang] = f
-                continue
-            current_model_date = res[lang].split('.')[0]
-            # string comparison works well here
-            if current_model_date >= date:
-                continue
-        res[lang] = f
-    return res
+    if os.path.exists(path):
+        with open(path) as f:
+            res = ujson.load(f)
+    return res.get('model-by-language', {})
+

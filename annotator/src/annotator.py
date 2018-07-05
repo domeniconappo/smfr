@@ -17,7 +17,7 @@ import sklearn
 from smfrcore.models.cassandramodels import Tweet
 from smfrcore.utils import RUNNING_IN_DOCKER
 
-from utils import create_text_for_cnn, get_models_language_dict
+from utils import create_text_for_cnn, models_by_language
 
 
 class Annotator:
@@ -31,7 +31,8 @@ class Annotator:
     logger.setLevel(logging.getLevelName(os.environ.get('LOGGING_LEVEL', 'DEBUG')))
     kafka_bootstrap_server = '{}:9092'.format('kafka' if RUNNING_IN_DOCKER else '127.0.0.1')
     models_path = os.path.join(os.environ.get('MODELS_PATH', '/'), 'models')
-    models = get_models_language_dict(models_path)
+    current_models_mapping = os.path.join(models_path, 'current-model.json')
+    models = models_by_language(current_models_mapping)
 
     kafkaup = False
     retries = 5
@@ -68,7 +69,7 @@ class Annotator:
         cls.logger.info('Fetching new models if any')
         cls.logger.info(git_status)
         cls.logger.info(error)
-        cls.models = get_models_language_dict(cls.models_path)
+        cls.models = models_by_language(cls.current_models_mapping)
 
     @classmethod
     def running(cls):
