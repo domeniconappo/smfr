@@ -17,13 +17,23 @@ COPY ./shared_libs/smfr_utils/. /smfr_utils/
 RUN pip3.6 install /smfr_utils/
 
 ENV LISTEN_PORT 8888
+ENV NGINX_MAX_UPLOAD 8m
+ENV USE_NGINX_WORKER_PROCESSES 4
 EXPOSE 8888
 
 ENV INSTALL_PATH /app
 RUN mkdir -p $INSTALL_PATH
 COPY ./web/conf/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 COPY ./web/conf/nginx.conf /etc/nginx/nginx.conf
+COPY ./web/conf/server.conf /etc/nginx/conf.d/server.conf
+COPY ./web/conf/entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
 COPY ./web/src/. $INSTALL_PATH/
 
+RUN rm /etc/nginx/conf.d/nginx.conf
 # Clean up APT
 RUN apt-get autoremove -y && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+ENTRYPOINT ["/entrypoint.sh"]
+CMD ["/start.sh"]

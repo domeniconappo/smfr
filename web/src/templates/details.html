@@ -32,8 +32,8 @@
                                        <tr>
                                            <th>Keywords</th>
                                            <td>{{ data.collection.tracking_keywords|join(', ') }}</td>
-                                           <th>Locations</th>
-                                           <td><a href="{{ data.collection.bboxfinder }}">({{ data.collection.locations|join(', ') }})</a></td>
+                                           <th>Bounding boxes</th>
+                                           <td><a href="{{ data.collection.bboxfinder }}">( {{ data.collection.locations|join(', ') }})</a></td>
                                        </tr>
                                        <tr>
                                            <th>Status</th>

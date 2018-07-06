@@ -50,7 +50,7 @@ services:
 
   kafka:
     restart: always
-    image: spotify/kafka
+    image: spotify/kafka:latest
     container_name: kafka
     hostname: kafka
     environment:
