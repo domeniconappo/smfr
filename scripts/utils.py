@@ -3,7 +3,7 @@ import json
 import os
 import sys
 import configparser
-from _pydecimal import Decimal
+from decimal import Decimal
 from datetime import datetime
 from itertools import chain
 
@@ -32,6 +32,8 @@ class CustomJSONEncoder(json.JSONEncoder):
 
     """
     def default(self, obj):
+        print(obj)
+        print(type(obj))
         if isinstance(obj, (np.float32, np.float64, Decimal)):
             return float(obj)
         elif isinstance(obj, (np.int32, np.int64)):
@@ -48,5 +50,6 @@ class CustomJSONEncoder(json.JSONEncoder):
                         res[k] = (v[0], v[1])
                 else:
                     res[k] = v
+
             return res
         return super().default(obj)
