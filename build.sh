@@ -48,6 +48,7 @@ if [ -n "${DOCKER_ID_USER}" ] && [ ${command} == "push" ]; then
     docker tag efas/restserver:${current_branch} efas/restserver:${current_branch}
     docker tag efas/web:${current_branch} efas/web:${current_branch}
     docker tag efas/mysql:latest efas/mysql:latest
+    docker tag efas/geonames:latest efas/geonames:latest
 
     docker push efas/persister:${current_branch}
     docker push efas/annotator:${current_branch}
@@ -55,4 +56,5 @@ if [ -n "${DOCKER_ID_USER}" ] && [ ${command} == "push" ]; then
     docker push efas/restserver:${current_branch}
     docker push efas/web:${current_branch}
     docker push efas/mysql:latest
+    docker push efas/geonames:latest
 fi
