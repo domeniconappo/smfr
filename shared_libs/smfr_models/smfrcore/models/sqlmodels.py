@@ -329,3 +329,17 @@ class Nuts3(SMFRModel):
                    names=names_by_lang,
                    properties=additional_props,
                    )
+
+
+class Aggregation(SMFRModel):
+    """
+
+    """
+    __tablename__ = 'aggregation'
+    __table_args__ = {'mysql_engine': 'InnoDB', 'mysql_charset': 'utf8mb4', 'mysql_collate': 'utf8mb4_general_ci'}
+
+    id = Column(Integer, primary_key=True, autoincrement=True, nullable=False)
+    collection_id = Column(Integer, ForeignKey('virtual_twitter_collection.id'))
+    collection = sqldb.relationship('TwitterCollection',
+                                    backref=sqldb.backref('virtual_twitter_collection', uselist=False))
+    parameters = Column(JSONType, nullable=False)
