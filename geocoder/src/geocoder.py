@@ -260,7 +260,13 @@ class Geocoder:
 
         errors = 0
         c = Counter()
-        tagger = Geoparser(cls.geonames_host)
+
+        try:
+            # try to use new mordecai with 'threads'
+            tagger = Geoparser(cls.geonames_host, threads=True)
+        except TypeError:
+            tagger = Geoparser(cls.geonames_host)
+
         for x, t in enumerate(tweets, start=1):
             if collection_id in cls.stop_signals:
                 cls.logger.info('Stopping geotagging process {}'.format(collection_id))

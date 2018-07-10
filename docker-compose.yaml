@@ -14,9 +14,11 @@ services:
       - '9200:9200'
       - '9300:9300'
     environment:
-      ES_JAVA_OPTS: "-Xms8g -Xmx8g"
+      bootstrap.memory_lock: "true"
+      discovery.type: "single-node"
+#      xpack.security.enabled: "false"
     volumes:
-      - '${SMFR_DATADIR}/geonames_index:/var/lib/elasticsearch/elasticsearch:rw'
+      - '${SMFR_DATADIR}/geonames_index:/usr/share/elasticsearch/data:rw'
     deploy:
       placement:
         constraints: [node.role == manager]

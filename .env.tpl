@@ -24,3 +24,4 @@ FTP_PASS=pass
 FTP_PATH=/remote/folder/
 DOWNLOAD_FOLDER=/downloaded
 RRA_ONDEMAND_FILENAME=filename{}.csv
+PRIVATE_DOCKER_REGISTRY=_

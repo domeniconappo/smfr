@@ -3,7 +3,7 @@ import json
 import os
 import sys
 import configparser
-from _pydecimal import Decimal
+from decimal import Decimal
 from datetime import datetime
 from itertools import chain
 
@@ -48,5 +48,6 @@ class CustomJSONEncoder(json.JSONEncoder):
                         res[k] = (v[0], v[1])
                 else:
                     res[k] = v
+
             return res
         return super().default(obj)
