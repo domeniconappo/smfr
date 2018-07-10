@@ -1,7 +1,8 @@
 cluster.name: smfr
 node.name: smfr
-action.auto_create_index: -l*,+z*
+#action.auto_create_index: -l*,+z*,+g*
 network.host: 0.0.0.0
+#xpack.security.enabled: false
 path:
-  data: /var/lib/elasticsearch/elasticsearch/
+  data: /usr/share/elasticsearch/data
   logs: /var/log/elasticsearch/

@@ -1,8 +1,9 @@
 flask
 flask-restful
-mordecai
+git+https://github.com/openeventdata/mordecai.git@speed
 shapely
 fiona
 gunicorn
 kafka-python
+ujson
 ijson

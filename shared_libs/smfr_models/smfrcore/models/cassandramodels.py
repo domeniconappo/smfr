@@ -5,12 +5,15 @@ Module for CQLAlchemy models to map to Cassandra keyspaces
 import os
 import time
 import datetime
+from decimal import Decimal
 
+import numpy as np
 import ujson as json
 from cassandra.cluster import Cluster
 from cassandra.cqlengine.connection import register_connection, set_default_connection
 from cassandra.query import dict_factory
 from cassandra.auth import PlainTextAuthProvider
+from cassandra.util import OrderedMapSerializedKey
 from flask_cqlalchemy import CQLAlchemy
 
 from smfrcore.utils import RUNNING_IN_DOCKER
@@ -51,7 +54,7 @@ class Tweet(cqldb.Model):
     __keyspace__ = _keyspace
 
     session = _session
-    session.default_fetch_size = 1000
+    session.default_fetch_size = 5000
 
     TYPES = [
         ('annotated', 'Annotated'),
@@ -117,14 +120,64 @@ class Tweet(cqldb.Model):
                '\n{o.geo}\n{o.annotations}'.format(o=self)
 
     @classmethod
-    def get_iterator(cls, collection_id, ttype, lang=None, to_obj=True):
+    def to_obj(cls, row):
+        return cls(**row)
+
+    @classmethod
+    def to_dict(cls, row):
+        return row
+
+    @classmethod
+    def to_json(cls, row):
+        """
+        Needs to be encoded because of OrderedMapSerializedKey and other specific Cassandra objects
+        :param row: dictionary representing a row in Cassandra tweet table
+        :return:
+        """
+        for k, v in row.items():
+            if isinstance(v, (np.float32, np.float64, Decimal)):
+                row[k] = float(v)
+            elif isinstance(v, (np.int32, np.int64)):
+                row[k] = int(v)
+            elif isinstance(v, datetime.datetime):
+                row[k] = v.isoformat()
+            elif isinstance(v, tuple):
+                row[k] = [float(i) if isinstance(i, (np.float32, np.float64, Decimal)) else i for i in v]
+            elif isinstance(v, OrderedMapSerializedKey):
+                # cassandra Map column
+                res = {}
+                for inner_k, inner_v in v.items():
+                    if isinstance(inner_v, tuple):
+                        encoded_v = [float(i) if isinstance(i, (np.float32, np.float64, Decimal)) else i for i in inner_v]
+                        try:
+                            res[inner_k] = dict((encoded_v,))
+                        except ValueError:
+                            res[inner_k] = (encoded_v[0], encoded_v[1])
+                    else:
+                        res[inner_k] = inner_v
+
+                row[k] = res
+        return row
+
+    @classmethod
+    def get_iterator(cls, collection_id, ttype, lang=None, out_format='obj'):
+        """
+
+        :param collection_id:
+        :param ttype:
+        :param lang:
+        :param out_format: can be 'obj', 'json' or 'dict'
+        :return: smfrcore.models.cassandramodels.Tweet object, dictionary or JSON encoded
+        """
+        if out_format not in ('obj', 'json', 'dict'):
+            raise ValueError('out_format is not valid')
         if not hasattr(cls, 'stmt'):
             cls.generate_prepared_statements()
         results = cls.session.execute(cls.stmt, parameters=[collection_id, ttype])
         for row in results:
             if lang and row.get('lang') != lang:
                 continue
-            yield cls(**row) if to_obj else row
+            yield getattr(cls, 'to_{}'.format(out_format))(row)
 
     @classmethod
     def generate_prepared_statements(cls):

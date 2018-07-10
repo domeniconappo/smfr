@@ -32,8 +32,6 @@ class CustomJSONEncoder(json.JSONEncoder):
 
     """
     def default(self, obj):
-        print(obj)
-        print(type(obj))
         if isinstance(obj, (np.float32, np.float64, Decimal)):
             return float(obj)
         elif isinstance(obj, (np.int32, np.int64)):
