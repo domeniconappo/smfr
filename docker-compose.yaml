@@ -263,7 +263,8 @@ services:
       - geocoder
       - persister
     deploy:
-      constraints: [node.labels.medium == true ]
+      placement:
+        constraints: [node.labels.medium == true ]
 
   web:
     restart: always
