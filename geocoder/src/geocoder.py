@@ -17,7 +17,7 @@ from utils import read_geojson
 
 
 class Nuts3Finder:
-    # TODO Use nuts2 and nuts3 tables instead of globalregions.geojson
+
     """
     Simple class with a single method that returns NUTS3 id for a Point(Long, Lat).
     Warning: the method does not return NUTS3 code but the NUTS3 id as it's stored in EFAS NUTS3 table.
@@ -26,9 +26,9 @@ class Nuts3Finder:
     logger = logging.getLogger(__name__)
     logger.setLevel(logging.getLevelName(os.environ.get('LOGGING_LEVEL', 'DEBUG')))
     config_dir = '/config/' if RUNNING_IN_DOCKER else os.path.join(os.path.dirname(__file__), '../config')
-    shapefile_name = os.environ.get('NUTS3_SHAPEFILE', '2018_GlobalRegionsWGS84_CUT_WGS84Coord.shp')
     geojson_name = os.environ.get('NUTS3_GEOJSON', 'GlobalRegions_052018.geojson')
     path = os.path.join(config_dir, geojson_name)
+    # TODO Use nuts2 and nuts3 tables instead of globalregions.geojson
     nutsitems = read_geojson(path)
 
     @classmethod
@@ -42,6 +42,7 @@ class Nuts3Finder:
                       'CNTR_CODE': None, 'EFAS_name': 'Borgou', 'AREA_GEO': 26714565260.2)
 
         """
+        cls.logger.debug('Inside find_nuts3')
         point = Point(float(lon), float(lat))
         nuts = None
         geo = None
@@ -52,11 +53,13 @@ class Nuts3Finder:
                     if isinstance(geo[0], tuple):
                         poly = Polygon(geo)
                         if point.within(poly):
+                            cls.logger.debug('Returning nuts from find_nuts3')
                             return nuts
                     else:
                         for ggeo in geo:
                             poly = Polygon(ggeo)
                             if point.within(poly):
+                                cls.logger.debug('Returning nuts from find_nuts3')
                                 return nuts
         except (KeyError, IndexError) as e:
             cls.logger.error('An error occured %s %s', type(e), str(e))
@@ -193,7 +196,9 @@ class Geocoder:
         :return: tuple (nuts3, nuts_source, coordinates)
         """
         no_results = (None, None, None)
+        cls.logger.debug('Calling geoparse_tweet %s', str(tweet.tweetid))
         mentions = cls.geoparse_tweet(tweet, tagger)
+        cls.logger.debug('Calling get_coordinates_from_tweet %s', str(tweet.tweetid))
         tweet_coords = cls.get_coordinates_from_tweet(tweet)
 
         if not mentions:
@@ -281,9 +286,11 @@ class Geocoder:
                 #     continue
 
                 t.ttype = 'geotagged'
+                cls.logger.debug('Calling find_nuts_heuristic: %s', str(t.tweetid))
                 nutsitem, nuts3_source, latlong = cls.find_nuts_heuristic(t, tagger)
-
+                cls.logger.debug('Finished find_nuts_heuristic: %s', str(t.tweetid))
                 if not latlong:
+                    cls.logger.debug('Not latlong found for %s', str(t.tweetid))
                     continue
 
                 t.latlong = latlong

@@ -16,12 +16,11 @@ services:
     environment:
       bootstrap.memory_lock: "true"
       discovery.type: "single-node"
-#      xpack.security.enabled: "false"
     volumes:
       - '${SMFR_DATADIR}/geonames_index:/usr/share/elasticsearch/data:rw'
     deploy:
       placement:
-        constraints: [node.role == manager]
+        constraints: [node.labels.large == true ]
 
   cassandrasmfr:
     image: alexcheng/cassandra:latest
@@ -48,7 +47,7 @@ services:
       CASSANDRA_RPC_ADDRESS: 0.0.0.0
     deploy:
       placement:
-        constraints: [node.role == manager]
+        constraints: [node.labels.large == true ]
 
   kafka:
     restart: always
@@ -65,8 +64,7 @@ services:
       - '2181:2181'
     deploy:
       placement:
-        constraints:
-          - node.id == ${NODE1}
+        constraints: [node.labels.medium == true ]
 
   mysql:
     build:
@@ -87,7 +85,7 @@ services:
       MYSQL_ALLOW_EMPTY_PASSWORD: 'yes'
     deploy:
       placement:
-        constraints: [node.role == manager]
+        constraints: [node.labels.large == true ]
 
   myadmin:
     image: phpmyadmin/phpmyadmin:latest
@@ -102,8 +100,7 @@ services:
       PMA_ARBITRARY: 1
     deploy:
       placement:
-        constraints:
-          - node.id == ${NODE2}
+        constraints: [node.labels.small == true ]
     depends_on:
       - mysql
 
@@ -135,8 +132,7 @@ services:
       - cassandrasmfr
     deploy:
       placement:
-        constraints:
-          - node.id == ${NODE1}
+        constraints: [node.labels.medium == true ]
 
   annotator:
     restart: always
@@ -174,7 +170,7 @@ services:
       - persister
     deploy:
       placement:
-        constraints: [node.role == manager]
+        constraints: [node.labels.medium == true ]
 
   geocoder:
     restart: always
@@ -211,8 +207,7 @@ services:
       - persister
     deploy:
       placement:
-        constraints:
-          - node.id == ${NODE1}
+        constraints: [node.labels.large == true ]
 
   restserver:
     restart: always
@@ -268,8 +263,7 @@ services:
       - geocoder
       - persister
     deploy:
-      placement:
-        constraints: [node.role == manager]
+      constraints: [node.labels.medium == true ]
 
   web:
     restart: always
@@ -296,5 +290,4 @@ services:
       - restserver
     deploy:
       placement:
-        constraints:
-          - node.id == ${NODE2}
+        constraints: [node.labels.small == true ]

@@ -20,7 +20,7 @@ def add_args(parser):
 
 
 def main(args):
-    parser = ParserHelpOnError(description='Export tweets for SMFR')
+    parser = ParserHelpOnError(description='Export a NUTS3 shapefile to json')
 
     add_args(parser)
     conf = parser.parse_args(args)
