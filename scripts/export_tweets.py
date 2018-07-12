@@ -37,6 +37,8 @@ def add_args(parser):
     parser.add_argument('-f', '--format', help='Export format. It can be JSONL (jsonlines.org) or standard JSON',
                         type=str, choices=['json', 'jsonl'],
                         metavar='Format', default='jsonl')
+    parser.add_argument('-e', '--exportonlytweets', action='store_true', default=False,
+                        help='If passed, the export will contain only tweets and not the entire object')
     parser.add_argument('-z', '--gzip', help='Compress file', action='store_true', default=True)
 
 
@@ -64,7 +66,7 @@ def write_jsonl(conf, tweets):
     with jsonlines.open(conf.output_file, mode='w') as writer:
         for i, t in enumerate(tweets, start=1):
             t['tweet'] = ujson.loads(t['tweet'])
-            writer.write(t)
+            writer.write(t if conf.exportonlytweets else t['tweet'])
             if conf.maxnum and i >= conf.maxnum:
                 break
             if not (i % 500):
@@ -75,7 +77,7 @@ def write_json(conf, tweets):
     out = []
     for i, t in enumerate(tweets, start=1):
         t['tweet'] = ujson.loads(t['tweet'])
-        out.append(t)
+        out.append(t if conf.exportonlytweets else t['tweet'])
         if conf.maxnum and i >= conf.maxnum:
             break
     with open(conf.output_file, 'w', encoding='utf-8') as fd:
