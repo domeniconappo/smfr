@@ -1,8 +1,7 @@
+from copy import deepcopy
 import argparse
 import sys
 import yaml
-
-from copy import deepcopy
 
 
 class ParserHelpOnError(argparse.ArgumentParser):
@@ -31,7 +30,7 @@ def clean_compose(d_in):
     return d_out
 
 
-def do():
+def main():
     parser = ParserHelpOnError(description='Produce a compatible docker-compose.yaml file to use with '
                                            '`docker stack deploy`')
 
@@ -47,4 +46,4 @@ def do():
 
 
 if __name__ == '__main__':
-    sys.exit(do())
+    sys.exit(main())

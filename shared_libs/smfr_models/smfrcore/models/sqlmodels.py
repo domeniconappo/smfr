@@ -341,5 +341,5 @@ class Aggregation(SMFRModel):
     id = Column(Integer, primary_key=True, autoincrement=True, nullable=False)
     collection_id = Column(Integer, ForeignKey('virtual_twitter_collection.id'))
     collection = sqldb.relationship('TwitterCollection',
-                                    backref=sqldb.backref('virtual_twitter_collection', uselist=False))
-    parameters = Column(JSONType, nullable=False)
+                                    backref=sqldb.backref('twitter_collection', uselist=False))
+    values = Column(JSONType, nullable=False)

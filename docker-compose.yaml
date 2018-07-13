@@ -253,8 +253,8 @@ services:
       - '5555:5555'
     volumes:
       - './rest_server/src:/rest_server'
-      - './uploads:/smfr/uploads/'
-      - './downloaded:/smfr/downloaded/'
+      - '~/uploads/:/smfr/uploads/'
+      - '~/downloads/:/smfr/downloaded/'
     depends_on:
       - mysql
       - kafka
@@ -264,7 +264,7 @@ services:
       - persister
     deploy:
       placement:
-        constraints: [node.labels.large == true ]
+        constraints: [ node.labels.large == true ]
 
   web:
     restart: always
@@ -291,4 +291,4 @@ services:
       - restserver
     deploy:
       placement:
-        constraints: [node.labels.small == true ]
+        constraints: [ node.labels.small == true ]
