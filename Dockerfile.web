@@ -1,4 +1,4 @@
-FROM tiangolo/uwsgi-nginx-flask:python3.6
+FROM python:3.6
 MAINTAINER Domenico Nappo <domenico.nappo@ext.ec.europa.eu>
 
 ARG http_proxy
@@ -6,8 +6,16 @@ ARG https_proxy
 
 ENV LANG=C.UTF-8
 
+RUN apt-get update
+RUN apt-get -y dist-upgrade
+RUN apt-get -yq install net-tools nginx supervisor uwsgi
+
+
 COPY ./web/requirements.txt /requirements.txt
 RUN pip install -U pip && pip install -r /requirements.txt
+
+RUN apt-get autoremove -y && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+RUN rm -R /root/.cache
 
 RUN mkdir -p /smfr_clients
 COPY ./shared_libs/smfr_clients/. /smfr_clients/
@@ -16,24 +24,19 @@ RUN mkdir -p /smfr_utils
 COPY ./shared_libs/smfr_utils/. /smfr_utils/
 RUN pip3.6 install /smfr_utils/
 
-ENV LISTEN_PORT 8888
-ENV NGINX_MAX_UPLOAD 8m
-ENV USE_NGINX_WORKER_PROCESSES 4
 EXPOSE 8888
+
+# Custom Supervisord config
+COPY ./web/conf/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+# Copy the Nginx global conf
+COPY ./web/conf/nginx.conf /etc/nginx/nginx.conf
+# Copy the Flask Nginx site conf
+COPY ./web/conf/site.conf /etc/nginx/conf.d/site.conf
+# Copy the base uWSGI ini file to enable default dynamic uwsgi process number
+COPY ./web/conf/uwsgi.ini /etc/uwsgi/uwsgi.ini
 
 ENV INSTALL_PATH /app
 RUN mkdir -p $INSTALL_PATH
-COPY ./web/conf/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
-COPY ./web/conf/nginx.conf /etc/nginx/nginx.conf
-COPY ./web/conf/server.conf /etc/nginx/conf.d/server.conf
-COPY ./web/conf/entrypoint.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
-
 COPY ./web/src/. $INSTALL_PATH/
 
-RUN rm /etc/nginx/conf.d/nginx.conf
-# Clean up APT
-RUN apt-get autoremove -y && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
-
-ENTRYPOINT ["/entrypoint.sh"]
-CMD ["/start.sh"]
+CMD ["/usr/bin/supervisord"]

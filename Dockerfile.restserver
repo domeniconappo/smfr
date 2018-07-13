@@ -19,10 +19,6 @@ RUN apt-get autoremove -y && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/*
 
 ENV PATH=/usr/local/mysql/bin/:$PATH
 
-COPY ./rest_server/src/. $INSTALL_PATH/
-COPY ./shared_libs/scripts/wait_for_it.sh /scripts/
-COPY ./rest_server/src/config/. /configuration/
-
 RUN mkdir -p ~/.ssh/
 RUN ssh-keyscan -t rsa ${ftp_host} >> ~/.ssh/known_hosts
 RUN mkdir -p ${download_folder}
@@ -40,6 +36,10 @@ COPY ./shared_libs/smfr_clients/. /smfr_clients/
 RUN pip3.6 install /smfr_clients/
 
 RUN mkdir -p /smfr/uploads/
+
+COPY ./rest_server/src/. $INSTALL_PATH/
+COPY ./shared_libs/scripts/wait_for_it.sh /scripts/
+COPY ./rest_server/src/config/. /configuration/
 
 EXPOSE 5555
 RUN ["chmod", "a+x", "/scripts/wait_for_it.sh"]

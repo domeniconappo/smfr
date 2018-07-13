@@ -264,7 +264,7 @@ services:
       - persister
     deploy:
       placement:
-        constraints: [node.labels.medium == true ]
+        constraints: [node.labels.large == true ]
 
   web:
     restart: always
