@@ -25,6 +25,8 @@ cqldb = CQLAlchemy()
 _keyspace = os.environ.get('CASSANDRA_KEYSPACE', 'smfr_persistent')
 _hosts = [os.environ.get('CASSANDRA_HOST', 'cassandrasmfr')]
 _port = os.environ.get('CASSANDRA_PORT', 9042)
+_cassandra_user = os.environ.get('CASSANDRA_USER')
+_cassandra_password = os.environ.get('CASSANDRA_PASSWORD')
 
 
 def cassandra_session_factory():
@@ -34,7 +36,7 @@ def cassandra_session_factory():
     # https://stackoverflow.com/questions/36133127/how-to-configure-cassandra-for-remote-connection
     # Anyway, when using the cassandra-driver Cluster object, the port to use is still 9042.
     # Just ensure to open 9042 and 9160 ports on all nodes of the Swarm cluster.
-    auth_provider = PlainTextAuthProvider(username='cassandra', password='cassandra')
+    auth_provider = PlainTextAuthProvider(username=_cassandra_user, password=_cassandra_password)
     cluster = Cluster(_hosts, port=_port, auth_provider=auth_provider) if RUNNING_IN_DOCKER else Cluster()
     session = cluster.connect()
     session.row_factory = dict_factory
@@ -73,8 +75,8 @@ class Tweet(cqldb.Model):
     """
     ttype = cqldb.columns.Text(required=True, partition_key=True)
 
-    nuts3 = cqldb.columns.Text()
-    nuts3source = cqldb.columns.Text()
+    nuts2 = cqldb.columns.Text()
+    nuts2source = cqldb.columns.Text()
 
     geo = cqldb.columns.Map(
         cqldb.columns.Text, cqldb.columns.Text,
@@ -192,7 +194,7 @@ class Tweet(cqldb.Model):
     @classmethod
     def make_table_object(cls, numrow, tweet_dict):
         """
-
+        Return dictionary that can be used in HTML5 tables / Jinja templates
         :param numrow: int: numrow
         :param tweet_dict: dict representing Tweet row in smfr_persistent.tweet column family
         :return:
@@ -210,7 +212,9 @@ class Tweet(cqldb.Model):
             'Type': tweet_dict['ttype'],
             'Lang': tweet_dict['lang'] or '-',
             'Annotations': tweet_obj.pretty_annotations,
-            'LatLon': tweet_obj.latlong or '-',
+            'LatLon': '<a href="https://www.openstreetmap.org/#{}/{}" target="_blank">{}</a>'.format(
+                tweet_obj.latlong[0], tweet_obj.latlong[1], tweet_obj.latlong
+            ) if tweet_obj.latlong else '',
             'Collected at': tweet_dict['created_at'] or '',
             'Tweeted at': tweet_dict['tweet']['created_at'] or ''
         }
@@ -281,8 +285,8 @@ class Tweet(cqldb.Model):
             collectionid=collection.id if isinstance(collection, TwitterCollection) else int(collection),
             created_at=time.mktime(time.strptime(tweet['created_at'], '%a %b %d %H:%M:%S +0000 %Y')),
             ttype=ttype,
-            nuts3=collection.nuts3 if isinstance(collection, TwitterCollection) else '',
-            nuts3source=collection.nuts3source if isinstance(collection, TwitterCollection) else '',
+            nuts2=collection.nuts2 if isinstance(collection, TwitterCollection) else '',
+            nuts2source=collection.nuts2source if isinstance(collection, TwitterCollection) else '',
             annotations={}, lang=tweet['lang'], geo={},
             tweet=json.dumps(tweet, ensure_ascii=False),
         )

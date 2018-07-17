@@ -5,7 +5,7 @@ import pathlib
 import connexion
 
 
-from server.config import RestServerConfiguration, LOGGER_FORMAT, DATE_FORMAT, SERVER_BOOTSTRAP
+from server.config import RestServerConfiguration, LOGGER_FORMAT, DATE_FORMAT, SERVER_BOOTSTRAP, MYSQL_MIGRATION
 
 logging.basicConfig(level=logging.INFO if not RestServerConfiguration.debug else logging.DEBUG,
                     format=LOGGER_FORMAT, datefmt=DATE_FORMAT)
@@ -15,6 +15,11 @@ os.environ['NO_PROXY'] = ','.join((RestServerConfiguration.restserver_host, Rest
 
 
 def create_app():
+    if MYSQL_MIGRATION:
+        logger = RestServerConfiguration.logger
+        logger.info('Migrations...')
+        return RestServerConfiguration.configure_migrations()
+
     connexion_app = connexion.App('SMFR Rest Server', specification_dir='swagger/')
     config = RestServerConfiguration(connexion_app)
     logger = RestServerConfiguration.logger

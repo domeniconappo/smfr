@@ -23,7 +23,10 @@ services:
         constraints: [node.labels.large == true ]
 
   cassandrasmfr:
-    image: alexcheng/cassandra:latest
+    build:
+      context: ./
+      dockerfile: cassandrasmfr/Dockerfile
+    image: efas/cassandrasmfr
     restart: always
     # From host, connect to DB with `docker exec -it cassandrasmfr cqlsh`
     volumes:
@@ -123,6 +126,8 @@ services:
       KAFKA_BOOTSTRAP_SERVER: ${KAFKA_BOOTSTRAP_SERVER}
       CASSANDRA_HOST: ${CASSANDRA_HOST}
       CASSANDRA_PORT: ${CASSANDRA_PORT}
+      CASSANDRA_USER: ${CASSANDRA_USER}
+      CASSANDRA_PASSWORD: ${CASSANDRA_PASSWORD}
       http_proxy: ${http_proxy}
       https_proxy: ${https_proxy}
     volumes:
@@ -197,7 +202,11 @@ services:
       KAFKA_TOPIC: ${KAFKA_TOPIC}
       CASSANDRA_HOST: ${CASSANDRA_HOST}
       CASSANDRA_PORT: ${CASSANDRA_PORT}
-      NUTS3_GEOJSON: GlobalRegions_052018.geojson
+      MYSQL_HOST: mysql
+      MYSQL_DBNAME: ${MYSQL_DBNAME}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+#      NUTS3_GEOJSON: GlobalRegions_052018.geojson
       http_proxy: ${http_proxy}
       https_proxy: ${https_proxy}
     depends_on:
@@ -237,6 +246,7 @@ services:
       RESTSERVER_BASEPATH: '/1.0'
       MYSQL_HOST: mysql
       MYSQL_DBNAME: ${MYSQL_DBNAME}
+      MYSQL_USER: ${MYSQL_USER}
       MYSQL_PASSWORD: ${MYSQL_PASSWORD}
       CASSANDRA_HOST: ${CASSANDRA_HOST}
       CASSANDRA_PORT: ${CASSANDRA_PORT}

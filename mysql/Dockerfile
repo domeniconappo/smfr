@@ -1,4 +1,4 @@
-FROM mysql:latest
+FROM mysql:8.0.11
 MAINTAINER Domenico Nappo <domenico.nappo@ext.ec.europa.eu>
 
 ENV LANG=C.UTF-8

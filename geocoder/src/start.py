@@ -1,13 +1,15 @@
 import os
 import logging
 
-from flask import Flask
+
 from flask_restful import Resource, Api, fields, marshal_with, marshal_with_field
 
+
+
 from geocoder import Geocoder
+from utils import create_app
 
-
-app = Flask(__name__)
+app = create_app()
 api = Api(app)
 
 LOGGER_FORMAT = '%(asctime)s: Geocoder - <%(name)s>[%(levelname)s] (%(threadName)-10s) %(message)s'

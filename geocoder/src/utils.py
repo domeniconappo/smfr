@@ -1,33 +1,20 @@
-from collections import namedtuple
+import os
 
-import ujson as json
+from flask import Flask
 
-
-class NutsItem(namedtuple('NutsItem', 'id, nuts_id, properties, geometry')):
-    def __eq__(self, other):
-        if not other:
-            return False
-        return self.id == other.id
+from smfrcore.utils import RUNNING_IN_DOCKER
+from smfrcore.models.sqlmodels import sqldb
 
 
-def read_geojson(path):
-    items = []
-    try:
-        with open(path) as f:
-            data = json.load(f, precise_float=True)
-    except FileNotFoundError:
-        data = {'features': []}
-        print('File not found: ', path)
-
-    for feat in data['features']:
-        properties = feat['properties']
-        geometry = feat['geometry']
-        items.append(
-            NutsItem(
-                properties['ObjectID'],
-                properties['NUTS_ID'],
-                properties,
-                geometry['coordinates']
-            )
-        )
-    return items
+def create_app():
+    _mysql_host = '127.0.0.1' if not RUNNING_IN_DOCKER else os.environ.get('MYSQL_HOST', 'mysql')
+    _mysql_db_name = os.environ.get('MYSQL_DBNAME', 'smfr')
+    _mysql_user = os.environ.get('MYSQL_USER')
+    _mysql_pass = os.environ.get('MYSQL_PASSWORD')
+    app = Flask('geocoder Micro Service')
+    app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://{}:{}@{}/{}?charset=utf8mb4'.format(
+        _mysql_user, _mysql_pass, _mysql_host, _mysql_db_name
+    )
+    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+    sqldb.init_app(app)
+    return app

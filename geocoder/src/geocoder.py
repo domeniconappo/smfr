@@ -3,6 +3,7 @@ import os
 import sys
 import threading
 import time
+import traceback
 from collections import Counter
 
 from kafka import KafkaProducer
@@ -11,64 +12,68 @@ from mordecai import Geoparser
 from shapely.geometry import Point, Polygon
 
 from smfrcore.models.cassandramodels import Tweet
+from smfrcore.models.sqlmodels import Nuts2
 from smfrcore.utils import RUNNING_IN_DOCKER
 
-from utils import read_geojson
+from utils import create_app
 
 
-class Nuts3Finder:
+class Nuts2Finder:
 
     """
-    Simple class with a single method that returns NUTS3 id for a Point(Long, Lat).
-    Warning: the method does not return NUTS3 code but the NUTS3 id as it's stored in EFAS NUTS3 table.
+    Simple class with a single method that returns NUTS2 id for a Point(Long, Lat).
+    Warning: the method does not return NUTS2 code but the NUTS2 id as it's stored in EFAS NUTS2 table.
     TODO: Evaluate if it's better to refactor to a function instead of keeping this onemethod static class
     """
     logger = logging.getLogger(__name__)
     logger.setLevel(logging.getLevelName(os.environ.get('LOGGING_LEVEL', 'DEBUG')))
-    config_dir = '/config/' if RUNNING_IN_DOCKER else os.path.join(os.path.dirname(__file__), '../config')
-    geojson_name = os.environ.get('NUTS3_GEOJSON', 'GlobalRegions_052018.geojson')
-    path = os.path.join(config_dir, geojson_name)
-    # TODO Use nuts2 and nuts3 tables instead of globalregions.geojson
-    nutsitems = read_geojson(path)
+    # config_dir = '/config/' if RUNNING_IN_DOCKER else os.path.join(os.path.dirname(__file__), '../config')
+    # geojson_name = os.environ.get('NUTS3_GEOJSON', 'GlobalRegions_052018.geojson')
+    # path = os.path.join(config_dir, geojson_name)
 
     @classmethod
-    def find_nuts3(cls, lat, lon):
+    def find_nuts2(cls, lat, lon):
         """
-        Check if a point (lat, lon) is in a NUTS3 region and returns its id. None otherwise.
-        :param lat: float Latitude of a point
-        :param lon: float Longituted of a point
-        :return: NutsItem object with object_id, nuts_id, polygon geometry and other properties
-                like ('COUNTRY': 'Benin', 'ISO_CODE': 'BJBO', 'ISO_CC': 'BJ', 'ISO_SUB': 'BO', 'NUTS_ID': None,
-                      'CNTR_CODE': None, 'EFAS_name': 'Borgou', 'AREA_GEO': 26714565260.2)
+        Check if a point (lat, lon) is in a NUTS2 region and returns its id. None otherwise.
+        :param lat: Latitude of a point
+        :rtype lat: float
+        :param lon: Longitute of a point
+        :rtype lon: float
+        :return: Nuts2 object
 
         """
-        cls.logger.debug('Inside find_nuts3')
+        cls.logger.debug('Inside find_nuts2')
         point = Point(float(lon), float(lat))
-        nuts = None
-        geo = None
-        try:
-            for nuts in cls.nutsitems:
-                geo = None
-                for geo in nuts.geometry:
-                    if isinstance(geo[0], tuple):
+        nuts2_candidates = Nuts2.get_nuts2(lat, lon)
+        cls.logger.debug('Returned %d nuts2 candidates', len(nuts2_candidates))
+
+        for nuts2 in nuts2_candidates:
+            cls.logger.debug('type nuts2 %s', str(type(nuts2)))
+            try:
+                for geo in nuts2.geometry:
+                    cls.logger.debug('type geo in geometry %s', str(type(geo)))
+                    cls.logger.debug(geo)
+                    if isinstance(geo[0], (list, tuple)):
+                        cls.logger.debug('type geo[0] %s', str(type(geo[0])))
                         poly = Polygon(geo)
                         if point.within(poly):
-                            cls.logger.debug('Returning nuts from find_nuts3')
-                            return nuts
+                            cls.logger.debug('Returning nuts from find_nuts2')
+                            return nuts2
                     else:
                         for ggeo in geo:
+                            cls.logger.debug('type ggeo %s', str(type(ggeo)))
+                            cls.logger.debug(ggeo)
                             poly = Polygon(ggeo)
                             if point.within(poly):
-                                cls.logger.debug('Returning nuts from find_nuts3')
-                                return nuts
-        except (KeyError, IndexError) as e:
-            cls.logger.error('An error occured %s %s', type(e), str(e))
-            cls.logger.error(nuts)
-            cls.logger.error(geo)
-            return None
-        except Exception as e:
-            cls.logger.error('An error occured %s %s', type(e), str(e))
-            return None
+                                cls.logger.debug('Returning nuts from find_nuts2')
+                                return nuts2
+            except (KeyError, IndexError, TypeError) as e:
+                cls.logger.error('An error occured %s %s', type(e), str(e))
+                traceback.print_exc()
+                return None
+            except Exception as e:
+                cls.logger.error('An error occured %s %s', type(e), str(e))
+                return None
 
 
 class Geocoder:
@@ -84,6 +89,10 @@ class Geocoder:
     geonames_host = '127.0.0.1' if not RUNNING_IN_DOCKER else 'geonames'
     kafka_bootstrap_server = '{}:9092'.format('kafka' if RUNNING_IN_DOCKER else '127.0.0.1')
 
+    flask_app = create_app()
+
+    # FIXME duplicated code (same as Annotator)
+    # Need a class in shared_lib where to put common code
     kafkaup = False
     retries = 5
     while (not kafkaup) and retries >= 0:
@@ -149,6 +158,7 @@ class Geocoder:
     def geoparse_tweet(cls, tweet, tagger):
         """
         Mordecai geoparsing
+        :param tagger:
         :param tweet: smfrcore.models.cassandramodels.Tweet object
         :return: list of tuples of lat/lon coordinates
         """
@@ -180,75 +190,81 @@ class Geocoder:
     def find_nuts_heuristic(cls, tweet, tagger):
         """
         The following heuristic is applied:
+
         #1 First, a gazetteer is run on the tweet to find location mentions
 
         #2 If no location mention is found:
-            If the tweet contains (longitude, latitude): the NUTS3 area containing that (longitude, latitude) is returned (nuts3source="coordinates")
+            If the tweet contains (longitude, latitude):
+                the NUTS2 area containing that (longitude, latitude) is returned (nuts2source="coordinates")
             Otherwise, NULL is returned
-        #3 If location mentions mapping to a list of NUTS3 areas are found:
-            If the tweet contains (longitude, latitude), then if any of the NUTS3 areas contain that point, that NUTS3 area is returned (nuts3source="coordinates-and-mentions")
+        #3 If location mentions mapping to a list of NUTS2 areas are found:
+            If the tweet contains (longitude, latitude), then if any of the NUTS2 areas contain that point, that NUTS2
+            area is returned (nuts2source="coordinates-and-mentions")
             Otherwise
-                If there is a single NUTS3 area in the list, that NUTS3 area is returned (nuts3source="mentions")
+                If there is a single NUTS2 area in the list, that NUTS2 area is returned (nuts2source="mentions")
                 Otherwise, check if user location is in one of the NUTS list and return it. If not, NULL is returned
 
         :param tagger:
         :param tweet: Tweet object
-        :return: tuple (nuts3, nuts_source, coordinates)
+        :return: tuple (nuts2, nuts_source, coordinates)
         """
-        no_results = (None, None, None)
-        cls.logger.debug('Calling geoparse_tweet %s', str(tweet.tweetid))
-        mentions = cls.geoparse_tweet(tweet, tagger)
-        cls.logger.debug('Calling get_coordinates_from_tweet %s', str(tweet.tweetid))
-        tweet_coords = cls.get_coordinates_from_tweet(tweet)
+        # TODO refactor to use shorter private methods
 
-        if not mentions:
-            if tweet_coords:
-                nuts3 = Nuts3Finder.find_nuts3(*tweet_coords)
-                if nuts3:
-                    coordinates = tweet_coords
-                    nuts_source = 'coordinates'
-                    cls.logger.debug('Found Nuts from tweet geo... - coordinates')
-                    return nuts3, nuts_source, coordinates
-            return no_results
-        else:
-            if tweet_coords and len(mentions) > 1:
-                nuts3_from_tweet = Nuts3Finder.find_nuts3(*tweet_coords)
-                for latlong in mentions:
-                    # checking the list of mentioned places coordinates
-                    nuts3 = Nuts3Finder.find_nuts3(*latlong)
-                    if nuts3 == nuts3_from_tweet:
-                        coordinates = latlong
-                        nuts_source = 'coordinates-and-mentions'
-                        cls.logger.debug('Found Nuts from tweet geo and mentions... - coordinates-and-mentions')
-                        return nuts3, nuts_source, coordinates
+        with cls.flask_app.app_context():
+            no_results = (None, None, None)
+            cls.logger.debug('Calling geoparse_tweet %s', str(tweet.tweetid))
+            mentions = cls.geoparse_tweet(tweet, tagger)
+            cls.logger.debug('Calling get_coordinates_from_tweet %s', str(tweet.tweetid))
+            tweet_coords = cls.get_coordinates_from_tweet(tweet)
+
+            if not mentions:
+                if tweet_coords:
+                    nuts2 = Nuts2Finder.find_nuts2(*tweet_coords)
+                    if nuts2:
+                        coordinates = tweet_coords
+                        nuts_source = 'coordinates'
+                        cls.logger.debug('Found Nuts from tweet geo... - coordinates')
+                        return nuts2, nuts_source, coordinates
                 return no_results
             else:
-                if len(mentions) == 1:
-                    coordinates = mentions[0]
-                    nuts3 = Nuts3Finder.find_nuts3(*coordinates)
-                    if nuts3:
-                        nuts_source = 'mentions'
-                        cls.logger.debug('Found Nuts... - Exactly one mention')
-                        return nuts3, nuts_source, coordinates
-
+                if tweet_coords and len(mentions) > 1:
+                    nuts2_from_tweet = Nuts2Finder.find_nuts2(*tweet_coords)
+                    for latlong in mentions:
+                        # checking the list of mentioned places coordinates
+                        nuts2 = Nuts2Finder.find_nuts2(*latlong)
+                        if nuts2 == nuts2_from_tweet:
+                            coordinates = latlong
+                            nuts_source = 'coordinates-and-mentions'
+                            cls.logger.debug('Found Nuts from tweet geo and mentions... - coordinates-and-mentions')
+                            return nuts2, nuts_source, coordinates
                     return no_results
                 else:
-                    # no geolocated tweet and more than one mention
-                    user_location = tweet.original_tweet_as_dict['user'].get('location')
-                    res = tagger.geoparse(user_location) if user_location else None
-                    if res and res[0] and 'lat' in res[0].get('geo', {}):
-                        res = res[0]
-                        user_coordinates = (float(res['geo']['lat']), float(res['geo']['lon']))
-                        user_nuts3 = Nuts3Finder.find_nuts3(*user_coordinates)
-                        for latlong in mentions:
-                            # checking the list of mentioned places coordinates
-                            nuts3 = Nuts3Finder.find_nuts3(*latlong)
-                            if nuts3 == user_nuts3:
-                                coordinates = latlong
-                                nuts_source = 'mentions-and-user'
-                                cls.logger.debug('Found Nuts... - User location')
-                                return nuts3, nuts_source, coordinates
-                    return no_results
+                    if len(mentions) == 1:
+                        coordinates = mentions[0]
+                        nuts2 = Nuts2Finder.find_nuts2(*coordinates)
+                        if nuts2:
+                            nuts_source = 'mentions'
+                            cls.logger.debug('Found Nuts... - Exactly one mention')
+                            return nuts2, nuts_source, coordinates
+
+                        return no_results
+                    else:
+                        # no geolocated tweet and more than one mention
+                        user_location = tweet.original_tweet_as_dict['user'].get('location')
+                        res = tagger.geoparse(user_location) if user_location else None
+                        if res and res[0] and 'lat' in res[0].get('geo', {}):
+                            res = res[0]
+                            user_coordinates = (float(res['geo']['lat']), float(res['geo']['lon']))
+                            user_nuts2 = Nuts2Finder.find_nuts2(*user_coordinates)
+                            for latlong in mentions:
+                                # checking the list of mentioned places coordinates
+                                nuts2 = Nuts2Finder.find_nuts2(*latlong)
+                                if nuts2 == user_nuts2:
+                                    coordinates = latlong
+                                    nuts_source = 'mentions-and-user'
+                                    cls.logger.debug('Found Nuts... - User location')
+                                    return nuts2, nuts_source, coordinates
+                        return no_results
 
     @classmethod
     def start(cls, collection_id):
@@ -266,11 +282,8 @@ class Geocoder:
         errors = 0
         c = Counter()
 
-        try:
-            # try to use new mordecai with 'threads'
-            tagger = Geoparser(cls.geonames_host, threads=True)
-        except TypeError:
-            tagger = Geoparser(cls.geonames_host)
+        # try to use new mordecai with 'threads'
+        tagger = Geoparser(cls.geonames_host, threads=True)
 
         for x, t in enumerate(tweets, start=1):
             if collection_id in cls.stop_signals:
@@ -287,34 +300,32 @@ class Geocoder:
 
                 t.ttype = 'geotagged'
                 cls.logger.debug('Calling find_nuts_heuristic: %s', str(t.tweetid))
-                nutsitem, nuts3_source, latlong = cls.find_nuts_heuristic(t, tagger)
+                nutsitem, nuts2_source, latlong = cls.find_nuts_heuristic(t, tagger)
                 cls.logger.debug('Finished find_nuts_heuristic: %s', str(t.tweetid))
                 if not latlong:
                     cls.logger.debug('Not latlong found for %s', str(t.tweetid))
                     continue
 
                 t.latlong = latlong
-                t.nuts3 = str(nutsitem.id) if nutsitem and nutsitem.id is not None else None
-                t.nuts3source = nuts3_source
-                nuts_properties = nutsitem.properties if nutsitem else {}
+                t.nuts2 = str(nutsitem.id) if nutsitem and nutsitem.id is not None else None
+                t.nuts2source = nuts2_source
 
                 t.geo = {
                     'nuts_efas_id': str(nutsitem.id) if nutsitem and nutsitem.id is not None else '',
                     'nuts_id': str(nutsitem.nuts_id) if nutsitem and nutsitem.nuts_id is not None else '',
-                    'nuts_source': nuts3_source or '',
+                    'nuts_source': nuts2_source or '',
                     'latitude': str(latlong[0]),
                     'longitude': str(latlong[1]),
-                    'country': nuts_properties.get('COUNTRY') or '',
-                    'iso_code': nuts_properties.get('ISO_CODE') or '',
-                    'iso_cc': nuts_properties.get('ISO_CC') or '',
-                    'efas_name': nuts_properties.get('EFAS_name') or '',
+                    'country': nutsitem.country if nutsitem and nutsitem.country else '',
+                    'country_code': nutsitem.country_code if nutsitem and nutsitem.country_code else '',
+                    'efas_name': nutsitem.efas_name if nutsitem and nutsitem.efas_name else '',
                 }
 
                 message = t.serialize()
                 cls.logger.debug('Send geocoded tweet to persister: %s', str(t))
 
                 cls.producer.send(cls.kafka_topic, message)
-                counter_key = '{}#{}'.format(t.lang, nuts3_source)
+                counter_key = '{}#{}'.format(t.lang, nuts2_source)
                 c[counter_key] += 1
 
             except Exception as e:

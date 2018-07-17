@@ -24,6 +24,8 @@ RUN mkdir -p /smfr_utils
 COPY ./shared_libs/smfr_utils/. /smfr_utils/
 RUN pip3.6 install /smfr_utils/
 
+RUN rm -R /root/.cache
+
 EXPOSE 5558
 RUN ["chmod", "a+x", "/scripts/wait_for_it.sh"]
 ENTRYPOINT ["/scripts/wait_for_it.sh", "cassandrasmfr:9160"]

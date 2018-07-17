@@ -324,7 +324,6 @@ def fetch_efas(since='latest'):
                 if not nuts3_data:
                     logger.info('No NUTS3 data found for RRA event id %d', rra_event_id)
                     continue
-                # logger.info(nuts3_data[0])
                 efas_id = nuts3_data[0][3]
                 bbox = Nuts2.nuts2_bbox(efas_id)
                 country_name = nuts3_data[0][1] if nuts3_data else ''

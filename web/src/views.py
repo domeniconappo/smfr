@@ -69,8 +69,8 @@ def export_tweets(collection_id):
     if form.validate_on_submit():
         payload = {
             'config': form.config.data, 'kwfile': form.kwfile.data, 'locfile': form.locfile.data,
-            'runtime': form.runtime.data, 'trigger': form.trigger.data, 'nuts3': form.nuts3.data,
-            'forecast': form.forecast_id.data, 'nuts3source': form.nuts3source.data, 'tzclient': form.tzclient.data,
+            'runtime': form.runtime.data, 'trigger': form.trigger.data, 'nuts2': form.nuts2.data,
+            'forecast': form.forecast_id.data, 'tzclient': form.tzclient.data,
         }
     return render_template('export.html', form=form), 200
 
@@ -81,8 +81,8 @@ def new_collection():
     if form.validate_on_submit():
         payload = {
             'config': form.config.data, 'kwfile': form.kwfile.data, 'locfile': form.locfile.data,
-            'runtime': form.runtime.data, 'trigger': form.trigger.data, 'nuts3': form.nuts3.data,
-            'forecast': form.forecast_id.data, 'nuts3source': form.nuts3source.data, 'tzclient': form.tzclient.data,
+            'runtime': form.runtime.data, 'trigger': form.trigger.data, 'nuts2': form.nuts2.data,
+            'forecast': form.forecast_id.data, 'tzclient': form.tzclient.data,
         }
         try:
             res = client.new_collection(payload)

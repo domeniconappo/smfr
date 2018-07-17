@@ -11,6 +11,7 @@ import numpy as np
 from cassandra.cluster import NoHostAvailable
 from cassandra.cqlengine import connection
 from cassandra.util import OrderedMapSerializedKey
+from flask import Flask
 from flask.json import JSONEncoder
 from kafka import KafkaProducer
 from kafka.errors import NoBrokersAvailable
@@ -28,8 +29,12 @@ from smfrcore.utils import RUNNING_IN_DOCKER
 
 UNDER_TESTS = any('nose2' in x for x in sys.argv)
 SERVER_BOOTSTRAP = 'gunicorn' in sys.argv[0]
+MYSQL_MIGRATION = all(os.path.basename(a) in ('flask', 'db', 'migrate') for a in sys.argv) \
+                  or all(os.path.basename(a) in ('flask', 'db', 'upgrade') for a in sys.argv)
+
 LOGGER_FORMAT = '%(asctime)s: Server - <%(name)s>[%(levelname)s] (%(threadName)-10s) %(message)s'
 DATE_FORMAT = '%Y%m%d %H:%M:%S'
+
 CONFIG_STORE_PATH = os.environ.get('SERVER_PATH_UPLOADS', os.path.join(os.path.dirname(__file__), '../../../uploads/'))
 CONFIG_FOLDER = '/configuration/' if RUNNING_IN_DOCKER else os.path.join(os.path.dirname(__file__), '../config/')
 
@@ -83,7 +88,9 @@ class RestServerConfiguration(metaclass=Singleton):
     """
     geonames_host = '127.0.0.1' if not RUNNING_IN_DOCKER else 'geonames'
     kafka_host = '127.0.0.1' if not RUNNING_IN_DOCKER else 'kafka'
-    mysql_db_host = '127.0.0.1' if not RUNNING_IN_DOCKER else 'mysql'
+    mysql_host = '127.0.0.1' if not RUNNING_IN_DOCKER else os.environ.get('MYSQL_HOST', 'mysql')
+    __mysql_user = os.environ.get('MYSQL_USER', 'root')
+    __mysql_pass = os.environ.get('MYSQL_PASSWORD', 'example')
     cassandra_host = '127.0.0.1' if not RUNNING_IN_DOCKER else os.environ.get('CASSANDRA_HOST', 'cassandrasmfr')
     annotator_host = '127.0.0.1' if not RUNNING_IN_DOCKER else 'annotator'
     geocoder_host = '127.0.0.1' if not RUNNING_IN_DOCKER else 'geocoder'
@@ -91,9 +98,7 @@ class RestServerConfiguration(metaclass=Singleton):
     kafka_bootstrap_server = '{}:9092'.format(kafka_host)
 
     cassandra_keyspace = '{}{}'.format(os.environ.get('CASSANDRA_KEYSPACE', 'smfr_persistent'), '_test' if UNDER_TESTS else '')
-    mysql_user = 'root'
     mysql_db_name = '{}{}'.format(os.environ.get('MYSQL_DBNAME', 'smfr'), '_test' if UNDER_TESTS else '')
-    mysql_pass = os.environ.get('MYSQL_PASSWORD', 'password')
     restserver_port = os.environ.get('RESTSERVER_PORT', 5555)
     annotator_port = os.environ.get('ANNOTATOR_PORT', 5556)
     geocoder_port = os.environ.get('GEOCODER_PORT', 5557)
@@ -105,7 +110,37 @@ class RestServerConfiguration(metaclass=Singleton):
     logger = logging.getLogger(__name__)
     logger.setLevel(logger_level)
 
+    @classmethod
+    def configure_migrations(cls):
+        app = Flask(__name__)
+        app.json_encoder = CustomJSONEncoder
+        app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://{}:{}@{}/{}?charset=utf8mb4'.format(
+            cls.__mysql_user, cls.__mysql_pass, cls.mysql_host, cls.mysql_db_name
+        )
+        app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+        up = False
+        retries = 1
+        while not up and retries <= 5:
+            try:
+                from smfrcore.models.sqlmodels import sqldb
+                sqldb.init_app(app)
+                cls.db_mysql = sqldb
+                cls.migrate = Migrate(app, cls.db_mysql)
+            except (OperationalError, socket.gaierror):
+                cls.logger.warning(
+                    'Cannot apply migrations because Mysql was not up...wait 5 seconds before retrying')
+                sleep(5)
+                retries += 1
+            else:
+                up = True
+                return app
+            finally:
+                if not up and retries >= 5:
+                    cls.logger.error('Missing link with MySQL. Exiting...')
+                    sys.exit(1)
+
     def __init__(self, connexion_app=None):
+
         if not connexion_app:
             if RestServerConfiguration not in self.__class__.instances:
                 from start import app
@@ -118,9 +153,9 @@ class RestServerConfiguration(metaclass=Singleton):
             self.logger.debug('Pushing application context')
             self.flask_app.app_context().push()
             self.producer = None
-
             up = False
             retries = 1
+
             while not up and retries <= 5:
                 try:
                     from smfrcore.models.sqlmodels import sqldb
@@ -150,7 +185,9 @@ class RestServerConfiguration(metaclass=Singleton):
     def set_flaskapp(self, connexion_app):
         app = connexion_app.app
         app.json_encoder = CustomJSONEncoder
-        app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:example@{}/{}?charset=utf8mb4'.format(self.mysql_db_host, self.mysql_db_name)
+        app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://{}:{}@{}/{}?charset=utf8mb4'.format(
+            self.__mysql_user, self.__mysql_pass, self.mysql_host, self.mysql_db_name
+        )
         app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
         app.config['CASSANDRA_HOSTS'] = [self.cassandra_host]
         app.config['CASSANDRA_KEYSPACE'] = self.cassandra_keyspace

@@ -79,7 +79,7 @@ class Collector:
     def __init__(self, config_file,
                  keywords_file=None, locations_file=None,
                  running_time=None, forecast_id=None,
-                 nuts3=None, nuts3source=None, tz=None, user=None):
+                 nuts2=None, nuts2source=None, tz=None, user=None):
 
         self.forecast_id = forecast_id
         self.config = config_file
@@ -88,8 +88,8 @@ class Collector:
         self.ctype = 'keywords' if keywords_file else 'geo'
         self.runtime = running_time
         self.user_tzone = tz
-        self.nuts3 = nuts3
-        self.nuts3source = nuts3source
+        self.nuts2 = nuts2
+        self.nuts2source = nuts2source
         self.stored_instance = None
 
         collector_config = yaml.load(open(self.config).read())
@@ -128,7 +128,7 @@ class Collector:
                    locations_file=payload.get('locfile'),
                    running_time=payload.get('runtime'), tz=payload.get('tzclient'),
                    forecast_id=payload.get('forecast'),
-                   nuts3=payload.get('nuts3'), nuts3source=payload.get('nuts3source'), user=user)
+                   nuts2=payload.get('nuts2'), nuts2source=payload.get('nuts2source'), user=user)
 
     def build_query(self):
         """
@@ -301,9 +301,9 @@ class OndemandCollector(Collector):
         locations_file = cls.locations_file_from_bbox(event['bbox'], event['forecast'])
         config_file = cls.user_collector_config_file(user)
         forecast_id = event['forecast']
-        nuts3 = event['efas_id']
+        nuts2 = event['efas_id']
         return cls(config_file, keywords_file=keywords_file, locations_file=locations_file,
-                   forecast_id=forecast_id, nuts3=nuts3)
+                   forecast_id=forecast_id, nuts2=nuts2)
 
 
 class ManualCollector(Collector):

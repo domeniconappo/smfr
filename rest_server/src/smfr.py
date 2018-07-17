@@ -23,18 +23,18 @@ from start import app
 @click.option('--runtime', '-r', required=False)
 @click.option('--nuts3', '-n', required=False)
 @click.option('--nuts3source', '-s', required=False)
-def new_collection(init_config, trigger, collection_type, forecast, keywords, locations, runtime, nuts3, nuts3source):
+def new_collection(init_config, trigger, collection_type, forecast, keywords, locations, runtime, nuts2, nuts2source):
     """Start a collector process with given arguments"""
     click.echo('===> Creating a new collection and attach a collector process to it:')
     config_msg = 'Config file: {}\nTrigger type: {}\nCollection type: {}\nForecast ID: {}\nKeywords file: {}\n' \
                  'Locations file: {}\nRunning Time: {}\nNuts3: {}\nNuts3 Source: {}'
     config_msg = config_msg.format(init_config, trigger, collection_type, forecast or '-', keywords or '-',
-                                   locations or '-', runtime or '-', nuts3 or '-', nuts3source or '-')
+                                   locations or '-', runtime or '-', nuts2 or '-', nuts2source or '-')
     click.echo(config_msg)
 
     payload = {'config': init_config, 'trigger': trigger, 'ctype': collection_type,
                'forecast_id': forecast, 'kwfile': keywords, 'locfile': locations,
-               'runtime': runtime, 'nuts3': nuts3, 'nuts3source': nuts3source}
+               'runtime': runtime, 'nuts3': nuts2, 'nuts3source': nuts2source}
     client = ApiLocalClient()
     res = client.new_collection(payload)
     click.echo(res)

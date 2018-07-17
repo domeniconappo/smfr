@@ -4,8 +4,6 @@ MAINTAINER Domenico Nappo <domenico.nappo@ext.ec.europa.eu>
 
 ENV INSTALL_PATH /geocoder
 ENV LANG=C.UTF-8
-ENV NUTS3_SHAPEFILE 2018_GlobalRegionsWGS84_CUT_WGS84Coord.shp
-ENV NUTS3_GEOJSON GlobalRegions_052018.geojson
 
 RUN mkdir -p $INSTALL_PATH && mkdir -p /scripts && mkdir -p /config
 
@@ -13,8 +11,6 @@ ARG http_proxy
 ARG https_proxy
 
 RUN pip3.6 install spacy && python3.6 -m spacy download en_core_web_lg
-ADD ./geocoder/config/${NUTS3_GEOJSON}.tar.gz /config/
-RUN chmod a+r /config/${NUTS3_GEOJSON}
 
 COPY ./geocoder/requirements.txt ./
 RUN pip3.6 install -r requirements.txt
@@ -28,6 +24,8 @@ RUN pip3.6 install /smfr_models/
 RUN mkdir -p /smfr_utils
 COPY ./shared_libs/smfr_utils/. /smfr_utils/
 RUN pip3.6 install /smfr_utils/
+
+RUN rm -R /root/.cache
 
 EXPOSE 5557
 RUN ["chmod", "a+x", "/scripts/wait_for_it.sh"]

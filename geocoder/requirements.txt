@@ -1,9 +1,10 @@
-flask
-flask-restful
-git+https://github.com/openeventdata/mordecai.git@speed
-shapely
-fiona
-gunicorn
 kafka-python
 ujson
-ijson
+mysqlclient
+flask
+flask-restful
+flask-sqlalchemy
+shapely
+fiona
+mordecai
+gunicorn

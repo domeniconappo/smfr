@@ -14,8 +14,7 @@ class NewCollectorForm(FlaskForm):
     locfile = FileField('Upload locations file')
     forecast_id = StringField('Forecast Id')
     runtime = DateTimeField('Run until...', format='%Y-%m-%d %H:%M', validators=(Optional(),))
-    nuts3 = StringField('NUTS3 Code')
-    nuts3source = StringField('NUTS3 Source')
+    nuts2 = StringField('NUTS2 Code')
     tzclient = HiddenField('tzclient')
 
 

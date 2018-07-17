@@ -41,6 +41,8 @@ COPY ./rest_server/src/. $INSTALL_PATH/
 COPY ./shared_libs/scripts/wait_for_it.sh /scripts/
 COPY ./rest_server/src/config/. /configuration/
 
+RUN rm -R /root/.cache
+
 EXPOSE 5555
 RUN ["chmod", "a+x", "/scripts/wait_for_it.sh"]
 ENTRYPOINT ["/scripts/wait_for_it.sh", "cassandrasmfr:9160"]

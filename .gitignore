@@ -3,6 +3,7 @@
 
 .idea
 rest_server/src/config/*.yaml
+jmxremote.password
 .env
 Dockerfile.*.ready
 !rest_server/src/config/*.tpl
