@@ -3,7 +3,7 @@
 command=${1:-1}
 
 PROPERTY_FILE=.env
-
+SERVICES="web restserver geocoder annotator persister aggregator"
 function getProperty {
    PROP_KEY=$1
    PROP_VALUE=`cat ${PROPERTY_FILE} | grep "$PROP_KEY" | cut -d'=' -f2`
@@ -19,27 +19,38 @@ if [ ! -d ${SMFR_DATADIR} ]; then
     mkdir -p ${SMFR_DATADIR}
 fi
 
+# update geonames ES index from https://s3.amazonaws.com/ahalterman-geo/
 if [ ! -d ${SMFR_DATADIR}/geonames_index ] || [ ${command} == "update_index" ]; then
     # Download geonames indices for geocoding
     cd ${SMFR_DATADIR}
     wget https://s3.amazonaws.com/ahalterman-geo/geonames_index.tar.gz
     tar xzf geonames_index.tar.gz
     rm geonames_index.tar.gz
-
-#    chown -R systemd-resolve:systemd-timesync geonames_index
     cd -
 fi
 
+# build base image
 docker build --build-arg http_proxy=${http_proxy} --build-arg https_proxy=${http_proxy} -t smfr_base:${current_branch} base_docker/.
 docker tag smfr_base:${current_branch} efas/smfr_base:${current_branch}
 
+# push base image
 if [ -n "${DOCKER_ID_USER}" ] && [ ${command} == "push" ]; then
     docker push efas/smfr_base:${current_branch}
 fi
 
 
+# building with docker-compose
 python3 compose4build.py ${current_branch}
-docker-compose build
+
+if [ -n "`echo ${SERVICES} | xargs -n1 echo | grep ${command}`" ]; then
+    echo  ++++++++++++++++++++ Building ${command} service +++++++++++++++++++++++++++++++
+    docker-compose build ${command}
+else
+    echo Building all services
+    docker-compose build
+fi
+
+# push images
 
 if [ -n "${DOCKER_ID_USER}" ] && [ ${command} == "push" ]; then
     docker tag efas/persister:${current_branch} efas/persister:${current_branch}

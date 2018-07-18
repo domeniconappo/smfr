@@ -1,6 +1,7 @@
 import logging
 
 import ujson as json
+
 from flask import render_template, redirect, request
 
 from smfrcore.client.api_client import ApiLocalClient, SMFRRestException
@@ -29,8 +30,8 @@ def admin():
 @app.route('/fetch_efas', methods=('GET', 'POST'))
 def fetch_efas():
     res = {}
-    if request.method == "POST":
-        selected_events = request.form.getlist("events")
+    if request.method == 'POST':
+        selected_events = request.form.getlist('events')
         selected_events = [json.loads(e.replace('\'', '"')) for e in selected_events]
         res = client.add_ondemand_collections(selected_events)
         add_message(res, category=MessageClass.SUCCESS)

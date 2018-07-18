@@ -117,7 +117,7 @@ class Tweet(cqldb.Model):
         Tweet.generate_prepared_statements()
 
     def __str__(self):
-        return '\nTweet\n{o.nuts3} - {o.nuts3source}\n' \
+        return '\nTweet\n{o.nuts2} - {o.nuts2source}\n' \
                '{o.created_at} - {o.lang}: {o.full_text:.80}' \
                '\n{o.geo}\n{o.annotations}'.format(o=self)
 
@@ -167,7 +167,7 @@ class Tweet(cqldb.Model):
 
         :param collection_id:
         :param ttype:
-        :param lang:
+        :param lang: two chars lang code (e.g. en)
         :param out_format: can be 'obj', 'json' or 'dict'
         :return: smfrcore.models.cassandramodels.Tweet object, dictionary or JSON encoded
         """
@@ -175,7 +175,8 @@ class Tweet(cqldb.Model):
             raise ValueError('out_format is not valid')
         if not hasattr(cls, 'stmt'):
             cls.generate_prepared_statements()
-        results = cls.session.execute(cls.stmt, parameters=[collection_id, ttype])
+        lang = lang.lower() if lang else None
+        results = cls.session.execute(cls.stmt, parameters=(collection_id, ttype))
         for row in results:
             if lang and row.get('lang') != lang:
                 continue
@@ -187,7 +188,8 @@ class Tweet(cqldb.Model):
         Generate prepared SQL statements for existing tables
         """
         cls.samples_stmt = cls.session.prepare(
-            "SELECT * FROM tweet WHERE collectionid=? AND ttype=? ORDER BY tweetid DESC LIMIT ?")
+            "SELECT * FROM tweet WHERE collectionid=? AND ttype=? ORDER BY tweetid DESC LIMIT ?"
+        )
         cls.stmt = cls.session.prepare("SELECT * FROM tweet WHERE collectionid=? AND ttype=? ORDER BY tweetid DESC")
         cls.stmt_with_lang = cls.session.prepare("SELECT * FROM tweet WHERE collectionid=? AND ttype=? AND lang=?")
 
@@ -212,8 +214,8 @@ class Tweet(cqldb.Model):
             'Type': tweet_dict['ttype'],
             'Lang': tweet_dict['lang'] or '-',
             'Annotations': tweet_obj.pretty_annotations,
-            'LatLon': '<a href="https://www.openstreetmap.org/#{}/{}" target="_blank">{}</a>'.format(
-                tweet_obj.latlong[0], tweet_obj.latlong[1], tweet_obj.latlong
+            'LatLon': '<a href="https://www.openstreetmap.org/#map=13/{}/{}" target="_blank">lat: {}, lon: {}</a>'.format(
+                tweet_obj.latlong[0], tweet_obj.latlong[1], tweet_obj.latlong[0], tweet_obj.latlong[1]
             ) if tweet_obj.latlong else '',
             'Collected at': tweet_dict['created_at'] or '',
             'Tweeted at': tweet_dict['tweet']['created_at'] or ''

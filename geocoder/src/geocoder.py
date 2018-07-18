@@ -1,5 +1,6 @@
 import logging
 import os
+import socket
 import sys
 import threading
 import time
@@ -32,6 +33,11 @@ class Nuts2Finder:
     # path = os.path.join(config_dir, geojson_name)
 
     @classmethod
+    def _is_in_poly(cls, point, geo):
+        poly = Polygon(geo)
+        return point.within(poly)
+
+    @classmethod
     def find_nuts2(cls, lat, lon):
         """
         Check if a point (lat, lon) is in a NUTS2 region and returns its id. None otherwise.
@@ -42,38 +48,22 @@ class Nuts2Finder:
         :return: Nuts2 object
 
         """
-        cls.logger.debug('Inside find_nuts2')
         point = Point(float(lon), float(lat))
         nuts2_candidates = Nuts2.get_nuts2(lat, lon)
-        cls.logger.debug('Returned %d nuts2 candidates', len(nuts2_candidates))
+        cls.logger.debug('Returned %d nuts2 geometries to check', len(nuts2_candidates))
 
         for nuts2 in nuts2_candidates:
-            cls.logger.debug('type nuts2 %s', str(type(nuts2)))
+            geometry = nuts2.geometry[0]
             try:
-                for geo in nuts2.geometry:
-                    cls.logger.debug('type geo in geometry %s', str(type(geo)))
-                    cls.logger.debug(geo)
-                    if isinstance(geo[0], (list, tuple)):
-                        cls.logger.debug('type geo[0] %s', str(type(geo[0])))
-                        poly = Polygon(geo)
-                        if point.within(poly):
-                            cls.logger.debug('Returning nuts from find_nuts2')
-                            return nuts2
-                    else:
-                        for ggeo in geo:
-                            cls.logger.debug('type ggeo %s', str(type(ggeo)))
-                            cls.logger.debug(ggeo)
-                            poly = Polygon(ggeo)
-                            if point.within(poly):
-                                cls.logger.debug('Returning nuts from find_nuts2')
-                                return nuts2
-            except (KeyError, IndexError, TypeError) as e:
-                cls.logger.error('An error occured %s %s', type(e), str(e))
-                traceback.print_exc()
-                return None
-            except Exception as e:
-                cls.logger.error('An error occured %s %s', type(e), str(e))
-                return None
+                if cls._is_in_poly(point, geometry):
+                    return nuts2
+            except ValueError:
+                for subgeometry in geometry:
+                    if cls._is_in_poly(point, subgeometry):
+                        return nuts2
+
+        cls.logger.debug('No NUTS2 polygons is containing the point %s', str(point))
+        return None
 
 
 class Geocoder:
@@ -92,7 +82,7 @@ class Geocoder:
     flask_app = create_app()
 
     # FIXME duplicated code (same as Annotator)
-    # Need a class in shared_lib where to put common code
+    # TODO Need a class in shared_lib where to put common code for microservices like this
     kafkaup = False
     retries = 5
     while (not kafkaup) and retries >= 0:
@@ -164,9 +154,21 @@ class Geocoder:
         """
         # try to geoparse
         latlong_list = []
-        res = tagger.geoparse(tweet.full_text)
+        res = []
+        retries = 0
+        es_up = False
+        while not es_up and retries <= 10:
+            try:
+                res = tagger.geoparse(tweet.full_text)
+            except socket.timeout:
+                cls.logger.warning('ES not responding...throttling a bit')
+                time.sleep(3)
+                retries += 1
+            else:
+                es_up = True
+
         for result in res:
-            if result.get('country_conf', 0) < 0.5 or 'lat' not in result.get('geo', {}):
+            if result.get('country_conf', 0) < 0.4 or 'lat' not in result.get('geo', {}):
                 continue
             latlong_list.append((float(result['geo']['lat']), float(result['geo']['lon'])))
         return latlong_list
@@ -212,9 +214,7 @@ class Geocoder:
 
         with cls.flask_app.app_context():
             no_results = (None, None, None)
-            cls.logger.debug('Calling geoparse_tweet %s', str(tweet.tweetid))
             mentions = cls.geoparse_tweet(tweet, tagger)
-            cls.logger.debug('Calling get_coordinates_from_tweet %s', str(tweet.tweetid))
             tweet_coords = cls.get_coordinates_from_tweet(tweet)
 
             if not mentions:
@@ -299,11 +299,8 @@ class Geocoder:
                 #     continue
 
                 t.ttype = 'geotagged'
-                cls.logger.debug('Calling find_nuts_heuristic: %s', str(t.tweetid))
                 nutsitem, nuts2_source, latlong = cls.find_nuts_heuristic(t, tagger)
-                cls.logger.debug('Finished find_nuts_heuristic: %s', str(t.tweetid))
                 if not latlong:
-                    cls.logger.debug('Not latlong found for %s', str(t.tweetid))
                     continue
 
                 t.latlong = latlong

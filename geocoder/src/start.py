@@ -4,8 +4,6 @@ import logging
 
 from flask_restful import Resource, Api, fields, marshal_with, marshal_with_field
 
-
-
 from geocoder import Geocoder
 from utils import create_app
 

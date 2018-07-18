@@ -363,9 +363,9 @@ definitions:
       runtime:
         type: string
         format: date-time
-      nuts3:
+      nuts2:
         type: string
-      nuts3source:
+      nuts2source:
         type: string
       status:
         type: string
@@ -391,9 +391,9 @@ definitions:
       runtime:
         type: string
         format: date-time
-      nuts3:
+      nuts2:
         type: string
-      nuts3source:
+      nuts2source:
         type: string
 
   CollectorResponse:

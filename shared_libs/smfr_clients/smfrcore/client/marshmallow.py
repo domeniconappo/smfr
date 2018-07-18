@@ -23,8 +23,8 @@ class Collection(BaseSchema):
     locations = fields.List(fields.String())
     languages = fields.List(fields.String())
     runtime = DateTime()
-    nuts3 = fields.String()
-    nuts3source = fields.String()
+    nuts2 = fields.String()
+    nuts2source = fields.String()
     status = fields.String(validate=[OneOf(choices=['active', 'inactive'], labels=[])])
     started_at = DateTime()
     stopped_at = DateTime()
@@ -35,8 +35,8 @@ class CollectorPayload(BaseSchema):
     trigger = fields.String(required=True, validate=[OneOf(choices=['background', 'on-demand', 'manual'], labels=[])])
     forecast_id = fields.String()
     runtime = DateTime()
-    nuts3 = fields.String()
-    nuts3source = fields.String()
+    nuts2 = fields.String()
+    nuts2source = fields.String()
 
 
 class CollectorResponse(BaseSchema):

@@ -74,7 +74,7 @@ class Collector:
         return ((hashed_id, running_coll) for hashed_id, running_coll in cls._running_instances.items() if running_coll)
 
     def hashedid(self):
-        return hash('{o.config}{o.nuts3source}{o.nuts3}{o.runtime}{o.ctype}{o.trigger}{o.forecast_id}{o.kwfile}{o.locfile}'.format(o=self))
+        return hash('{o.config}{o.nuts2source}{o.nuts2}{o.runtime}{o.ctype}{o.trigger}{o.forecast_id}{o.kwfile}{o.locfile}'.format(o=self))
 
     def __init__(self, config_file,
                  keywords_file=None, locations_file=None,

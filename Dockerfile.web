@@ -1,4 +1,4 @@
-FROM python:3.6
+FROM python:3.5-stretch
 MAINTAINER Domenico Nappo <domenico.nappo@ext.ec.europa.eu>
 
 ARG http_proxy
@@ -8,22 +8,26 @@ ENV LANG=C.UTF-8
 
 RUN apt-get update
 RUN apt-get -y dist-upgrade
-RUN apt-get -yq install net-tools nginx supervisor uwsgi
+RUN apt-get -y install apt-utils
+RUN apt-get -y install net-tools nginx supervisor
+
+# build uwsgi and python plugin
+RUN mkdir -p /uwsgi && cd /uwsgi && wget https://projects.unbit.it/downloads/uwsgi-2.0.15.tar.gz && tar xzvf uwsgi-2.0.15.tar.gz
+RUN cd /uwsgi/uwsgi-2.0.15/ && python3.5 uwsgiconfig.py --build core && python3.5 uwsgiconfig.py --plugin plugins/python core && UWSGI_PROFILE=core python3.5 setup.py install
+RUN mkdir -p /usr/lib/uwsgi && cp /uwsgi/uwsgi-2.0.15/python_plugin.so /usr/lib/uwsgi/
+# fix ImportError: No module named '_sysconfigdata_m'
+RUN ln -fs /usr/lib/python3.5/plat-x86_64-linux-gnu/_sysconfigdata_m.py /usr/lib/python3.5/
 
 
 COPY ./web/requirements.txt /requirements.txt
-RUN pip install -U pip && pip install -r /requirements.txt
+RUN pip3 install -U pip && pip3 install -r /requirements.txt
 
 RUN apt-get autoremove -y && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-RUN mkdir -p /smfr_clients
+RUN mkdir -p /smfr_clients && mkdir -p /smfr_utils && mkdir -p /app
 COPY ./shared_libs/smfr_clients/. /smfr_clients/
-RUN pip3.6 install /smfr_clients/
-RUN mkdir -p /smfr_utils
 COPY ./shared_libs/smfr_utils/. /smfr_utils/
-RUN pip3.6 install /smfr_utils/
-
-RUN rm -R /root/.cache
+RUN pip3 install /smfr_clients/ && pip3 install /smfr_utils/ && rm -R /root/.cache
 
 EXPOSE 8888
 
@@ -36,8 +40,5 @@ COPY ./web/conf/site.conf /etc/nginx/conf.d/site.conf
 # Copy the base uWSGI ini file to enable default dynamic uwsgi process number
 COPY ./web/conf/uwsgi.ini /etc/uwsgi/uwsgi.ini
 
-ENV INSTALL_PATH /app
-RUN mkdir -p $INSTALL_PATH
-COPY ./web/src/. $INSTALL_PATH/
-
+COPY ./web/src/. /app/
 CMD ["/usr/bin/supervisord"]

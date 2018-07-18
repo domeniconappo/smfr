@@ -3,7 +3,6 @@ Module for API client to the SMFR Rest Server
 """
 
 import logging
-from json import JSONDecodeError
 
 import requests
 from werkzeug.datastructures import FileStorage
@@ -119,11 +118,12 @@ class ApiLocalClient:
             raise e
         except ConnectionError as e:
             self.logger.error('SMFR REST API server is not listening...%s', str(e))
-            raise SMFRRestException({'status': 500, 'title': 'SMFR Rest Server is not listening', 'description': url})
+            raise SMFRRestException({'status': 500, 'title': 'SMFR Rest Server is not listening',
+                                     'description': url}, status_code=500)
         else:
             try:
                 return res.json()
-            except JSONDecodeError:
+            except ValueError:
                 return {}
 
     def list_collections(self):

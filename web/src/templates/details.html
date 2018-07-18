@@ -54,12 +54,12 @@
                                            <td colspan="2">{{ data.collection.runtime|datetimeformat('%Y-%m-%d %H:%M:%S') }}</td>
                                        </tr>
                                        {% endif %}
-                                       {% if data.collection.nuts3 %}
+                                       {% if data.collection.nuts2 %}
                                        <tr>
                                            <th>NUTS3</th>
-                                           <td>{{ data.collection.nuts3 }}</td>
+                                           <td>{{ data.collection.nuts2 }}</td>
                                            <th>NUTS3 Source</th>
-                                           <td>{{ data.collection.nuts3source or '-' }}</td>
+                                           <td>{{ data.collection.nuts2source or '-' }}</td>
                                        </tr>
                                        {% endif %}
 

@@ -25,23 +25,15 @@ RUN mkdir -p ${download_folder}
 
 WORKDIR $INSTALL_PATH
 
-RUN mkdir -p /smfr_models
-COPY ./shared_libs/smfr_models/. /smfr_models/
-RUN pip3.6 install /smfr_models/
-RUN mkdir -p /smfr_utils
-COPY ./shared_libs/smfr_utils/. /smfr_utils/
-RUN pip3.6 install /smfr_utils/
-RUN mkdir -p /smfr_clients
+RUN mkdir -p /smfr_clients && mkdir -p /smfr_utils && mkdir -p /smfr_models && mkdir -p /smfr/uploads/
 COPY ./shared_libs/smfr_clients/. /smfr_clients/
-RUN pip3.6 install /smfr_clients/
-
-RUN mkdir -p /smfr/uploads/
+COPY ./shared_libs/smfr_utils/. /smfr_utils/
+COPY ./shared_libs/smfr_models/. /smfr_models/
+RUN pip3 install /smfr_clients/ && pip3 install /smfr_utils/ && pip3.6 install /smfr_models/ && rm -R /root/.cache
 
 COPY ./rest_server/src/. $INSTALL_PATH/
 COPY ./shared_libs/scripts/wait_for_it.sh /scripts/
 COPY ./rest_server/src/config/. /configuration/
-
-RUN rm -R /root/.cache
 
 EXPOSE 5555
 RUN ["chmod", "a+x", "/scripts/wait_for_it.sh"]

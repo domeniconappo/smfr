@@ -272,6 +272,7 @@ services:
       - annotator
       - geocoder
       - persister
+#      - aggregator
     deploy:
       placement:
         constraints: [ node.labels.large == true ]
@@ -299,6 +300,7 @@ services:
       - '8888:8888'
     depends_on:
       - restserver
+      - myadmin
     deploy:
       placement:
         constraints: [ node.labels.small == true ]

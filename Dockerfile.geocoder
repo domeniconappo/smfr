@@ -5,7 +5,7 @@ MAINTAINER Domenico Nappo <domenico.nappo@ext.ec.europa.eu>
 ENV INSTALL_PATH /geocoder
 ENV LANG=C.UTF-8
 
-RUN mkdir -p $INSTALL_PATH && mkdir -p /scripts && mkdir -p /config
+RUN mkdir -p $INSTALL_PATH && mkdir -p /scripts && mkdir -p /config && mkdir -p /smfr_models && mkdir -p /smfr_utils
 
 ARG http_proxy
 ARG https_proxy
@@ -17,15 +17,10 @@ RUN pip3.6 install -r requirements.txt
 
 COPY ./geocoder/src/. ${INSTALL_PATH}
 COPY ./shared_libs/scripts/wait_for_it.sh /scripts/
-
-RUN mkdir -p /smfr_models
-COPY ./shared_libs/smfr_models/. /smfr_models/
-RUN pip3.6 install /smfr_models/
-RUN mkdir -p /smfr_utils
 COPY ./shared_libs/smfr_utils/. /smfr_utils/
-RUN pip3.6 install /smfr_utils/
+COPY ./shared_libs/smfr_models/. /smfr_models/
 
-RUN rm -R /root/.cache
+RUN pip3.6 install /smfr_models/ && pip3.6 install /smfr_utils/ && rm -R /root/.cache
 
 EXPOSE 5557
 RUN ["chmod", "a+x", "/scripts/wait_for_it.sh"]
