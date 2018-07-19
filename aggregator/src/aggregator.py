@@ -1,6 +1,7 @@
-import functools
 from collections import Counter
+import functools
 from datetime import timedelta, datetime
+import logging
 import multiprocessing
 
 from sqlalchemy import or_
@@ -8,6 +9,11 @@ from sqlalchemy import or_
 from smfrcore.models.sqlmodels import TwitterCollection, Aggregation, create_app
 from smfrcore.models.cassandramodels import Tweet
 
+LOGGER_FORMAT = '%(asctime)s: Aggregator - <%(name)s>[%(levelname)s] (%(threadName)-10s) %(message)s'
+DATE_FORMAT = '%Y%m%d %H:%M:%S'
+
+logging.basicConfig(format=LOGGER_FORMAT, datefmt=DATE_FORMAT)
+logger = logging.getLogger(__name__)
 
 flask_app = create_app()
 
@@ -15,9 +21,9 @@ flask_app = create_app()
 def with_logging(func):
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
-        print('LOG: Running job "%s"(args="%s", kwargs="%s")' % (func.__name__, str(args), str(kwargs)))
+        logger.info('Running job "%s"(args="%s", kwargs="%s")' % (func.__name__, str(args), str(kwargs)))
         result = func(*args, **kwargs)
-        print('LOG: Job "%s" completed' % func.__name__)
+        logger.info('Job "%s" completed' % func.__name__)
         return result
     return wrapper
 
@@ -26,10 +32,10 @@ def with_logging(func):
 def aggregate(everything=False, background=False):
     with flask_app.app_context():
         if everything:
-            print('LOG: Aggregate everything')
+            logger.debug('Aggregate everything')
             collections_to_aggregate = TwitterCollection.query.all()
         elif background:
-            print('LOG: Aggregate background collector')
+            logger.debug('Aggregate background collector')
             collections_to_aggregate = TwitterCollection.query.filter_by(trigger='background')
         else:
 
@@ -41,7 +47,7 @@ def aggregate(everything=False, background=False):
             )
         aggregations_args = []
         for coll in collections_to_aggregate:
-            print('LOG: Aggregating %s' % coll)
+            logger.debug('Aggregating %s' % coll)
             aggregation = Aggregation.query.filter_by(collection_id=coll.id).first()
             if not aggregation:
                 aggregation = Aggregation(collection_id=coll.id, values={})
@@ -54,18 +60,17 @@ def aggregate(everything=False, background=False):
 
 
 def run_single_aggregation(collection_id, last_tweetid):
-    print(collection_id)
     last_tweet = None
     counter = Counter()
-    print('LOG: START AGGREGATION FOR collection id %d' % collection_id)
+    logger.info('START AGGREGATION FOR collection id %d' % collection_id)
     collected_tweets = Tweet.get_iterator(collection_id, 'collected', last_tweetid=last_tweetid)
 
     for i, t in enumerate(collected_tweets, start=1):
-        print('%d' % i)
+        logger.debug('%d' % i)
         last_tweet = t
         counter['collected'] += 1
         if not (i % 100):
-            print('LOG: WENT TROUGH %d tweets already' % i)
+            logger.debug('WENT TROUGH %d tweets already' % i)
 
     annotated_tweets = Tweet.get_iterator(collection_id, 'annotated', last_tweetid=last_tweetid)
     for t in annotated_tweets:
@@ -79,6 +84,6 @@ def run_single_aggregation(collection_id, last_tweetid):
     aggregation = Aggregation.query.filter_by(collection_id=collection_id.id).first()
     aggregation.last_tweetid = last_tweet.tweetid if last_tweet else None
     aggregation.values = dict(counter)
-    print('LOG: Aggregated %d %s', collection_id, str(counter))
+    logger.info('Aggregated %d %s', collection_id, str(counter))
     aggregation.save()
     return 0

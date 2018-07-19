@@ -1,1 +1,1 @@
-cassandra cassandra
+user password

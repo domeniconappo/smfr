@@ -13,6 +13,7 @@ if __name__ == '__main__':
                         help='If passed, aggregate only background collections now')
     conf = parser.parse_args()
     if conf.all or conf.background:
+        # aggregation starting now
         aggregate(everything=conf.all, background=conf.background)
     else:
         schedule.every(6).hour.do(aggregate).tag('aggregator-main')

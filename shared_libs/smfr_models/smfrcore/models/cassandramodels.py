@@ -1,7 +1,7 @@
 """
 Module for CQLAlchemy models to map to Cassandra keyspaces
 """
-
+import logging
 import os
 import time
 import datetime
@@ -19,7 +19,11 @@ from flask_cqlalchemy import CQLAlchemy
 from smfrcore.utils import RUNNING_IN_DOCKER
 from smfrcore.models.sqlmodels import TwitterCollection
 
+LOGGER_FORMAT = '%(asctime)s: Cassandra Models - <%(name)s>[%(levelname)s] (%(threadName)-10s) %(message)s'
+DATE_FORMAT = '%Y%m%d %H:%M:%S'
 
+logging.basicConfig(format=LOGGER_FORMAT, datefmt=DATE_FORMAT)
+logger = logging.getLogger(__name__)
 cqldb = CQLAlchemy()
 
 _keyspace = os.environ.get('CASSANDRA_KEYSPACE', 'smfr_persistent')
@@ -41,6 +45,7 @@ def cassandra_session_factory():
     session = cluster.connect()
     session.row_factory = dict_factory
     session.execute("USE {}".format(_keyspace))
+    logger.debug('Using session %s', str(session))
     return session
 
 
@@ -176,18 +181,17 @@ class Tweet(cqldb.Model):
             raise ValueError('out_format is not valid')
         if not hasattr(cls, 'stmt'):
             cls.generate_prepared_statements()
-        print('calling session.execute')
         if last_tweetid:
-            print('calling session.execute with last tweet id')
+            logger.debug('calling session.execute with last tweet id')
             results = cls.session.execute(cls.stmt_with_last_tweetid, parameters=(collection_id, ttype, last_tweetid))
         else:
-            print('calling session.execute without last tweet id')
+            logger.debug('calling session.execute without last tweet id')
             results = cls.session.execute(cls.stmt, parameters=(collection_id, ttype))
         lang = lang.lower() if lang else None
         for row in results:
             if lang and row.get('lang') != lang:
                 continue
-            print('yielding result')
+            logger.debug('yielding result...')
             yield getattr(cls, 'to_{}'.format(out_format))(row)
 
     @classmethod
@@ -195,6 +199,7 @@ class Tweet(cqldb.Model):
         """
         Generate prepared SQL statements for existing tables
         """
+        logger.debug('Generating prepared statements')
         cls.samples_stmt = cls.session.prepare(
             "SELECT * FROM tweet WHERE collectionid=? AND ttype=? ORDER BY tweetid DESC LIMIT ?"
         )

@@ -1,5 +1,11 @@
 #!/usr/bin/env bash
 service=${1:web}
-export current_branch=`git rev-parse --symbolic-full-name --abbrev-ref HEAD`
-python3 compose4build.py ${current_branch}
+current_branch=`git rev-parse --symbolic-full-name --abbrev-ref HEAD`
+if [ ${current_branch} == "master" ]; then
+    image_tag='latest'
+else
+    image_tag=`cat VERSION | grep "VERSION" | cut -d'=' -f2`
+fi
+export image_tag
+python3 compose4build.py ${image_tag}
 docker-compose up -d ${service}

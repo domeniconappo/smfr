@@ -6,7 +6,7 @@ services:
     build:
       context: ./
       dockerfile: geonames/Dockerfile
-    image: efas/geonames
+    image: efas/geonames:${image_tag}
     restart: always
     working_dir: /geonames
     container_name: geonames
@@ -26,7 +26,7 @@ services:
     build:
       context: ./
       dockerfile: cassandrasmfr/Dockerfile
-    image: efas/cassandrasmfr
+    image: efas/cassandrasmfr:${image_tag}
     restart: always
     # From host, connect to DB with `docker exec -it cassandrasmfr cqlsh`
     volumes:
@@ -73,7 +73,7 @@ services:
     build:
       context: ./
       dockerfile: mysql/Dockerfile
-    image: efas/mysql:latest
+    image: efas/mysql:${image_tag}
     restart: always
     container_name: mysql
     # From host, connect to DB with `mysql -h 127.0.0.1 -p` (if you have mysql client installed)
@@ -110,7 +110,7 @@ services:
   persister:
     restart: always
     container_name: persister
-    image: efas/persister:${current_branch}
+    image: efas/persister:${image_tag}
     build:
       context: ./
       args:
@@ -142,7 +142,7 @@ services:
   annotator:
     restart: always
     container_name: annotator
-    image: efas/annotator:${current_branch}
+    image: efas/annotator:${image_tag}
     build:
       context: ./
       dockerfile: Dockerfile.annotator.ready
@@ -180,7 +180,7 @@ services:
   geocoder:
     restart: always
     container_name: geocoder
-    image: efas/geocoder:${current_branch}
+    image: efas/geocoder:${image_tag}
     build:
       context: ./
       dockerfile: Dockerfile.geocoder.ready
@@ -221,7 +221,7 @@ services:
   aggregator:
     restart: always
     container_name: aggregator
-    image: efas/aggregator:${current_branch}
+    image: efas/aggregator:${image_tag}
     build:
       context: ./
       dockerfile: Dockerfile.aggregator.ready
@@ -256,7 +256,7 @@ services:
   restserver:
     restart: always
     container_name: restserver
-    image: efas/restserver:${current_branch}
+    image: efas/restserver:${image_tag}
     build:
       context: ./
       dockerfile: Dockerfile.restserver.ready
@@ -315,7 +315,7 @@ services:
   web:
     restart: always
     container_name: web
-    image: efas/web:${current_branch}
+    image: efas/web:${image_tag}
     build:
       context: ./
       dockerfile: Dockerfile.web.ready

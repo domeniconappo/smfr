@@ -12,9 +12,11 @@ function getProperty {
 
 current_branch=`git rev-parse --symbolic-full-name --abbrev-ref HEAD`
 if [ ${current_branch} == "master" ]; then
-    current_branch='latest'
+    image_tag='latest'
+else
+    image_tag=`cat VERSION | grep "VERSION" | cut -d'=' -f2`
 fi
-export current_branch
+export image_tag
 
 SMFR_DATADIR=$(getProperty "SMFR_DATADIR")
 GIT_REPO_MODELS=$(getProperty "GIT_REPO_MODELS")
@@ -35,42 +37,42 @@ if [ ! -d ${SMFR_DATADIR}/geonames_index ] || [ ${command} == "update_index" ]; 
 fi
 
 # build base image
-docker build --build-arg http_proxy=${http_proxy} --build-arg https_proxy=${http_proxy} -t smfr_base:${current_branch} base_docker/.
-docker tag smfr_base:${current_branch} efas/smfr_base:${current_branch}
+docker build --build-arg http_proxy=${http_proxy} --build-arg https_proxy=${http_proxy} -t smfr_base:${image_tag} base_docker/.
+docker tag smfr_base:${image_tag} efas/smfr_base:${image_tag}
 
 # push base image
 if [ -n "${DOCKER_ID_USER}" ] && [ ${command} == "push" ]; then
-    docker push efas/smfr_base:${current_branch}
+    docker push efas/smfr_base:${image_tag}
 fi
 
 
 # building with docker-compose
-python3 compose4build.py ${current_branch}
+python3 compose4build.py ${image_tag}
 
 if [ -n "`echo ${SERVICES} | xargs -n1 echo | grep ${command}`" ]; then
     echo  ++++++++++++++++++++ Building ${command} service +++++++++++++++++++++++++++++++
     docker-compose build ${command}
 else
-    echo Building all services
+    echo !!! Building all services !!!
     docker-compose build
 fi
 
 # push images
 
 if [ -n "${DOCKER_ID_USER}" ] && [ ${command} == "push" ]; then
-    docker tag efas/persister:${current_branch} efas/persister:${current_branch}
-    docker tag efas/annotator:${current_branch} efas/annotator:${current_branch}
-    docker tag efas/geocoder:${current_branch} efas/geocoder:${current_branch}
-    docker tag efas/restserver:${current_branch} efas/restserver:${current_branch}
-    docker tag efas/web:${current_branch} efas/web:${current_branch}
-    docker tag efas/mysql:latest efas/mysql:latest
-    docker tag efas/geonames:latest efas/geonames:latest
+    docker tag efas/persister:${image_tag} efas/persister:${image_tag}
+    docker tag efas/annotator:${image_tag} efas/annotator:${image_tag}
+    docker tag efas/geocoder:${image_tag} efas/geocoder:${image_tag}
+    docker tag efas/restserver:${image_tag} efas/restserver:${image_tag}
+    docker tag efas/web:${image_tag} efas/web:${image_tag}
+    docker tag efas/mysql:${image_tag} efas/mysql:${image_tag}
+    docker tag efas/geonames:${image_tag} efas/geonames:${image_tag}
 
-    docker push efas/persister:${current_branch}
-    docker push efas/annotator:${current_branch}
-    docker push efas/geocoder:${current_branch}
-    docker push efas/restserver:${current_branch}
-    docker push efas/web:${current_branch}
-    docker push efas/mysql:latest
-    docker push efas/geonames:latest
+    docker push efas/persister:${image_tag}
+    docker push efas/annotator:${image_tag}
+    docker push efas/geocoder:${image_tag}
+    docker push efas/restserver:${image_tag}
+    docker push efas/web:${image_tag}
+    docker push efas/mysql:${image_tag}
+    docker push efas/geonames:${image_tag}
 fi

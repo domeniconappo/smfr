@@ -4,8 +4,10 @@ import logging
 
 from flask_restful import Resource, Api, fields, marshal_with, marshal_with_field
 
+from smfrcore.models.sqlmodels import create_app
+
 from geocoder import Geocoder
-from utils import create_app
+
 
 app = create_app()
 api = Api(app)

@@ -1,5 +1,11 @@
 #!/usr/bin/env bash
-export current_branch=`git rev-parse --symbolic-full-name --abbrev-ref HEAD`
+current_branch=`git rev-parse --symbolic-full-name --abbrev-ref HEAD`
+if [ ${current_branch} == "master" ]; then
+    image_tag='latest'
+else
+    image_tag=`cat VERSION | grep "VERSION" | cut -d'=' -f2`
+fi
+export image_tag
 docker-compose config > docker-compose-parsed.yaml
 
 # cleaning volumes from docker compose configuration
@@ -7,10 +13,10 @@ python3 compose4deploy.py -i docker-compose-parsed.yaml -o docker-compose-4deplo
 docker stack deploy -c ./docker-compose-4deploy.yaml SMFR
 
 # forcing updates of images
-docker service update SMFR_persister --detach=false --image efas/persister:${current_branch}
-docker service update SMFR_geonames --detach=false --image efas/geonames:latest
-docker service update SMFR_mysql --detach=false --image efas/mysql:latest
-docker service update SMFR_annotator --detach=false --image efas/annotator:${current_branch}
-docker service update SMFR_geocoder --detach=false --image efas/geocoder:${current_branch}
-docker service update SMFR_restserver --detach=false --image efas/restserver:${current_branch}
-docker service update SMFR_web --detach=false --image efas/web:${current_branch}
+docker service update SMFR_persister --detach=false --image efas/persister:${image_tag}
+docker service update SMFR_geonames --detach=false --image efas/geonames:${image_tag}
+docker service update SMFR_mysql --detach=false --image efas/mysql:${image_tag}
+docker service update SMFR_annotator --detach=false --image efas/annotator:${image_tag}
+docker service update SMFR_geocoder --detach=false --image efas/geocoder:${image_tag}
+docker service update SMFR_restserver --detach=false --image efas/restserver:${image_tag}
+docker service update SMFR_web --detach=false --image efas/web:${image_tag}
