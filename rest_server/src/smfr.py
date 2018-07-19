@@ -76,15 +76,6 @@ def stop_all_collectors():
 
 
 @app.cli.command()
-def start_all_collectors():
-    """Stop a given collector by its ID"""
-    client = ApiLocalClient()
-    click.echo('Starting all _running collectors')
-    res = client.start_all()
-    click.echo(res)
-
-
-@app.cli.command()
 @click.option('--collector', '-c', required=True)
 def start_collector(collector):
     """Start a given collector by its ID"""
@@ -126,6 +117,7 @@ def empty_dbs():
 @click.option('--collectionid', '-c', required=True)
 @click.option('--ttype', '-t', required=True)
 def set_language(collectionid, ttype):
+    """Set language for collected tweets"""
     from daemons.utils import safe_langdetect, tweet_normalization_aggressive
     from smfrcore.models.cassandramodels import Tweet
 
@@ -148,6 +140,7 @@ def set_language(collectionid, ttype):
 @click.option('--email', '-e', required=True)
 @click.option('--password', '-p', required=True)
 def add_admin(name, email, password):
+    """Add an admin user to DB"""
     from smfrcore.models.sqlmodels import User
     user = User.create(name=name, email=email, password=password, role='admin')
     click.echo('User created {}'.format(user))

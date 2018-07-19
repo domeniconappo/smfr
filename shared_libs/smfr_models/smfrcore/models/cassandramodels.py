@@ -162,24 +162,32 @@ class Tweet(cqldb.Model):
         return row
 
     @classmethod
-    def get_iterator(cls, collection_id, ttype, lang=None, out_format='obj'):
+    def get_iterator(cls, collection_id, ttype, lang=None, out_format='obj', last_tweetid=None):
         """
 
         :param collection_id:
         :param ttype:
         :param lang: two chars lang code (e.g. en)
         :param out_format: can be 'obj', 'json' or 'dict'
+        :param last_tweetid:
         :return: smfrcore.models.cassandramodels.Tweet object, dictionary or JSON encoded
         """
         if out_format not in ('obj', 'json', 'dict'):
             raise ValueError('out_format is not valid')
         if not hasattr(cls, 'stmt'):
             cls.generate_prepared_statements()
+        print('calling session.execute')
+        if last_tweetid:
+            print('calling session.execute with last tweet id')
+            results = cls.session.execute(cls.stmt_with_last_tweetid, parameters=(collection_id, ttype, last_tweetid))
+        else:
+            print('calling session.execute without last tweet id')
+            results = cls.session.execute(cls.stmt, parameters=(collection_id, ttype))
         lang = lang.lower() if lang else None
-        results = cls.session.execute(cls.stmt, parameters=(collection_id, ttype))
         for row in results:
             if lang and row.get('lang') != lang:
                 continue
+            print('yielding result')
             yield getattr(cls, 'to_{}'.format(out_format))(row)
 
     @classmethod
@@ -192,6 +200,9 @@ class Tweet(cqldb.Model):
         )
         cls.stmt = cls.session.prepare("SELECT * FROM tweet WHERE collectionid=? AND ttype=? ORDER BY tweetid DESC")
         cls.stmt_with_lang = cls.session.prepare("SELECT * FROM tweet WHERE collectionid=? AND ttype=? AND lang=?")
+        cls.stmt_with_last_tweetid = cls.session.prepare(
+            "SELECT * FROM tweet WHERE collectionid=? AND ttype=? AND tweetid > ? ORDER BY tweetid ASC"
+        )
 
     @classmethod
     def make_table_object(cls, numrow, tweet_dict):

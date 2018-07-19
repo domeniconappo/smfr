@@ -2,7 +2,7 @@ import sys
 
 
 def do(image_tag):
-    for component in ('annotator', 'geocoder', 'persister', 'restserver', 'web'):
+    for component in ('annotator', 'geocoder', 'persister', 'restserver', 'web', 'aggregator',):
         docker_in = 'Dockerfile.{}'.format(component)
         docker_out = 'Dockerfile.{}.ready'.format(component)
         with open(docker_out, 'w') as f, open(docker_in) as i:

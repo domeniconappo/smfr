@@ -171,7 +171,7 @@ class RestServerConfiguration(metaclass=Singleton):
                         self.producer = KafkaProducer(bootstrap_servers=self.kafka_bootstrap_server, compression_type='gzip')
                 except (NoHostAvailable, OperationalError, NoBrokersAvailable, socket.gaierror):
                     self.logger.error('Missing link with a db server.')
-                    self.logger.warning('Cassandra/Mysql/Kafka were not up...wait 5 seconds before retrying')
+                    self.logger.warning('Cassandra/Mysql/Kafka/ElasticSearch were not up...wait 5 seconds before retrying')
                     sleep(5)
                     retries += 1
                 else:

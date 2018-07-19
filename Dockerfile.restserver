@@ -29,7 +29,7 @@ RUN mkdir -p /smfr_clients && mkdir -p /smfr_utils && mkdir -p /smfr_models && m
 COPY ./shared_libs/smfr_clients/. /smfr_clients/
 COPY ./shared_libs/smfr_utils/. /smfr_utils/
 COPY ./shared_libs/smfr_models/. /smfr_models/
-RUN pip3 install /smfr_clients/ && pip3 install /smfr_utils/ && pip3.6 install /smfr_models/ && rm -R /root/.cache
+RUN pip3.6 install /smfr_clients/ && pip3 install /smfr_utils/ && pip3.6 install /smfr_models/ && rm -R /root/.cache
 
 COPY ./rest_server/src/. $INSTALL_PATH/
 COPY ./shared_libs/scripts/wait_for_it.sh /scripts/

@@ -20,7 +20,7 @@ services:
       - '${SMFR_DATADIR}/geonames_index:/usr/share/elasticsearch/data:rw'
     deploy:
       placement:
-        constraints: [node.labels.large == true ]
+        constraints: [ node.labels.large == true ]
 
   cassandrasmfr:
     build:
@@ -50,7 +50,7 @@ services:
       CASSANDRA_RPC_ADDRESS: 0.0.0.0
     deploy:
       placement:
-        constraints: [node.labels.large == true ]
+        constraints: [ node.labels.large == true ]
 
   kafka:
     restart: always
@@ -67,7 +67,7 @@ services:
       - '2181:2181'
     deploy:
       placement:
-        constraints: [node.labels.medium == true ]
+        constraints: [ node.labels.medium == true ]
 
   mysql:
     build:
@@ -88,7 +88,7 @@ services:
       MYSQL_ALLOW_EMPTY_PASSWORD: 'yes'
     deploy:
       placement:
-        constraints: [node.labels.large == true ]
+        constraints: [ node.labels.large == true ]
 
   myadmin:
     image: phpmyadmin/phpmyadmin:latest
@@ -103,7 +103,7 @@ services:
       PMA_ARBITRARY: 1
     deploy:
       placement:
-        constraints: [node.labels.small == true ]
+        constraints: [ node.labels.small == true ]
     depends_on:
       - mysql
 
@@ -137,7 +137,7 @@ services:
       - cassandrasmfr
     deploy:
       placement:
-        constraints: [node.labels.medium == true ]
+        constraints: [ node.labels.medium == true ]
 
   annotator:
     restart: always
@@ -175,7 +175,7 @@ services:
       - persister
     deploy:
       placement:
-        constraints: [node.labels.medium == true ]
+        constraints: [ node.labels.medium == true ]
 
   geocoder:
     restart: always
@@ -216,7 +216,42 @@ services:
       - persister
     deploy:
       placement:
-        constraints: [node.labels.large == true ]
+        constraints: [ node.labels.large == true ]
+
+  aggregator:
+    restart: always
+    container_name: aggregator
+    image: efas/aggregator:${current_branch}
+    build:
+      context: ./
+      dockerfile: Dockerfile.aggregator.ready
+      args:
+        http_proxy: ${http_proxy}
+        https_proxy: ${https_proxy}
+    working_dir: /aggregator
+    volumes:
+      - './aggregator/src:/aggregator'
+    environment:
+      LOGGING_LEVEL: ${LOGGING_LEVEL}
+      PYTHONUNBUFFERED: 'true'
+      CASSANDRA_KEYSPACE: ${CASSANDRA_KEYSPACE}
+      CASSANDRA_HOST: ${CASSANDRA_HOST}
+      CASSANDRA_PORT: ${CASSANDRA_PORT}
+      CASSANDRA_USER: ${CASSANDRA_USER}
+      CASSANDRA_PASSWORD: ${CASSANDRA_PASSWORD}
+      MIN_FLOOD_PROBABILITY: ${MIN_FLOOD_PROBABILITY}
+      MYSQL_HOST: mysql
+      MYSQL_DBNAME: ${MYSQL_DBNAME}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      http_proxy: ${http_proxy}
+      https_proxy: ${https_proxy}
+    depends_on:
+      - mysql
+      - cassandrasmfr
+    deploy:
+      placement:
+        constraints: [ node.labels.medium == true ]
 
   restserver:
     restart: always

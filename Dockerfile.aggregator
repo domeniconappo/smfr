@@ -14,13 +14,12 @@ COPY ./aggregator/requirements.txt ./
 RUN pip3.6 install -r requirements.txt
 
 
-COPY ./aggregator/src/. ./
 COPY ./shared_libs/scripts/wait_for_it.sh /scripts/
 COPY ./shared_libs/smfr_models/. /smfr_models/
 COPY ./shared_libs/smfr_utils/. /smfr_utils/
-RUN pip3 install /smfr_models/ && pip3 install /smfr_utils/ && rm -R /root/.cache
+RUN pip3.6 install /smfr_models/ && pip3 install /smfr_utils/ && rm -R /root/.cache
+COPY ./aggregator/src/. ./
 
-EXPOSE 5558
 RUN ["chmod", "a+x", "/scripts/wait_for_it.sh"]
 ENTRYPOINT ["/scripts/wait_for_it.sh", "cassandrasmfr:9160"]
-CMD ["--", "gunicorn", "-b", "0.0.0.0:5556", "--workers", "1", "--log-level", "warning", "--timeout", "240", "--threads", "4", "--worker-class", "gthread", "--reload", "--access-logfile", "-", "--name", "aggregator", "start:app"]
+CMD ["--", "python3.6", "start.py", "-b"]

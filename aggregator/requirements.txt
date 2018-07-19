@@ -1,1 +1,4 @@
 cassandra-driver
+mysqlclient
+sqlalchemy
+schedule

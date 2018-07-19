@@ -2,9 +2,8 @@ import logging
 import os
 import socket
 import sys
-import threading
+import threading  # TODO replace by launching a subprocess
 import time
-import traceback
 from collections import Counter
 
 from kafka import KafkaProducer
@@ -13,10 +12,9 @@ from mordecai import Geoparser
 from shapely.geometry import Point, Polygon
 
 from smfrcore.models.cassandramodels import Tweet
-from smfrcore.models.sqlmodels import Nuts2
+from smfrcore.models.sqlmodels import Nuts2, create_app
 from smfrcore.utils import RUNNING_IN_DOCKER
-
-from utils import create_app
+# from utils import create_app
 
 
 class Nuts2Finder:

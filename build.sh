@@ -10,7 +10,12 @@ function getProperty {
    echo ${PROP_VALUE}
 }
 
-export current_branch=`git rev-parse --symbolic-full-name --abbrev-ref HEAD`
+current_branch=`git rev-parse --symbolic-full-name --abbrev-ref HEAD`
+if [ ${current_branch} == "master" ]; then
+    current_branch='latest'
+fi
+export current_branch
+
 SMFR_DATADIR=$(getProperty "SMFR_DATADIR")
 GIT_REPO_MODELS=$(getProperty "GIT_REPO_MODELS")
 DOCKER_ID_USER=$(getProperty "DOCKER_ID_USER")

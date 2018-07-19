@@ -1,16 +1,33 @@
+import os
 import datetime
 
 from passlib.apps import custom_app_context as pwd_context
 
 from sqlalchemy import Column, Integer, String, TIMESTAMP, Float, ForeignKey, inspect, Index
 from sqlalchemy_utils import ChoiceType, ScalarListType, JSONType
+from flask import Flask
 
 from .base import SMFRModel, metadata
 from ..ext.database import SQLAlchemy
-
 from .utils import jwt_token, jwt_decode
 
+from smfrcore.utils import RUNNING_IN_DOCKER
+
 sqldb = SQLAlchemy(metadata=metadata, session_options={'expire_on_commit': False})
+
+
+def create_app(app_name='SMFR'):
+    _mysql_host = '127.0.0.1' if not RUNNING_IN_DOCKER else os.environ.get('MYSQL_HOST', 'mysql')
+    _mysql_db_name = os.environ.get('MYSQL_DBNAME', 'smfr')
+    _mysql_user = os.environ.get('MYSQL_USER')
+    _mysql_pass = os.environ.get('MYSQL_PASSWORD')
+    app = Flask(app_name)
+    app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://{}:{}@{}/{}?charset=utf8mb4'.format(
+        _mysql_user, _mysql_pass, _mysql_host, _mysql_db_name
+    )
+    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+    sqldb.init_app(app)
+    return app
 
 
 class User(SMFRModel):
@@ -340,7 +357,7 @@ class Nuts3(SMFRModel):
                    latitude=properties['LAT'],
                    longitude=properties['LON'],
                    names=names_by_lang,
-                   properties=additional_props,
+                   properties=additional_props
                    )
 
 
@@ -353,6 +370,23 @@ class Aggregation(SMFRModel):
 
     id = Column(Integer, primary_key=True, autoincrement=True, nullable=False)
     collection_id = Column(Integer, ForeignKey('virtual_twitter_collection.id'))
-    collection = sqldb.relationship('TwitterCollection',
-                                    backref=sqldb.backref('twitter_collection', uselist=False))
+    collection = sqldb.relationship(
+        'TwitterCollection',
+        backref=sqldb.backref('twitter_collection', uselist=False)
+    )
     values = Column(JSONType, nullable=False)
+    last_tweetid = Column(String(100), nullable=True)
+
+    def save(self):
+        # we need 'merge' method because objects can be attached to db sessions in different threads
+        attached_obj = sqldb.session.merge(self)
+        sqldb.session.add(attached_obj)
+        sqldb.session.commit()
+        self.id = attached_obj.id
+
+    def delete(self):
+        sqldb.session.delete(self)
+        sqldb.session.commit()
+
+    def __str__(self):
+        return 'Aggregation ID: {} (collection: {})'.format(self.id, self.collection_id)

@@ -15,12 +15,13 @@ RUN pip3.6 install spacy && python3.6 -m spacy download en_core_web_lg
 COPY ./geocoder/requirements.txt ./
 RUN pip3.6 install -r requirements.txt
 
-COPY ./geocoder/src/. ${INSTALL_PATH}
 COPY ./shared_libs/scripts/wait_for_it.sh /scripts/
 COPY ./shared_libs/smfr_utils/. /smfr_utils/
 COPY ./shared_libs/smfr_models/. /smfr_models/
 
 RUN pip3.6 install /smfr_models/ && pip3.6 install /smfr_utils/ && rm -R /root/.cache
+
+COPY ./geocoder/src/. ${INSTALL_PATH}
 
 EXPOSE 5557
 RUN ["chmod", "a+x", "/scripts/wait_for_it.sh"]
