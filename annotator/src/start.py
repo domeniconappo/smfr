@@ -3,14 +3,12 @@ import os
 
 from flask import Flask
 from flask_restful import Resource, Api, marshal_with, fields, marshal_with_field
+from smfrcore.utils import LOGGER_FORMAT, DATE_FORMAT
 
 from annotator import Annotator
 
 app = Flask(__name__)
 api = Api(app)
-
-LOGGER_FORMAT = '%(asctime)s: Annotator - <%(name)s>[%(levelname)s] (%(threadName)-10s) %(message)s'
-DATE_FORMAT = '%Y%m%d %H:%M:%S'
 
 logging.basicConfig(format=LOGGER_FORMAT, datefmt=DATE_FORMAT)
 

@@ -9,21 +9,20 @@ from decimal import Decimal
 
 import numpy as np
 import ujson as json
-from cassandra.cluster import Cluster
+from cassandra.cluster import Cluster, default_lbp_factory
 from cassandra.cqlengine.connection import register_connection, set_default_connection
 from cassandra.query import dict_factory
 from cassandra.auth import PlainTextAuthProvider
 from cassandra.util import OrderedMapSerializedKey
 from flask_cqlalchemy import CQLAlchemy
 
-from smfrcore.utils import RUNNING_IN_DOCKER
+from smfrcore.utils import RUNNING_IN_DOCKER, LOGGER_FORMAT, DATE_FORMAT
 from smfrcore.models.sqlmodels import TwitterCollection
 
-LOGGER_FORMAT = '%(asctime)s: Cassandra Models - <%(name)s>[%(levelname)s] (%(threadName)-10s) %(message)s'
-DATE_FORMAT = '%Y%m%d %H:%M:%S'
 
 logging.basicConfig(format=LOGGER_FORMAT, datefmt=DATE_FORMAT)
 logger = logging.getLogger(__name__)
+logger.setLevel(os.environ.get('LOGGING_LEVEL', 'DEBUG'))
 cqldb = CQLAlchemy()
 
 _keyspace = os.environ.get('CASSANDRA_KEYSPACE', 'smfr_persistent')
@@ -40,8 +39,9 @@ def cassandra_session_factory():
     # https://stackoverflow.com/questions/36133127/how-to-configure-cassandra-for-remote-connection
     # Anyway, when using the cassandra-driver Cluster object, the port to use is still 9042.
     # Just ensure to open 9042 and 9160 ports on all nodes of the Swarm cluster.
-    auth_provider = PlainTextAuthProvider(username=_cassandra_user, password=_cassandra_password)
-    cluster = Cluster(_hosts, port=_port, auth_provider=auth_provider) if RUNNING_IN_DOCKER else Cluster()
+    cluster = Cluster(_hosts, port=_port,
+                      auth_provider=PlainTextAuthProvider(username=_cassandra_user, password=_cassandra_password),
+                      load_balancing_policy=default_lbp_factory()) if RUNNING_IN_DOCKER else Cluster()
     session = cluster.connect()
     session.row_factory = dict_factory
     session.execute("USE {}".format(_keyspace))
@@ -119,7 +119,7 @@ class Tweet(cqldb.Model):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        Tweet.generate_prepared_statements()
+        # Tweet.generate_prepared_statements()
 
     def __str__(self):
         return '\nTweet\n{o.nuts2} - {o.nuts2source}\n' \
@@ -179,14 +179,17 @@ class Tweet(cqldb.Model):
         """
         if out_format not in ('obj', 'json', 'dict'):
             raise ValueError('out_format is not valid')
+
         if not hasattr(cls, 'stmt'):
             cls.generate_prepared_statements()
+
         if last_tweetid:
             logger.debug('calling session.execute with last tweet id')
             results = cls.session.execute(cls.stmt_with_last_tweetid, parameters=(collection_id, ttype, last_tweetid))
         else:
             logger.debug('calling session.execute without last tweet id')
             results = cls.session.execute(cls.stmt, parameters=(collection_id, ttype))
+
         lang = lang.lower() if lang else None
         for row in results:
             if lang and row.get('lang') != lang:
@@ -199,15 +202,17 @@ class Tweet(cqldb.Model):
         """
         Generate prepared SQL statements for existing tables
         """
-        logger.debug('Generating prepared statements')
+        logger.debug('Generating prepared statements 1')
         cls.samples_stmt = cls.session.prepare(
             "SELECT * FROM tweet WHERE collectionid=? AND ttype=? ORDER BY tweetid DESC LIMIT ?"
         )
+        logger.debug('Generating prepared statements 2')
         cls.stmt = cls.session.prepare("SELECT * FROM tweet WHERE collectionid=? AND ttype=? ORDER BY tweetid DESC")
-        cls.stmt_with_lang = cls.session.prepare("SELECT * FROM tweet WHERE collectionid=? AND ttype=? AND lang=?")
+        logger.debug('Generating prepared statements 3')
         cls.stmt_with_last_tweetid = cls.session.prepare(
             "SELECT * FROM tweet WHERE collectionid=? AND ttype=? AND tweetid > ? ORDER BY tweetid ASC"
         )
+        logger.debug('finished!!!')
 
     @classmethod
     def make_table_object(cls, numrow, tweet_dict):

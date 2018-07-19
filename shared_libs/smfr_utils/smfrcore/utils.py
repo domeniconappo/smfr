@@ -14,3 +14,5 @@ def _running_in_docker():
 
 
 RUNNING_IN_DOCKER = _running_in_docker()
+LOGGER_FORMAT = '%(asctime)s: SMFR - <%(name)s>[%(levelname)s] (%(threadName)-10s) %(message)s'
+DATE_FORMAT = '%Y%m%d %H:%M:%S'

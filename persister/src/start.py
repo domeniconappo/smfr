@@ -1,11 +1,10 @@
 import logging
 import signal
 
+from smfrcore.utils import LOGGER_FORMAT, DATE_FORMAT
+
 from persister import Persister
 
-
-LOGGER_FORMAT = '%(asctime)s: Persister - <%(name)s>[%(levelname)s] (%(threadName)-10s) %(message)s'
-DATE_FORMAT = '%Y%m%d %H:%M:%S'
 
 logging.basicConfig(format=LOGGER_FORMAT, datefmt=DATE_FORMAT)
 

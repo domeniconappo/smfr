@@ -12,7 +12,7 @@ from geocoder import Geocoder
 app = create_app()
 api = Api(app)
 
-LOGGER_FORMAT = '%(asctime)s: Geocoder - <%(name)s>[%(levelname)s] (%(threadName)-10s) %(message)s'
+LOGGER_FORMAT = '%(asctime)s: SMFR - <%(name)s>[%(levelname)s] (%(threadName)-10s) %(message)s'
 DATE_FORMAT = '%Y%m%d %H:%M:%S'
 
 logging.basicConfig(format=LOGGER_FORMAT, datefmt=DATE_FORMAT)

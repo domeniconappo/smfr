@@ -42,12 +42,16 @@ services:
       - ALL
     privileged: true
     environment:
+#      CASSANDRA_CLUSTER_NAME: SMFR (need to rename cluster_name in system.local table first) !!!
       MAX_HEAP_SIZE: 8G
       HEAP_NEWSIZE: 1024M
-      JVM_OPTS: "-Xms4g -Xmx8g"
+      JVM_OPTS: -Xms4g -Xmx8g
+      JVM_EXTRA_OPTS: -Dcom.sun.management.jmxremote.authenticate=true -Dcom.sun.management.jmxremote.password.file=/etc/cassandra/jmxremote.password -Dcom.sun.management.jmxremote.access.file=/etc/cassandra/jmxremote.access
       CASSANDRA_START_RPC: "true"
-      CASSANDRA_LISTEN_ADDRESS: "auto"
+      CASSANDRA_LISTEN_ADDRESS: auto
       CASSANDRA_RPC_ADDRESS: 0.0.0.0
+      LOCAL_JMX: "no"
+      JMX_PORT: 9160
     deploy:
       placement:
         constraints: [ node.labels.large == true ]
@@ -163,6 +167,8 @@ services:
       KAFKA_BOOTSTRAP_SERVER: ${KAFKA_BOOTSTRAP_SERVER}
       CASSANDRA_HOST: ${CASSANDRA_HOST}
       CASSANDRA_PORT: ${CASSANDRA_PORT}
+      CASSANDRA_USER: ${CASSANDRA_USER}
+      CASSANDRA_PASSWORD: ${CASSANDRA_PASSWORD}
       MODELS_PATH: /models
       GIT_REPO_MODELS: ${GIT_REPO_MODELS}
       http_proxy: ${http_proxy}
@@ -202,6 +208,8 @@ services:
       KAFKA_TOPIC: ${KAFKA_TOPIC}
       CASSANDRA_HOST: ${CASSANDRA_HOST}
       CASSANDRA_PORT: ${CASSANDRA_PORT}
+      CASSANDRA_USER: ${CASSANDRA_USER}
+      CASSANDRA_PASSWORD: ${CASSANDRA_PASSWORD}
       MYSQL_HOST: mysql
       MYSQL_DBNAME: ${MYSQL_DBNAME}
       MYSQL_USER: ${MYSQL_USER}
@@ -233,7 +241,7 @@ services:
       - './aggregator/src:/aggregator'
     environment:
       LOGGING_LEVEL: ${LOGGING_LEVEL}
-      PYTHONUNBUFFERED: 'true'
+      PYTHONUNBUFFERED: "true"
       CASSANDRA_KEYSPACE: ${CASSANDRA_KEYSPACE}
       CASSANDRA_HOST: ${CASSANDRA_HOST}
       CASSANDRA_PORT: ${CASSANDRA_PORT}
@@ -285,6 +293,8 @@ services:
       MYSQL_PASSWORD: ${MYSQL_PASSWORD}
       CASSANDRA_HOST: ${CASSANDRA_HOST}
       CASSANDRA_PORT: ${CASSANDRA_PORT}
+      CASSANDRA_USER: ${CASSANDRA_USER}
+      CASSANDRA_PASSWORD: ${CASSANDRA_PASSWORD}
       FTP_USER: ${FTP_USER}
       FTP_PASS: ${FTP_PASS}
       FTP_HOST: ${FTP_HOST}
@@ -307,7 +317,6 @@ services:
       - annotator
       - geocoder
       - persister
-#      - aggregator
     deploy:
       placement:
         constraints: [ node.labels.large == true ]

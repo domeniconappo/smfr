@@ -28,7 +28,7 @@ class Annotator:
     _stop_signals = []
     _lock = threading.RLock()
     logger = logging.getLogger(__name__)
-    logger.setLevel(logging.getLevelName(os.environ.get('LOGGING_LEVEL', 'DEBUG')))
+    logger.setLevel(os.environ.get('LOGGING_LEVEL', 'DEBUG'))
     kafka_bootstrap_server = '{}:9092'.format('kafka' if RUNNING_IN_DOCKER else '127.0.0.1')
     models_path = os.path.join(os.environ.get('MODELS_PATH', '/'), 'models')
     current_models_mapping = os.path.join(models_path, 'current-model.json')

@@ -25,17 +25,17 @@ app = create_app()
 import views
 
 
-def datetimeformat(value, format='%Y-%m-%d %H:%M'):
+def datetimeformat(value, fmt='%Y-%m-%d %H:%M'):
     """
     A jinja2 filter for dates/times
     :param value: a string like 2018-02-23T13:24:04+00:00
-    :param format: output rendered format
+    :param fmt: output rendered format
     :return:
     """
     if value is None:
         return ''
     value = parse(value)
-    return value.strftime(format)
+    return value.strftime(fmt)
 
 
 def jsonfilter(value):
