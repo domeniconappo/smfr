@@ -3,20 +3,14 @@
 command=${1:-1}
 
 PROPERTY_FILE=.env
-SERVICES="web restserver geocoder annotator persister aggregator"
+SERVICES="web restserver geocoder annotator persister aggregator cassandrasmfr mysql"
 function getProperty {
    PROP_KEY=$1
    PROP_VALUE=`cat ${PROPERTY_FILE} | grep "$PROP_KEY" | cut -d'=' -f2`
    echo ${PROP_VALUE}
 }
 
-current_branch=`git rev-parse --symbolic-full-name --abbrev-ref HEAD`
-if [ ${current_branch} == "master" ]; then
-    image_tag='latest'
-else
-    image_tag=`cat VERSION | grep "VERSION" | cut -d'=' -f2`
-fi
-export image_tag
+export image_tag=`cat VERSION | grep "VERSION" | cut -d'=' -f2`
 
 SMFR_DATADIR=$(getProperty "SMFR_DATADIR")
 GIT_REPO_MODELS=$(getProperty "GIT_REPO_MODELS")
@@ -61,18 +55,22 @@ fi
 
 if [ -n "${DOCKER_ID_USER}" ] && [ ${command} == "push" ]; then
     docker tag efas/persister:${image_tag} efas/persister:${image_tag}
+    docker tag efas/aggregator:${image_tag} efas/aggregator:${image_tag}
     docker tag efas/annotator:${image_tag} efas/annotator:${image_tag}
     docker tag efas/geocoder:${image_tag} efas/geocoder:${image_tag}
     docker tag efas/restserver:${image_tag} efas/restserver:${image_tag}
     docker tag efas/web:${image_tag} efas/web:${image_tag}
     docker tag efas/mysql:${image_tag} efas/mysql:${image_tag}
+    docker tag efas/cassandrasmfr:${image_tag} efas/cassandrasmfr:${image_tag}
     docker tag efas/geonames:${image_tag} efas/geonames:${image_tag}
 
     docker push efas/persister:${image_tag}
+    docker push efas/aggregator:${image_tag}
     docker push efas/annotator:${image_tag}
     docker push efas/geocoder:${image_tag}
     docker push efas/restserver:${image_tag}
     docker push efas/web:${image_tag}
     docker push efas/mysql:${image_tag}
     docker push efas/geonames:${image_tag}
+    docker push efas/cassandrasmfr:${image_tag}
 fi

@@ -4,8 +4,9 @@ import pathlib
 
 import connexion
 
+from smfrcore.utils import LOGGER_FORMAT, DATE_FORMAT
 
-from server.config import RestServerConfiguration, LOGGER_FORMAT, DATE_FORMAT, SERVER_BOOTSTRAP, MYSQL_MIGRATION
+from server.config import RestServerConfiguration, SERVER_BOOTSTRAP, MYSQL_MIGRATION
 
 logging.basicConfig(level=logging.INFO if not RestServerConfiguration.debug else logging.DEBUG,
                     format=LOGGER_FORMAT, datefmt=DATE_FORMAT)

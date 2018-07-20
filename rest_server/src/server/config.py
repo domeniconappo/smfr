@@ -8,7 +8,8 @@ from decimal import Decimal
 from time import sleep
 
 import numpy as np
-from cassandra.cluster import NoHostAvailable
+from cassandra.auth import PlainTextAuthProvider
+from cassandra.cluster import NoHostAvailable, default_lbp_factory
 from cassandra.cqlengine import connection
 from cassandra.util import OrderedMapSerializedKey
 from flask import Flask
@@ -25,7 +26,7 @@ from flask_jwt_extended import (
 )
 
 from smfrcore.auth import authenticate, identity
-from smfrcore.utils import RUNNING_IN_DOCKER, LOGGER_FORMAT, DATE_FORMAT
+from smfrcore.utils import RUNNING_IN_DOCKER
 
 UNDER_TESTS = any('nose2' in x for x in sys.argv)
 SERVER_BOOTSTRAP = 'gunicorn' in sys.argv[0]
@@ -104,7 +105,7 @@ class RestServerConfiguration(metaclass=Singleton):
     debug = not UNDER_TESTS and not os.environ.get('PRODUCTION', True)
 
     logger_level = logging.ERROR if UNDER_TESTS else logging.getLevelName(os.environ.get('LOGGING_LEVEL', 'DEBUG').upper())
-    logger = logging.getLogger(__name__)
+    logger = logging.getLogger('RestServer config')
     logger.setLevel(logger_level)
 
     @classmethod
@@ -124,8 +125,7 @@ class RestServerConfiguration(metaclass=Singleton):
                 cls.db_mysql = sqldb
                 cls.migrate = Migrate(app, cls.db_mysql)
             except (OperationalError, socket.gaierror):
-                cls.logger.warning(
-                    'Cannot apply migrations because Mysql was not up...wait 5 seconds before retrying')
+                cls.logger.warning('Cannot apply migrations because Mysql was not up...wait 5 seconds before retrying')
                 sleep(5)
                 retries += 1
             else:
@@ -175,7 +175,7 @@ class RestServerConfiguration(metaclass=Singleton):
                     up = True
                 finally:
                     if not up and retries >= 5:
-                        self.logger.error('Cannot boot because DB servers are not reachable! Exiting...')
+                        self.logger.error('Too many retries. Cannot boot because DB servers are not reachable! Exiting...')
                         sys.exit(1)
             self.log_configuration()
 
@@ -188,6 +188,12 @@ class RestServerConfiguration(metaclass=Singleton):
         app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
         app.config['CASSANDRA_HOSTS'] = [self.cassandra_host]
         app.config['CASSANDRA_KEYSPACE'] = self.cassandra_keyspace
+        app.config['CASSANDRA_SETUP_KWARGS'] = {
+            'auth_provider': PlainTextAuthProvider(username=os.environ.get('CASSANDRA_USER'),
+                                                   password=os.environ.get('CASSANDRA_PASSWORD')),
+            'load_balancing_policy': default_lbp_factory(),
+            'compression': True,
+        }
         return app
 
     @property

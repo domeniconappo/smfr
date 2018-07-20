@@ -16,7 +16,7 @@ if __name__ == '__main__':
         # aggregation starting now
         aggregate(everything=conf.all, background=conf.background)
     else:
-        schedule.every(6).hour.do(aggregate).tag('aggregator-main')
+        schedule.every(30).minutes.do(aggregate).tag('aggregator-main')
 
         while True:
             schedule.run_pending()

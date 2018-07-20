@@ -8,4 +8,5 @@ else
 fi
 export image_tag
 python3 compose4build.py ${image_tag}
+echo ++++++++++++++++++++++++++ Starting ${service} and its dependent services ++++++++++++++++++++++++++
 docker-compose up -d ${service}

@@ -74,11 +74,20 @@ In this case, you must login to Docker Hub (just issue `$ docker login` before t
 
 ### Init and manage Databases
 
+#### Cassandra
+
+```bash
+$ docker exec -it cassandrasmfr cqlsh -u cassandra -p cassandra
+Connected to Test Cluster at 127.0.0.1:9042.
+cassandra@cqlsh> CREATE USER myuser WITH PASSWORD 'mypassword' SUPERUSER;
+cassandra@cqlsh> ALTER USER cassandra WITH PASSWORD 'anotherpassword';
+```
+
 #### Geonames
 
 Check that Geonames index is up in ES:
 Connect to http://localhost:9200/_cat/indices?v
-You should see something like (check __docs.count__ and __store.size__):
+You should see something like the output below (check __docs.count__ and __store.size__):
 
 ```
 health status index    uuid                   pri rep docs.count docs.deleted store.size pri.store.size

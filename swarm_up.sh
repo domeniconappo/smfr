@@ -1,11 +1,6 @@
 #!/usr/bin/env bash
-current_branch=`git rev-parse --symbolic-full-name --abbrev-ref HEAD`
-if [ ${current_branch} == "master" ]; then
-    image_tag='latest'
-else
-    image_tag=`cat VERSION | grep "VERSION" | cut -d'=' -f2`
-fi
-export image_tag
+export image_tag=`cat VERSION | grep "VERSION" | cut -d'=' -f2`
+
 docker-compose config > docker-compose-parsed.yaml
 
 # cleaning volumes from docker compose configuration

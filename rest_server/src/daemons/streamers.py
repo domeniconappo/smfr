@@ -15,7 +15,7 @@ class CollectorStreamer(TwythonStreamer):
 
     """
 
-    logger = logging.getLogger(__name__)
+    logger = logging.getLogger('RestServer Streamer')
     logger.setLevel(RestServerConfiguration.logger_level)
 
     def __init__(self, app_key, app_secret, oauth_token, oauth_token_secret,

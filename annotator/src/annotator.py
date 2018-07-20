@@ -162,5 +162,5 @@ class Annotator:
         :param collection_id: int Collection Id as it's stored in MySQL virtual_twitter_collection table
         :param lang: str two characters string denoting a language (e.g. 'en')
         """
-        t = threading.Thread(target=cls.start, args=(collection_id, lang), name='{} {}'.format(collection_id, lang))
+        t = threading.Thread(target=cls.start, args=(collection_id, lang), name='Annotator {} {}'.format(collection_id, lang))
         t.start()

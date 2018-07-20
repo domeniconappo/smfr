@@ -28,7 +28,7 @@ class Collector:
                     'manual': 'twitterod'}
 
     _running_instances = {}
-    logger = logging.getLogger(__name__)
+    logger = logging.getLogger('RestServer Collector')
     logger.setLevel(RestServerConfiguration.logger_level)
     server_conf = RestServerConfiguration()
 

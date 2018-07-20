@@ -26,7 +26,7 @@ from server.config import CONFIG_STORE_PATH
 from server.api import utils
 
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger('RestServer API')
 
 
 # @jwt_required

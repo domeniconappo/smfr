@@ -263,7 +263,7 @@ commit_failure_policy: stop
 # Constantly re-preparing statements is a performance penalty.
 #
 # Default value ("auto") is 1/256th of the heap or 10MB, whichever is greater
-prepared_statements_cache_size_mb: auto
+prepared_statements_cache_size_mb:
 
 # Maximum size of the Thrift prepared statement cache
 #
@@ -272,7 +272,7 @@ prepared_statements_cache_size_mb: auto
 # See description of 'prepared_statements_cache_size_mb' above for more information.
 #
 # Default value ("auto") is 1/256th of the heap or 10MB, whichever is greater
-thrift_prepared_statements_cache_size_mb: auto
+thrift_prepared_statements_cache_size_mb:
 
 # Maximum size of the key cache in memory.
 #
@@ -286,7 +286,7 @@ thrift_prepared_statements_cache_size_mb: auto
 # NOTE: if you reduce the size, you may not get you hottest keys loaded on startup.
 #
 # Default value is empty to make it "auto" (min(5% of Heap (in MB), 100MB)). Set to 0 to disable key cache.
-key_cache_size_in_mb: auto
+key_cache_size_in_mb:
 
 # Duration in seconds after which Cassandra should
 # save the key cache. Caches are saved to saved_caches_directory as
@@ -350,7 +350,7 @@ row_cache_save_period: 0
 #
 # Default value is empty to make it "auto" (min(2.5% of Heap (in MB), 50MB)). Set to 0 to disable counter cache.
 # NOTE: if you perform counter deletes and rely on low gcgs, you should disable the counter cache.
-counter_cache_size_in_mb: auto
+counter_cache_size_in_mb:
 
 # Duration in seconds after which Cassandra should
 # save the counter cache (keys only). Caches are saved to saved_caches_directory as
@@ -729,8 +729,8 @@ rpc_server_type: hsha
 # encouraged to set a maximum that makes sense for you in production, but do keep in mind that
 # rpc_max_threads represents the maximum number of client requests this server may execute concurrently.
 #
-# rpc_min_threads: 16
-# rpc_max_threads: 2048
+rpc_min_threads: 16
+rpc_max_threads: 512
 
 # uncomment to set socket buffer sizes on rpc connections
 # rpc_send_buff_size_in_bytes:

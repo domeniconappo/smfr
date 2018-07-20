@@ -13,7 +13,7 @@ from start import app
 
 
 logging.basicConfig(level=logging.INFO, format=LOGGER_FORMAT, datefmt=DATE_FORMAT)
-logger = logging.getLogger(__name__)
+logger = logging.getLogger('Web')
 client = ApiLocalClient()
 
 

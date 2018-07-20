@@ -1,8 +1,10 @@
+import threading
 from collections import Counter
 import functools
 from datetime import timedelta, datetime
 import logging
-import multiprocessing
+from multiprocessing import cpu_count
+from multiprocessing.pool import ThreadPool
 
 from sqlalchemy import or_
 
@@ -54,9 +56,14 @@ def aggregate(everything=False, background=False):
                 aggregation.save()
             aggregations_args.append((coll.id, aggregation.last_tweetid or None))
 
-        # max 6 aggregation processes running at same time
-        with multiprocessing.Pool(multiprocessing.cpu_count() - 1) as p:
+        # # max 6 aggregation processes running at same time
+        with ThreadPool(cpu_count() - 1) as p:
             p.starmap(run_single_aggregation, aggregations_args)
+
+        # for params in aggregations_args:
+        #     t = threading.Thread(target=run_single_aggregation, args=params,
+        #                          name='Aggregator {} from last tweet id: {}'.format(*params))
+        #     t.start()
 
 
 def run_single_aggregation(collection_id, last_tweetid):
