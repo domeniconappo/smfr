@@ -63,6 +63,13 @@
                                        </tr>
                                        {% endif %}
 
+                                       <tr>
+                                           <th>Aggregated data</th>
+                                           <td>{{ data.aggregation.data }}</td>
+                                           <th>Last tweet id examined</th>
+                                           <td>{{ data.aggregation.last_tweetid or '-' }}</td>
+                                       </tr>
+
                                        </tbody>
                                    </table>
 
@@ -105,7 +112,6 @@
                                    <div class="btn-group btn-group-justified" role="group">
                                        <div class="btn-group">
                                            {% set test = data.collection.id in data.running_geotaggers %}
-                                       <!-- {{ data.running_geotaggers }}-->
                                             <a {% if test %}title="Geotagging is currently running for this collection" class="btn btn-sm btn-default disabled"{% else %} title="Start geotagging for annotated tweets in this collection" class="btn btn-sm btn-default"{% endif %}
                                                href="/geolocalize/{{ data.collection.id }}"><em class="fas fa-globe"></em></a>
                                        </div>
@@ -121,6 +127,24 @@
                                    </div>
                                </div>
 	                       </div>
+
+                        <div class="panel panel-default">
+
+                           <div class="panel-heading">
+                               <h4>Aggregation</h4>
+                           </div>
+                           <div class="panel-body">
+                               <div>
+                                     <table class="table table-striped">
+                                       <tbody>
+                                        {% for k, v in data.aggregation.data.items() %}
+                                        <tr><th>{{ k }}</th><td>{{ v }}</td></tr>
+                                        {% endfor %}
+                                       </tbody>
+                                     </table>
+                               </div>
+                           </div>
+	                    </div>
 
 	                   </div>
 

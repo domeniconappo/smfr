@@ -10,7 +10,7 @@ from annotator import Annotator
 app = Flask(__name__)
 api = Api(app)
 
-logging.basicConfig(format=LOGGER_FORMAT, datefmt=DATE_FORMAT)
+logging.basicConfig(level=os.environ.get('LOGGING_LEVEL', 'DEBUG'), format=LOGGER_FORMAT, datefmt=DATE_FORMAT)
 
 
 class AnnotatorApi(Resource):
@@ -19,7 +19,6 @@ class AnnotatorApi(Resource):
     """
 
     logger = logging.getLogger(__name__)
-    logger.setLevel(logging.getLevelName(os.environ.get('LOGGING_LEVEL', 'DEBUG')))
 
     @marshal_with({'error': fields.Nested({'description': fields.Raw}), 'result': fields.Raw, 'action_performed': fields.Raw})
     def put(self, collection_id, lang, action):

@@ -227,7 +227,7 @@ services:
         constraints: [ node.labels.large == true ]
 
   aggregator:
-    restart: always
+    restart: on-failure
     container_name: aggregator
     image: efas/aggregator:${image_tag}
     build:
@@ -259,6 +259,8 @@ services:
     deploy:
       placement:
         constraints: [ node.labels.large == true ]
+      restart_policy:
+        condition: on-failure
 
   restserver:
     restart: always
@@ -344,6 +346,7 @@ services:
     depends_on:
       - restserver
       - myadmin
+      - aggregator
     deploy:
       placement:
         constraints: [ node.labels.small == true ]

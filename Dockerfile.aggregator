@@ -9,14 +9,12 @@ ENV LANG=C.UTF-8
 RUN mkdir -p /aggregator && mkdir -p /scripts && mkdir -p /config && mkdir -p /smfr_models && mkdir -p /smfr_utils
 
 COPY ./aggregator/requirements.txt /aggregator/
-RUN pip3.6 install -r requirements.txt
-
 COPY ./shared_libs/scripts/wait_for_it.sh /scripts/
 COPY ./shared_libs/smfr_models/. /smfr_models/
 COPY ./shared_libs/smfr_utils/. /smfr_utils/
+RUN pip3.6 install -r /aggregator/requirements.txt && chmod a+x /scripts/wait_for_it.sh
 RUN pip3.6 install /smfr_models/ && pip3 install /smfr_utils/ && rm -R /root/.cache
 COPY ./aggregator/src/. /aggregator/
 
-RUN ["chmod", "a+x", "/scripts/wait_for_it.sh"]
 ENTRYPOINT ["/scripts/wait_for_it.sh", "cassandrasmfr:9160"]
-CMD ["--", "python3.6", "start.py", "-b"]
+CMD ["--", "python3.6", "start.py", "-a"]

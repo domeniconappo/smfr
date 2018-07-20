@@ -335,6 +335,19 @@ paths:
 
 definitions:
 
+  Aggregation:
+    type: object
+    properties:
+      id:
+        type: integer
+      collection_id:
+        type: integer
+      data:
+        type: object
+      last_tweetid:
+        type: string
+
+
   Collection:
     type: object
     properties:
@@ -401,6 +414,8 @@ definitions:
     properties:
       collection:
         $ref: '#/definitions/Collection'
+      aggregation:
+        $ref: '#/definitions/Aggregation'
       id:
         type: integer
 

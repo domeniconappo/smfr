@@ -1,4 +1,5 @@
 import logging
+import os
 import signal
 
 from smfrcore.utils import LOGGER_FORMAT, DATE_FORMAT
@@ -6,7 +7,7 @@ from smfrcore.utils import LOGGER_FORMAT, DATE_FORMAT
 from persister import Persister
 
 
-logging.basicConfig(format=LOGGER_FORMAT, datefmt=DATE_FORMAT)
+logging.basicConfig(level=os.environ.get('LOGGING_LEVEL', 'DEBUG'), format=LOGGER_FORMAT, datefmt=DATE_FORMAT)
 
 
 if __name__ == '__main__':

@@ -14,6 +14,13 @@ from swagger_marshmallow_codegen.validate import ItemsRange
 import re
 
 
+class Aggregation(BaseSchema):
+    id = fields.Integer()
+    collection_id = fields.Integer()
+    data = fields.Field()
+    last_tweetid = fields.String()
+
+
 class Collection(BaseSchema):
     id = fields.Integer()
     trigger = fields.String(validate=[OneOf(choices=['background', 'on-demand', 'manual'], labels=[])])
@@ -41,6 +48,7 @@ class CollectorPayload(BaseSchema):
 
 class CollectorResponse(BaseSchema):
     collection = fields.Nested('Collection')
+    aggregation = fields.Nested('Aggregation')
     id = fields.Integer()
 
 

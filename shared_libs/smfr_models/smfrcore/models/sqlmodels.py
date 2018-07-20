@@ -3,7 +3,7 @@ import datetime
 
 from passlib.apps import custom_app_context as pwd_context
 
-from sqlalchemy import Column, Integer, String, TIMESTAMP, Float, ForeignKey, inspect, Index
+from sqlalchemy import Column, BigInteger, Integer, String, TIMESTAMP, Float, ForeignKey, inspect, Index
 from sqlalchemy_utils import ChoiceType, ScalarListType, JSONType
 from flask import Flask
 
@@ -375,7 +375,9 @@ class Aggregation(SMFRModel):
         backref=sqldb.backref('twitter_collection', uselist=False)
     )
     values = Column(JSONType, nullable=False)
-    last_tweetid = Column(String(100), nullable=True)
+    last_tweetid_collected = Column(BigInteger, nullable=True)
+    last_tweetid_annotated = Column(BigInteger, nullable=True)
+    last_tweetid_geotagged = Column(BigInteger, nullable=True)
 
     def save(self):
         # we need 'merge' method because objects can be attached to db sessions in different threads
@@ -387,6 +389,10 @@ class Aggregation(SMFRModel):
     def delete(self):
         sqldb.session.delete(self)
         sqldb.session.commit()
+
+    @property
+    def data(self):
+        return self.values
 
     def __str__(self):
         return 'Aggregation ID: {} (collection: {})'.format(self.id, self.collection_id)

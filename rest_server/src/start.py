@@ -8,11 +8,12 @@ from smfrcore.utils import LOGGER_FORMAT, DATE_FORMAT
 
 from server.config import RestServerConfiguration, SERVER_BOOTSTRAP, MYSQL_MIGRATION
 
-logging.basicConfig(level=logging.INFO if not RestServerConfiguration.debug else logging.DEBUG,
-                    format=LOGGER_FORMAT, datefmt=DATE_FORMAT)
+logging.basicConfig(level=os.environ.get('LOGGING_LEVEL', 'DEBUG'), format=LOGGER_FORMAT, datefmt=DATE_FORMAT)
 
 
-os.environ['NO_PROXY'] = ','.join((RestServerConfiguration.restserver_host, RestServerConfiguration.annotator_host, RestServerConfiguration.geocoder_host))
+os.environ['NO_PROXY'] = ','.join((RestServerConfiguration.restserver_host,
+                                   RestServerConfiguration.annotator_host,
+                                   RestServerConfiguration.geocoder_host))
 
 
 def create_app():

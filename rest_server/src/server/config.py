@@ -35,6 +35,7 @@ MYSQL_MIGRATION = all(os.path.basename(a) in ('flask', 'db', 'migrate') for a in
 
 CONFIG_STORE_PATH = os.environ.get('SERVER_PATH_UPLOADS', os.path.join(os.path.dirname(__file__), '../../../uploads/'))
 CONFIG_FOLDER = '/configuration/' if RUNNING_IN_DOCKER else os.path.join(os.path.dirname(__file__), '../config/')
+NUM_SAMPLES = os.environ.get('NUM_SAMPLES', 100)
 
 logging.getLogger('cassandra').setLevel(logging.ERROR)
 logging.getLogger('kafka').setLevel(logging.ERROR)

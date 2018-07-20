@@ -8,14 +8,15 @@ cassandra_password = properties.get('CASSANDRA_PASSWORD')
 
 cluster = Cluster(auth_provider=PlainTextAuthProvider(username=cassandra_user, password=cassandra_password),
                   load_balancing_policy=default_lbp_factory())
+
 session = cluster.connect('smfr_persistent')
 
-rows = session.execute('SELECT collectionid, tweetid, nuts3, nuts3source, ttype FROM tweet')
+rows = session.execute('SELECT collectionid, tweetid, ttype FROM tweet')
 
 for i, row in enumerate(rows, start=1):
     session.execute(
-        'UPDATE tweet SET nuts2=%s, nuts2source=%s WHERE collectionid=%s AND tweetid=%s AND ttype=%s',
-        (row.nuts3, row.nuts3source, row.collectionid, row.tweetid, row.ttype)
+        'UPDATE tweet SET tweet_id=%s WHERE collectionid=%s AND tweetid=%s AND ttype=%s',
+        (int(row.tweetid), row.collectionid, row.tweetid, row.ttype)
     )
-    if not (i % 1000):
+    if not (i % 5000):
         print(i)

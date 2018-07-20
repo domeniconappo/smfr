@@ -11,7 +11,7 @@ from kafka.errors import CommitFailedError
 from smfrcore.models.cassandramodels import Tweet
 
 
-PersisterConfiguration = namedtuple('PersisterConfiguration', ['logger_level', 'kafka_topic', 'kafka_bootstrap_server'])
+PersisterConfiguration = namedtuple('PersisterConfiguration', ['kafka_topic', 'kafka_bootstrap_server'])
 
 
 class Persister:
@@ -19,14 +19,12 @@ class Persister:
         Persister component to save Tweet messages in Cassandra.
         It listens to the Kafka queue, build a Tweet object from messages and save it in Cassandra.
         """
-    config = PersisterConfiguration(logger_level=os.environ.get('LOGGING_LEVEL', 'DEBUG'),
-                                    kafka_topic=os.environ.get('KAFKA_TOPIC', 'persister'),
+    config = PersisterConfiguration(kafka_topic=os.environ.get('KAFKA_TOPIC', 'persister'),
                                     kafka_bootstrap_server=os.environ.get('KAFKA_BOOTSTRAP_SERVER', 'kafka:9092'))
     _running_instance = None
     _lock = threading.RLock()
 
     logger = logging.getLogger(__name__)
-    logger.setLevel(config.logger_level)
 
     @classmethod
     def running_instance(cls):

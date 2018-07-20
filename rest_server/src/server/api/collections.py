@@ -11,9 +11,9 @@ import connexion
 from flask import abort
 from flask_jwt_extended import jwt_required, get_jwt_identity
 
-from smfrcore.models.sqlmodels import StoredCollector, TwitterCollection, User, Nuts3, Nuts2
+from smfrcore.models.sqlmodels import StoredCollector, TwitterCollection, User, Nuts3, Nuts2, Aggregation
 from smfrcore.models.cassandramodels import Tweet
-from smfrcore.client.marshmallow import Collector as CollectorSchema, CollectorResponse, Collection
+from smfrcore.client.marshmallow import Collector as CollectorSchema, CollectorResponse, Collection, Aggregation as AggregationSchema
 from smfrcore.client.ftp import FTPEfas
 
 from daemons.collector import Collector
@@ -22,7 +22,7 @@ from smfrcore.errors import SMFRDBError, SMFRRestException
 
 from server.api.clients import AnnotatorClient, GeocoderClient
 from server.api.decorators import check_identity, check_role
-from server.config import CONFIG_STORE_PATH
+from server.config import CONFIG_STORE_PATH, NUM_SAMPLES
 from server.api import utils
 
 
@@ -193,20 +193,22 @@ def get_collection_details(collection_id):
     :param collection_id: int
     :return: A CollectionResponse marshmallow object
     """
-    num_samples = 100
     collection = TwitterCollection.query.get(collection_id)
     if not collection:
         return {'error': {'description': 'No collector with this id was found'}}, 404
     collector = StoredCollector.query.filter_by(collection_id=collection.id).first()
+    aggregation = Aggregation.query.filter_by(collection_id=collection.id).first()
 
     collection_schema = Collection()
     collection_dump = collection_schema.dump(collection).data
     collector_schema = CollectorSchema()
     collector_dump = collector_schema.dump(collector).data
+    aggregation_schema = AggregationSchema()
+    aggregation_dump = aggregation_schema.dump(aggregation).data
 
-    tweets = Tweet.get_samples(collection_id=collection_id, ttype='collected', size=num_samples)
-    annotated_tweets = Tweet.get_samples(collection_id=collection_id, ttype='annotated', size=num_samples)
-    geotagged_tweets = Tweet.get_samples(collection_id=collection_id, ttype='geotagged', size=num_samples)
+    tweets = Tweet.get_samples(collection_id=collection_id, ttype='collected', size=NUM_SAMPLES)
+    annotated_tweets = Tweet.get_samples(collection_id=collection_id, ttype='annotated', size=NUM_SAMPLES)
+    geotagged_tweets = Tweet.get_samples(collection_id=collection_id, ttype='geotagged', size=NUM_SAMPLES)
 
     samples_table = []
     annotated_table = []
@@ -222,6 +224,7 @@ def get_collection_details(collection_id):
         geotagged_table.append(Tweet.make_table_object(i, t))
 
     res = {'collection': collection_dump, 'collector': collector_dump, 'datatable': samples_table,
+           'aggregation': aggregation_dump,
            'running_annotators': AnnotatorClient.running()[0], 'running_geotaggers': GeocoderClient.running()[0],
            'datatableannotated': annotated_table, 'datatablegeotagged': geotagged_table}
     return res, 200

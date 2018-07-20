@@ -25,7 +25,6 @@ class Nuts2Finder:
     TODO: Evaluate if it's better to refactor to a function instead of keeping this onemethod static class
     """
     logger = logging.getLogger(__name__)
-    logger.setLevel(logging.getLevelName(os.environ.get('LOGGING_LEVEL', 'DEBUG')))
     # config_dir = '/config/' if RUNNING_IN_DOCKER else os.path.join(os.path.dirname(__file__), '../config')
     # geojson_name = os.environ.get('NUTS3_GEOJSON', 'GlobalRegions_052018.geojson')
     # path = os.path.join(config_dir, geojson_name)
@@ -73,7 +72,6 @@ class Geocoder:
     stop_signals = []
     _lock = threading.RLock()
     logger = logging.getLogger(__name__)
-    logger.setLevel(logging.getLevelName(os.environ.get('LOGGING_LEVEL', 'DEBUG')))
     geonames_host = '127.0.0.1' if not RUNNING_IN_DOCKER else 'geonames'
     kafka_bootstrap_server = '{}:9092'.format('kafka' if RUNNING_IN_DOCKER else '127.0.0.1')
 

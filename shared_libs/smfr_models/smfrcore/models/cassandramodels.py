@@ -59,7 +59,7 @@ class Tweet(cqldb.Model):
     __keyspace__ = _keyspace
 
     session = _session
-    session.default_fetch_size = 5000
+    session.default_fetch_size = os.environ.get('CASSANDRA_FETCH_SIZE', 1000)
 
     TYPES = [
         ('annotated', 'Annotated'),
@@ -68,6 +68,7 @@ class Tweet(cqldb.Model):
     ]
 
     tweetid = cqldb.columns.Text(primary_key=True, required=True)
+    tweet_id = cqldb.columns.BigInt(index=True)
     """
     Id of the tweet
     """
@@ -182,7 +183,7 @@ class Tweet(cqldb.Model):
             cls.generate_prepared_statements()
 
         if last_tweetid:
-            results = cls.session.execute(cls.stmt_with_last_tweetid, parameters=(collection_id, ttype, last_tweetid))
+            results = cls.session.execute(cls.stmt_with_last_tweetid, parameters=(collection_id, ttype, int(last_tweetid)))
         else:
             results = cls.session.execute(cls.stmt, parameters=(collection_id, ttype))
 
@@ -202,7 +203,7 @@ class Tweet(cqldb.Model):
         )
         cls.stmt = cls.session.prepare("SELECT * FROM tweet WHERE collectionid=? AND ttype=? ORDER BY tweetid DESC")
         cls.stmt_with_last_tweetid = cls.session.prepare(
-            "SELECT * FROM tweet WHERE collectionid=? AND ttype=? AND tweetid > ? ORDER BY tweetid ASC"
+            "SELECT * FROM tweet WHERE collectionid=? AND ttype=? AND tweet_id>?"
         )
 
     @classmethod
@@ -295,7 +296,7 @@ class Tweet(cqldb.Model):
         :return:
         """
         return cls(
-            tweetid=tweet['id_str'],
+            tweetid=tweet['id_str'], tweet_id=int(tweet['id_str']),
             collectionid=collection.id if isinstance(collection, TwitterCollection) else int(collection),
             created_at=time.mktime(time.strptime(tweet['created_at'], '%a %b %d %H:%M:%S +0000 %Y')),
             ttype=ttype,

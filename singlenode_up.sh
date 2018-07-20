@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-service=${1:web}
+service=${1:-web}
 current_branch=`git rev-parse --symbolic-full-name --abbrev-ref HEAD`
 if [ ${current_branch} == "master" ]; then
     image_tag='latest'
