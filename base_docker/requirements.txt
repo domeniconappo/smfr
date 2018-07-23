@@ -1,5 +1,6 @@
 kafka-python
 cassandra-driver
+requests
 gunicorn
 numpy
 cython
@@ -9,10 +10,5 @@ flask-sqlalchemy
 flask-cqlalchemy
 sqlalchemy_utils
 ujson
-requests
 PassLib
-PyJWT
 PyYAML
-flask-marshmallow
-flask-jwt-extended
-swagger-marshmallow-codegen

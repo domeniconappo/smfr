@@ -64,10 +64,27 @@
                                        {% endif %}
 
                                        <tr>
-                                           <th>Aggregated data</th>
-                                           <td>{{ data.aggregation.data }}</td>
-                                           <th>Last tweet id examined</th>
-                                           <td>{{ data.aggregation.last_tweetid or '-' }}</td>
+                                           <th colspan="2">Statistics details</th>
+                                           <td>
+                                                <table class="table table-striped">
+                                                   <tbody>
+                                                   <tr>
+                                                       <th>Timestamp start</th>
+                                                       <td>{{ data.aggregation.timestamp_start }}</td>
+                                                       <th>Timestamp end</th>
+                                                       <td>{{ data.aggregation.timestamp_end }}</td>
+                                                   </tr>
+                                                   <tr>
+                                                       <th>Last tweet collected</th>
+                                                       <td>{{ data.aggregation.last_tweetid_collected}}</td>
+                                                       <th>Last tweet annotated</th>
+                                                       <td>{{ data.aggregation.last_tweetid_annotated}}</td>
+                                                       <th>Last tweet geolocalized</th>
+                                                       <td>{{ data.aggregation.last_tweetid_geotagged}}</td>
+                                                   </tr>
+                                                   </tbody>
+                                                </table>
+                                           </td>
                                        </tr>
 
                                        </tbody>
@@ -81,7 +98,7 @@
 	                       <div class="panel panel-default">
 
                                <div class="panel-heading">
-                                   <h4>Actions</h4>
+                                   <h4>Manage</h4>
 	                           </div>
 	                           <div class="panel-body">
                                    <div class="btn-group btn-group-justified" role="group">
@@ -131,7 +148,7 @@
                         <div class="panel panel-default">
 
                            <div class="panel-heading">
-                               <h4>Aggregation</h4>
+                               <h4>Stats</h4>
                            </div>
                            <div class="panel-body">
                                <div>

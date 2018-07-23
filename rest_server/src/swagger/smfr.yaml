@@ -344,8 +344,18 @@ definitions:
         type: integer
       data:
         type: object
-      last_tweetid:
+      last_tweetid_annotated:
+        type: integer
+      last_tweetid_collected:
+        type: integer
+      last_tweetid_geotagged:
+        type: integer
+      timestamp_start:
         type: string
+        format: date-time
+      timestamp_end:
+        type: string
+        format: date-time
 
 
   Collection:

@@ -17,4 +17,4 @@ RUN pip3.6 install /smfr_models/ && pip3 install /smfr_utils/ && rm -R /root/.ca
 COPY ./aggregator/src/. /aggregator/
 
 ENTRYPOINT ["/scripts/wait_for_it.sh", "cassandrasmfr:9160"]
-CMD ["--", "python3.6", "start.py", "-a"]
+CMD ["--", "python3.6", "start.py", "-r"]

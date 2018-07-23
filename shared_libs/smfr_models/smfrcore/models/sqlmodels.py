@@ -289,6 +289,12 @@ class Nuts2(SMFRModel):
 
     @classmethod
     def get_nuts2(cls, lat, lon):
+        """
+
+        :param lat:
+        :param lon:
+        :return:
+        """
         rows = cls.query.filter(Nuts2.min_lon <= lon, Nuts2.max_lon >= lon, Nuts2.min_lat <= lat, Nuts2.max_lat >= lat)
         return list(rows)
 
@@ -378,6 +384,8 @@ class Aggregation(SMFRModel):
     last_tweetid_collected = Column(BigInteger, nullable=True)
     last_tweetid_annotated = Column(BigInteger, nullable=True)
     last_tweetid_geotagged = Column(BigInteger, nullable=True)
+    timestamp_start = Column(TIMESTAMP, nullable=True)
+    timestamp_end = Column(TIMESTAMP, nullable=True)
 
     def save(self):
         # we need 'merge' method because objects can be attached to db sessions in different threads
@@ -392,6 +400,7 @@ class Aggregation(SMFRModel):
 
     @property
     def data(self):
+        # TODO rearrange values dictionary for cleaner output...
         return self.values
 
     def __str__(self):

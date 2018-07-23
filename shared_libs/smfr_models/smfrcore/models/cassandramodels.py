@@ -19,7 +19,6 @@ from flask_cqlalchemy import CQLAlchemy
 from smfrcore.utils import RUNNING_IN_DOCKER, LOGGER_FORMAT, DATE_FORMAT
 from smfrcore.models.sqlmodels import TwitterCollection
 
-
 logging.basicConfig(format=LOGGER_FORMAT, datefmt=DATE_FORMAT)
 logger = logging.getLogger('models')
 logger.setLevel(os.environ.get('LOGGING_LEVEL', 'DEBUG'))
@@ -38,9 +37,10 @@ def cassandra_session_factory():
     # https://stackoverflow.com/questions/36133127/how-to-configure-cassandra-for-remote-connection
     # Anyway, when using the cassandra-driver Cluster object, the port to use is still 9042.
     # Just ensure to open 9042 and 9160 ports on all nodes of the Swarm cluster.
-    cluster = Cluster(_hosts, port=_port, compression=True,
-                      auth_provider=PlainTextAuthProvider(username=_cassandra_user, password=_cassandra_password),
-                      load_balancing_policy=default_lbp_factory()) if RUNNING_IN_DOCKER else Cluster()
+    cluster_kwargs = {'compression': True,
+                      'auth_provider': PlainTextAuthProvider(username=_cassandra_user, password=_cassandra_password),
+                      'load_balancing_policy': default_lbp_factory()}
+    cluster = Cluster(_hosts, port=_port, **cluster_kwargs) if RUNNING_IN_DOCKER else Cluster(**cluster_kwargs)
     session = cluster.connect()
     session.row_factory = dict_factory
     session.execute("USE {}".format(_keyspace))
@@ -118,7 +118,6 @@ class Tweet(cqldb.Model):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # Tweet.generate_prepared_statements()
 
     def __str__(self):
         return '\nTweet\n{o.nuts2} - {o.nuts2source}\n' \
@@ -154,7 +153,8 @@ class Tweet(cqldb.Model):
                 res = {}
                 for inner_k, inner_v in v.items():
                     if isinstance(inner_v, tuple):
-                        encoded_v = [float(i) if isinstance(i, (np.float32, np.float64, Decimal)) else i for i in inner_v]
+                        encoded_v = [float(i) if isinstance(i, (np.float32, np.float64, Decimal)) else i for i in
+                                     inner_v]
                         try:
                             res[inner_k] = dict((encoded_v,))
                         except ValueError:
@@ -183,7 +183,8 @@ class Tweet(cqldb.Model):
             cls.generate_prepared_statements()
 
         if last_tweetid:
-            results = cls.session.execute(cls.stmt_with_last_tweetid, parameters=(collection_id, ttype, int(last_tweetid)))
+            results = cls.session.execute(cls.stmt_with_last_tweetid,
+                                          parameters=(collection_id, ttype, int(last_tweetid)))
         else:
             results = cls.session.execute(cls.stmt, parameters=(collection_id, ttype))
 
@@ -295,15 +296,18 @@ class Tweet(cqldb.Model):
         :param tweet:
         :return:
         """
+        created = tweet.get('created_at')
+        collectionid = collection.id if isinstance(collection, TwitterCollection) else int(collection)
         return cls(
             tweetid=tweet['id_str'], tweet_id=int(tweet['id_str']),
-            collectionid=collection.id if isinstance(collection, TwitterCollection) else int(collection),
-            created_at=time.mktime(time.strptime(tweet['created_at'], '%a %b %d %H:%M:%S +0000 %Y')),
+            collectionid=collectionid,
+            created_at=time.mktime(
+                time.strptime(created, '%a %b %d %H:%M:%S +0000 %Y')) if created else datetime.datetime.now().replace(
+                microsecond=0),
             ttype=ttype,
             nuts2=collection.nuts2 if isinstance(collection, TwitterCollection) else '',
             nuts2source=collection.nuts2source if isinstance(collection, TwitterCollection) else '',
-            annotations={}, lang=tweet['lang'], geo={},
-            tweet=json.dumps(tweet, ensure_ascii=False),
+            annotations={}, lang=tweet['lang'], geo={}, tweet=json.dumps(tweet, ensure_ascii=False),
         )
 
     @classmethod
@@ -317,9 +321,9 @@ class Tweet(cqldb.Model):
         obj = cls()
         for k, v in values.items():
             if k == 'created_at':
-                v = datetime.datetime.strptime(
-                    v.partition('.')[0], '%Y-%m-%dT%H:%M:%S') if v is not None else datetime.datetime.now()\
-                    .replace(microsecond=0)
+                v = datetime.datetime.strptime(v.partition('.')[0],
+                                               '%Y-%m-%dT%H:%M:%S') if v is not None else datetime.datetime.now().replace(
+                    microsecond=0)
             setattr(obj, k, v)
         return obj
 
@@ -339,6 +343,7 @@ class Tweet(cqldb.Model):
                 break
 
         if not full_text:
-            full_text = tweet.get('full_text') or tweet.get('extended_tweet', {}).get('full_text', '') or tweet.get('text', '')
+            full_text = tweet.get('full_text') or tweet.get('extended_tweet', {}).get('full_text', '') or tweet.get(
+                'text', '')
 
         return full_text
