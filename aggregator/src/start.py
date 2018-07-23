@@ -3,7 +3,7 @@ import argparse
 
 import schedule
 
-from aggregator import aggregate, logger
+from aggregator import aggregate
 
 
 if __name__ == '__main__':
@@ -16,14 +16,9 @@ if __name__ == '__main__':
                         help='If passed, aggregate running or recently (<6 hours) stopped collections')
 
     conf = parser.parse_args()
-    if conf.all or conf.background:
-        conf.running = False
-        # aggregation starting now
-        logger.warning('Specific Custom setup...running with %s', str(conf))
-        aggregate(running=False, everything=conf.all, background=conf.background)
-    else:
-        schedule.every(30).minutes.do(aggregate).tag('aggregator-main')
+    kwargs = {'running_conf': conf}
+    schedule.every(30).minutes.do(aggregate, **kwargs).tag('aggregator-main')
 
-        while True:
-            schedule.run_pending()
-            time.sleep(10)
+    while True:
+        schedule.run_pending()
+        time.sleep(30)

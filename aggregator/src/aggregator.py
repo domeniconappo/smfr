@@ -8,10 +8,10 @@ import os
 
 from sqlalchemy import or_
 
+from smfrcore.utils import LOGGER_FORMAT, DATE_FORMAT
+
 from smfrcore.models.sqlmodels import TwitterCollection, Aggregation, create_app
 
-LOGGER_FORMAT = '%(asctime)s: Aggregator - <%(name)s>[%(levelname)s] (%(threadName)-10s) %(message)s'
-DATE_FORMAT = '%Y%m%d %H:%M:%S'
 
 logging.basicConfig(level=os.environ.get('LOGGING_LEVEL', 'DEBUG'), format=LOGGER_FORMAT, datefmt=DATE_FORMAT)
 
@@ -19,6 +19,8 @@ logger = logging.getLogger(__name__)
 logging.getLogger('cassandra').setLevel(logging.ERROR)
 
 flask_app = create_app()
+
+running_aggregators = set()
 
 
 def with_logging(func):
@@ -32,7 +34,17 @@ def with_logging(func):
 
 
 @with_logging
-def aggregate(running=True, everything=False, background=False):
+def aggregate(running_conf=None):
+    """
+
+    :param running_conf: ArgumentParser object with running, all and background attributes
+    :return:
+    """
+    if not running_conf:
+        raise ValueError('No parsed arguments were passed')
+    running = running_conf.running
+    everything = running_conf.all
+    background = running_conf.background
     with flask_app.app_context():
         if running:
             collections_to_aggregate = TwitterCollection.query.filter(
@@ -74,6 +86,9 @@ def run_single_aggregation(collection_id,
                            initial_values):
     from smfrcore.models.cassandramodels import Tweet
 
+    if collection_id in running_aggregators:
+        logger.warning(' !!!!!!!!!!! Previous aggregation for collection id %d is not finished yet !!!!!!!!' % collection_id)
+        return 0
     max_collected_tweetid = 0
     max_annotated_tweetid = 0
     max_geotagged_tweetid = 0
@@ -82,7 +97,7 @@ def run_single_aggregation(collection_id,
     last_tweetid_geotagged = int(last_tweetid_geotagged) if last_tweetid_geotagged else 0
     counter = Counter(initial_values)
     logger.info(' >>>>>>>>>>>> Starting aggregation for collection id %d' % collection_id)
-
+    running_aggregators.add(collection_id)
     collected_tweets = Tweet.get_iterator(collection_id, 'collected', last_tweetid=last_tweetid_collected)
     for t in collected_tweets:
         max_collected_tweetid = max(max_collected_tweetid, t.tweet_id)
@@ -107,4 +122,5 @@ def run_single_aggregation(collection_id,
         aggregation.values = dict(counter)
         aggregation.save()
         logger.info(' <<<<<<<<<<< Aggregation terminated for collection %d: %s', collection_id, str(aggregation.values))
+        running_aggregators.remove(collection_id)
     return 0

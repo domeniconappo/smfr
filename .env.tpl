@@ -26,3 +26,4 @@ FTP_PATH=/remote/folder/
 DOWNLOAD_FOLDER=/downloaded
 RRA_ONDEMAND_FILENAME=filename{}.csv
 DOCKER_REGISTRY=_
+AGGREGATOR_RUN_CONF=running

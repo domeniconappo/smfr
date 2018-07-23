@@ -253,6 +253,7 @@ services:
       MYSQL_PASSWORD: ${MYSQL_PASSWORD}
       http_proxy: ${http_proxy}
       https_proxy: ${https_proxy}
+    command: -- python3.6 start.py --${AGGREGATOR_RUN_CONF}
     depends_on:
       - mysql
       - cassandrasmfr
