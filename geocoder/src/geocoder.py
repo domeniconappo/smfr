@@ -2,7 +2,11 @@ import logging
 import os
 import socket
 import sys
-import threading  # TODO replace by launching a subprocess
+
+# TODO replace by launching a subprocess
+# (note: it probably does not work out of the box in docker containers inside a VM...need to reconsider it)
+import threading
+
 import time
 from collections import Counter
 
@@ -14,7 +18,6 @@ from shapely.geometry import Point, Polygon
 from smfrcore.models.cassandramodels import Tweet
 from smfrcore.models.sqlmodels import Nuts2, create_app
 from smfrcore.utils import RUNNING_IN_DOCKER
-# from utils import create_app
 
 
 class Nuts2Finder:
@@ -25,9 +28,6 @@ class Nuts2Finder:
     TODO: Evaluate if it's better to refactor to a function instead of keeping this onemethod static class
     """
     logger = logging.getLogger(__name__)
-    # config_dir = '/config/' if RUNNING_IN_DOCKER else os.path.join(os.path.dirname(__file__), '../config')
-    # geojson_name = os.environ.get('NUTS3_GEOJSON', 'GlobalRegions_052018.geojson')
-    # path = os.path.join(config_dir, geojson_name)
 
     @classmethod
     def _is_in_poly(cls, point, geo):

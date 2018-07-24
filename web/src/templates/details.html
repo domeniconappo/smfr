@@ -364,10 +364,10 @@ $(document).ready(function() {
         else {
             // Open this row
             var d = row.data();
-            row.child( format(d, 1000) ).show();
+            row.child( format(d, 10000) ).show();
             tr.addClass('shown');
             var obj = d.original_tweet;
-            output("#jsonout_" + (d.rownum + 1000), syntaxHighlight(obj));
+            output("#jsonout_" + (d.rownum + 10000), syntaxHighlight(obj));
         }
     } );
 
@@ -407,10 +407,10 @@ $(document).ready(function() {
         else {
             // Open this row
             var d = row.data();
-            row.child( format(d, 2000) ).show();
+            row.child( format(d, 20000) ).show();
             tr.addClass('shown');
             var obj = d.original_tweet;
-            output("#jsonout_" + (d.rownum + 2000), syntaxHighlight(obj));
+            output("#jsonout_" + (d.rownum + 20000), syntaxHighlight(obj));
         }
     } );
 

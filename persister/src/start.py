@@ -14,7 +14,7 @@ if __name__ == '__main__':
 
     def stop_active_collectors(signum, _):
         Persister.logger.debug("Received %d", signum)
-        Persister.logger.debug("Stopping any _running collector...")
+        Persister.logger.debug("Stopping any running collector...")
 
         running_consumer = Persister.running_instance()
         if running_consumer:

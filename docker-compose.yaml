@@ -33,6 +33,10 @@ services:
       LOCAL_JMX: "no"
       JMX_PORT: 9160
     deploy:
+      restart_policy:
+        condition: on-failure
+        max_attempts: 3
+        window: 60s
       placement:
         constraints: [ node.labels.large == true ]
 
@@ -50,6 +54,10 @@ services:
       - '9092:9092'
       - '2181:2181'
     deploy:
+      restart_policy:
+        condition: on-failure
+        max_attempts: 3
+        window: 120s
       placement:
         constraints: [ node.labels.medium == true ]
 
@@ -71,6 +79,10 @@ services:
       MYSQL_DATABASE: smfr
       MYSQL_ALLOW_EMPTY_PASSWORD: 'yes'
     deploy:
+      restart_policy:
+        condition: on-failure
+        max_attempts: 3
+        window: 120s
       placement:
         constraints: [ node.labels.large == true ]
 
@@ -86,11 +98,15 @@ services:
       - '9200:9200'
       - '9300:9300'
     environment:
-      bootstrap.memory_lock: "true"
-      discovery.type: "single-node"
+      bootstrap.memory_lock: 'true'
+      discovery.type: 'single-node'
     volumes:
       - '${SMFR_DATADIR}/geonames_index:/usr/share/elasticsearch/data:rw'
     deploy:
+      restart_policy:
+        condition: on-failure
+        max_attempts: 3
+        window: 120s
       placement:
         constraints: [ node.labels.large == true ]
 
@@ -106,6 +122,10 @@ services:
       MYSQL_ALLOW_EMPTY_PASSWORD: 'yes'
       PMA_ARBITRARY: 1
     deploy:
+      restart_policy:
+        condition: on-failure
+        max_attempts: 3
+        window: 120s
       placement:
         constraints: [ node.labels.small == true ]
     depends_on:
@@ -124,7 +144,7 @@ services:
     working_dir: /persister
     environment:
       LOGGING_LEVEL: ${LOGGING_LEVEL}
-      PYTHONUNBUFFERED: "true"
+      PYTHONUNBUFFERED: 'true'
       KAFKA_TOPIC: ${KAFKA_TOPIC}
       KAFKA_BOOTSTRAP_SERVER: ${KAFKA_BOOTSTRAP_SERVER}
       CASSANDRA_HOST: ${CASSANDRA_HOST}
@@ -140,6 +160,10 @@ services:
       - kafka
       - cassandrasmfr
     deploy:
+      restart_policy:
+        condition: on-failure
+        max_attempts: 3
+        window: 120s
       placement:
         constraints: [ node.labels.medium == true ]
 
@@ -180,6 +204,10 @@ services:
       - cassandrasmfr
       - persister
     deploy:
+      restart_policy:
+        condition: on-failure
+        max_attempts: 3
+        window: 120s
       placement:
         constraints: [ node.labels.medium == true ]
 
@@ -222,6 +250,10 @@ services:
       - geonames
       - persister
     deploy:
+      restart_policy:
+        condition: on-failure
+        max_attempts: 3
+        window: 120s
       placement:
         constraints: [ node.labels.large == true ]
 
@@ -262,6 +294,8 @@ services:
         constraints: [ node.labels.large == true ]
       restart_policy:
         condition: on-failure
+        max_attempts: 3
+        window: 120s
 
   restserver:
     restart: always
@@ -320,6 +354,10 @@ services:
       - geocoder
       - persister
     deploy:
+      restart_policy:
+        condition: on-failure
+        max_attempts: 3
+        window: 120s
       placement:
         constraints: [ node.labels.large == true ]
 
@@ -349,5 +387,9 @@ services:
       - myadmin
       - aggregator
     deploy:
+      restart_policy:
+        condition: on-failure
+        max_attempts: 3
+        window: 120s
       placement:
         constraints: [ node.labels.small == true ]

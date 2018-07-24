@@ -31,12 +31,7 @@ _cassandra_user = os.environ.get('CASSANDRA_USER')
 _cassandra_password = os.environ.get('CASSANDRA_PASSWORD')
 
 
-def cassandra_session_factory():
-    # In Cassandra >= 2.0.x, the default cqlsh listen port is 9160
-    # which is defined in cassandra.yaml by the rpc_port parameter.
-    # https://stackoverflow.com/questions/36133127/how-to-configure-cassandra-for-remote-connection
-    # Anyway, when using the cassandra-driver Cluster object, the port to use is still 9042.
-    # Just ensure to open 9042 and 9160 ports on all nodes of the Swarm cluster.
+def _cassandra_session_factory():
     cluster_kwargs = {'compression': True,
                       'auth_provider': PlainTextAuthProvider(username=_cassandra_user, password=_cassandra_password),
                       'load_balancing_policy': default_lbp_factory()}
@@ -47,7 +42,7 @@ def cassandra_session_factory():
     return session
 
 
-_session = cassandra_session_factory()
+_session = _cassandra_session_factory()
 register_connection(str(_session), session=_session)
 set_default_connection(str(_session))
 
@@ -321,9 +316,9 @@ class Tweet(cqldb.Model):
         obj = cls()
         for k, v in values.items():
             if k == 'created_at':
-                v = datetime.datetime.strptime(v.partition('.')[0],
-                                               '%Y-%m-%dT%H:%M:%S') if v is not None else datetime.datetime.now().replace(
-                    microsecond=0)
+                v = datetime.datetime.strptime(
+                    v.partition('.')[0],
+                    '%Y-%m-%dT%H:%M:%S') if v is not None else datetime.datetime.now().replace(microsecond=0)
             setattr(obj, k, v)
         return obj
 

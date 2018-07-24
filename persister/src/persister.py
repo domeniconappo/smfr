@@ -110,4 +110,4 @@ class Persister:
         self.logger.info('Persister connection closed!')
 
     def __str__(self):
-        return 'Consumer ({}): {}@{}:{}'.format(id(self), self.topic, self.bootstrap_server, self.group_id)
+        return 'Persister ({}): {}@{}:{}'.format(id(self), self.topic, self.bootstrap_server, self.group_id)
