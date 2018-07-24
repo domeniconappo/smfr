@@ -22,7 +22,7 @@ DOCKER_REGISTRY=$(getProperty "DOCKER_REGISTRY")
 SMFR_IMAGE=$(getProperty "SMFR_IMAGE")
 
 if [ -n "${DOCKER_ID_USER}" ] && [ ${DOCKER_REGISTRY} != "index.docker.io" ]; then
-    echo Pulling from a private registry: need to login
+    echo Pulling from a private registry: ${DOCKER_REGISTRY} - need to login
     docker login -u ${DOCKER_ID_USER} -p ${DOCKER_ID_PASSWORD} ${DOCKER_REGISTRY}
     logged=1
 fi
@@ -48,9 +48,12 @@ docker build --build-arg http_proxy=${http_proxy} --build-arg https_proxy=${http
 docker tag smfr_base:${image_tag} ${SMFR_IMAGE}:${image_tag}
 
 # push base image
-if [ -n "${DOCKER_ID_USER}" ] && [ ${command} == "push" ] && [ ${logged} == 0 ]; then
-    docker login -u ${DOCKER_ID_USER} -p ${DOCKER_ID_PASSWORD} ${DOCKER_REGISTRY}
-    docker push ${SMFR_IMAGE}:${image_tag}
+if [ -n "${DOCKER_ID_USER}" ] && [ ${command} == "push" ]; then
+    if  [ ${logged} == 0 ]; then
+        docker login -u ${DOCKER_ID_USER} -p ${DOCKER_ID_PASSWORD} ${DOCKER_REGISTRY}
+    fi
+    docker tag ${SMFR_IMAGE}:${image_tag} ${DOCKER_REGISTRY}/${SMFR_IMAGE}:${image_tag}
+    docker push ${DOCKER_REGISTRY}/${SMFR_IMAGE}:${image_tag}
 fi
 
 
