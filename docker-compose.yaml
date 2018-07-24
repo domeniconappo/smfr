@@ -2,31 +2,11 @@ version: '3.4'
 
 services:
 
-  geonames:
-    build:
-      context: ./
-      dockerfile: geonames/Dockerfile
-    image: efas/geonames:${image_tag}
-    restart: always
-    working_dir: /geonames
-    container_name: geonames
-    ports:
-      - '9200:9200'
-      - '9300:9300'
-    environment:
-      bootstrap.memory_lock: "true"
-      discovery.type: "single-node"
-    volumes:
-      - '${SMFR_DATADIR}/geonames_index:/usr/share/elasticsearch/data:rw'
-    deploy:
-      placement:
-        constraints: [ node.labels.large == true ]
-
   cassandrasmfr:
     build:
       context: ./
       dockerfile: cassandrasmfr/Dockerfile
-    image: efas/cassandrasmfr:${image_tag}
+    image: ${CASSANDRA_IMAGE}:${image_tag}
     restart: always
     # From host, connect to DB with `docker exec -it cassandrasmfr cqlsh`
     volumes:
@@ -58,7 +38,7 @@ services:
 
   kafka:
     restart: always
-    image: spotify/kafka:latest
+    image: ${KAFKA_IMAGE}
     container_name: kafka
     hostname: kafka
     environment:
@@ -77,7 +57,7 @@ services:
     build:
       context: ./
       dockerfile: mysql/Dockerfile
-    image: efas/mysql:${image_tag}
+    image: ${MYSQL_IMAGE}:${image_tag}
     restart: always
     container_name: mysql
     # From host, connect to DB with `mysql -h 127.0.0.1 -p` (if you have mysql client installed)
@@ -94,8 +74,28 @@ services:
       placement:
         constraints: [ node.labels.large == true ]
 
+  geonames:
+    build:
+      context: ./
+      dockerfile: geonames/Dockerfile
+    image: ${GEONAMES_IMAGE}:${image_tag}
+    restart: always
+    working_dir: /geonames
+    container_name: geonames
+    ports:
+      - '9200:9200'
+      - '9300:9300'
+    environment:
+      bootstrap.memory_lock: "true"
+      discovery.type: "single-node"
+    volumes:
+      - '${SMFR_DATADIR}/geonames_index:/usr/share/elasticsearch/data:rw'
+    deploy:
+      placement:
+        constraints: [ node.labels.large == true ]
+
   myadmin:
-    image: phpmyadmin/phpmyadmin:latest
+    image: ${MYADMIN_IMAGE}
     restart: always
     container_name: myadmin
     ports:
@@ -114,7 +114,7 @@ services:
   persister:
     restart: always
     container_name: persister
-    image: efas/persister:${image_tag}
+    image: ${PERSISTER_IMAGE}:${image_tag}
     build:
       context: ./
       args:
@@ -146,7 +146,7 @@ services:
   annotator:
     restart: always
     container_name: annotator
-    image: efas/annotator:${image_tag}
+    image: ${ANNOTATOR_IMAGE}:${image_tag}
     build:
       context: ./
       dockerfile: Dockerfile.annotator.ready
@@ -186,7 +186,7 @@ services:
   geocoder:
     restart: always
     container_name: geocoder
-    image: efas/geocoder:${image_tag}
+    image: ${GEOCODER_IMAGE}:${image_tag}
     build:
       context: ./
       dockerfile: Dockerfile.geocoder.ready
@@ -214,7 +214,6 @@ services:
       MYSQL_DBNAME: ${MYSQL_DBNAME}
       MYSQL_USER: ${MYSQL_USER}
       MYSQL_PASSWORD: ${MYSQL_PASSWORD}
-#      NUTS3_GEOJSON: GlobalRegions_052018.geojson
       http_proxy: ${http_proxy}
       https_proxy: ${https_proxy}
     depends_on:
@@ -229,7 +228,7 @@ services:
   aggregator:
     restart: on-failure
     container_name: aggregator
-    image: efas/aggregator:${image_tag}
+    image: ${AGGREGATOR_IMAGE}:${image_tag}
     build:
       context: ./
       dockerfile: Dockerfile.aggregator.ready
@@ -267,7 +266,7 @@ services:
   restserver:
     restart: always
     container_name: restserver
-    image: efas/restserver:${image_tag}
+    image: ${RESTSERVER_IMAGE}:${image_tag}
     build:
       context: ./
       dockerfile: Dockerfile.restserver.ready
@@ -327,7 +326,7 @@ services:
   web:
     restart: always
     container_name: web
-    image: efas/web:${image_tag}
+    image: ${WEB_IMAGE}:${image_tag}
     build:
       context: ./
       dockerfile: Dockerfile.web.ready

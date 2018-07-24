@@ -21,7 +21,7 @@ class ParserHelpOnError(argparse.ArgumentParser):
 def clean_compose(d_in):
     d_out = deepcopy(d_in)
     for service in d_out['services']:
-        if service in ('annotator', 'geocoder', 'web', 'restserver', 'persister') and 'volumes' in d_out['services'][service]:
+        if service in ('annotator', 'geocoder', 'web', 'restserver', 'persister', 'aggregator') and 'volumes' in d_out['services'][service]:
             if service == 'restserver':
                 volumes = d_out['services'][service]['volumes']
                 d_out['services'][service]['volumes'] = [v for v in volumes if 'rest_server/src' not in v]

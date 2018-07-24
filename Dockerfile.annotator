@@ -1,4 +1,4 @@
-FROM efas/smfr_base:${IMAGE_TAG}
+FROM ${SMFR_IMAGE}:${IMAGE_TAG}
 MAINTAINER Domenico Nappo <domenico.nappo@ext.ec.europa.eu>
 
 ARG http_proxy

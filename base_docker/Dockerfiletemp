@@ -1,4 +1,4 @@
-FROM python:3.6
+FROM ${PYTHON_BASE_IMAGE}
 MAINTAINER Domenico Nappo <domenico.nappo@ext.ec.europa.eu>
 
 ARG http_proxy

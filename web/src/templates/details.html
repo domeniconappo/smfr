@@ -33,7 +33,7 @@
                                            <th>Keywords</th>
                                            <td>{{ data.collection.tracking_keywords|join(', ') }}</td>
                                            <th>Bounding boxes</th>
-                                           <td><a href="{{ data.collection.bboxfinder }}">( {{ data.collection.locations|join(', ') }})</a></td>
+                                           <td><a href="{{ data.collection.bboxfinder }}" target="_blank">( {{ data.collection.locations|join(', ') }})</a></td>
                                        </tr>
                                        <tr>
                                            <th>Status</th>
@@ -62,36 +62,33 @@
                                            <td>{{ data.collection.nuts2source or '-' }}</td>
                                        </tr>
                                        {% endif %}
-
-                                       <tr>
-                                           <th colspan="2">Statistics details</th>
-                                           <td>
-                                                <table class="table table-striped">
-                                                   <tbody>
-                                                   <tr>
-                                                       <th>Timestamp start</th>
-                                                       <td>{{ data.aggregation.timestamp_start }}</td>
-                                                       <th>Timestamp end</th>
-                                                       <td>{{ data.aggregation.timestamp_end }}</td>
-                                                   </tr>
-                                                   <tr>
-                                                       <th>Last tweet collected</th>
-                                                       <td>{{ data.aggregation.last_tweetid_collected}}</td>
-                                                       <th>Last tweet annotated</th>
-                                                       <td>{{ data.aggregation.last_tweetid_annotated}}</td>
-                                                       <th>Last tweet geolocalized</th>
-                                                       <td>{{ data.aggregation.last_tweetid_geotagged}}</td>
-                                                   </tr>
-                                                   </tbody>
-                                                </table>
-                                           </td>
-                                       </tr>
-
-                                       </tbody>
+                                          </tbody>
                                    </table>
 
 	                           </div>
-	                       </div>
+                           </div>
+                           <div class="panel panel-default">
+                               <div class="panel-heading">
+                                   Statistics
+                               </div>
+                               <div class="panel-body">
+                                    <table class="table table-striped">
+                                       <tbody>
+                                       <tr>
+                                           <th colspan="2">First tweet</th>
+                                           <td colspan="2">{{ data.aggregation.timestamp_start|datetimeformat('%Y-%m-%d %H:%M') }}</td>
+                                           <th colspan="2">Last tweet</th>
+                                           <td colspan="2">{{ data.aggregation.timestamp_end|datetimeformat('%Y-%m-%d %H:%M') }}</td>
+                                       </tr>
+                                       {% for item in data.aggregation.data|dictsort(true,'value', reverse=true) %}
+                                        <tr>
+                                            <th colspan="4">{{ item.0 }}</th><td colspan="4">{{ item.1 }}</td>
+                                        </tr>
+                                        {% endfor %}
+                                       </tbody>
+                                    </table>
+                               </div>
+                           </div>
                         </div>
                         <div class="col-xs-6 col-sm-3">
 
@@ -144,24 +141,6 @@
                                    </div>
                                </div>
 	                       </div>
-
-                        <div class="panel panel-default">
-
-                           <div class="panel-heading">
-                               <h4>Stats</h4>
-                           </div>
-                           <div class="panel-body">
-                               <div>
-                                     <table class="table table-striped">
-                                       <tbody>
-                                        {% for k, v in data.aggregation.data.items() %}
-                                        <tr><th>{{ k }}</th><td>{{ v }}</td></tr>
-                                        {% endfor %}
-                                       </tbody>
-                                     </table>
-                               </div>
-                           </div>
-	                    </div>
 
 	                   </div>
 

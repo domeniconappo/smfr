@@ -1,5 +1,6 @@
 import os
 import datetime
+from collections import OrderedDict
 
 from passlib.apps import custom_app_context as pwd_context
 
@@ -346,8 +347,9 @@ class Nuts3(SMFRModel):
         :return:
         """
         properties = feature['properties']
-        names_by_lang = {lang.split('_')[1]: cityname for lang, cityname in properties.items() if
-                         lang.startswith('name_')}
+        names_by_lang = {lang.split('_')[1]: cityname
+                         for lang, cityname in properties.items() if lang.startswith('name_')
+                         }
         additional_props = {
             'is_megacity': bool(properties['MEGACITY']),
             'is_worldcity': bool(properties['WORLDCITY']),
@@ -376,10 +378,7 @@ class Aggregation(SMFRModel):
 
     id = Column(Integer, primary_key=True, autoincrement=True, nullable=False)
     collection_id = Column(Integer, ForeignKey('virtual_twitter_collection.id'))
-    collection = sqldb.relationship(
-        'TwitterCollection',
-        backref=sqldb.backref('twitter_collection', uselist=False)
-    )
+    collection = sqldb.relationship('TwitterCollection', backref=sqldb.backref('twitter_collection', uselist=False))
     values = Column(JSONType, nullable=False)
     last_tweetid_collected = Column(BigInteger, nullable=True)
     last_tweetid_annotated = Column(BigInteger, nullable=True)

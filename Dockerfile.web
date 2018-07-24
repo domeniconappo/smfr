@@ -1,4 +1,4 @@
-FROM python:3.5-stretch
+FROM ${WEB_BASE_IMAGE}
 MAINTAINER Domenico Nappo <domenico.nappo@ext.ec.europa.eu>
 
 ARG http_proxy
