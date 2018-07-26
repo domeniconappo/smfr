@@ -89,6 +89,9 @@ services:
   geonames:
     build:
       context: ./
+      args:
+        http_proxy: ${http_proxy}
+        https_proxy: ${https_proxy}
       dockerfile: geonames/Dockerfile
     image: ${GEONAMES_IMAGE}:${image_tag}
     restart: always
@@ -101,14 +104,14 @@ services:
       bootstrap.memory_lock: 'true'
       discovery.type: 'single-node'
     volumes:
-      - '${SMFR_DATADIR}/geonames_index:/usr/share/elasticsearch/data:rw'
+      - geonames_index:/usr/share/elasticsearch/data:rw
     deploy:
       restart_policy:
         condition: on-failure
         max_attempts: 3
         window: 120s
       placement:
-        constraints: [ node.labels.large == true ]
+        constraints: [ node.labels.huge == true ]
 
   myadmin:
     image: ${MYADMIN_IMAGE}
@@ -210,7 +213,7 @@ services:
         max_attempts: 3
         window: 120s
       placement:
-        constraints: [ node.labels.medium == true ]
+        constraints: [ node.labels.large == true ]
 
   geocoder:
     restart: always
@@ -256,7 +259,7 @@ services:
         max_attempts: 3
         window: 120s
       placement:
-        constraints: [ node.labels.large == true ]
+        constraints: [ node.labels.huge == true ]
 
   aggregator:
     restart: on-failure
@@ -393,3 +396,6 @@ services:
         window: 120s
       placement:
         constraints: [ node.labels.small == true ]
+
+volumes:
+  geonames_index:

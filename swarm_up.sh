@@ -45,17 +45,17 @@ docker pull ${DOCKER_REGISTRY}/${MYSQL_IMAGE}:${image_tag}
 docker pull ${DOCKER_REGISTRY}/${CASSANDRA_IMAGE}:${image_tag}
 docker pull ${DOCKER_REGISTRY}/${GEONAMES_IMAGE}:${image_tag}
 
-docker stack deploy -c ./docker-compose-4deploy.yaml SMFR
+docker stack deploy --with-registry-auth -c ./docker-compose-4deploy.yaml SMFR
 
 # forcing updates of images
 
 
-docker service update SMFR_persister --detach=false --image ${DOCKER_REGISTRY}/${PERSISTER_IMAGE}:${image_tag}
-docker service update SMFR_geonames --detach=false --image ${DOCKER_REGISTRY}/${AGGREGATOR_IMAGE}:${image_tag}
-docker service update SMFR_mysql --detach=false --image ${DOCKER_REGISTRY}/${ANNOTATOR_IMAGE}:${image_tag}
-docker service update SMFR_annotator --detach=false --image ${DOCKER_REGISTRY}/${GEOCODER_IMAGE}:${image_tag}
-docker service update SMFR_geocoder --detach=false --image ${DOCKER_REGISTRY}/${RESTSERVER_IMAGE}:${image_tag}
-docker service update SMFR_restserver --detach=false --image ${DOCKER_REGISTRY}/${WEB_IMAGE}:${image_tag}
-docker service update SMFR_web --detach=false --image ${DOCKER_REGISTRY}/${MYSQL_IMAGE}:${image_tag}
-docker service update SMFR_cassandrasmfr --detach=false --image ${DOCKER_REGISTRY}/${CASSANDRA_IMAGE}:${image_tag}
-docker service update SMFR_geonames --detach=false --image ${DOCKER_REGISTRY}/${GEONAMES_IMAGE}:${image_tag}
+docker service update SMFR_persister --detach=false --with-registry-auth --image ${DOCKER_REGISTRY}/${PERSISTER_IMAGE}:${image_tag}
+docker service update SMFR_geonames --detach=false --with-registry-auth --image ${DOCKER_REGISTRY}/${AGGREGATOR_IMAGE}:${image_tag}
+docker service update SMFR_mysql --detach=false --with-registry-auth --image ${DOCKER_REGISTRY}/${ANNOTATOR_IMAGE}:${image_tag}
+docker service update SMFR_annotator --detach=false --with-registry-auth --image ${DOCKER_REGISTRY}/${GEOCODER_IMAGE}:${image_tag}
+docker service update SMFR_geocoder --detach=false --with-registry-auth --image ${DOCKER_REGISTRY}/${RESTSERVER_IMAGE}:${image_tag}
+docker service update SMFR_restserver --detach=false --with-registry-auth --image ${DOCKER_REGISTRY}/${WEB_IMAGE}:${image_tag}
+docker service update SMFR_web --detach=false --with-registry-auth --image ${DOCKER_REGISTRY}/${MYSQL_IMAGE}:${image_tag}
+docker service update SMFR_cassandrasmfr --detach=false --with-registry-auth --image ${DOCKER_REGISTRY}/${CASSANDRA_IMAGE}:${image_tag}
+docker service update SMFR_geonames --detach=false --with-registry-auth --image ${DOCKER_REGISTRY}/${GEONAMES_IMAGE}:${image_tag}

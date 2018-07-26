@@ -1,10 +1,12 @@
 FROM ${GEONAMES_BASE_IMAGE}
 MAINTAINER Domenico Nappo <domenico.nappo@ext.ec.europa.eu>
 
-ENV LANG=C.UTF-8
-ENV INSTALL_PATH /geonames
+ARG http_proxy
+ARG https_proxy
 
-WORKDIR $INSTALL_PATH
+ENV LANG=C.UTF-8
+
+WORKDIR /geonames
 
 USER root
 
@@ -18,6 +20,10 @@ COPY geonames/elasticsearch.yml /usr/share/elasticsearch/config/
 COPY geonames/log4j2.properties /usr/share/elasticsearch/config/
 COPY geonames/jvm.options /usr/share/elasticsearch/config/
 RUN elasticsearch-plugin remove x-pack
+
+WORKDIR /usr/share/elasticsearch/
+RUN wget https://s3.amazonaws.com/ahalterman-geo/geonames_index.tar.gz && tar xzf geonames_index.tar.gz \
+    && rm geonames_index.tar.gz && mv geonames_index/nodes/ data/
 
 ENV PATH=$PATH:/usr/share/elasticsearch/bin
 CMD ["elasticsearch"]
