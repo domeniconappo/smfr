@@ -40,17 +40,23 @@ class FTPEfas:
     def _get_filename(self):
         if self.dated == 'latest':
             remote_filelist = self.connection.listdir(self.server_folder)
-            res = [f for f in remote_filelist if f.startswith(self.filename_template[:6]) and self.date_from_filename(f).isdigit()]
+            res = [f for f in remote_filelist if self._is_rra_file(f)]
             filename = sorted(res, key=self.date_from_filename, reverse=True)[0]
         else:
             filename = self.filename_template.format(self.dated)
         return filename
 
+    def _is_rra_file(self, f):
+        name, _ = os.path.splitext(f)
+        template_name, _ = os.path.splitext(self.filename_template)
+        template_name = template_name.replace('{}', '')
+        return template_name in name
+
     @classmethod
     def date_from_filename(cls, filename):
-        # filename is CostPopEstYYYYMMDDHH.json or stats_fullYYYYMMDDHH.csv
+        # filename is CostPopEstYYYYMMDDHH.json or stats_fullYYYYMMDDHH.csv or YYYYMMDDHHSM_meanLT_tmp.json
         name, _ = os.path.splitext(filename)
-        return name[-10:]
+        return name[:10] if name[:10].isdigit() else name[-10:]
 
     def _fetch(self, force=False):
         """

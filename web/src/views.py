@@ -86,8 +86,7 @@ def new_collection():
             'forecast': form.forecast_id.data, 'tzclient': form.tzclient.data,
         }
         try:
-            res = client.new_collection(payload)
-            logger.debug('New Collection: %s', str(res))
+            _ = client.new_collection(payload)
             add_message('A new collection was added.', category=MessageClass.SUCCESS)
             return redirect('/list')
         except SMFRRestException as e:
@@ -165,7 +164,7 @@ def annotate_collection(collection_id, lang):
         add_message('An error occurred: {}'.format(e), category=MessageClass.ERROR)
         logger.error(str(e))
     else:
-        add_message('Classification started for collection', category=MessageClass.SUCCESS)
+        add_message('Classification started for collection: language: {}'.format(lang), category=MessageClass.SUCCESS)
     finally:
         return redirect('/details/{}'.format(collection_id))
 

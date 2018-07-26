@@ -7,6 +7,7 @@ import uuid
 import csv
 from functools import partial
 
+import ujson as json
 import connexion
 from flask import abort
 from flask_jwt_extended import jwt_required, get_jwt_identity
@@ -224,7 +225,7 @@ def get_collection_details(collection_id):
         geotagged_table.append(Tweet.make_table_object(i, t))
 
     res = {'collection': collection_dump, 'collector': collector_dump, 'datatable': samples_table,
-           'aggregation': aggregation_dump,
+           'aggregation': aggregation_dump, 'annotation_models': AnnotatorClient.models()[0]['models'],
            'running_annotators': AnnotatorClient.running()[0], 'running_geotaggers': GeocoderClient.running()[0],
            'datatableannotated': annotated_table, 'datatablegeotagged': geotagged_table}
     return res, 200
@@ -309,38 +310,34 @@ def fetch_efas(since='latest'):
     ftp_client.download_rra()
     ftp_client.close()
     results = {}
-
+    # RRA file content
+    # [{"ID":1414,"SM_meanLT":2.0},{"ID":1436,"SM_meanLT":3.0},{"ID":1673,"SM_meanLT":7.0}]
     if os.path.getsize(ftp_client.localfilepath) > 0:
         with open(ftp_client.localfilepath) as f:
-            reader = csv.DictReader(f, delimiter=',')
-            next(reader)  # skip header
+            events = json.load(f)
 
-            for event in reader:
+            for event in events:
                 date = ftp_client.filename_date
-                event_id = event['ID'].rstrip('.0')
-                rra_event_id = int(float(event['ID']))
-
-                cities = event.get('Cities') or event.get('1Cities') or ''
-                # from EFAS RRA, cities come as '[Bassens/0.28%] [Bordeaux/1.7%]' strings
-                logger.info('Fetched event id %d', rra_event_id)
-                nuts3_data = list(Nuts3.query.with_entities(Nuts3.name_ascii, Nuts3.country_name, Nuts3.nuts_id, Nuts3.efas_id).filter_by(join_id=rra_event_id))
+                efas_id = int(event['ID'])
+                lead_time = int(event['SM_meanLT'])
+                logger.info('Fetched event for efas id %d', efas_id)
+                nuts3_data = list(Nuts3.query.with_entities(
+                    Nuts3.names, Nuts3.country_name, Nuts3.nuts_id, Nuts3.name_ascii
+                ).filter_by(efas_id=efas_id))
                 if not nuts3_data:
-                    logger.info('No NUTS3 data found for RRA event id %d', rra_event_id)
+                    logger.info('No NUTS3 data found for RRA event id %d', efas_id)
                     continue
-                efas_id = nuts3_data[0][3]
                 bbox = Nuts2.nuts2_bbox(efas_id)
                 country_name = nuts3_data[0][1] if nuts3_data else ''
                 nuts_id = nuts3_data[0][2] if nuts3_data else ''
-                cities = ','.join(c.replace('[', '').replace(']', '').split('/')[0] for c in cities.split())
-                if not cities:
-                    cities = ','.join(c[0] for c in nuts3_data if c and c[0])
-
-                if event_id not in results:
-                    results[event_id] = {'efas_id': efas_id, 'trigger': 'on-demand',
-                                         'nuts': nuts_id, 'country': country_name,
-                                         'keywords': cities, 'bbox': bbox, 'forecast': date}
+                cities = set([s for c in nuts3_data for s in c[0].values() if c and c[0] and s] + [c[3] for c in nuts3_data if c and c[3]])
+                cities = ','.join(c for c in cities)
+                if event['ID'] not in results:
+                    results[event['ID']] = {'efas_id': efas_id, 'trigger': 'on-demand',
+                                            'nuts': nuts_id, 'country': country_name, 'lead_time': lead_time,
+                                            'keywords': cities, 'bbox': bbox, 'forecast': date}
                 else:
-                    results[event_id].update({'keywords': cities})
+                    results[event['ID']].update({'keywords': cities})
     return {'results': results}, 200
 
 
@@ -348,7 +345,7 @@ def fetch_efas(since='latest'):
 # @jwt_required
 def add_ondemand(payload):
     """
-
+    Add a list of on demand collections running immediately which stop at given runtime parameter
     :param payload: list of dict with following format
     {'bbox': {'max_lat': 40.6587, 'max_lon': -1.14236, 'min_lat': 39.2267, 'min_lon': -3.16142},
      'trigger': 'on-demand', 'forecast': '2018061500', 'keywords': 'Cuenca', 'efas_id': 1436
@@ -357,20 +354,23 @@ def add_ondemand(payload):
     :return:
     """
     from daemons.collector import OndemandCollector
-    collectors = []
+    collections = []
     for event in payload:
+        event['tz'] = '+00:00'
         collector = OndemandCollector.create_from_event(event)
-        collectors.append(str(collector))
         # params for stored collector is in the form of a dict:
         # {"trigger": "manual", "tzclient": "+02:00", "forecast": 123456789,
         #     "kwfile": "/path/c78e0f08-98c9-4553-b8ee-a41f15a34110_kwfile.yaml",
         #     "locfile": "/path/c78e0f08-98c9-4553-b8ee-a41f15a34110_locfile.yaml",
         #     "config": "/path/c78e0f08-98c9-4553-b8ee-a41f15a34110_config.yaml"}
         params = {'trigger': 'on-demand', 'forecast': event['forecast'],
-                  'tzclient': '+00:00',
+                  'tzclient': '+00:00', 'runtime': collector.runtime,
                   'kwfile': collector.kwfile, 'locfile': collector.locfile,
                   'config': collector.config}
+        collections.append({'efas id': event['efas_id'], 'runtime': collector.runtime, 'nuts': event.get('nuts'),
+                            'keywords': event['keywords'], 'bbox': event['bbox']})
         stored = StoredCollector(collection_id=collector.collection.id, parameters=params)
         stored.save()
         collector.stored_instance = stored
-    return {'results': collectors}, 201
+        collector.launch()
+    return {'results': collections}, 201

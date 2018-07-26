@@ -327,7 +327,6 @@ class Nuts3(SMFRModel):
     __tablename__ = 'nuts3'
     __table_args__ = {'mysql_engine': 'InnoDB', 'mysql_charset': 'utf8mb4', 'mysql_collate': 'utf8mb4_general_ci'}
     id = Column(Integer, primary_key=True, nullable=False, autoincrement=True)
-    join_id = Column(Integer, nullable=False, index=True)
     efas_id = Column(Integer, nullable=False, index=True)
     name = Column(String(500), nullable=False)
     name_ascii = Column(String(500), nullable=False, index=True)

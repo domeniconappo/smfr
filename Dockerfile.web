@@ -10,6 +10,7 @@ RUN apt-get update
 RUN apt-get -y dist-upgrade
 RUN apt-get -y install apt-utils
 RUN apt-get -y install net-tools nginx supervisor
+RUN pip3 install -U pip
 
 # build uwsgi and python plugin
 RUN mkdir -p /uwsgi && cd /uwsgi && wget https://projects.unbit.it/downloads/uwsgi-2.0.15.tar.gz && tar xzvf uwsgi-2.0.15.tar.gz
@@ -20,7 +21,7 @@ RUN ln -fs /usr/lib/python3.5/plat-x86_64-linux-gnu/_sysconfigdata_m.py /usr/lib
 
 
 COPY ./web/requirements.txt /requirements.txt
-RUN pip3 install -U pip && pip3 install -r /requirements.txt
+RUN pip3 install -r /requirements.txt
 
 RUN apt-get autoremove -y && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 

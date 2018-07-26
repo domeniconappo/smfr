@@ -23,6 +23,7 @@
                             <li>{{ kw }}</li>
                         {% endfor %}
                         </ul>
+                        <div>Peak time within {{ result.lead_time }} days</div>
                         <div>Bbox: <a target="_blank" href="{{ result.bbox.bboxfinder }}">{{ result.bbox.plain }}</a></div>
                     </div>
                 {% endfor %}

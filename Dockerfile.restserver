@@ -9,31 +9,29 @@ ARG download_folder
 ENV INSTALL_PATH /rest_server
 ENV LANG=C.UTF-8
 
-RUN apt-get update && apt-get install -y mariadb-client  && mkdir -p $INSTALL_PATH && mkdir -p /scripts && mkdir -p /configuration
+RUN apt-get update && apt-get install -y mariadb-client  && mkdir -p /rest_server \
+    && mkdir -p /scripts && mkdir -p /configuration mkdir -p /smfr_clients \
+    && mkdir -p /smfr_utils && mkdir -p /smfr_models && mkdir -p /smfr/uploads/ \
+    && mkdir -p ~/.ssh/ && mkdir -p ${download_folder}
 
-COPY ./rest_server/requirements.txt $INSTALL_PATH/
-RUN pip3.6 install -r $INSTALL_PATH/requirements.txt
+COPY ./rest_server/requirements.txt /rest_server
+RUN pip3.6 install -r /rest_server/requirements.txt
 
 # Clean up APT
 RUN apt-get autoremove -y && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
-
 ENV PATH=/usr/local/mysql/bin/:$PATH
 
-RUN mkdir -p ~/.ssh/
 RUN ssh-keyscan -t rsa ${ftp_host} >> ~/.ssh/known_hosts
-RUN mkdir -p ${download_folder}
 
-WORKDIR $INSTALL_PATH
-
-RUN mkdir -p /smfr_clients && mkdir -p /smfr_utils && mkdir -p /smfr_models && mkdir -p /smfr/uploads/
 COPY ./shared_libs/smfr_clients/. /smfr_clients/
 COPY ./shared_libs/smfr_utils/. /smfr_utils/
 COPY ./shared_libs/smfr_models/. /smfr_models/
 RUN pip3.6 install /smfr_clients/ && pip3 install /smfr_utils/ && pip3.6 install /smfr_models/ && rm -R /root/.cache
 
-COPY ./rest_server/src/. $INSTALL_PATH/
+COPY ./rest_server/src/. /rest_server
 COPY ./shared_libs/scripts/wait_for_it.sh /scripts/
-COPY ./rest_server/src/config/. /configuration/
+COPY ./rest_server/src/config/admin_collector.yaml /configuration/admin_collector.yaml
+COPY ./rest_server/src/config/flood_keywords.yaml /configuration/flood_keywords.yaml
 
 EXPOSE 5555
 RUN ["chmod", "a+x", "/scripts/wait_for_it.sh"]

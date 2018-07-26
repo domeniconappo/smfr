@@ -11,6 +11,7 @@ from server.config import RestServerConfiguration
 
 
 class MicroserviceClient:
+    """Base classe for microservices with common methods"""
 
     configuration = RestServerConfiguration()
     base_uri = None
@@ -43,6 +44,13 @@ class AnnotatorClient(MicroserviceClient):
     host = MicroserviceClient.configuration.annotator_host
     port = MicroserviceClient.configuration.annotator_port
     base_uri = 'http://{}:{}'.format(host, port)
+
+    @classmethod
+    def models(cls):
+        url = '{}/models'.format(cls.base_uri)
+        res = requests.get(url)
+        cls._check_response(res, res.status_code)
+        return res.json(), res.status_code
 
     @classmethod
     def start(cls, collection_id, lang):

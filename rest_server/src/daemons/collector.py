@@ -1,14 +1,13 @@
+import datetime
 import logging
 import os
 import sched
 import sys
 import threading
-
 import time
 import uuid
 
 import yaml
-
 from dateutil import parser
 
 from smfrcore.models.sqlmodels import TwitterCollection, StoredCollector
@@ -43,7 +42,7 @@ class Collector:
         iden = uuid.uuid4()
         filename = '{}_{}_kwfile.yaml'.format(forecast_id, iden)
         fullpath = os.path.join(CONFIG_STORE_PATH, filename)
-        content = {'no_language': keywords.split(',')}
+        content = {'-': keywords.split(',')}
         with open(fullpath, 'w') as f:
             yaml.dump(content, f)
         return fullpath
@@ -92,7 +91,7 @@ class Collector:
         self.nuts2source = nuts2source
         self.stored_instance = None
 
-        collector_config = yaml.load(open(self.config).read())
+        collector_config = yaml.load(open(self.user_collector_config_file()).read())
         client_args = {}
         if os.environ.get('http_proxy'):
             client_args = {
@@ -242,7 +241,7 @@ class Collector:
             # schedule the stop
             s = sched.scheduler(time.time, time.sleep)
             self.logger.info('---+ Collector scheduled to stop at %s %s...', self.runtime, self.user_tzone)
-            stop_at = parser.parse('{} {}'.format(self.runtime, self.user_tzone))  # - tz_diff(self.user_tzone)
+            stop_at = parser.parse('{} {}'.format(self.runtime, self.user_tzone))
             s.enterabs(stop_at.timestamp(), 1, self.stop)
             t = threading.Thread(target=s.run, name='stop_at_%s' % str(stop_at))
             t.start()
@@ -297,13 +296,24 @@ class OndemandCollector(Collector):
         :type: dict
         :return: Collector object
         """
+        runtime = cls.runtime_from_leadtime(event['lead_time'])
         keywords_file = cls.keywords_file_from_keywords(event['keywords'], event['forecast'])
         locations_file = cls.locations_file_from_bbox(event['bbox'], event['forecast'])
         config_file = cls.user_collector_config_file(user)
         forecast_id = event['forecast']
         nuts2 = event['efas_id']
         return cls(config_file, keywords_file=keywords_file, locations_file=locations_file,
-                   forecast_id=forecast_id, nuts2=nuts2)
+                   forecast_id=forecast_id, nuts2=nuts2, running_time=runtime, tz=event['tz'])
+
+    @classmethod
+    def runtime_from_leadtime(cls, lead_time):
+        """
+
+        :param lead_time: number of days before the peak occurs
+        :return: runtime in format %Y-%m-%d %H:%M
+        """
+        runtime = datetime.datetime.now() + datetime.timedelta(days=int(lead_time))
+        return runtime.strftime('%Y-%m-%d %H:%M')
 
 
 class ManualCollector(Collector):

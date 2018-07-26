@@ -62,6 +62,8 @@ class OnDemandPayload(BaseSchema):
     keywords = fields.String()
     trigger = fields.String(validate=[OneOf(choices=['background', 'on-demand', 'manual'], labels=[])])
     bbox = fields.Field()
+    lead_time = fields.Integer()
+    nuts = fields.String()
 
 
 class Collector(BaseSchema):

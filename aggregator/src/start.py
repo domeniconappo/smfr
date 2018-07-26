@@ -21,6 +21,11 @@ if __name__ == '__main__':
     conf = parser.parse_args()
     logger.info('Configuration: %s every %s minutes', pretty_running_conf(conf), scheduling_interval)
     kwargs = {'running_conf': conf}
+
+    # run first job
+    aggregate(running_conf=conf)
+
+    # schedule every X minutes
     schedule.every(scheduling_interval).minutes.do(aggregate, **kwargs).tag('aggregator-main')
 
     while True:

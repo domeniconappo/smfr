@@ -9,6 +9,7 @@ class NewCollectorForm(FlaskForm):
                          choices=[('background', 'Background'), ('manual', 'Manual'), ('on-demand', 'On Demand')],
                          validators=[DataRequired('You must declare how collection was triggered.')]
                          )
+
     config = FileField('Upload your config file', validators=[DataRequired('Collector configuration is mandatory.')])
     kwfile = FileField('Upload keywords file')
     locfile = FileField('Upload locations file')

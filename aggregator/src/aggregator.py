@@ -22,7 +22,7 @@ logging.getLogger('cassandra').setLevel(logging.ERROR)
 flask_app = create_app()
 
 running_aggregators = set()
-flood_propability_ranges = ((0, 20), (20, 40), (40, 60), (60, 80), (80, 100))
+flood_propability_ranges = ((0, 10), (10, 90), (90, 100))
 
 
 def with_logging(func):

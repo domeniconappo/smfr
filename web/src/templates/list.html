@@ -61,7 +61,7 @@
 
                     <td>{% if c.collection.locations %}<a href="{{ c.collection.bboxfinder }}" target="_blank">({{c.collection.locations|join(', ')}})</a>{% endif %}</td>
 
-                    <td> {% if c.collection.runtime %} {{c.collection.runtime|datetimeformat|datetimeformat('%Y-%m-%d %H:%M:%S')}} {% endif %}</td>
+                    <td> {% if c.collection.runtime %} {{c.collection.runtime|datetimeformat('%Y-%m-%d %H:%M:%S')}} {% endif %}</td>
                     <td>{{c.collection.started_at|datetimeformat('%Y-%m-%d %H:%M:%S')}}</td>
                     <td>{{c.collection.stopped_at|datetimeformat('%Y-%m-%d %H:%M:%S')}}</td>
                 </tr>

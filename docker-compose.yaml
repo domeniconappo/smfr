@@ -186,6 +186,7 @@ services:
       PYTHONUNBUFFERED: 'true'
       RESTSERVER_PORT: ${RESTSERVER_PORT}
       RESTSERVER_BASEPATH: '/1.0'
+      KERAS_BACKEND: tensorflow
       KAFKA_TOPIC: ${KAFKA_TOPIC}
       KAFKA_BOOTSTRAP_SERVER: ${KAFKA_BOOTSTRAP_SERVER}
       CASSANDRA_HOST: ${CASSANDRA_HOST}
@@ -326,7 +327,6 @@ services:
       GEOCODER_PORT: ${GEOCODER_PORT}
       FLASK_APP: smfr.py
       SERVER_PATH_UPLOADS: /smfr/uploads/
-      KERAS_BACKEND: tensorflow
       CQLENG_ALLOW_SCHEMA_MANAGEMENT: 1
       PRODUCTION: ${PRODUCTION}
       RESTSERVER_BASEPATH: '/1.0'
@@ -384,7 +384,7 @@ services:
       - '8888:8888'
     depends_on:
       - restserver
-      - myadmin
+#      - myadmin
       - aggregator
     deploy:
       restart_policy:

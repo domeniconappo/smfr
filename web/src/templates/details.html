@@ -15,7 +15,7 @@
 	                               Collection details
 	                           </div>
 	                           <div class="panel-body">
-                                   <table class="table table-striped">
+                                   <table class="table">
                                        <tbody>
                                        <tr>
                                            <th>Collection Id</th>
@@ -72,7 +72,8 @@
                                    Statistics
                                </div>
                                <div class="panel-body">
-                                    <table class="table table-striped">
+                               {% if data.aggregation.data %}
+                                    <table class="table">
                                        <tbody>
                                        <tr>
                                            <th colspan="2">First tweet</th>
@@ -87,6 +88,9 @@
                                         {% endfor %}
                                        </tbody>
                                     </table>
+                               {% else %}
+                                   There are no data yet
+                               {% endif %}
                                </div>
                            </div>
                         </div>
@@ -120,25 +124,43 @@
 	                        <div class="panel panel-default">
 
                                <div class="panel-heading">
-                                   <h4>Analysis</h4>
+                                   <h4>Geocoding</h4>
 	                           </div>
 	                           <div class="panel-body">
                                    <div class="btn-group btn-group-justified" role="group">
                                        <div class="btn-group">
                                            {% set test = data.collection.id in data.running_geotaggers %}
-                                            <a {% if test %}title="Geotagging is currently running for this collection" class="btn btn-sm btn-default disabled"{% else %} title="Start geotagging for annotated tweets in this collection" class="btn btn-sm btn-default"{% endif %}
-                                               href="/geolocalize/{{ data.collection.id }}"><em class="fas fa-globe"></em></a>
+                                            <a {% if test %}title="Geotagging is currently running for this collection" class="btn btn-default disabled"{% else %} title="Start geotagging for annotated tweets in this collection" class="btn btn-default"{% endif %}
+                                               href="/geolocalize/{{ data.collection.id }}"><em class="fas fa-globe"></em> Start Geocoding</a>
                                        </div>
-                                       {% for l in data.collection.languages %}
-                                           {% set cur = [data.collection.id, l] %}
-                                           {% set test = cur in data.running_annotators %}
-                                           <div class="btn-group">
-                                               <a {% if test %}title="Classification {{ l.upper() }} is currently running for this collection" class="btn btn-sm btn-default disabled"{% else %} title="Start {{ l.upper() }} classification for this collection" class="btn btn-sm btn-default"{% endif %} href="/annotate/{{ data.collection.id }}/{{ l }}">
-                                                   <em class="fas fa-tasks"></em>&nbsp;{{ l.upper() }}
-                                               </a>
-                                           </div>
-                                       {% endfor %}
                                    </div>
+                               </div>
+	                       </div>
+
+                           <div class="panel panel-default">
+
+                               <div class="panel-heading">
+                                   <h4>Annotation</h4>
+	                           </div>
+	                           <div class="panel-body">
+                                   <form>
+                                       <div class="form-group">
+                                            <label for="annotation_select">
+                                            <select id ="annotation_select" class="form-control">
+                                              <option value="-" selected>Choose the language</option>
+                                               {% for l in data.annotation_models %}
+                                                   {% if not (data.collection.languages and data.collection.languages != ['-'] and l not in data.collection.languages)  %}
+                                                   <option value="{{ l }}" {% if test %}class="disabled"{% endif %}>{{ l }}</option>
+                                                   {% endif %}
+                                               {% endfor %}
+                                            </select>
+                                            </label>
+
+                                        </div>
+                                   </form>
+                               <a id="annotate_button" title="Start classification for this collection" class="btn btn-default disabled" href="javascript: void(0);">
+                                            <em class="fas fa-tasks"></em> Start annotation
+                                            </a>
                                </div>
 	                       </div>
 
@@ -278,142 +300,155 @@
 {% block scripts %}
     {{ super() }}
     <script>
-function format (d, inc) {
-    // `d` is the original data object for the row
+        var sel = document.getElementById('annotation_select');
+        var btn = $("#annotate_button");
+        sel.onchange = function () {
+            var selected = this.value;
 
-    return '<table cellpadding="5" cellspacing="0" border="0" style="padding-left:50px;"><tr><td>'+
-        '<pre id="jsonout_' + (d.rownum + inc) + '"></pre></div>'+
-        '</td></tr></table>';
-}
+            if (selected === '-') {
+                btn.attr("href", "javascript: void(0)");
+                btn.addClass("disabled");
+            } else {
+                btn.removeClass("disabled");
+                btn.attr("href", "/annotate/{{ data.collection.id }}/" + selected);
+            }
+        };
+        function format (d, inc) {
+            // `d` is the original data object for the row
 
-
-$(document).ready(function() {
-    var dataSet = {{ data.datatable | safe }};
-
-    var table = $('#tabletweets').DataTable( {
-        "data": dataSet,
-        "columns": [
-            {
-                "className":      'details-control',
-                "orderable":      false,
-                "data":           null,
-                "defaultContent": ''
-            },
-            { "data": "rownum", "orderable": false },
-            { "data": "Tweet id" },
-            { "data": "Tweeted at" },
-            { "data": "Collected at" },
-            { "data": "Lang" },
-            { "data": "Full Text", "orderable": false}
-        ],
-        "order": [[1, 'asc']]
-    } );
-
-    // Add event listener for opening and closing details
-    $('#tabletweets tbody').on('click', 'td.details-control', function () {
-        var tr = $(this).closest('tr');
-        var row = table.row( tr );
-
-        if ( row.child.isShown() ) {
-            // This row is already open - close it
-            row.child.hide();
-            tr.removeClass('shown');
+            return '<table cellpadding="5" cellspacing="0" border="0" style="padding-left:50px;"><tr><td>'+
+                '<pre id="jsonout_' + (d.rownum + inc) + '"></pre></div>'+
+                '</td></tr></table>';
         }
-        else {
-            // Open this row
-            var d = row.data();
-            row.child( format(d, 0) ).show();
-            tr.addClass('shown');
-            var obj = d.original_tweet;
-            output("#jsonout_" + d.rownum, syntaxHighlight(obj));
-        }
-    } );
 
 
-    var dataSetAnnotated = {{ data.datatableannotated | safe }};
-    var tableAnnotated = $('#tabletweetsannotated').DataTable( {
-        "data": dataSetAnnotated,
-        "columns": [
-            {
-                "className":      'details-control',
-                "orderable":      false,
-                "data":           null,
-                "defaultContent": ''
-            },
-            { "data": "rownum", "orderable": false },
-            { "data": "Tweet id" },
-            { "data": "Annotations" },
-            { "data": "Tweeted at" },
-            { "data": "Collected at" },
-            { "data": "Lang" },
-            { "data": "Full Text", "orderable": false}
-        ],
-        "order": [[1, 'asc']]
-    } );
+        $(document).ready(function() {
+            var dataSet = {{ data.datatable | safe }};
 
-    // Add event listener for opening and closing details
-    $('#tabletweetsannotated tbody').on('click', 'td.details-control', function () {
-        var tr = $(this).closest('tr');
-        var row = tableAnnotated.row( tr );
+            var table = $('#tabletweets').DataTable( {
+                "data": dataSet,
+                "columns": [
+                    {
+                        "className":      'details-control',
+                        "orderable":      false,
+                        "data":           null,
+                        "defaultContent": ''
+                    },
+                    { "data": "rownum", "orderable": false },
+                    { "data": "Tweet id" },
+                    { "data": "Tweeted at" },
+                    { "data": "Collected at" },
+                    { "data": "Lang" },
+                    { "data": "Full Text", "orderable": false}
+                ],
+                "order": [[1, 'asc']]
+            } );
 
-        if ( row.child.isShown() ) {
-            // This row is already open - close it
-            row.child.hide();
-            tr.removeClass('shown');
-        }
-        else {
-            // Open this row
-            var d = row.data();
-            row.child( format(d, 10000) ).show();
-            tr.addClass('shown');
-            var obj = d.original_tweet;
-            output("#jsonout_" + (d.rownum + 10000), syntaxHighlight(obj));
-        }
-    } );
+            // Add event listener for opening and closing details
+            $('#tabletweets tbody').on('click', 'td.details-control', function () {
+                var tr = $(this).closest('tr');
+                var row = table.row( tr );
+
+                if ( row.child.isShown() ) {
+                    // This row is already open - close it
+                    row.child.hide();
+                    tr.removeClass('shown');
+                }
+                else {
+                    // Open this row
+                    var d = row.data();
+                    row.child( format(d, 0) ).show();
+                    tr.addClass('shown');
+                    var obj = d.original_tweet;
+                    output("#jsonout_" + d.rownum, syntaxHighlight(obj));
+                }
+            } );
 
 
-    var dataSetGeotagged = {{ data.datatablegeotagged | safe }};
-    var tableGeotagged = $('#tabletweetsgeotagged').DataTable( {
-        "data": dataSetGeotagged,
-        "columns": [
-            {
-                "className":      'details-control',
-                "orderable":      false,
-                "data":           null,
-                "defaultContent": ''
-            },
-            { "data": "rownum", "orderable": false },
-            { "data": "Tweet id" },
-            { "data": "Annotations" },
-            { "data": "LatLon" },
-            { "data": "Tweeted at" },
-            { "data": "Collected at" },
-            { "data": "Lang" },
-            { "data": "Full Text", "orderable": false}
-        ],
-        "order": [[1, 'asc']]
-    } );
+            var dataSetAnnotated = {{ data.datatableannotated | safe }};
+            var tableAnnotated = $('#tabletweetsannotated').DataTable( {
+                "data": dataSetAnnotated,
+                "columns": [
+                    {
+                        "className":      'details-control',
+                        "orderable":      false,
+                        "data":           null,
+                        "defaultContent": ''
+                    },
+                    { "data": "rownum", "orderable": false },
+                    { "data": "Tweet id" },
+                    { "data": "Annotations" },
+                    { "data": "Tweeted at" },
+                    { "data": "Collected at" },
+                    { "data": "Lang" },
+                    { "data": "Full Text", "orderable": false}
+                ],
+                "order": [[1, 'asc']]
+            } );
 
-    // Add event listener for opening and closing details
-    $('#tabletweetsgeotagged tbody').on('click', 'td.details-control', function () {
-        var tr = $(this).closest('tr');
-        var row = tableGeotagged.row( tr );
+            // Add event listener for opening and closing details
+            $('#tabletweetsannotated tbody').on('click', 'td.details-control', function () {
+                var tr = $(this).closest('tr');
+                var row = tableAnnotated.row( tr );
 
-        if ( row.child.isShown() ) {
-            // This row is open - close it
-            row.child.hide();
-            tr.removeClass('shown');
-        }
-        else {
-            // Open this row
-            var d = row.data();
-            row.child( format(d, 20000) ).show();
-            tr.addClass('shown');
-            var obj = d.original_tweet;
-            output("#jsonout_" + (d.rownum + 20000), syntaxHighlight(obj));
-        }
-    } );
+                if ( row.child.isShown() ) {
+                    // This row is already open - close it
+                    row.child.hide();
+                    tr.removeClass('shown');
+                }
+                else {
+                    // Open this row
+                    var d = row.data();
+                    row.child( format(d, 10000) ).show();
+                    tr.addClass('shown');
+                    var obj = d.original_tweet;
+                    output("#jsonout_" + (d.rownum + 10000), syntaxHighlight(obj));
+                }
+            } );
 
-} );
+
+            var dataSetGeotagged = {{ data.datatablegeotagged | safe }};
+            var tableGeotagged = $('#tabletweetsgeotagged').DataTable( {
+                "data": dataSetGeotagged,
+                "columns": [
+                    {
+                        "className":      'details-control',
+                        "orderable":      false,
+                        "data":           null,
+                        "defaultContent": ''
+                    },
+                    { "data": "rownum", "orderable": false },
+                    { "data": "Tweet id" },
+                    { "data": "Annotations" },
+                    { "data": "LatLon" },
+                    { "data": "Tweeted at" },
+                    { "data": "Collected at" },
+                    { "data": "Lang" },
+                    { "data": "Full Text", "orderable": false}
+                ],
+                "order": [[1, 'asc']]
+            } );
+
+            // Add event listener for opening and closing details
+            $('#tabletweetsgeotagged tbody').on('click', 'td.details-control', function () {
+                var tr = $(this).closest('tr');
+                var row = tableGeotagged.row( tr );
+
+                if ( row.child.isShown() ) {
+                    // This row is open - close it
+                    row.child.hide();
+                    tr.removeClass('shown');
+                }
+                else {
+                    // Open this row
+                    var d = row.data();
+                    row.child( format(d, 20000) ).show();
+                    tr.addClass('shown');
+                    var obj = d.original_tweet;
+                    output("#jsonout_" + (d.rownum + 20000), syntaxHighlight(obj));
+                }
+            } );
+
+        } );
     </script>
 {% endblock %}

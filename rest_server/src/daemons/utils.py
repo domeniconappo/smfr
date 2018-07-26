@@ -57,9 +57,9 @@ def safe_langdetect(text):
     """ Detects language of a lower case text """
     sanitized = tweet_normalization_aggressive(text)
     if len(sanitized) == 0:
-        return NO_LANGUAGE
+        return None
     else:
         try:
             return langdetect.detect(sanitized.lower())
         except langdetect.lang_detect_exception.LangDetectException:
-            return NO_LANGUAGE
+            return None

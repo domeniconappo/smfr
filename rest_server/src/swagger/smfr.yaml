@@ -443,6 +443,10 @@ definitions:
         enum: [background, on-demand, manual]
       bbox:
         type: object
+      lead_time:
+        type: integer
+      nuts:
+        type: string
 
   Collector:
     type: object

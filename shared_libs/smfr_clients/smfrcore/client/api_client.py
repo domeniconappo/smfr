@@ -196,8 +196,6 @@ class ApiLocalClient:
 
     def add_ondemand_collections(self, events):
         payload = OnDemandPayload().load(events, many=True).data
-        self.logger.info(type(payload))
-        self.logger.info(type(payload[0]))
         return self._post('add_ondemand', payload=payload), 201
 
 

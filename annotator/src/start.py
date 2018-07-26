@@ -11,6 +11,7 @@ app = Flask(__name__)
 api = Api(app)
 
 logging.basicConfig(level=os.environ.get('LOGGING_LEVEL', 'DEBUG'), format=LOGGER_FORMAT, datefmt=DATE_FORMAT)
+logger = logging.getLogger(__name__)
 
 
 class AnnotatorApi(Resource):
@@ -18,16 +19,12 @@ class AnnotatorApi(Resource):
     Flask Restful API for Annotator microservice (start/stop methods)
     """
 
-    logger = logging.getLogger(__name__)
-
     @marshal_with({'error': fields.Nested({'description': fields.Raw}), 'result': fields.Raw, 'action_performed': fields.Raw})
     def put(self, collection_id, lang, action):
         action = action.lower()
         if action not in ('start', 'stop'):
             return {'error': {'description': 'Unknown operation {}'.format(action)}}, 400
-        if lang in ('no_language', 'multilanguage'):
-            lang = 'multilang'
-        if lang not in Annotator.models and lang not in ('no_language', 'multilang', 'multilanguage'):
+        if lang not in Annotator.models:
             return {'error': {'description': 'No models for language {}'.format(lang)}}, 400
 
         if action == 'start':
@@ -42,18 +39,28 @@ class AnnotatorApi(Resource):
 
 class RunningAnnotatorsApi(Resource):
     """
-    Flask Restful API for Annotator microservice for `/running` endpoint
+    API for `/running` endpoint
     """
-
-    logger = logging.getLogger(__name__)
 
     @marshal_with_field(fields.List(fields.List(fields.Raw)))
     def get(self):
         return Annotator.running(), 200
 
 
+class AnnotatorModels(Resource):
+    """
+    API for `/models` endpoint
+    """
+
+    @marshal_with_field(fields.Raw)
+    def get(self):
+        return Annotator.available_models(), 200
+
+
 api.add_resource(AnnotatorApi, '/<int:collection_id>/<string:lang>/<string:action>')
 api.add_resource(RunningAnnotatorsApi, '/running')
+api.add_resource(AnnotatorModels, '/models')
+logger.info('Check if there are new models...')
 Annotator.download_cnn_models()
-AnnotatorApi.logger.info('Annotator Microservice ready for incoming requests')
+logger.info('Annotator Microservice ready for incoming requests')
 Annotator.log_config()

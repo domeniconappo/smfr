@@ -65,7 +65,6 @@ class Annotator:
 
         git_query = Popen(git_command, cwd=repository, stdout=PIPE, stderr=PIPE)
         git_status, error = git_query.communicate()
-        cls.logger.info('Fetching new models if any')
         cls.logger.info(git_status)
         cls.logger.info(error)
         cls.models = models_by_language(cls.current_models_mapping)
@@ -114,8 +113,7 @@ class Annotator:
                 with cls._lock:
                     cls._running.append((collection_id, lang))
 
-                filter_by_lang = lang if lang not in ('no_language', 'multilanguage', 'multilang') else None
-                tweets = Tweet.get_iterator(collection_id, ttype, lang=filter_by_lang)
+                tweets = Tweet.get_iterator(collection_id, ttype, lang=lang)
                 i = 0
                 for t in tweets:
                     if (collection_id, lang) in cls._stop_signals:
@@ -128,8 +126,8 @@ class Annotator:
                     sequences = tokenizer.texts_to_sequences([text])
                     data = pad_sequences(sequences, maxlen=model.layers[0].input_shape[1])
                     predictions_list = model.predict(data)
-                    prediction = 1. * predictions_list[:, 1][0]
-                    t.annotations = {'flood_probability': ('yes', prediction)}
+                    flood_probability = 1. * predictions_list[:, 1][0]
+                    t.annotations = {'flood_probability': ('yes', flood_probability)}
                     t.ttype = 'annotated'
                     message = t.serialize()
                     cls.logger.debug('Sending annotated tweet to queue: %s', str(t))
@@ -163,3 +161,7 @@ class Annotator:
         """
         t = threading.Thread(target=cls.start, args=(collection_id, lang), name='Annotator {} {}'.format(collection_id, lang))
         t.start()
+
+    @classmethod
+    def available_models(cls):
+        return {'models': cls.models}
