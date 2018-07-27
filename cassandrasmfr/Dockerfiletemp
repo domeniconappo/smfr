@@ -2,8 +2,8 @@ FROM ${CASSANDRA_BASE_IMAGE}
 
 ENV LOCAL_JMX no
 
-#COPY cassandrasmfr/jmxremote.password /etc/cassandra/jmxremote.password
-#COPY cassandrasmfr/jmxremote.access /etc/cassandra/jmxremote.access
+COPY cassandrasmfr/jmxremote.password /etc/cassandra/jmxremote.password
+COPY cassandrasmfr/jmxremote.access /etc/cassandra/jmxremote.access
 COPY cassandrasmfr/cassandra.yaml /etc/cassandra/cassandra.yaml
 RUN chmod 400 /etc/cassandra/jmxremote.*
 RUN chown cassandra:cassandra /etc/cassandra/jmxremote.*

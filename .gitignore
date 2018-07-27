@@ -7,8 +7,7 @@ jmxremote.password
 jmxremote.access
 .env
 Dockerfile.*.ready
-
-!rest_server/src/config/*.tpl
+!*.tpl
 
 # parsed docker-composer.yaml files for `docker stack deploy`
 docker-compose-parsed.yaml
