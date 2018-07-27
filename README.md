@@ -72,6 +72,8 @@ In this case, you must login to Docker Hub (just issue `$ docker login` before t
 
 #### Cassandra
 
+Create a new SUPERUSER in cassandra (with same user and password you set up in your jmxremote.access)
+
 ```bash
 $ docker exec -it cassandrasmfr cqlsh -u cassandra -p cassandra
 Connected to Test Cluster at 127.0.0.1:9042.

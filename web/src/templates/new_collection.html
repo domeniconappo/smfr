@@ -22,7 +22,7 @@
 <form method="POST" class="form-horizontal" enctype="multipart/form-data" role="form">
     {{ form.hidden_tag() }}
     <div class="heading">
-        <h4 class="form-heading">Create a new SMFR Background Collection service</h4>
+        <h4 class="form-heading">Create a new SMFR Collection manually</h4>
     </div>
 
     <div class="form-group {% if form.config.errors %} has-error {% endif %}">
@@ -87,15 +87,6 @@
         </div>
         <p class="col-sm-5 help-block">
         {{ form.nuts2.errors[0] }}
-    </div>
-
-    <div class="form-group {% if form.nuts2source.errors %} has-error {% endif %}">
-        {{form.nuts2source.label(class="col-sm-4")}}
-        <div class="col-sm-3">
-        {{ form.nuts2source(placeholder="NUTS_2013L_20180221_161109.htm", class="form-control") }}
-        </div>
-        <p class="col-sm-5 help-block">
-        {{ form.nuts2source.errors[0] }}
     </div>
 
 

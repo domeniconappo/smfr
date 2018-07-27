@@ -44,7 +44,7 @@ services:
     container_name: kafka
     hostname: kafka
     environment:
-      ADVERTISED_PORT: 9092./
+      ADVERTISED_PORT: 9092
       ADVERTISED_HOST: kafka
     depends_on:
       - cassandrasmfr
