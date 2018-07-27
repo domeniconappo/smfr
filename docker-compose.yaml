@@ -11,6 +11,8 @@ services:
     # From host, connect to DB with `docker exec -it cassandrasmfr cqlsh`
     volumes:
       - '${SMFR_DATADIR}/cassandra:/var/lib/cassandra:rw'
+      - 'cassandrasmfr/jmxremote.password /etc/cassandra/jmxremote.password'
+      - 'cassandrasmfr/jmxremote.access /etc/cassandra/jmxremote.access'
     container_name: cassandrasmfr
     ports:
       - '9042:9042'

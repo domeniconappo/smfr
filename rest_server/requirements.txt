@@ -1,5 +1,7 @@
 pytz
 mysqlclient
+ujson
+kafka-python
 
 Flask
 gunicorn
