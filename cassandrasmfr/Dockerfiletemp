@@ -5,5 +5,6 @@ ENV LOCAL_JMX no
 COPY cassandrasmfr/jmxremote.password /etc/cassandra/jmxremote.password
 COPY cassandrasmfr/jmxremote.access /etc/cassandra/jmxremote.access
 COPY cassandrasmfr/cassandra.yaml /etc/cassandra/cassandra.yaml
-RUN chmod 400 /etc/cassandra/jmxremote.*
-RUN chown cassandra:cassandra /etc/cassandra/jmxremote.*
+COPY cassandrasmfr/cassandra-env.sh /etc/cassandra/cassandra-env.sh
+COPY cassandrasmfr/jvm.options /etc/cassandra/jvm.options
+RUN chmod 400 /etc/cassandra/jmxremote.* && chown cassandra:cassandra /etc/cassandra/*

@@ -31,7 +31,7 @@ Final product of SMFR is a event-related map reporting relevant tweets.
   - `$ cp .env.tpl .env`
 - Edit the file `.env` and set the following variables:
     - `SMFR_DATADIR=/DATA/smfr/data`
-      -   The server folder where MySQL, Cassandra and Elasticsearch data folders will be mapped to.
+      -   The server folder where MySQL and Cassandra data folders will be mapped to.
     - `CASSANDRA_KEYSPACE=smfr_persistent`
       -   Cassandra keyspace name
     - `KAFKA_TOPIC=persister`
@@ -43,10 +43,6 @@ Final product of SMFR is a event-related map reporting relevant tweets.
     - `GIT_REPO_MODELS=https://user:pass@bitbucket.org/lorinivalerio/smfr_models_data.git`
       - You have to include Bitbucket credentials of a user with read permissions to the SMFR models repository
     - `DOCKER_ID_USER=efas`
-      - This is the Docker user that must login before to build and push the base_smfr Docker image. This must be set only for project contributors of base SMFR image.
-    - `NODE0=xxx000yyyyy0zzzzzzzz0kkk0`
-    - `NODE1=xxx000yyyyy0zzzzzzzz0kkk1`
-    - `NODE2=xxx000yyyyy0zzzzzzzz0kkk2`
       - Docker swarm node ids to set up for swarm deploy. Check [Developer Notes](DEVELOPER_NOTES.md) for more info.
 - Execute `./build.sh` if you need to rebuild images. This step can take several minutes and will also push updates to Docker registry in case the DOCKER_ID_USER is set and it's got rights to push.
     - __Note__: It's not possible to build images with `docker-compose build` command
