@@ -68,11 +68,12 @@ def export_tweets(collection_id):
     # TODO
     form = ExportForm(collection_id=collection_id)
     if form.validate_on_submit():
-        payload = {
-            'config': form.config.data, 'kwfile': form.kwfile.data, 'locfile': form.locfile.data,
-            'runtime': form.runtime.data, 'trigger': form.trigger.data, 'nuts2': form.nuts2.data,
-            'forecast': form.forecast_id.data, 'tzclient': form.tzclient.data,
-        }
+        pass
+        # payload = {
+        #     'config': form.config.data, 'kwfile': form.kwfile.data, 'locfile': form.locfile.data,
+        #     'runtime': form.runtime.data, 'trigger': form.trigger.data, 'nuts2': form.nuts2.data,
+        #     'forecast': form.forecast_id.data, 'tzclient': form.tzclient.data,
+        # }
     return render_template('export.html', form=form), 200
 
 
@@ -81,17 +82,19 @@ def new_collection():
     form = NewCollectorForm()
     if form.validate_on_submit():
         payload = {
-            'config': form.config.data, 'kwfile': form.kwfile.data, 'locfile': form.locfile.data,
+            'configuration': form.configuration.data, 'keywords': form.keywords.data,
+            'bounding_boxes': form.bounding_boxes.data,
             'runtime': form.runtime.data, 'trigger': form.trigger.data, 'nuts2': form.nuts2.data,
             'forecast': form.forecast_id.data, 'tzclient': form.tzclient.data,
         }
         try:
             _ = client.new_collection(payload)
             add_message('A new collection was added.', category=MessageClass.SUCCESS)
-            return redirect('/list')
         except SMFRRestException as e:
             add_message('An error occurred: {}'.format(e), category=MessageClass.ERROR)
             return render_template('new_collection.html', form=form)
+        else:
+            return redirect('/list')
     return render_template('new_collection.html', form=form), 200
 
 

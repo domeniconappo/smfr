@@ -41,13 +41,11 @@
                                 <a class="btn btn-sm btn-default" href="/details/{{ c.collection.id }}"><em class="fas fa-eye"></em></a>
                             </div>
                             <div class="btn-group">
-                                <a {% if c.collection.status == 'Active'%} class="btn btn-sm btn-default disabled" {% else %} class="btn btn-sm btn-default" {% endif %} href="/start/{{ c.id }}"><em class="fas fa-play"></em></a>
-                            </div>
-                            <div class="btn-group">
-                                <a {% if c.collection.status == 'Inactive'%} class="btn btn-sm btn-default disabled" {% else %} class="btn btn-sm btn-default" {% endif %} href="/stop/{{ c.id }}"><em class="fas fa-stop"></em></a>
-                            </div>
-                            <div class="btn-group">
-                                <a class="btn btn-sm btn-danger" href="/remove/{{ c.collection.id }}"><em class="fas fa-trash"></em></a>
+                                {% if c.collection.status == 'Active'%}
+                                <a class="btn btn-sm btn-primary" href="/stop/{{ c.id }}"><em class="fas fa-stop"></em></a>
+                                {%  else %}
+                                <a class="btn btn-sm btn-primary" href="/start/{{ c.id }}"><em class="fas fa-play"></em></a>
+                                {%  endif %}
                             </div>
                         </div>
                     </td>
@@ -55,11 +53,13 @@
                     <td>{{c.collection.id}} - {{c.id}}</td>
                     <td>{{c.collection.trigger}}</td>
                     <td>{{c.collection.forecast_id}}</td>
-                    <td data-toggle="tooltip" data-placement="top" title="{{c.collection.tracking_keywords|join(', ')}}"><u><b>{{c.collection.ctype}}</b></u></td>
+                    <td data-toggle="tooltip" data-placement="top" title="{{c.collection.tracking_keywords|join(', ')}}">
+                        <u><b>{{c.collection.ctype}}</b></u>
+                    </td>
                     <td>{{c.collection.status}}</td>
                     <td>{{c.collection.languages|join(', ')}}</td>
 
-                    <td>{% if c.collection.locations %}<a href="{{ c.collection.bboxfinder }}" target="_blank">({{c.collection.locations|join(', ')}})</a>{% endif %}</td>
+                    <td>{% if c.collection.locations %}<a href="{{ c.collection.bboxfinder }}" target="_blank">({{c.collection.locations|join(',')}})</a>{% endif %}</td>
 
                     <td> {% if c.collection.runtime %} {{c.collection.runtime|datetimeformat('%Y-%m-%d %H:%M:%S')}} {% endif %}</td>
                     <td>{{c.collection.started_at|datetimeformat('%Y-%m-%d %H:%M:%S')}}</td>

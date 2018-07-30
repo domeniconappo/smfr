@@ -100,17 +100,17 @@ paths:
           name: payload
           schema:
             $ref: '#/definitions/CollectorPayload'
-        - in: formData
-          name: kwfile
-          type: file
-          description: File with keywords by language
-        - in: formData
-          name: locfile
-          type: file
-          description: File with bounding boxes
-        - in: formData
-          name: config
-          type: file
+#        - in: formData
+#          name: kwfile
+#          type: file
+#          description: File with keywords by language
+#        - in: formData
+#          name: locfile
+#          type: file
+#          description: File with bounding boxes
+#        - in: formData
+#          name: config
+#          type: file
           description: Configuration file for Collector
       responses:
         200:
@@ -408,7 +408,7 @@ definitions:
     properties:
       trigger:
         type: string
-        enum: [background, on-demand, manual]
+        enum: [background, manual]
       forecast_id:
         type: string
       runtime:
@@ -416,8 +416,13 @@ definitions:
         format: date-time
       nuts2:
         type: string
-      nuts2source:
+      keywords:
         type: string
+      bounding_boxes:
+        type: string
+      configuration:
+        type: object
+
 
   CollectorResponse:
     type: object
@@ -440,7 +445,7 @@ definitions:
         type: string
       trigger:
         type: string
-        enum: [background, on-demand, manual]
+        enum: [on-demand]
       bbox:
         type: object
       lead_time:

@@ -60,22 +60,11 @@ Run the output command on other nodes and check the swarm cluster status with `d
 To view the swarm cluster:
 
 ```bash
-<<<<<<< HEAD
-$ docker node ls
-
-ID                            HOSTNAME                      STATUS              AVAILABILITY        MANAGER STATUS
-crl690adjge5ckezkkyg7cnk7 *   vmi149143.contaboserver.net   Ready               Active              Leader
-lduv1m62pwgbk3925snj8b164     vmi149158.contaboserver.net   Ready               Active
-dr0k79jxagxt5kf4mdqmyfhb5     vmi156891.contaboserver.net   Ready               Active
-=======
-
 $ docker node ls
 ID                            HOSTNAME            STATUS              AVAILABILITY        MANAGER STATUS      ENGINE VERSION
 5xvoosrucfqumbzzzie3incea     D01RI1000318        Ready               Active                                  18.03.1-ce
 3jvsn4my7acqzjhvb09nfa6l0     D01RI1303461        Ready               Active                                  18.03.1-ce
 to5yzzql1ok0dr6x8r9lfn1rm *   D01RI1303463        Ready               Active              Leader              18.03.1-ce
-
->>>>>>> origin/11_efas_ondemand
 ```
 
 Set these ID values in .env convifguration file, where NODE0 is the manager's ID and NODE1 and NODE2 are the workers' IDs:
@@ -89,7 +78,7 @@ NODE2=5xvoosrucfqumbzzzie3incea
 To deploy:
 
 ```bash
-$  ./deploy.sh
+$  ./swarm_up.sh
 ```
 
 

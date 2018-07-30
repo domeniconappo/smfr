@@ -53,9 +53,11 @@ class AnnotatorClient(MicroserviceClient):
         return res.json(), res.status_code
 
     @classmethod
-    def start(cls, collection_id, lang):
+    def start(cls, collection_id, lang, start_date, end_date):
         """
 
+        :param end_date:
+        :param start_date:
         :param lang:
         :type lang:
         :param collection_id: ID of Collection as it's stored in virtual_twitter_collection.id field in MySQL
@@ -64,7 +66,8 @@ class AnnotatorClient(MicroserviceClient):
         :rtype: dict
         """
         url = '{}/{}/{}/start'.format(cls.base_uri, collection_id, lang)
-        res = requests.put(url)
+        params = {'start_date': start_date, 'end_date': end_date}
+        res = requests.put(url, params=params)
         cls._check_response(res, res.status_code)
         return res.json(), res.status_code
 
@@ -94,16 +97,19 @@ class GeocoderClient(MicroserviceClient):
     base_uri = 'http://{}:{}'.format(host, port)
 
     @classmethod
-    def start(cls, collection_id):
+    def start(cls, collection_id, start_date, end_date):
         """
 
+        :param end_date:
+        :param start_date:
         :param collection_id: ID of Collection as it's stored in virtual_twitter_collection.id field in MySQL
         :type collection_id: int
         :return: JSON result from Geocoder API
         :rtype: dict
         """
         url = '{}/{}/start'.format(cls.base_uri, collection_id)
-        res = requests.put(url)
+        params = {'start_date': start_date, 'end_date': end_date}
+        res = requests.put(url, params=params)
         cls._check_response(res, res.status_code)
         return res.json(), res.status_code
 

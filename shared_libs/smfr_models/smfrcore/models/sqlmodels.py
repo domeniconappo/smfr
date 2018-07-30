@@ -143,7 +143,7 @@ class TwitterCollection(SMFRModel):
     stopped_at = Column(TIMESTAMP, nullable=True)
     runtime = Column(TIMESTAMP, nullable=True)
     user_id = Column(Integer, ForeignKey('users.id'))
-    collection = sqldb.relationship('User', backref=sqldb.backref('users', uselist=False))
+    user = sqldb.relationship('User', backref=sqldb.backref('users', uselist=False))
 
     def __str__(self):
         return 'TwitterCollection<{o.id}: {o.forecast_id} - {o.trigger.value}/{o.ctype.value}>'.format(o=self)
@@ -152,8 +152,9 @@ class TwitterCollection(SMFRModel):
     def bboxfinder(self):
         bbox = ''
         if self.locations:
-            coords = self.locations[0].split(', ')
-            bbox = '{},{},{},{}'.format(coords[1], coords[0], coords[3], coords[2])
+            coords = list(map(str.strip, self.locations[0].split(',')))
+            if coords and len(coords) == 4:
+                bbox = '{}, {}, {}, {}'.format(coords[1], coords[0], coords[3], coords[2])
         return '' if not bbox else 'http://bboxfinder.com/#{}'.format(bbox)
 
     @classmethod
@@ -165,6 +166,8 @@ class TwitterCollection(SMFRModel):
         :return: A :class:`TwitterCollection` object
         """
         query = collector.query
+        locations = query['locations']
+        locations = ','.join(loc[:6] for loc in map(str.strip, locations.split(',')))
         collection = cls(
             trigger=collector.trigger,
             ctype=collector.ctype,
@@ -173,7 +176,7 @@ class TwitterCollection(SMFRModel):
             nuts2source=collector.nuts2source,
             tracking_keywords=query['track'],
             languages=query['languages'],
-            locations=query['locations'],
+            locations=locations,
             runtime=collector.runtime,
             user_id=user.id if user else 1
         )

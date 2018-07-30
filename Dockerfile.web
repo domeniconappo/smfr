@@ -6,10 +6,7 @@ ARG https_proxy
 
 ENV LANG=C.UTF-8
 
-RUN apt-get update
-RUN apt-get -y dist-upgrade
-RUN apt-get -y install apt-utils
-RUN apt-get -y install net-tools nginx supervisor
+RUN apt-get update && apt-get -y dist-upgrade && apt-get -y install apt-utils && apt-get -y install net-tools nginx supervisor
 RUN pip3 install -U pip
 
 # build uwsgi and python plugin
@@ -29,7 +26,8 @@ RUN mkdir -p /smfr_clients && mkdir -p /smfr_utils && mkdir -p /app
 COPY ./shared_libs/smfr_clients/. /smfr_clients/
 COPY ./shared_libs/smfr_utils/. /smfr_utils/
 RUN pip3 install /smfr_clients/ && pip3 install /smfr_utils/ && rm -R /root/.cache
-
+COPY ./shared_libs/scripts/wait_for_it.sh /scripts/
+RUN ["chmod", "a+x", "/scripts/wait_for_it.sh"]
 EXPOSE 8888
 
 # Custom Supervisord config
@@ -42,4 +40,5 @@ COPY ./web/conf/site.conf /etc/nginx/conf.d/site.conf
 COPY ./web/conf/uwsgi.ini /etc/uwsgi/uwsgi.ini
 
 COPY ./web/src/. /app/
-CMD ["/usr/bin/supervisord"]
+ENTRYPOINT ["/scripts/wait_for_it.sh", "restserver:5555"]
+CMD ["--", "/usr/bin/supervisord"]

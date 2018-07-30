@@ -43,11 +43,13 @@ class Collection(BaseSchema):
 
 
 class CollectorPayload(BaseSchema):
-    trigger = fields.String(required=True, validate=[OneOf(choices=['background', 'on-demand', 'manual'], labels=[])])
+    trigger = fields.String(required=True, validate=[OneOf(choices=['background', 'manual'], labels=[])])
     forecast_id = fields.String()
     runtime = DateTime()
     nuts2 = fields.String()
-    nuts2source = fields.String()
+    keywords = fields.String()
+    bounding_boxes = fields.String()
+    configuration = fields.Field()
 
 
 class CollectorResponse(BaseSchema):

@@ -6,6 +6,7 @@ import sys
 import threading
 import time
 import uuid
+from itertools import zip_longest
 
 import yaml
 from dateutil import parser
@@ -22,11 +23,14 @@ class Collector:
 
     """
     trigger = None
-    account_keys = {'background': 'twitterbg',
-                    'on-demand': 'twitterod',
-                    'manual': 'twitterod'}
+    account_keys = {
+        'background': 'twitterbg',
+        'on-demand': 'twitterod',
+        'manual': 'twitterod'
+    }
 
     _running_instances = {}
+
     logger = logging.getLogger('RestServer Collector')
     logger.setLevel(RestServerConfiguration.logger_level)
     server_conf = RestServerConfiguration()
@@ -48,6 +52,15 @@ class Collector:
         return fullpath
 
     @classmethod
+    def content_kwfile(cls, s):
+        if ':' in s:
+            language, keywords = list(map(str.strip, s.split(':')))
+            content = {language: list(map(str.strip, keywords.split(',')))}
+        else:
+            content = list(map(str.strip, s.split(',')))
+        return yaml.dump(content)
+
+    @classmethod
     def locations_file_from_bbox(cls, bbox, forecast_id):
         """
 
@@ -64,9 +77,23 @@ class Collector:
         return fullpath
 
     @classmethod
+    def content_locfile(cls, s):
+        bboxes = list(map(str.strip, s.split(',')))
+        bboxes = [iter(bboxes)] * 4
+        bboxes = zip_longest(*bboxes)
+        content = {}
+        for i, bbox in enumerate(bboxes, start=1):
+            content['bbox{}'.format(i)] = ','.join(bbox)
+        return yaml.dump(content)
+
+    @classmethod
     def user_collector_config_file(cls, user=None):
         # TODO return collector config based on user object
         return os.path.join(CONFIG_FOLDER, 'admin_collector.yaml')
+
+    @classmethod
+    def content_config(cls, config_dict):
+        return yaml.dump({'twitterbg': config_dict, 'twitterod': config_dict})
 
     @classmethod
     def running_instances(cls):

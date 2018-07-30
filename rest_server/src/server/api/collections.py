@@ -24,7 +24,6 @@ from smfrcore.errors import SMFRDBError, SMFRRestException
 from server.api.clients import AnnotatorClient, GeocoderClient
 from server.api.decorators import check_identity, check_role
 from server.config import CONFIG_STORE_PATH, NUM_SAMPLES
-from server.api import utils
 
 
 logger = logging.getLogger('RestServer API')
@@ -38,25 +37,25 @@ def add_collection(payload):
     :param payload: a CollectorPayload object
     :return: the created collection as a dict, 201
     """
-    payload = connexion.request.form.to_dict()
-    if not payload.get('forecast'):
+    payload = json.loads(payload) if payload else {}
+    if payload.get('forecast') is None:
         payload['forecast'] = ''
-
     CollectorClass = Collector.get_collector_class(payload['trigger'])
 
+    # 1 copy files locally on server and set paths
+    # 2 set the payload to build Collector object
     iden = uuid.uuid4()
     tpl_filename = partial('{}_{}.yaml'.format, iden)
+    for paramkey, filekey in (('keywords', 'kwfile'), ('configuration', 'config'), ('bounding_boxes', 'locfile')):
+        if not payload.get(paramkey):
+            continue
+        filename = tpl_filename(filekey)
+        path = os.path.join(CONFIG_STORE_PATH, filename)
+        payload[filekey] = os.path.normpath(path)
+        with open(path, 'w') as fs:
+            content = getattr(Collector, 'content_{}'.format(filekey))(payload[paramkey])
+            fs.write(content)
 
-    # 1 copy files locally  on server and set paths
-    # 2 set the payload to build Collector object
-    for keyname, fs in connexion.request.files.items():
-        if fs:
-            filename = tpl_filename(fs.name)
-            path = os.path.join(CONFIG_STORE_PATH, filename)
-            fs.save(path)
-            payload[keyname] = path
-
-    payload = utils.normalize_payload(payload)
     collector = CollectorClass.from_payload(payload, user=None)
 
     # # The collector/collection objects are only instantiated at this point,
@@ -70,9 +69,11 @@ def add_collection(payload):
     stored = StoredCollector(collection_id=collector.collection.id, parameters=payload)
     stored.save()
     collector.stored_instance = stored
-    out_schema = CollectorResponse()
-    res = out_schema.dump({'collection': collector.collection, 'id': stored.id}).data
-    return res, 201
+    # out_schema = CollectorResponse()
+    coll_schema = Collection()
+    collection_res = coll_schema.dump(collector.collection).data
+    res = {'collection': collection_res, 'id': stored.id}
+    return res, 200
 
 
 def get():
@@ -82,9 +83,10 @@ def get():
     :return:
     """
     collectors = StoredCollector.query.join(TwitterCollection, StoredCollector.collection_id == TwitterCollection.id)
-    coll_schema = CollectorResponse()
-    res = [{'id': c.id, 'collection': c.collection} for c in collectors]
-    res = coll_schema.dump(res, many=True).data
+    coll_schema = Collection()
+
+    res = [{'id': c.id, 'collection': coll_schema.dump(c.collection).data} for c in collectors]
+    # res = coll_schema.dump(res, many=True).data
     return res, 200
 
 
@@ -242,7 +244,7 @@ def geolocalize(collection_id, startdate=None, enddate=None):
     :return:
     """
     try:
-        res, code = GeocoderClient.start(collection_id)
+        res, code = GeocoderClient.start(collection_id, startdate, enddate)
     except SMFRRestException as e:
         return {'error': {'description': str(e)}}, 500
     else:

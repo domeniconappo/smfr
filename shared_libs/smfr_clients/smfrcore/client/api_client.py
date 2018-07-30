@@ -107,6 +107,7 @@ class ApiLocalClient:
                 }
             if data:
                 requests_kwargs['data'] = data
+                self.logger.info(data)
 
         url = self._build_url(endpoint, path_kwargs)
 
@@ -150,11 +151,16 @@ class ApiLocalClient:
     def new_collection(self, input_payload):
         schema = CollectorPayload()
         formdata = schema.load(input_payload).data
-        formdata['kwfile_file'] = input_payload.get('kwfile')
-        formdata['locfile_file'] = input_payload.get('locfile')
-        formdata['config_file'] = input_payload.get('config')
-        formdata['tzclient'] = input_payload.get('tzclient')
-        return self._post('new_collection', formdata=formdata)
+        # formdata['keywords'] = input_payload.get('keywords')
+        # formdata['bounding_boxes'] = input_payload.get('bounding_boxes')
+        # formdata['configuration'] = input_payload.get('configuration')
+        # formdata['tzclient'] = input_payload.get('tzclient')
+        # formdata['trigger'] = input_payload.get('trigger')
+        # formdata['forecast'] = input_payload.get('forecast')
+        # formdata['nuts2'] = input_payload.get('nuts2')
+        # formdata['trigger'] = input_payload.get('trigger')
+        self.logger.info(formdata)
+        return self._post('new_collection', payload=formdata)
 
     def signup_user(self, input_payload):
         data = {'username': input_payload['username'], 'password': input_payload['password']}

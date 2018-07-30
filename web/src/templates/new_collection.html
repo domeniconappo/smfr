@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Add a new background collection{% endblock %}
+{% block title %}Add a new collection manually{% endblock %}
 {% block styles %}
     {{ super() }}
     <link rel="stylesheet" href="/static/css/jquery-ui.min.css">
@@ -24,51 +24,57 @@
     <div class="heading">
         <h4 class="form-heading">Create a new SMFR Collection manually</h4>
     </div>
+    <fieldset>
+      <legend>Collection Type</legend>
+        <div class="form-group {% if form.trigger.errors %} has-error {% endif %}">
+            {{form.trigger.label(class="col-sm-4")}}
+            <div class="col-sm-3">
+            {{ form.trigger(class="radio") }}
+            </div>
+            <p class="col-sm-5 help-block">{{ form.trigger.errors[0] }}</p>
 
-    <div class="form-group {% if form.config.errors %} has-error {% endif %}">
-        {{form.config.label(class="col-sm-4")}}
-        <div class="col-sm-3">
-        {{ form.config(class="form-control") }}
         </div>
-        <p class="col-sm-5 help-block">
-        {{ form.config.errors[0] }}
-    </div>
-
-    <div class="form-group {% if form.trigger.errors %} has-error {% endif %}">
-        {{form.trigger.label(class="col-sm-4")}}
-        <div class="col-sm-3">
-        {{ form.trigger(class="radio") }}
+    </fieldset>
+    <fieldset>
+      <legend>Crawler configuration</legend>
+        {% for field in form.configuration %}
+        <div class="form-group {% if field.errors %} has-error {% endif %}">
+            {{field.label(class="col-sm-4")}}
+            <div class="col-sm-3">
+            {{ field(class="form-control") }}
+            </div>
+            <p class="col-sm-5 help-block">{{ field.errors[0] }}</p>
         </div>
-        <p class="col-sm-5 help-block">
-        {{ form.trigger.errors[0] }}
-    </div>
-
-
-    <div class="form-group {% if form.kwfile.errors %} has-error {% endif %}">
-        {{form.kwfile.label(class="col-sm-4")}}
-        <div class="col-sm-3">
-        {{ form.kwfile(class="form-control") }}
+        {% endfor %}
+        <div class="form-group {% if form.keywords.errors %} has-error {% endif %}">
+            {{form.keywords.label(class="col-sm-4")}}
+            Eg: <em>it: inondazione,...,inondato</em> or <em>flood,...,inundated</em> if language is not specified.
+            Max 400 keywords.
+            <div class="col-sm-3">
+            {{ form.keywords(class="form-control") }}
+            </div>
+            <p class="col-sm-5 help-block">{{ form.keywords.errors[0] }}</p>
         </div>
-        <p class="col-sm-5 help-block">
-        {{ form.kwfile.errors[0] }}
-    </div>
 
-    <div class="form-group {% if form.locfile.errors %} has-error {% endif %}">
-        {{form.locfile.label(class="col-sm-4")}}
-        <div class="col-sm-3">
-        {{ form.locfile(class="form-control") }}
+        <div class="form-group {% if form.bounding_boxes.errors %} has-error {% endif %}">
+            {{form.bounding_boxes.label(class="col-sm-4")}}
+            Eg: <em>23.181152, 43.293200, 28.729248, 48.070738,...,min_lonN, min_latN, max_lonN, max_latN</em>.
+            Max 25 bboxes
+            <div class="col-sm-3">
+            {{ form.bounding_boxes(class="form-control") }}
+            </div>
+            <p class="col-sm-5 help-block">{{ form.bounding_boxes.errors[0] }}</p>
         </div>
-        <p class="col-sm-5 help-block">
-        {{ form.locfile.errors[0] }}
-    </div>
+    </fieldset>
 
+
+    <fieldset><legend>Forecast related parameters</legend>
     <div class="form-group {% if form.forecast_id.errors %} has-error {% endif %}">
         {{form.forecast_id.label(class="col-sm-4")}}
         <div class="col-sm-3">
         {{ form.forecast_id(placeholder="201802201200", class="form-control") }}
         </div>
-        <p class="col-sm-5 help-block">
-        {{ form.forecast_id.errors[0] }}
+        <p class="col-sm-5 help-block">{{ form.forecast_id.errors[0] }}</p>
     </div>
 
     <div class="form-group {% if form.runtime.errors %} has-error {% endif %}">
@@ -76,19 +82,17 @@
         <div class="col-sm-3">
         {{ form.runtime(placeholder="2018-03-14 00:00", class="form-control, dtpick") }}
         </div>
-        <p class="col-sm-5 help-block">
-        {{ form.runtime.errors[0] }}
+        <p class="col-sm-5 help-block">{{ form.runtime.errors[0] }}</p>
     </div>
 
     <div class="form-group {% if form.nuts2.errors %} has-error {% endif %}">
         {{form.nuts2.label(class="col-sm-4")}}
         <div class="col-sm-3">
-        {{ form.nuts2(placeholder="FR4", class="form-control") }}
+        {{ form.nuts2(placeholder="ITF4", class="form-control") }}
         </div>
-        <p class="col-sm-5 help-block">
-        {{ form.nuts2.errors[0] }}
+        <p class="col-sm-5 help-block">{{ form.nuts2.errors[0] }}</p>
     </div>
-
+    </fieldset>
 
     <button class="btn btn-lg btn-primary" type="submit">Add new collection</button>
 
