@@ -6,14 +6,12 @@ ARG https_proxy
 
 ENV LANG=C.UTF-8
 
-RUN mkdir -p /aggregator && mkdir -p /scripts && mkdir -p /config && mkdir -p /smfr_models && mkdir -p /smfr_utils
+RUN mkdir -p /aggregator && mkdir -p /config && mkdir -p /smfr_models/
 
 COPY ./aggregator/requirements.txt /aggregator/
-COPY ./shared_libs/scripts/wait_for_it.sh /scripts/
-COPY ./shared_libs/smfr_models/. /smfr_models/
-COPY ./shared_libs/smfr_utils/. /smfr_utils/
-RUN pip3.6 install -r /aggregator/requirements.txt && chmod a+x /scripts/wait_for_it.sh
-RUN pip3.6 install /smfr_models/ && pip3 install /smfr_utils/ && rm -R /root/.cache
+RUN pip3.6 install -r /aggregator/requirements.txt
+COPY base_docker/shared_libs/smfr_models/. /smfr_models/
+RUN pip3 install /smfr_models/ && rm -R /root/.cache
 COPY ./aggregator/src/. /aggregator/
 
 ENTRYPOINT ["/scripts/wait_for_it.sh", "cassandrasmfr:9160"]

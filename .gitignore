@@ -8,13 +8,12 @@ jmxremote.access
 .env
 Dockerfile.*.ready
 !*.tpl
+/uploads/*.yaml
+/uploads/*.yml
+/downloads/*.json
+/downloads/*.csv
+docker-compose-*.yaml
 
-# parsed docker-composer.yaml files for `docker stack deploy`
-docker-compose-parsed.yaml
-docker-compose-4deploy.yaml
-
-uploads/
-downloaded/
 GlobalRegions_052018.geojson
 rest_server/src/tests/data/CostPopEst2018061300.json
 *geonames_index*
@@ -31,7 +30,6 @@ __pycache__/
 build/
 develop-eggs/
 dist/
-downloads/
 eggs/
 .eggs/
 lib/

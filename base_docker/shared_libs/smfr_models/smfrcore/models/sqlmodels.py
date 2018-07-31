@@ -1,6 +1,6 @@
 import os
 import datetime
-from collections import OrderedDict
+import logging
 
 from passlib.apps import custom_app_context as pwd_context
 
@@ -15,6 +15,10 @@ from .utils import jwt_token, jwt_decode
 from smfrcore.utils import RUNNING_IN_DOCKER
 
 sqldb = SQLAlchemy(metadata=metadata, session_options={'expire_on_commit': False})
+
+
+logger = logging.getLogger('SQL')
+logger.setLevel(os.environ.get('LOGGING_LEVEL', 'DEBUG'))
 
 
 def create_app(app_name='SMFR'):
@@ -154,7 +158,7 @@ class TwitterCollection(SMFRModel):
         if self.locations:
             coords = list(map(str.strip, self.locations[0].split(',')))
             if coords and len(coords) == 4:
-                bbox = '{}, {}, {}, {}'.format(coords[1], coords[0], coords[3], coords[2])
+                bbox = '{},{},{},{}'.format(coords[1], coords[0], coords[3], coords[2])
         return '' if not bbox else 'http://bboxfinder.com/#{}'.format(bbox)
 
     @classmethod
@@ -166,8 +170,12 @@ class TwitterCollection(SMFRModel):
         :return: A :class:`TwitterCollection` object
         """
         query = collector.query
-        locations = query['locations']
-        locations = ','.join(loc[:6] for loc in map(str.strip, locations.split(',')))
+        locations = []
+        if query.get('locations'):
+            # get only the first bbox
+            locations = query['locations'][0]
+            locations = [loc[:6] for loc in locations.split(',')]
+            locations = [','.join(loc for loc in locations)]
         collection = cls(
             trigger=collector.trigger,
             ctype=collector.ctype,
@@ -245,6 +253,11 @@ class StoredCollector(SMFRModel):
         self.id = attached_obj.id
 
     def delete(self):
+        collector_params = self.parameters
+        for k in ('kwfile', 'locfile', 'config'):
+            path = collector_params.get(k)
+            if path and os.path.exists(path):
+                os.unlink(path)
         sqldb.session.delete(self)
         sqldb.session.commit()
 

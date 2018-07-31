@@ -143,19 +143,6 @@ paths:
             items:
               $ref: '#/definitions/CollectorResponse'
 
-  /collections/inactive:
-    get:
-      tags: [collections]
-      operationId: server.api.collections.get_stopped_collectors
-      summary: Get inactive collections
-      responses:
-        200:
-          description: Return inactive collectors
-          schema:
-            type: array
-            items:
-              $ref: '#/definitions/CollectorResponse'
-
   /collections/start/{collector_id}:
     post:
       tags: [collections]

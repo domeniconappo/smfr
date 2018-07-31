@@ -60,7 +60,7 @@ def aggregate(running_conf=None):
             collections_to_aggregate = TwitterCollection.query.filter(
                 or_(
                     TwitterCollection.status == 'active',
-                    TwitterCollection.stopped_at >= datetime.now() - timedelta(hours=6)
+                    TwitterCollection.stopped_at >= datetime.now() - timedelta(days=2)
                 )
             )
         elif everything:
@@ -124,7 +124,7 @@ def run_single_aggregation(collection_id,
     max_collected_tweetid = 0
     max_annotated_tweetid = 0
     max_geotagged_tweetid = 0
-    last_timestamp_start = timestamp_start or datetime(2100, 12, 31)
+    last_timestamp_start = timestamp_start or datetime(2100, 12, 30)
     last_timestamp_end = timestamp_end or datetime(1970, 1, 1)
     last_tweetid_collected = int(last_tweetid_collected) if last_tweetid_collected else 0
     last_tweetid_annotated = int(last_tweetid_annotated) if last_tweetid_annotated else 0
@@ -165,8 +165,10 @@ def run_single_aggregation(collection_id,
         aggregation.last_tweetid_collected = max_collected_tweetid if max_collected_tweetid else last_tweetid_collected
         aggregation.last_tweetid_annotated = max_annotated_tweetid if max_annotated_tweetid else last_tweetid_annotated
         aggregation.last_tweetid_geotagged = max_geotagged_tweetid if max_geotagged_tweetid else last_tweetid_geotagged
-        aggregation.timestamp_start = last_timestamp_start
-        aggregation.timestamp_end = last_timestamp_end
+        # if timestamp_start/end were none, last_timestamp_start contains an
+        # invalid timestamp for MySQL (timestamp in the future) so we store a NULL value
+        aggregation.timestamp_start = last_timestamp_start if timestamp_start else None
+        aggregation.timestamp_end = last_timestamp_end if timestamp_end else None
         aggregation.values = dict(counter)
         aggregation.save()
         logger.info(' <<<<<<<<<<< Aggregation terminated for collection %d: %s', collection_id, str(aggregation.values))

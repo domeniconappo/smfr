@@ -3,12 +3,8 @@ Module to handle /collections API
 """
 import os
 import logging
-import uuid
-import csv
-from functools import partial
 
 import ujson as json
-import connexion
 from flask import abort
 from flask_jwt_extended import jwt_required, get_jwt_identity
 
@@ -23,7 +19,7 @@ from smfrcore.errors import SMFRDBError, SMFRRestException
 
 from server.api.clients import AnnotatorClient, GeocoderClient
 from server.api.decorators import check_identity, check_role
-from server.config import CONFIG_STORE_PATH, NUM_SAMPLES
+from server.config import NUM_SAMPLES
 
 
 logger = logging.getLogger('RestServer API')
@@ -38,41 +34,15 @@ def add_collection(payload):
     :return: the created collection as a dict, 201
     """
     payload = json.loads(payload) if payload else {}
-    if payload.get('forecast') is None:
-        payload['forecast'] = ''
+    # if payload.get('forecast') is None:
+    #     payload['forecast'] = ''
     CollectorClass = Collector.get_collector_class(payload['trigger'])
-
-    # 1 copy files locally on server and set paths
-    # 2 set the payload to build Collector object
-    iden = uuid.uuid4()
-    tpl_filename = partial('{}_{}.yaml'.format, iden)
-    for paramkey, filekey in (('keywords', 'kwfile'), ('configuration', 'config'), ('bounding_boxes', 'locfile')):
-        if not payload.get(paramkey):
-            continue
-        filename = tpl_filename(filekey)
-        path = os.path.join(CONFIG_STORE_PATH, filename)
-        payload[filekey] = os.path.normpath(path)
-        with open(path, 'w') as fs:
-            content = getattr(Collector, 'content_{}'.format(filekey))(payload[paramkey])
-            fs.write(content)
-
     collector = CollectorClass.from_payload(payload, user=None)
-
-    # # The collector/collection objects are only instantiated at this point,
-    # there are no processes starting here, unless it's a collector process with runtime
-    # (i.e. start now and finish at the datetime defined in runtime)
     if collector.runtime:
         # launch the collector at creation time only when runtime parameter is set.
         # In all other cases, the collection process is being started manually from interface/cli
         collector.launch()
-
-    stored = StoredCollector(collection_id=collector.collection.id, parameters=payload)
-    stored.save()
-    collector.stored_instance = stored
-    # out_schema = CollectorResponse()
-    coll_schema = Collection()
-    collection_res = coll_schema.dump(collector.collection).data
-    res = {'collection': collection_res, 'id': stored.id}
+    res = {'collection': CollectorResponse().dump(collector).data, 'id': collector.stored_instance.id}
     return res, 200
 
 
@@ -83,10 +53,8 @@ def get():
     :return:
     """
     collectors = StoredCollector.query.join(TwitterCollection, StoredCollector.collection_id == TwitterCollection.id)
-    coll_schema = Collection()
-
-    res = [{'id': c.id, 'collection': coll_schema.dump(c.collection).data} for c in collectors]
-    # res = coll_schema.dump(res, many=True).data
+    out_schema = CollectorResponse()
+    res = out_schema.dump(collectors, many=True).data
     return res, 200
 
 
@@ -99,19 +67,6 @@ def get_running_collectors():
     out_schema = CollectorResponse()
     res = Collector.running_instances()
     res = [{'id': c.stored_instance.id, 'collection': c.collection} for _, c in res]
-    res = out_schema.dump(res, many=True).data
-    return res, 200
-
-
-def get_stopped_collectors():
-    """
-    GET /collections/inactive
-    Get _running collections/collectors
-    :return:
-    """
-    out_schema = CollectorResponse()
-    collectors = Collector.resume_inactive()
-    res = [{'id': c.stored_instance.id, 'collection': c.collection} for c in collectors]
     res = out_schema.dump(res, many=True).data
     return res, 200
 
@@ -178,12 +133,10 @@ def remove_collection(collection_id):
         return {'error': {'description': 'No collector with this id was found'}}, 404
     stored = StoredCollector.query.filter_by(collection_id=collection.id).first()
     if stored:
-        collector_params = stored.parameters
-        for k in ('kwfile', 'locfile', 'config'):
-            path = collector_params.get(k)
-            if path and os.path.exists(path):
-                os.unlink(path)
         stored.delete()
+    aggregation = Aggregation.query.filter_by(collection_id=collection.id).first()
+    if aggregation:
+        aggregation.delete()
     collection.delete()
     return {}, 204
 

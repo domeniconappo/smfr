@@ -29,12 +29,18 @@
                                            <th>Collection Type</th>
                                            <td>{{ data.collection.ctype }}</td>
                                        </tr>
+                                       {% if data.collection.tracking_keywords %}
                                        <tr>
-                                           <th>Keywords</th>
-                                           <td>{{ data.collection.tracking_keywords|join(', ') }}</td>
-                                           <th>Bounding boxes</th>
-                                           <td><a href="{{ data.collection.bboxfinder }}" target="_blank">( {{ data.collection.locations|join(', ') }})</a></td>
+                                           <th colspan="2">Keywords</th>
+                                           <td colspan="2">{{ data.collection.tracking_keywords|join(', ') }}</td>
                                        </tr>
+                                       {% endif %}
+                                       {% if data.collection.locations %}
+                                       <tr>
+                                           <th colspan="2">Bounding boxes</th>
+                                           <td colspan="2"><a href="{{ data.collection.bboxfinder }}" target="_blank">{{ data.collection.locations|join(', ') }}</a></td>
+                                       </tr>
+                                       {% endif %}
                                        <tr>
                                            <th>Status</th>
                                            <td>{{ data.collection.status }}</td>

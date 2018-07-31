@@ -345,8 +345,8 @@ services:
       - '5555:5555'
     volumes:
       - './rest_server/src:/rest_server'
-      - uploads:/smfr/uploads/'
-      - downloads:/smfr/downloaded/'
+      - './uploads:/smfr/uploads/'
+      - './downloads:/smfr/downloaded/'
     depends_on:
       - mysql
       - kafka
@@ -385,7 +385,6 @@ services:
       - '8888:8888'
     depends_on:
       - restserver
-#      - myadmin
       - aggregator
     deploy:
       restart_policy:
@@ -397,5 +396,3 @@ services:
 
 volumes:
   geonames_index:
-  uploads:
-  downloads:
