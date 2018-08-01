@@ -7,9 +7,14 @@ ENV http_proxy ${http_proxy}
 ENV https_proxy ${https_proxy}
 ENV LANG C.UTF-8
 
-RUN mkdir -p /persister && mkdir -p /config && mkdir -p /smfr_models/
-COPY base_docker/shared_libs/smfr_models/. /smfr_models/
-RUN pip3 install /smfr_models/ && rm -R /root/.cache
+RUN mkdir -p /persister && mkdir -p /config \
+ && mkdir -p /smfr_clients && mkdir -p /smfr_utils && mkdir -p /smfr_models && mkdir -p /scripts
+COPY base/shared_libs/scripts/wait_for_it.sh /scripts/
+COPY base/shared_libs/smfr_utils/. /smfr_utils/
+COPY base/shared_libs/smfr_clients/. /smfr_clients/
+COPY base/shared_libs/smfr_models/. /smfr_models/
+RUN chmod -R a+x /scripts/
+RUN pip3 install /smfr_utils/ && pip3 install /smfr_models/ && rm -R /root/.cache
 COPY ./persister/src/. /persister
 
 ENTRYPOINT ["/scripts/wait_for_it.sh", "cassandrasmfr:9160"]

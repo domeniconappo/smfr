@@ -53,11 +53,6 @@ def create_app():
                 logger.info("Stopping collector %s", str(_id))
                 running_collector.stop(reanimate=True)
 
-            # running_consumer = Persister.running_instance()
-            # if running_consumer:
-            #     logger.info("Stopping consumer %s", str(running_consumer))
-            #     Persister.running_instance().stop()
-
         signal.signal(signal.SIGINT, stop_active_collectors)
         signal.signal(signal.SIGTERM, stop_active_collectors)
         signal.signal(signal.SIGQUIT, stop_active_collectors)

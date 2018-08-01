@@ -53,7 +53,7 @@ class AnnotatorClient(MicroserviceClient):
         return res.json(), res.status_code
 
     @classmethod
-    def start(cls, collection_id, lang, start_date, end_date):
+    def start(cls, collection_id, lang, start_date=None, end_date=None):
         """
 
         :param end_date:

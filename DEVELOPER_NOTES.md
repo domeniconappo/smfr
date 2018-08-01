@@ -30,7 +30,7 @@ $ docker login
 
 Then, you can push the image.
 ```bash
-$ docker build --build-arg http_proxy=${http_proxy} --build-arg https_proxy=${http_proxy} -t smfr_base base_docker/.
+$ docker build --build-arg http_proxy=${http_proxy} --build-arg https_proxy=${http_proxy} -t smfr_base base/.
 $ docker tag smfr_base efas/smfr_base
 $ docker push efas/smfr_base
 ```

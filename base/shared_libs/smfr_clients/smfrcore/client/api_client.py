@@ -10,7 +10,7 @@ from werkzeug.datastructures import FileStorage
 from smfrcore.client.conf import ServerConfiguration, DATE_FORMAT, LOGGER_FORMAT
 from smfrcore.errors import SMFRError
 
-from .marshmallow import CollectorPayload, OnDemandPayload
+from .marshmallow import OnDemandPayload, CollectionPayload
 
 logging.basicConfig(level=logging.INFO if not ServerConfiguration.debug else logging.DEBUG,
                     format=LOGGER_FORMAT, datefmt=DATE_FORMAT)
@@ -24,14 +24,12 @@ class ApiLocalClient:
     endpoints = {
         'list_collections': '/collections',
         'new_collection': '/collections',
-        'stop_collector': '/collections/stop/{id}',
-        'stopall': '/collections/stopall',
-        'startall': '/collections/startall',
-        'start_collector': '/collections/start/{id}',
+        'stop_collector': '/collections/{id}/stop',
+        'start_collector': '/collections/{id}/start',
         'list_running_collectors': '/collections/active',
         'list_inactive_collectors': '/collections/inactive',
         'remove_collection': '/collections/{id}/remove',
-        'collection_details': '/collections/{id}/details',
+        'collection_details': '/collections/{id}',
         'annotate_collection': '/collections/{id}/annotate',
         'geotag_collection': '/collections/{id}/geo',
         'signup_user': '/users',
@@ -149,18 +147,10 @@ class ApiLocalClient:
         return self._get('list_inactive_collectors')
 
     def new_collection(self, input_payload):
-        schema = CollectorPayload()
-        formdata = schema.load(input_payload).data
-        # formdata['keywords'] = input_payload.get('keywords')
-        # formdata['bounding_boxes'] = input_payload.get('bounding_boxes')
-        # formdata['configuration'] = input_payload.get('configuration')
-        # formdata['tzclient'] = input_payload.get('tzclient')
-        # formdata['trigger'] = input_payload.get('trigger')
-        # formdata['forecast'] = input_payload.get('forecast')
-        # formdata['nuts2'] = input_payload.get('nuts2')
-        # formdata['trigger'] = input_payload.get('trigger')
-        self.logger.info(formdata)
-        return self._post('new_collection', payload=formdata)
+        schema = CollectionPayload()
+        payload = schema.load(input_payload).data
+        self.logger.info(payload)
+        return self._post('new_collection', payload=payload)
 
     def signup_user(self, input_payload):
         data = {'username': input_payload['username'], 'password': input_payload['password']}
@@ -181,12 +171,6 @@ class ApiLocalClient:
 
     def start_collector(self, collector_id):
         return self._post('start_collector', path_kwargs={'id': collector_id})
-
-    def stop_all(self):
-        return self._post('stopall')
-
-    def start_all(self):
-        return self._post('startall')
 
     def get_collection(self, collection_id):
         return self._get('collection_details', path_kwargs={'id': collection_id})

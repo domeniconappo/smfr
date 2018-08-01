@@ -42,7 +42,7 @@ class Collection(BaseSchema):
     bboxfinder = fields.String()
 
 
-class CollectorPayload(BaseSchema):
+class CollectionPayload(BaseSchema):
     trigger = fields.String(required=True, validate=[OneOf(choices=['background', 'manual'], labels=[])])
     forecast_id = fields.String()
     runtime = DateTime()
@@ -52,26 +52,14 @@ class CollectorPayload(BaseSchema):
     configuration = fields.Field()
 
 
-class CollectorResponse(BaseSchema):
-    collection = fields.Nested('Collection')
-    aggregation = fields.Nested('Aggregation')
-    id = fields.Integer()
-
-
 class OnDemandPayload(BaseSchema):
     efas_id = fields.Integer()
     forecast = fields.String()
     keywords = fields.String()
-    trigger = fields.String(validate=[OneOf(choices=['background', 'on-demand', 'manual'], labels=[])])
+    trigger = fields.String(validate=[OneOf(choices=['on-demand'], labels=[])])
     bbox = fields.Field()
     lead_time = fields.Integer()
     nuts = fields.String()
-
-
-class Collector(BaseSchema):
-    id = fields.Integer()
-    collection_id = fields.Integer()
-    parameters = fields.String()
 
 
 class CollectionStats(BaseSchema):
@@ -94,7 +82,6 @@ class CollectionTweetSample(BaseSchema):
 
 class CollectionResponse(BaseSchema):
     collection = fields.Nested('Collection')
-    collector = fields.Nested('Collector')
     stats = fields.Nested('CollectionStats')
     running_annotators = fields.List(fields.Field('CollectionResponseRunning_annotatorsItem'))
     samples = fields.List(fields.Nested('CollectionTweetSample'))

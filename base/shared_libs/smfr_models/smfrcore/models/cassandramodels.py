@@ -115,9 +115,9 @@ class Tweet(cqldb.Model):
         super().__init__(*args, **kwargs)
 
     def __str__(self):
-        return '\nTweet\n{o.nuts2} - {o.nuts2source}\n' \
-               '{o.created_at} - {o.lang}: {o.full_text:.80}' \
-               '\n{o.geo}\n{o.annotations}'.format(o=self)
+        return '\nTweet\n{o.nuts2}\n' \
+               '{o.created_at} - {o.lang}: {o.full_text:.120}' \
+               '\nGeo: {o.geo}\nAnnotations: {o.annotations}'.format(o=self)
 
     @classmethod
     def to_obj(cls, row):
@@ -301,7 +301,6 @@ class Tweet(cqldb.Model):
                 microsecond=0),
             ttype=ttype,
             nuts2=collection.nuts2 if isinstance(collection, TwitterCollection) else '',
-            nuts2source=collection.nuts2source if isinstance(collection, TwitterCollection) else '',
             annotations={}, lang=tweet['lang'], geo={}, tweet=json.dumps(tweet, ensure_ascii=False),
         )
 

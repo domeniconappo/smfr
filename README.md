@@ -29,7 +29,7 @@ Final product of SMFR is a event-related map reporting relevant tweets.
 - Get the source code: `$ git clone https://github.com/domeniconappo/SMFR.git`
 - Enter into SMFR folder and copy _.env.tpl_ file to _.env_.
   - `$ cp .env.tpl .env`
-- Edit the file `.env` and set the following variables:
+- Edit the file `.env` and change defaults according your needs:
     - `SMFR_DATADIR=/DATA/smfr/data`
       -   The server folder where MySQL and Cassandra data folders will be mapped to.
     - `CASSANDRA_KEYSPACE=smfr_persistent`
@@ -44,6 +44,8 @@ Final product of SMFR is a event-related map reporting relevant tweets.
       - You have to include Bitbucket credentials of a user with read permissions to the SMFR models repository
     - `DOCKER_ID_USER=efas`
       - Docker swarm node ids to set up for swarm deploy. Check [Developer Notes](DEVELOPER_NOTES.md) for more info.
+- Copy all yaml.tpl files to have extension yaml and edit them according your configuration
+  (e.g. admin_collector.yaml which contains Twitter client keys and secrets)
 - Execute `./build.sh` if you need to rebuild images. This step can take several minutes and will also push updates to Docker registry in case the DOCKER_ID_USER is set and it's got rights to push.
     - __Note__: It's not possible to build images with `docker-compose build` command
      as there are some variables substitution to perform (e.g. current branch name giving the image tag).
@@ -95,10 +97,17 @@ yellow open   geonames 23vFz20STbudmqktmHVOLg   1   1   11139265            0   
 
 #### MySQL
 
-Whenever new models (or new fields) are added to the mysql schema, follow these steps to update DB:
+Whenever new models (or new fields) are added to the mysql schema, follow these steps to update DB.
 On development:
+- start MySQL container only (other containers will exit due unsynched db)
+- install models package in a virtualenv
+- then execute flask alembic commands
 
-```
+```bash
+./singlenode_up.sh mysql
+pip install base/shared_libs/smfr_models/
+cd rest_server/src
+export FLASK__APP=smfr.py
 flask db migrate
 flask db upgrade
 ```
@@ -109,7 +118,7 @@ On dockerized server, once the migrations are under SCM and the service `restser
 docker exec restserver flask db upgrade
 ```
 
-If smfr_restserver image has problems to start due "unsynced" db tables, try the following command
+If smfr_restserver image has problems to start due "unsynched" db tables, try the following command
 
 ```bash
 docker run -e FLASK_APP=smfr.py --entrypoint='flask' smfr_restserver 'db upgrade'
@@ -118,7 +127,8 @@ docker run -e FLASK_APP=smfr.py --entrypoint='flask' smfr_restserver 'db upgrade
 From host, connect to MySQL DB as the docker root user with `mysql -h 127.0.0.1 -p` (if you have mysql client installed) or just use docker exec:
 `docker exec -it mysql mysql -h 127.0.0.1 -p`
 
-**_Note: You have to create migrations in development and push them to GIT repo. Then you have to apply migrations on all systems where SMFR runs (dev, test, prod etc.)_**
+**_Note: You have to create migrations in development and push them to GIT repo.
+Then you have to apply migrations on all systems where SMFR runs (dev, test, prod etc.)_**
 
 
 #### Cassandra
@@ -126,7 +136,8 @@ From host, connect to MySQL DB as the docker root user with `mysql -h 127.0.0.1 
 Table migrations (i.e. new columns) will be automatically added by CQLAlchemy.
 **_Note: New columns are added by CQLAlchemy but you have to manually drop or alter types of existing columns using cqlsh._**
 
-From host, use cqlsh on docker container to connect to DB: `docker exec -it cassandrasmfr cqlsh`
+From host, use cqlsh on docker container to connect to DB:
+`docker exec -it cassandrasmfr cqlsh -u $CASSANDRA_USER -p $CASSANDRA_PASSWORD`
 
 
 ### Troubleshooting

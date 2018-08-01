@@ -123,7 +123,7 @@ venv.bak/
 # dbs
 *.sql
 *.db
-/base_docker/Dockerfile
+/base/Dockerfile
 /cassandrasmfr/Dockerfile
 /geonames/Dockerfile
 /mysql/Dockerfile

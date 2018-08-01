@@ -8,9 +8,9 @@ import ujson as json
 from flask import abort
 from flask_jwt_extended import jwt_required, get_jwt_identity
 
-from smfrcore.models.sqlmodels import StoredCollector, TwitterCollection, User, Nuts3, Nuts2, Aggregation
+from smfrcore.models.sqlmodels import TwitterCollection, User, Nuts3, Nuts2, Aggregation
 from smfrcore.models.cassandramodels import Tweet
-from smfrcore.client.marshmallow import Collector as CollectorSchema, CollectorResponse, Collection, Aggregation as AggregationSchema
+from smfrcore.client.marshmallow import Collection as CollectionSchema, Aggregation as AggregationSchema
 from smfrcore.client.ftp import FTPEfas
 
 from daemons.collector import Collector
@@ -19,8 +19,7 @@ from smfrcore.errors import SMFRDBError, SMFRRestException
 
 from server.api.clients import AnnotatorClient, GeocoderClient
 from server.api.decorators import check_identity, check_role
-from server.config import NUM_SAMPLES
-
+from server.config import NUM_SAMPLES, RestServerConfiguration
 
 logger = logging.getLogger('RestServer API')
 
@@ -30,20 +29,18 @@ def add_collection(payload):
     """
     POST /collections
     Create a new Collection and start the associated Collector if runtime is specified.
-    :param payload: a CollectorPayload object
+    :param payload: a CollectorPayload schema object (plain text)
     :return: the created collection as a dict, 201
     """
     payload = json.loads(payload) if payload else {}
-    # if payload.get('forecast') is None:
-    #     payload['forecast'] = ''
-    CollectorClass = Collector.get_collector_class(payload['trigger'])
-    collector = CollectorClass.from_payload(payload, user=None)
-    if collector.runtime:
-        # launch the collector at creation time only when runtime parameter is set.
-        # In all other cases, the collection process is being started manually from interface/cli
+    if not payload.get('keywords'):
+        payload['languages'], payload['keywords'] = RestServerConfiguration.default_keywords()
+    collection = TwitterCollection.create(**payload)
+    if collection.runtime:
+        collector = Collector(collection)
         collector.launch()
-    res = {'collection': CollectorResponse().dump(collector).data, 'id': collector.stored_instance.id}
-    return res, 200
+    res = CollectionSchema().dump(collection).data
+    return res, 201
 
 
 def get():
@@ -52,67 +49,66 @@ def get():
     Get all collections stored in DB (active and not active)
     :return:
     """
-    collectors = StoredCollector.query.join(TwitterCollection, StoredCollector.collection_id == TwitterCollection.id)
-    out_schema = CollectorResponse()
-    res = out_schema.dump(collectors, many=True).data
+    collections = TwitterCollection.query.all()
+    res = CollectionSchema().dump(collections, many=True).data
     return res, 200
 
 
-def get_running_collectors():
+def get_running_collections():
     """
     GET /collections/active
-    Get _running collections/collectors
+    Get running collections/collectors
     :return:
     """
-    out_schema = CollectorResponse()
+    out_schema = CollectionSchema()
     res = Collector.running_instances()
-    res = [{'id': c.stored_instance.id, 'collection': c.collection} for _, c in res]
+    res = [c for _, c in res]
     res = out_schema.dump(res, many=True).data
     return res, 200
 
 
 # @check_identity
 # @jwt_required
-def stop_collector(collector_id):
+def stop_collection(collection_id):
     """
-    POST /collections/stop/{collector_id}
-    Stop an existing and _running collection
-    :param collector_id:
+    POST /collections/{collection_id}/stop
+    Stop an existing and running collection
+    :param collection_id:
     :return:
     """
-    if not Collector.is_running(collector_id):
+    if not Collector.is_running(collection_id):
         return {}, 204
 
     res = Collector.running_instances()
     for _, collector in res:
-        if collector_id == collector.stored_instance.id:
+        if collection_id == collector.stored_instance.id:
             collector.stop()
             return {}, 204
 
-    # A collection is Active but its collector is not _running. Update its status only.
+    # A collection is Active but its collector is not running. Update its status only.
     try:
-        collector = Collector.resume(collector_id)
+        collector = Collector.resume(collection_id)
         collector.collection.deactivate()
         return {}, 204
     except SMFRDBError:
-        return {'error': {'description': 'No collector with this id was found'}}, 404
+        return {'error': {'description': 'No collection with id {} was found for stopping'.format(collection_id)}}, 404
 
 
 # @check_identity
 # @jwt_required
-def start_collector(collector_id):
+def start_collection(collection_id):
     """
-    POST /collections/{collector_id}/start
-    Start an existing collection by resuming its assoicated collector
-    :param collector_id:
+    POST /collections/start/{collection_id}
+    Start an existing collection by resuming its associated collector
+    :param collection_id:
     :return:
     """
-    if Collector.is_running(collector_id):
+    if Collector.is_running(collection_id):
         return {}, 204
     try:
-        collector = Collector.resume(collector_id)
+        collector = Collector.resume(collection_id)
     except SMFRDBError:
-        return {'error': {'description': 'No collector with this id was found'}}, 404
+        return {'error': {'description': 'No collection with id {} was found for starting'.format(collection_id)}}, 404
 
     collector.launch()
 
@@ -131,9 +127,6 @@ def remove_collection(collection_id):
     collection = TwitterCollection.query.get(collection_id)
     if not collection:
         return {'error': {'description': 'No collector with this id was found'}}, 404
-    stored = StoredCollector.query.filter_by(collection_id=collection.id).first()
-    if stored:
-        stored.delete()
     aggregation = Aggregation.query.filter_by(collection_id=collection.id).first()
     if aggregation:
         aggregation.delete()
@@ -152,13 +145,10 @@ def get_collection_details(collection_id):
     collection = TwitterCollection.query.get(collection_id)
     if not collection:
         return {'error': {'description': 'No collector with this id was found'}}, 404
-    collector = StoredCollector.query.filter_by(collection_id=collection.id).first()
     aggregation = Aggregation.query.filter_by(collection_id=collection.id).first()
 
-    collection_schema = Collection()
+    collection_schema = CollectionSchema()
     collection_dump = collection_schema.dump(collection).data
-    collector_schema = CollectorSchema()
-    collector_dump = collector_schema.dump(collector).data
     aggregation_schema = AggregationSchema()
     aggregation_dump = aggregation_schema.dump(aggregation).data
 
@@ -179,7 +169,7 @@ def get_collection_details(collection_id):
     for i, t in enumerate(geotagged_tweets, start=1):
         geotagged_table.append(Tweet.make_table_object(i, t))
 
-    res = {'collection': collection_dump, 'collector': collector_dump, 'datatable': samples_table,
+    res = {'collection': collection_dump, 'datatable': samples_table,
            'aggregation': aggregation_dump, 'annotation_models': AnnotatorClient.models()[0]['models'],
            'running_annotators': AnnotatorClient.running()[0], 'running_geotaggers': GeocoderClient.running()[0],
            'datatableannotated': annotated_table, 'datatablegeotagged': geotagged_table}
@@ -222,35 +212,6 @@ def annotate(collection_id=None, lang='en', forecast_id=None, startdate=None, en
         return {'error': {'description': str(e)}}, 500
     else:
         return res, code
-
-
-# @check_role
-# @jwt_required
-def start_all():
-    """
-    POST /collections/startall
-    Start all inactive collections
-    :return:
-    """
-    not_running_collectors = (c for c in Collector.resume_all() if not Collector.is_running(c.stored_instance.id))
-    for c in not_running_collectors:
-        c.launch()
-    return {}, 204
-
-
-# @check_role
-# @jwt_required
-def stop_all():
-    """
-    POST /collections/stopall
-    Stop all _running collections
-    :return:
-    """
-
-    res = Collector.running_instances()
-    for _, collector in res:
-        collector.stop()
-    return {}, 204
 
 
 # @check_role
@@ -308,11 +269,12 @@ def add_ondemand(payload):
     :type: list
     :return:
     """
-    from daemons.collector import OndemandCollector
+    from daemons.collector import Collector
+    # TODO readapt for the new structure
     collections = []
     for event in payload:
         event['tz'] = '+00:00'
-        collector = OndemandCollector.create_from_event(event)
+        collector = Collector.create_from_event(event)
         # params for stored collector is in the form of a dict:
         # {"trigger": "manual", "tzclient": "+02:00", "forecast": 123456789,
         #     "kwfile": "/path/c78e0f08-98c9-4553-b8ee-a41f15a34110_kwfile.yaml",
@@ -324,8 +286,5 @@ def add_ondemand(payload):
                   'config': collector.config}
         collections.append({'efas id': event['efas_id'], 'runtime': collector.runtime, 'nuts': event.get('nuts'),
                             'keywords': event['keywords'], 'bbox': event['bbox']})
-        stored = StoredCollector(collection_id=collector.collection.id, parameters=params)
-        stored.save()
-        collector.stored_instance = stored
         collector.launch()
     return {'results': collections}, 201

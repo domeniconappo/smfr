@@ -20,14 +20,8 @@
                                        <tr>
                                            <th>Collection Id</th>
                                            <td>{{ data.collection.id }}</td>
-                                           <th>Collector Id</th>
-                                           <td>{{ data.collector.id }}</td>
-                                       </tr>
-                                       <tr>
                                            <th>Trigger</th>
                                            <td>{{ data.collection.trigger }}</td>
-                                           <th>Collection Type</th>
-                                           <td>{{ data.collection.ctype }}</td>
                                        </tr>
                                        {% if data.collection.tracking_keywords %}
                                        <tr>
@@ -38,7 +32,7 @@
                                        {% if data.collection.locations %}
                                        <tr>
                                            <th colspan="2">Bounding boxes</th>
-                                           <td colspan="2"><a href="{{ data.collection.bboxfinder }}" target="_blank">{{ data.collection.locations|join(', ') }}</a></td>
+                                           <td colspan="2"><a href="{{ data.collection.bboxfinder }}" target="_blank">{{ data.collection.locations }}</a></td>
                                        </tr>
                                        {% endif %}
                                        <tr>
@@ -110,16 +104,16 @@
 	                           <div class="panel-body">
                                    <div class="btn-group btn-group-justified" role="group">
                                        <div class="btn-group">
-                                        <a {% if data.collection.status == 'Active'%} class="btn btn-sm btn-default disabled" {% else %} class="btn btn-sm btn-default" {% endif %} href="/start/{{ data.collector.id }}"><em class="fas fa-play"></em></a>
+                                        <a {% if data.collection.status == 'Active'%} class="btn btn-sm btn-default disabled" {% else %} class="btn btn-sm btn-default" {% endif %} href="/start/{{ data.collection.id }}"><em class="fas fa-play"></em></a>
                                        </div>
                                        <div class="btn-group">
-                                        <a {% if data.collection.status == 'Inactive'%} class="btn btn-sm btn-default disabled" {% else %} class="btn btn-sm btn-default" {% endif %} href="/stop/{{ data.collector.id }}"><em class="fas fa-stop"></em></a>
+                                        <a {% if data.collection.status == 'Inactive'%} class="btn btn-sm btn-default disabled" {% else %} class="btn btn-sm btn-default" {% endif %} href="/stop/{{ data.collection.id }}"><em class="fas fa-stop"></em></a>
                                        </div>
                                        <div class="btn-group">
                                         <a class="btn btn-sm btn-danger" href="/remove/{{ data.collection.id }}"><em class="fas fa-trash"></em></a>
                                        </div>
                                        <div class="btn-group">
-                                        <a class="btn btn-sm btn-default" href="/export/{{ data.collector.id }}">
+                                        <a class="btn btn-sm btn-default" href="/export/{{ data.collection.id }}">
                                             <em class="fas fa-download"></em>
                                         </a>
                                        </div>

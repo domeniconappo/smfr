@@ -99,41 +99,30 @@ paths:
         - in: body
           name: payload
           schema:
-            $ref: '#/definitions/CollectorPayload'
-#        - in: formData
-#          name: kwfile
-#          type: file
-#          description: File with keywords by language
-#        - in: formData
-#          name: locfile
-#          type: file
-#          description: File with bounding boxes
-#        - in: formData
-#          name: config
-#          type: file
-          description: Configuration file for Collector
+            $ref: '#/definitions/CollectionPayload'
+          description: Collection arguments
       responses:
-        200:
-          description: Return collectors
+        201:
+          description: Return created collection
           schema:
             type: object
-            $ref: '#/definitions/CollectorResponse'
+            $ref: '#/definitions/Collection'
     get:
       tags: [collections]
       operationId: server.api.collections.get
       summary: Get all collections defined in SMFR
       responses:
         200:
-          description: Return collectors
+          description: Return all collections
           schema:
             type: array
             items:
-              $ref: '#/definitions/CollectorResponse'
+              $ref: '#/definitions/Collection'
 
   /collections/active:
     get:
       tags: [collections]
-      operationId: server.api.collections.get_running_collectors
+      operationId: server.api.collections.get_running_collections
       summary: Get _running collectors
       responses:
         200:
@@ -141,34 +130,34 @@ paths:
           schema:
             type: array
             items:
-              $ref: '#/definitions/CollectorResponse'
+              $ref: '#/definitions/Collection'
 
-  /collections/start/{collector_id}:
+  /collections/{collection_id}/start:
     post:
       tags: [collections]
-      operationId: server.api.collections.start_collector
+      operationId: server.api.collections.start_collection
       parameters:
         - in: path
-          name: collector_id
+          name: collection_id
           type: integer
           required: true
-          description: Numeric ID of the stored collector to start.
+          description: Collection ID to start.
       summary: Start a previously defined collector
       responses:
         204:
           description: The collector was started successfully.
 
-  /collections/stop/{collector_id}:
+  /collections/{collection_id}/stop:
     post:
       tags: [collections]
-      operationId: server.api.collections.stop_collector
+      operationId: server.api.collections.stop_collection
       parameters:
         - in: path
-          name: collector_id
+          name: collection_id
           type: integer
           required: true
-          description: Numeric ID of the stored collector to start.
-      summary: Stop a previously defined and _running collector
+          description: Collection ID to stop.
+      summary: Stop a previously defined and running collector
       responses:
         204:
           description: The collector was stopped successfully.
@@ -188,7 +177,7 @@ paths:
         204:
           description: The collection was removed successfully
 
-  /collections/{collection_id}/details:
+  /collections/{collection_id}:
     get:
       tags: [collections]
       operationId: server.api.collections.get_collection_details
@@ -265,24 +254,6 @@ paths:
       responses:
         204:
           description: Collected tweets are starting to be annotated...
-
-  /collections/startall:
-    post:
-      tags: [collections]
-      operationId: server.api.collections.start_all
-      summary: Start all inactive collections defined in the system
-      responses:
-        204:
-          description: Collectors were started successfully
-
-  /collections/stopall:
-    post:
-      tags: [collections]
-      operationId: server.api.collections.stop_all
-      summary: Stop all active collections defined in the system
-      responses:
-        204:
-          description: Collectors were stopped successfully
 
   /collections/fetch_efas:
     get:
@@ -389,7 +360,7 @@ definitions:
       bboxfinder:
         type: string
 
-  CollectorPayload:
+  CollectionPayload:
     type: object
     required: [trigger]
     properties:
@@ -411,16 +382,6 @@ definitions:
         type: object
 
 
-  CollectorResponse:
-    type: object
-    properties:
-      collection:
-        $ref: '#/definitions/Collection'
-      aggregation:
-        $ref: '#/definitions/Aggregation'
-      id:
-        type: integer
-
   OnDemandPayload:
     type: object
     properties:
@@ -438,16 +399,6 @@ definitions:
       lead_time:
         type: integer
       nuts:
-        type: string
-
-  Collector:
-    type: object
-    properties:
-      id:
-        type: integer
-      collection_id:
-        type: integer
-      parameters:
         type: string
 
   CollectionStats:
@@ -500,8 +451,6 @@ definitions:
     properties:
       collection:
         $ref: '#/definitions/Collection'
-      collector:
-        $ref: '#/definitions/Collector'
       stats:
         $ref: '#/definitions/CollectionStats'
       running_annotators:

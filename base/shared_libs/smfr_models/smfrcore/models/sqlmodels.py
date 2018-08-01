@@ -1,7 +1,9 @@
 import os
 import datetime
 import logging
+import uuid
 
+import yaml
 from passlib.apps import custom_app_context as pwd_context
 
 from sqlalchemy import Column, BigInteger, Integer, String, TIMESTAMP, Float, ForeignKey, inspect, Index
@@ -104,6 +106,38 @@ class User(SMFRModel):
         return payload['sub']
 
 
+class CollectorConfiguration(SMFRModel):
+    __tablename__ = 'collector_configuration'
+    __table_args__ = {'mysql_engine': 'InnoDB', 'mysql_charset': 'utf8mb4', 'mysql_collate': 'utf8mb4_general_ci'}
+    id = Column(Integer, primary_key=True)
+    name = Column(String(500), nullable=True)
+    consumer_key = Column(String(200), nullable=False)
+    consumer_secret = Column(String(200), nullable=False)
+    access_token = Column(String(200), nullable=False)
+    access_token_secret = Column(String(200), nullable=False)
+
+    @classmethod
+    def create(cls, config):
+        if not all(config.get(k) for k in ('access_token', 'access_token_secret', 'consumer_key', 'consumer_secret')):
+            return CollectorConfiguration.query.filter_by(name='admin').first()
+        obj = CollectorConfiguration(name=uuid.uuid4(), consumer_key=config['consumer_key'],
+                                     consumer_secret=config['consumer_secret'],
+                                     access_token=config['access_token_secret'])
+        obj.save()
+        return obj
+
+    def save(self):
+        # we need 'merge' method because objects can be attached to db sessions in different threads
+        attached_obj = sqldb.session.merge(self)
+        sqldb.session.add(attached_obj)
+        sqldb.session.commit()
+        self.id = attached_obj.id
+
+    def delete(self):
+        sqldb.session.delete(self)
+        sqldb.session.commit()
+
+
 class TwitterCollection(SMFRModel):
     """
 
@@ -114,10 +148,6 @@ class TwitterCollection(SMFRModel):
     ACTIVE_STATUS = 'active'
     INACTIVE_STATUS = 'inactive'
 
-    TYPES = [
-        ('keywords', 'Keywords'),
-        ('geo', 'Geotagged'),
-    ]
     TRIGGER_ONDEMAND = 'on-demand'
     TRIGGER_BACKGROUND = 'background'
     TRIGGER_MANUAL = 'manual'
@@ -136,69 +166,66 @@ class TwitterCollection(SMFRModel):
     id = Column(Integer, primary_key=True, autoincrement=True, nullable=False)
     forecast_id = Column(Integer)
     trigger = Column(ChoiceType(TRIGGERS), nullable=False)
-    ctype = Column(ChoiceType(TYPES), nullable=False)
     tracking_keywords = Column(ScalarListType(str), nullable=True)
     locations = Column(JSONType, nullable=True)
     languages = Column(ScalarListType(str), nullable=True)
     status = Column(ChoiceType(STATUSES), nullable=False, default='inactive')
     nuts2 = Column(String(50), nullable=True)
-    nuts2source = Column(String(255), nullable=True)
     started_at = Column(TIMESTAMP, nullable=True)
     stopped_at = Column(TIMESTAMP, nullable=True)
     runtime = Column(TIMESTAMP, nullable=True)
     user_id = Column(Integer, ForeignKey('users.id'))
     user = sqldb.relationship('User', backref=sqldb.backref('users', uselist=False))
+    configuration_id = Column(Integer, ForeignKey('collector_configuration.id'))
+    configuration = sqldb.relationship('CollectorConfiguration', lazy='subquery',
+                                       backref=sqldb.backref('collector_configuration', uselist=False))
 
     def __str__(self):
-        return 'TwitterCollection<{o.id}: {o.forecast_id} - {o.trigger.value}/{o.ctype.value}>'.format(o=self)
+        return 'Collection<{o.id}: {o.forecast_id} - {o.trigger.value}>'.format(o=self)
+
+    @classmethod
+    def create(cls, **kwargs):
+        user = kwargs.get('user')
+        obj = cls(nuts2=kwargs.get('nuts2'), trigger=kwargs['trigger'],
+                  runtime=kwargs.get('runtime'), user_id=user.id if user else 1)
+        obj.forecast_id = kwargs.get('forecast_id')
+        keywords = kwargs.get('keywords')
+        languages = kwargs.get('languages')
+        if languages and isinstance(keywords, list):
+            obj.languages = languages
+            obj.tracking_keywords = keywords
+        elif ':' in keywords:
+            kwdict = {}
+            groups = keywords.split(' ')
+            for g in groups:
+                lang, kws = list(map(str.strip, g.split(':')))
+                kwdict[lang] = list(map(str.strip, kws.split(',')))
+            obj.languages = sorted(list(keywords.keys()))
+            obj.tracking_keywords = sorted(list(set(w for s in keywords.values() for w in s)))
+        else:
+            obj.tracking_keywords = list(map(str.strip, sorted(list(set(w for w in keywords.split(','))))))
+
+        locations = kwargs.get('bounding_boxes') or kwargs.get('locations')
+        if locations:
+            if isinstance(locations, str):
+                coords = list(map(str.strip, locations.split(',')))
+                bbox = {'min_lon': coords[0], 'min_lat': coords[1], 'max_lon': coords[2], 'max_lat': coords[3]}
+                obj.locations = bbox
+            elif isinstance(locations, dict):
+                obj.locations = locations
+
+        collector_config = CollectorConfiguration.create(kwargs.get('configuration'))
+        obj.configuration_id = collector_config.id
+        obj.save()
+        return obj
 
     @property
     def bboxfinder(self):
         bbox = ''
         if self.locations:
-            coords = list(map(str.strip, self.locations[0].split(',')))
-            if coords and len(coords) == 4:
-                bbox = '{},{},{},{}'.format(coords[1], coords[0], coords[3], coords[2])
+            bbox = '{},{},{},{}'.format(self.locations['min_lat'], self.locations['min_lon'],
+                                        self.locations['max_lat'], self.locations['max_lon'])
         return '' if not bbox else 'http://bboxfinder.com/#{}'.format(bbox)
-
-    @classmethod
-    def build_from_collector(cls, collector, user=None):
-        """
-        Construct a TwitterCollection object mapped to a row in MySQL
-        :param user: User object
-        :param collector: A :class:`daemons.collector.Collector` object
-        :return: A :class:`TwitterCollection` object
-        """
-        query = collector.query
-        locations = []
-        if query.get('locations'):
-            # get only the first bbox
-            locations = query['locations'][0]
-            locations = [loc[:6] for loc in locations.split(',')]
-            locations = [','.join(loc for loc in locations)]
-        collection = cls(
-            trigger=collector.trigger,
-            ctype=collector.ctype,
-            forecast_id=collector.forecast_id or 123456789,
-            nuts2=collector.nuts2,
-            nuts2source=collector.nuts2source,
-            tracking_keywords=query['track'],
-            languages=query['languages'],
-            locations=locations,
-            runtime=collector.runtime,
-            user_id=user.id if user else 1
-        )
-        kwargs = {}
-        for k, v in vars(collection).items():
-            if k in ('_sa_instance_state', 'id') or not v or (isinstance(v, ChoiceType) and not v.value):
-                continue
-            kwargs[k] = v if not isinstance(v, ChoiceType) else v.value
-
-        existing = TwitterCollection.query.filter_by(**kwargs).first()
-        if existing:
-            return existing
-        collection.save()
-        return collection
 
     def save(self):
         # we need 'merge' method because objects can be attached to db sessions in different threads
@@ -224,45 +251,6 @@ class TwitterCollection(SMFRModel):
     @property
     def is_ondemand(self):
         return self.trigger == self.TRIGGER_ONDEMAND
-
-
-class StoredCollector(SMFRModel):
-    """
-
-    """
-    __tablename__ = 'stored_collector'
-    __table_args__ = {'mysql_engine': 'InnoDB', 'mysql_charset': 'utf8mb4', 'mysql_collate': 'utf8mb4_general_ci'}
-
-    id = Column(Integer, primary_key=True, autoincrement=True, nullable=False)
-    collection_id = Column(Integer, ForeignKey('virtual_twitter_collection.id'))
-    collection = sqldb.relationship('TwitterCollection',
-                                    backref=sqldb.backref('virtual_twitter_collection', uselist=False))
-    parameters = Column(JSONType, nullable=False)
-    """
-    parameters = {"trigger": "manual", "tzclient": "+02:00", "forecast": 123456789, 
-    "kwfile": "/path/c78e0f08-98c9-4553-b8ee-a41f15a34110_kwfile.yaml", 
-    "locfile": "/path/c78e0f08-98c9-4553-b8ee-a41f15a34110_locfile.yaml", 
-    "config": "/path/c78e0f08-98c9-4553-b8ee-a41f15a34110_config.yaml"}
-    """
-
-    def save(self):
-        # we need 'merge' method because objects can be attached to db sessions in different threads
-        attached_obj = sqldb.session.merge(self)
-        sqldb.session.add(attached_obj)
-        sqldb.session.commit()
-        self.id = attached_obj.id
-
-    def delete(self):
-        collector_params = self.parameters
-        for k in ('kwfile', 'locfile', 'config'):
-            path = collector_params.get(k)
-            if path and os.path.exists(path):
-                os.unlink(path)
-        sqldb.session.delete(self)
-        sqldb.session.commit()
-
-    def __str__(self):
-        return 'Collector stored ID: {} (collection: {})'.format(self.id, self.collection_id)
 
 
 class Nuts2(SMFRModel):

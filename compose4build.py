@@ -22,7 +22,7 @@ def replace_image_variable(component_folder, variable):
 
 
 def do(image_tag):
-    replace_image_variable('./base_docker', 'PYTHON_BASE_IMAGE')
+    replace_image_variable('./base', 'PYTHON_BASE_IMAGE')
     replace_image_variable('./cassandrasmfr', 'CASSANDRA_BASE_IMAGE')
     replace_image_variable('./mysql', 'MYSQL_BASE_IMAGE')
     replace_image_variable('./geonames', 'GEONAMES_BASE_IMAGE')

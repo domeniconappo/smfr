@@ -48,7 +48,7 @@ def fetch_efas():
 @app.route('/list', methods=('GET',))
 def list_collections():
     res = client.list_collections()
-    return render_template('list.html', collectors=res), 200
+    return render_template('list.html', collections=res), 200
 
 
 @app.route('/_running', methods=('GET',))

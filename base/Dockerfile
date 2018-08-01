@@ -1,4 +1,4 @@
-FROM ${PYTHON_BASE_IMAGE}
+FROM d-registry.jrc.it:5000/public/python:3.6.6
 MAINTAINER Domenico Nappo <domenico.nappo@ext.ec.europa.eu>
 
 ARG http_proxy
@@ -16,9 +16,4 @@ RUN pip3.6 install -U pip && pip3.6 install -r requirements.txt
 
 # Clean up APT
 RUN apt-get autoremove -y && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
-RUN mkdir -p /smfr_clients && mkdir -p /smfr_utils && mkdir -p /smfr_models && mkdir -p /scripts
-COPY shared_libs/scripts/wait_for_it.sh /scripts/
-COPY shared_libs/smfr_utils/. /smfr_utils/
-COPY shared_libs/smfr_clients/. /smfr_clients/
-RUN chmod -R a+x /scripts/
-RUN pip3 install /smfr_utils/ && pip3 install /smfr_clients/ && rm -R /root/.cache
+

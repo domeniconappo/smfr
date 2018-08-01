@@ -58,8 +58,7 @@
 
         <div class="form-group {% if form.bounding_boxes.errors %} has-error {% endif %}">
             {{form.bounding_boxes.label(class="col-sm-4")}}
-            Eg: <em>23.181152, 43.293200, 28.729248, 48.070738,...,min_lonN, min_latN, max_lonN, max_latN</em>.
-            Max 25 bboxes
+            Eg: <em>23.181, 43.293, 28.729, 48.070</em>.
             <div class="col-sm-3">
             {{ form.bounding_boxes(class="form-control") }}
             </div>

@@ -8,6 +8,7 @@ from decimal import Decimal
 from time import sleep
 
 import numpy as np
+import yaml
 from cassandra.auth import PlainTextAuthProvider
 from cassandra.cluster import NoHostAvailable, default_lbp_factory
 from cassandra.cqlengine import connection
@@ -109,6 +110,14 @@ class RestServerConfiguration(metaclass=Singleton):
     logger_level = logging.ERROR if UNDER_TESTS else logging.getLevelName(os.environ.get('LOGGING_LEVEL', 'DEBUG').upper())
     logger = logging.getLogger('RestServer config')
     logger.setLevel(logger_level)
+
+    @classmethod
+    def default_keywords(cls):
+        with open(os.path.join(CONFIG_FOLDER, 'flood_keywords.yaml')) as f:
+            floods_keywords = yaml.load(f)
+            languages = sorted(list(floods_keywords.keys()))
+            track = sorted(list(set(w for s in floods_keywords.values() for w in s)))
+        return languages, track
 
     @classmethod
     def configure_migrations(cls):

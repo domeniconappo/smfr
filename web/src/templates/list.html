@@ -19,7 +19,7 @@
                 <tr>
                     <th>#</th>
                     <th><em class="fa fa-cogs"></em></th>
-                    <th>Collection Id - Collector Id</th>
+                    <th>Id</th>
                     <th>Trigger</th>
                     <th>Forecast Id</th>
                     <th>Type</th>
@@ -32,16 +32,16 @@
                 </tr>
               </thead>
               <tbody>
-              {% for c in collectors %}
+              {% for c in collections %}
                 <tr>
                     <td>{{ loop.index }}</td>
                     <td align="center">
                         <div class="btn-group btn-group-justified" role="group">
                             <div class="btn-group">
-                                <a class="btn btn-sm btn-default" href="/details/{{ c.collection.id }}"><em class="fas fa-eye"></em></a>
+                                <a class="btn btn-sm btn-default" href="/details/{{ c.id }}"><em class="fas fa-eye"></em></a>
                             </div>
                             <div class="btn-group">
-                                {% if c.collection.status == 'Active'%}
+                                {% if c.status == 'Active'%}
                                 <a class="btn btn-sm btn-primary" href="/stop/{{ c.id }}"><em class="fas fa-stop"></em></a>
                                 {%  else %}
                                 <a class="btn btn-sm btn-primary" href="/start/{{ c.id }}"><em class="fas fa-play"></em></a>
@@ -50,20 +50,20 @@
                         </div>
                     </td>
 
-                    <td>{{c.collection.id}} - {{c.id}}</td>
-                    <td>{{c.collection.trigger}}</td>
-                    <td>{{c.collection.forecast_id}}</td>
-                    <td data-toggle="tooltip" data-placement="top" title="{{c.collection.tracking_keywords|join(', ')}}">
-                        <u><b>{{c.collection.ctype}}</b></u>
+                    <td>{{c.id}}</td>
+                    <td>{{c.trigger}}</td>
+                    <td>{{c.forecast_id}}</td>
+                    <td data-toggle="tooltip" data-placement="top" title="{{c.tracking_keywords|join(', ')}}">
+                        <u><b>keywords...</b></u>
                     </td>
-                    <td>{{c.collection.status}}</td>
-                    <td>{{c.collection.languages|join(', ')}}</td>
+                    <td>{{c.status}}</td>
+                    <td>{{c.languages|join(', ')}}</td>
 
-                    <td>{% if c.collection.locations %}<a href="{{ c.collection.bboxfinder }}" target="_blank">({{c.collection.locations|join(',')}})</a>{% endif %}</td>
+                    <td>{% if c.locations %}<a href="{{ c.bboxfinder }}" target="_blank">({{c.locations|join(',')}})</a>{% endif %}</td>
 
-                    <td> {% if c.collection.runtime %} {{c.collection.runtime|datetimeformat('%Y-%m-%d %H:%M:%S')}} {% endif %}</td>
-                    <td>{{c.collection.started_at|datetimeformat('%Y-%m-%d %H:%M:%S')}}</td>
-                    <td>{{c.collection.stopped_at|datetimeformat('%Y-%m-%d %H:%M:%S')}}</td>
+                    <td> {% if c.runtime %} {{c.runtime|datetimeformat('%Y-%m-%d %H:%M:%S')}} {% endif %}</td>
+                    <td>{{c.started_at|datetimeformat('%Y-%m-%d %H:%M:%S')}}</td>
+                    <td>{{c.stopped_at|datetimeformat('%Y-%m-%d %H:%M:%S')}}</td>
                 </tr>
               {% endfor %}
               </tbody>

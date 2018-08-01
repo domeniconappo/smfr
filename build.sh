@@ -30,21 +30,11 @@ if [ ! -d ${SMFR_DATADIR} ]; then
     mkdir -p ${SMFR_DATADIR}
 fi
 
-## update geonames ES index from https://s3.amazonaws.com/ahalterman-geo/
-#if [ ! -d ${SMFR_DATADIR}/geonames_index ] || [ ${command} == "update_index" ]; then
-#    # Download geonames indices for geocoding
-#    cd ${SMFR_DATADIR}
-#    wget https://s3.amazonaws.com/ahalterman-geo/geonames_index.tar.gz
-#    tar xzf geonames_index.tar.gz
-#    rm geonames_index.tar.gz
-#    cd -
-#fi
-
 # building with docker-compose
 python3 compose4build.py ${image_tag}
 
 # build base image
-docker build --build-arg http_proxy=${http_proxy} --build-arg https_proxy=${http_proxy} -t smfr_base:${image_tag} base_docker/.
+docker build --build-arg http_proxy=${http_proxy} --build-arg https_proxy=${http_proxy} -t smfr_base:${image_tag} base/.
 docker tag smfr_base:${image_tag} ${SMFR_IMAGE}:${image_tag}
 
 # push base image
