@@ -169,7 +169,7 @@
                                         </div>
                                    </form>
                                <a id="annotate_button" title="Start classification for this collection"
-                                  class="btn btn-default disabled" href="javascript: void(0);">
+                                  class="btn btn-default" href="#">
                                    <em class="fas fa-tasks"></em> Start annotation
                                </a>
                                </div>
@@ -316,7 +316,7 @@
             var selected = this.value;
 
             if (selected === '-') {
-                btn.attr("href", "javascript: void(0)");
+                btn.attr("href", "#");
                 btn.addClass("disabled");
             } else {
                 btn.removeClass("disabled");
@@ -324,10 +324,6 @@
             }
             return false;
         });
-        btn.on("click", function (e) {
-           console.log('ooooook');
-           return false;
-         });
 
         function format (d, inc) {
             // `d` is the original data object for the row
@@ -339,8 +335,9 @@
 
 
         $(document).ready(function() {
-            var dataSet = {{ data.datatable | safe }};
+            $("#annotate_button").addClass("disabled");
 
+            var dataSet = {{ data.datatable | safe }};
             var table = $('#tabletweets').DataTable( {
                 "data": dataSet,
                 "columns": [
