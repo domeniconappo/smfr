@@ -367,6 +367,13 @@ class Nuts2(SMFRModel):
             country_code=properties['CNTR_CODE'],
         )
 
+    def save(self):
+        # we need 'merge' method because objects can be attached to db sessions in different threads
+        attached_obj = sqldb.session.merge(self)
+        sqldb.session.add(attached_obj)
+        sqldb.session.commit()
+        self.id = attached_obj.id
+
 
 class Nuts3(SMFRModel):
     """

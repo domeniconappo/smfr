@@ -32,7 +32,8 @@ from smfrcore.utils import RUNNING_IN_DOCKER
 UNDER_TESTS = any('nose2' in x for x in sys.argv)
 SERVER_BOOTSTRAP = 'gunicorn' in sys.argv[0]
 MYSQL_MIGRATION = all(os.path.basename(a) in ('flask', 'db', 'migrate') for a in sys.argv) \
-                  or all(os.path.basename(a) in ('flask', 'db', 'upgrade') for a in sys.argv)
+                  or all(os.path.basename(a) in ('flask', 'db', 'upgrade') for a in sys.argv) \
+                  or all(os.path.basename(a) in ('flask', 'db', 'init') for a in sys.argv)
 
 CONFIG_STORE_PATH = os.environ.get('SERVER_PATH_UPLOADS', os.path.join(os.path.dirname(__file__), '../../../uploads/'))
 CONFIG_FOLDER = '/configuration/' if RUNNING_IN_DOCKER else os.path.join(os.path.dirname(__file__), '../config/')
