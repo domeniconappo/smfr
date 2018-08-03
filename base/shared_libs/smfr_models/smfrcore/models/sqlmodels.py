@@ -228,18 +228,21 @@ class TwitterCollection(SMFRModel):
             self.languages = []
 
     def _set_locations(self, locations):
+        locations = locations or {}
+        if isinstance(locations, dict) and not all(locations.get(k) for k in ('min_lon', 'min_lat', 'max_lon', 'max_lat')):
+            locations = {}
         if locations:
             if isinstance(locations, str):
                 coords = list(map(str.strip, locations.split(',')))
                 locations = {'min_lon': coords[0], 'min_lat': coords[1], 'max_lon': coords[2], 'max_lat': coords[3]}
-            elif isinstance(locations, dict) and all(locations.get(k) for k in ('min_lon', 'min_lat', 'max_lon', 'max_lat')):
+            elif isinstance(locations, dict):
                 tmp_locations = locations.copy()
                 for k, v in tmp_locations.items():
                     if k not in ('min_lon', 'min_lat', 'max_lon', 'max_lat'):
                         del locations[k]
                         continue
                     locations[k] = round(float(v), 3)
-            self.locations = locations
+        self.locations = locations
 
     @property
     def bboxfinder(self):

@@ -90,14 +90,14 @@ class Collector:
         Build a dictionary containing information about tracking keywords or bounding box
         :return: dict {'languages': ['it', 'en'], 'track': ['',..., ''], 'locations': []}
         """
-        locations = None
+        query = {}
         if self.collection.locations:
             locations = self.collection.locations
             locations = ['{},{},{},{}'.format(locations['min_lon'], locations['min_lat'],
-                                          locations['max_lon'], locations['max_lat'])]
-        query = {'languages': self.collection.languages,
-                 'track': self.collection.tracking_keywords,
-                 'locations': locations}
+                                              locations['max_lon'], locations['max_lat'])]
+            query.update({'locations': locations})
+        query.update({'languages': self.collection.languages,
+                      'track': self.collection.tracking_keywords})
         return query
 
     def start(self):
