@@ -167,8 +167,8 @@ def run_single_aggregation(collection_id,
         aggregation.last_tweetid_geotagged = max_geotagged_tweetid if max_geotagged_tweetid else last_tweetid_geotagged
         # if timestamp_start/end were none, last_timestamp_start contains an
         # invalid timestamp for MySQL (timestamp in the future) so we store a NULL value
-        aggregation.timestamp_start = last_timestamp_start if timestamp_start else None
-        aggregation.timestamp_end = last_timestamp_end if timestamp_end else None
+        aggregation.timestamp_start = last_timestamp_start if last_timestamp_start != datetime(2100, 12, 30) else None
+        aggregation.timestamp_end = last_timestamp_end if last_timestamp_end != datetime(1970, 1, 1) else None
         aggregation.values = dict(counter)
         aggregation.save()
         logger.info(' <<<<<<<<<<< Aggregation terminated for collection %d: %s', collection_id, str(aggregation.values))
