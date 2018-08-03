@@ -23,6 +23,13 @@
                                            <th>Trigger</th>
                                            <td>{{ data.collection.trigger }}</td>
                                        </tr>
+                                       {% if data.collection.forecast_id %}
+                                       <tr>
+                                           <td colspan="4">
+                                               <strong>Forecast</strong> {{ data.collection.forecast_id }}
+                                           </td>
+                                       </tr>
+                                       {% endif %}
                                        {% if data.collection.tracking_keywords %}
                                        <tr>
                                            <th colspan="2">Keywords</th>
@@ -31,8 +38,12 @@
                                        {% endif %}
                                        {% if data.collection.locations %}
                                        <tr>
-                                           <th colspan="2">Bounding boxes</th>
-                                           <td colspan="2"><a href="{{ data.collection.bboxfinder }}" target="_blank">{{ data.collection.locations }}</a></td>
+                                           <td colspan="4">
+                                               <strong>Bounding box</strong>
+                                               <a href="{{ data.collection.bboxfinder }}" target="_blank">
+                                               {{ data.collection.bounding_box }}
+                                               </a>
+                                           </td>
                                        </tr>
                                        {% endif %}
                                        <tr>
@@ -43,23 +54,22 @@
                                            </td>
                                        </tr>
                                        <tr>
-                                           <th>Last started</th>
+                                           <th>Last started (UTC)</th>
                                            <td>{{ data.collection.started_at|datetimeformat('%Y-%m-%d %H:%M:%S') }}</td>
-                                           <th>Last stopped</th>
+                                           <th>Last stopped (UTC)</th>
                                            <td>{{ data.collection.stopped_at|datetimeformat('%Y-%m-%d %H:%M:%S') }}</td>
                                        </tr>
                                        {% if data.collection.runtime %}
                                        <tr>
-                                           <th colspan="2">Run until</th>
-                                           <td colspan="2">{{ data.collection.runtime|datetimeformat('%Y-%m-%d %H:%M:%S') }}</td>
+                                           <td colspan="4">
+                                               <strong>Run until (local time)</strong> {{ data.collection.runtime|datetimeformat('%Y-%m-%d %H:%M') }}
+                                           </td>
                                        </tr>
                                        {% endif %}
                                        {% if data.collection.nuts2 %}
                                        <tr>
-                                           <th>NUTS3</th>
-                                           <td>{{ data.collection.nuts2 }}</td>
-                                           <th>NUTS3 Source</th>
-                                           <td>{{ data.collection.nuts2source or '-' }}</td>
+                                           <th colspan="2">NUTS2</th>
+                                           <td colspan="2">{{ data.collection.nuts2 }}</td>
                                        </tr>
                                        {% endif %}
                                           </tbody>
@@ -158,9 +168,10 @@
 
                                         </div>
                                    </form>
-                               <a id="annotate_button" title="Start classification for this collection" class="btn btn-default disabled" href="javascript: void(0);">
-                                            <em class="fas fa-tasks"></em> Start annotation
-                                            </a>
+                               <a id="annotate_button" title="Start classification for this collection"
+                                  class="btn btn-default disabled" href="javascript: void(0);">
+                                   <em class="fas fa-tasks"></em> Start annotation
+                               </a>
                                </div>
 	                       </div>
 
@@ -300,9 +311,8 @@
 {% block scripts %}
     {{ super() }}
     <script>
-        var sel = document.getElementById('annotation_select');
         var btn = $("#annotate_button");
-        sel.onchange = function () {
+        $("#annotation_select").on("change", function () {
             var selected = this.value;
 
             if (selected === '-') {
@@ -312,7 +322,13 @@
                 btn.removeClass("disabled");
                 btn.attr("href", "/annotate/{{ data.collection.id }}/" + selected);
             }
-        };
+            return false;
+        });
+        btn.on("click", function (e) {
+           console.log('ooooook');
+           return false;
+         });
+
         function format (d, inc) {
             // `d` is the original data object for the row
 
@@ -451,4 +467,4 @@
 
         } );
     </script>
-{% endblock %}
+{% endblock scripts %}

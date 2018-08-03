@@ -28,31 +28,32 @@ class Aggregation(BaseSchema):
 class Collection(BaseSchema):
     id = fields.Integer()
     trigger = fields.String(validate=[OneOf(choices=['background', 'on-demand', 'manual'], labels=[])])
-    ctype = fields.String(validate=[OneOf(choices=['keywords', 'geo'], labels=[])])
     forecast_id = fields.String()
     tracking_keywords = fields.List(fields.String())
-    locations = fields.List(fields.String())
+    locations = fields.Field()
     languages = fields.List(fields.String())
     runtime = DateTime()
     nuts2 = fields.String()
-    nuts2source = fields.String()
     status = fields.String(validate=[OneOf(choices=['active', 'inactive'], labels=[])])
     started_at = DateTime()
     stopped_at = DateTime()
     bboxfinder = fields.String()
+    bounding_box = fields.String()
 
 
 class CollectionPayload(BaseSchema):
+    tzclient = fields.String()
     trigger = fields.String(required=True, validate=[OneOf(choices=['background', 'manual'], labels=[])])
     forecast_id = fields.String()
     runtime = DateTime()
     nuts2 = fields.String()
     keywords = fields.String()
-    bounding_boxes = fields.String()
+    bounding_box = fields.Field()
     configuration = fields.Field()
 
 
 class OnDemandPayload(BaseSchema):
+    tzclient = fields.String()
     efas_id = fields.Integer()
     forecast = fields.String()
     keywords = fields.String()
@@ -60,6 +61,7 @@ class OnDemandPayload(BaseSchema):
     bbox = fields.Field()
     lead_time = fields.Integer()
     nuts = fields.String()
+    tz = fields.String()
 
 
 class CollectionStats(BaseSchema):

@@ -2,3 +2,4 @@ cassandra-driver
 mysqlclient
 sqlalchemy
 schedule
+arrow

@@ -9,3 +9,4 @@ flask
 flask-restful
 gunicorn
 kafka-python
+arrow

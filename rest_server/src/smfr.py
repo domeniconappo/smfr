@@ -50,7 +50,7 @@ def list_collections():
 
 @app.cli.command()
 def list_running_collectors():
-    """List current _running collections/collectors"""
+    """List current running collections/collectors"""
     client = ApiLocalClient()
     res = client.list_running_collectors()
     click.echo(res)
@@ -63,15 +63,6 @@ def stop_collector(collector):
     client = ApiLocalClient()
     click.echo('Stopping collector %s' % collector)
     res = client.stop_collector(collector)
-    click.echo(res)
-
-
-@app.cli.command()
-def stop_all_collectors():
-    """Stop a given collector by its ID"""
-    client = ApiLocalClient()
-    click.echo('Stopping all _running collectors')
-    res = client.stop_all()
     click.echo(res)
 
 

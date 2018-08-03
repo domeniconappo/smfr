@@ -44,7 +44,7 @@ class Collector:
         """
         self.collection = collection
         self.query = self.build_query()
-        self.user_tzone = timezone
+        self.user_tzone = timezone or '+00:00'
 
         tw_api_account = collection.configuration
         client_args = {}
@@ -191,7 +191,7 @@ class Collector:
     @classmethod
     def resume_active(cls):
         """
-        Resume and launch all collectors for collections that are in ACTIVE status (i.e. they were _running before a shutdown)
+        Resume and launch all collectors for collections that are in ACTIVE status (i.e. they were running before a shutdown)
         """
         active_collections = TwitterCollection.query.filter_by(status=TwitterCollection.ACTIVE_STATUS)
         return (cls.resume(c) for c in active_collections)

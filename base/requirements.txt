@@ -1,3 +1,4 @@
+arrow
 kafka-python
 cassandra-driver
 requests

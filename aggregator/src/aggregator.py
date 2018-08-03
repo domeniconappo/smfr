@@ -9,12 +9,12 @@ import os
 import cassandra
 from sqlalchemy import or_
 
-from smfrcore.utils import LOGGER_FORMAT, DATE_FORMAT
+from smfrcore.utils import LOGGER_FORMAT, LOGGER_DATE_FORMAT
 
 from smfrcore.models.sqlmodels import TwitterCollection, Aggregation, create_app
 
 
-logging.basicConfig(level=os.environ.get('LOGGING_LEVEL', 'DEBUG'), format=LOGGER_FORMAT, datefmt=DATE_FORMAT)
+logging.basicConfig(level=os.environ.get('LOGGING_LEVEL', 'DEBUG'), format=LOGGER_FORMAT, datefmt=LOGGER_DATE_FORMAT)
 
 logger = logging.getLogger(__name__)
 logging.getLogger('cassandra').setLevel(logging.ERROR)

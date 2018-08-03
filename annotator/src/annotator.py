@@ -81,10 +81,10 @@ class Annotator:
     @classmethod
     def is_running_for(cls, collection_id, lang):
         """
-        Return True if annotation is _running for (collection_id, lang) couple. False otherwise
+        Return True if annotation is running for (collection_id, lang) couple. False otherwise
         :param collection_id: int Collection Id as it's stored in MySQL virtual_twitter_collection table
         :param lang: str two characters string denoting a language (e.g. 'en')
-        :return: bool True if annotation is _running for (collection_id, lang) couple
+        :return: bool True if annotation is running for (collection_id, lang) couple
         """
         return (collection_id, lang) in cls._running
 
@@ -143,7 +143,7 @@ class Annotator:
     @classmethod
     def stop(cls, collection_id, lang):
         """
-        Stop signal for a _running annotation process. If the Annotator is not _running, operation is ignored.
+        Stop signal for a running annotation process. If the Annotator is not running, operation is ignored.
         :param collection_id: int Collection Id as it's stored in MySQL virtual_twitter_collection table
         :param lang: str two characters string denoting a language (e.g. 'en')
         """

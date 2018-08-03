@@ -4,11 +4,11 @@ import pathlib
 
 import connexion
 
-from smfrcore.utils import LOGGER_FORMAT, DATE_FORMAT
+from smfrcore.utils import LOGGER_FORMAT, LOGGER_DATE_FORMAT
 
 from server.config import RestServerConfiguration, SERVER_BOOTSTRAP, MYSQL_MIGRATION
 
-logging.basicConfig(level=os.environ.get('LOGGING_LEVEL', 'DEBUG'), format=LOGGER_FORMAT, datefmt=DATE_FORMAT)
+logging.basicConfig(level=os.environ.get('LOGGING_LEVEL', 'DEBUG'), format=LOGGER_FORMAT, datefmt=LOGGER_DATE_FORMAT)
 
 
 os.environ['NO_PROXY'] = ','.join((RestServerConfiguration.restserver_host,
@@ -48,7 +48,7 @@ def create_app():
 
         def stop_active_collectors(signum, _):
             logger.debug("Received %d", signum)
-            logger.debug("Stopping any _running collector...")
+            logger.debug("Stopping any running collector...")
             for _id, running_collector in Collector.running_instances():
                 logger.info("Stopping collector %s", str(_id))
                 running_collector.stop(reanimate=True)

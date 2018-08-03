@@ -3,7 +3,7 @@ import datetime
 import logging
 import uuid
 
-import yaml
+import arrow
 from passlib.apps import custom_app_context as pwd_context
 
 from sqlalchemy import Column, BigInteger, Integer, String, TIMESTAMP, Float, ForeignKey, inspect, Index
@@ -118,9 +118,14 @@ class CollectorConfiguration(SMFRModel):
 
     @classmethod
     def create(cls, config):
-        if not all(config.get(k) for k in ('access_token', 'access_token_secret', 'consumer_key', 'consumer_secret')):
-            return CollectorConfiguration.query.filter_by(name='admin').first()
-        obj = CollectorConfiguration(name=uuid.uuid4(), consumer_key=config['consumer_key'],
+        if not config or not all(config.get(k) for k in ('access_token', 'access_token_secret',
+                                                         'consumer_key', 'consumer_secret')):
+            obj = CollectorConfiguration.query.filter_by(name='admin').first()
+            if not obj:
+                raise SystemError('You need to configure at least one Collector Configuration named "admin"')
+            return obj
+        obj = CollectorConfiguration(name=uuid.uuid4(),
+                                     consumer_key=config['consumer_key'],
                                      consumer_secret=config['consumer_secret'],
                                      access_token=config['access_token_secret'])
         obj.save()
@@ -181,51 +186,75 @@ class TwitterCollection(SMFRModel):
                                        backref=sqldb.backref('collector_configuration', uselist=False))
 
     def __str__(self):
-        return 'Collection<{o.id}: {o.forecast_id} - {o.trigger.value}>'.format(o=self)
+        return 'Collection<{o.id}: {o.forecast_id} - {o.trigger}>'.format(o=self)
 
     @classmethod
     def create(cls, **kwargs):
-        user = kwargs.get('user')
+        user = kwargs.get('user') or User.query.filter_by(role='admin').first()
+        if not user:
+            raise SystemError('You have to configure at least one admin user for SMFR system')
+        runtime = cls.convert_runtime(kwargs.get('runtime'))
         obj = cls(nuts2=kwargs.get('nuts2'), trigger=kwargs['trigger'],
-                  runtime=kwargs.get('runtime'), user_id=user.id if user else 1)
+                  runtime=runtime, user_id=user.id if user else 1)
         obj.forecast_id = kwargs.get('forecast_id')
         keywords = kwargs.get('keywords')
-        languages = kwargs.get('languages')
-        if languages and isinstance(keywords, list):
-            obj.languages = languages
-            obj.tracking_keywords = keywords
+        languages = kwargs.get('languages') or []
+        obj._set_keywords_and_languages(keywords, languages)
+        obj._set_locations(kwargs.get('bounding_box') or kwargs.get('locations'))
+
+        collector_config = CollectorConfiguration.create(kwargs.get('configuration'))
+        obj.configuration = collector_config
+        obj.configuration_id = collector_config.id
+        obj.save()
+        return obj
+
+    def _set_keywords_and_languages(self, keywords, languages):
+        if languages and isinstance(keywords, list) and isinstance(languages, list):
+            # default keywords with languages
+            self.languages = languages
+            self.tracking_keywords = keywords
         elif ':' in keywords:
+            # keywords from Web UI as text in the form of groups "lang1:kw1,kw2 lang2:kw3,kw4"
             kwdict = {}
             groups = keywords.split(' ')
             for g in groups:
                 lang, kws = list(map(str.strip, g.split(':')))
                 kwdict[lang] = list(map(str.strip, kws.split(',')))
-            obj.languages = sorted(list(keywords.keys()))
-            obj.tracking_keywords = sorted(list(set(w for s in keywords.values() for w in s)))
+            self.languages = sorted(list(kwdict.keys()))
+            self.tracking_keywords = sorted(list(set(w for s in kwdict.values() for w in s)))
         else:
-            obj.tracking_keywords = list(map(str.strip, sorted(list(set(w for w in keywords.split(','))))))
+            # keywords from Web UI as text in the form of comma separated words "kw1,kw2,kw3,kw4"
+            self.tracking_keywords = list(map(str.strip, sorted(list(set(w for w in keywords.split(','))))))
+            self.languages = []
 
-        locations = kwargs.get('bounding_boxes') or kwargs.get('locations')
+    def _set_locations(self, locations):
         if locations:
             if isinstance(locations, str):
                 coords = list(map(str.strip, locations.split(',')))
-                bbox = {'min_lon': coords[0], 'min_lat': coords[1], 'max_lon': coords[2], 'max_lat': coords[3]}
-                obj.locations = bbox
-            elif isinstance(locations, dict):
-                obj.locations = locations
-
-        collector_config = CollectorConfiguration.create(kwargs.get('configuration'))
-        obj.configuration_id = collector_config.id
-        obj.save()
-        return obj
+                locations = {'min_lon': coords[0], 'min_lat': coords[1], 'max_lon': coords[2], 'max_lat': coords[3]}
+            elif isinstance(locations, dict) and all(locations.get(k) for k in ('min_lon', 'min_lat', 'max_lon', 'max_lat')):
+                tmp_locations = locations.copy()
+                for k, v in tmp_locations.items():
+                    if k not in ('min_lon', 'min_lat', 'max_lon', 'max_lat'):
+                        del locations[k]
+                        continue
+                    locations[k] = round(float(v), 3)
+            self.locations = locations
 
     @property
     def bboxfinder(self):
         bbox = ''
-        if self.locations:
+        if self.locations and all(v for v in self.locations.values()):
             bbox = '{},{},{},{}'.format(self.locations['min_lat'], self.locations['min_lon'],
                                         self.locations['max_lat'], self.locations['max_lon'])
         return '' if not bbox else 'http://bboxfinder.com/#{}'.format(bbox)
+
+    @property
+    def bounding_box(self):
+        bbox = ''
+        if self.locations and all(v for v in self.locations.values()):
+            bbox = 'Lower left: {min_lon} - {min_lat}, Upper Right: {max_lon} - {max_lat}'.format(**self.locations)
+        return bbox
 
     def save(self):
         # we need 'merge' method because objects can be attached to db sessions in different threads
@@ -251,6 +280,18 @@ class TwitterCollection(SMFRModel):
     @property
     def is_ondemand(self):
         return self.trigger == self.TRIGGER_ONDEMAND
+
+    @classmethod
+    def convert_runtime(cls, runtime):
+        """
+        datetime objects are serialized by Flask json decoder in the format 'Thu, 02 Aug 2018 02:45:00 GMT'
+        arrow format is 'ddd, DD MMM YYYY HH:mm:ss ZZZ', equivalent to '%a, %d %b %Y %I:%M:%S %Z'
+        :param runtime:
+        :return: datetime object
+        """
+        if not runtime:
+            return None
+        return arrow.get(runtime, 'ddd, DD MMM YYYY HH:mm:ss ZZZ').datetime.replace(tzinfo=None)
 
 
 class Nuts2(SMFRModel):

@@ -16,10 +16,10 @@ from cassandra.auth import PlainTextAuthProvider
 from cassandra.util import OrderedMapSerializedKey
 from flask_cqlalchemy import CQLAlchemy
 
-from smfrcore.utils import RUNNING_IN_DOCKER, LOGGER_FORMAT, DATE_FORMAT
+from smfrcore.utils import RUNNING_IN_DOCKER, LOGGER_FORMAT, LOGGER_DATE_FORMAT
 from smfrcore.models.sqlmodels import TwitterCollection
 
-logging.basicConfig(format=LOGGER_FORMAT, datefmt=DATE_FORMAT)
+logging.basicConfig(format=LOGGER_FORMAT, datefmt=LOGGER_DATE_FORMAT)
 logger = logging.getLogger('models')
 logger.setLevel(os.environ.get('LOGGING_LEVEL', 'DEBUG'))
 cqldb = CQLAlchemy()

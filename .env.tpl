@@ -31,7 +31,6 @@ DOCKER_ID_USER=user
 DOCKER_ID_PASSWORD=pass
 
 KAFKA_IMAGE=spotify/kafka:latest
-MYADMIN_IMAGE=phpmyadmin/phpmyadmin:latest
 
 PYTHON_BASE_IMAGE=python:3.6
 CASSANDRA_BASE_IMAGE=cassandra:3.11.2

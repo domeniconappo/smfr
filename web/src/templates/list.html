@@ -42,7 +42,7 @@
                             </div>
                             <div class="btn-group">
                                 {% if c.status == 'Active'%}
-                                <a class="btn btn-sm btn-primary" href="/stop/{{ c.id }}"><em class="fas fa-stop"></em></a>
+                                <a class="btn btn-sm btn-danger" href="/stop/{{ c.id }}"><em class="fas fa-stop"></em></a>
                                 {%  else %}
                                 <a class="btn btn-sm btn-primary" href="/start/{{ c.id }}"><em class="fas fa-play"></em></a>
                                 {%  endif %}
@@ -52,14 +52,19 @@
 
                     <td>{{c.id}}</td>
                     <td>{{c.trigger}}</td>
-                    <td>{{c.forecast_id}}</td>
+                    <td>{{ c.forecast_id or '' }}</td>
                     <td data-toggle="tooltip" data-placement="top" title="{{c.tracking_keywords|join(', ')}}">
                         <u><b>keywords...</b></u>
                     </td>
                     <td>{{c.status}}</td>
                     <td>{{c.languages|join(', ')}}</td>
 
-                    <td>{% if c.locations %}<a href="{{ c.bboxfinder }}" target="_blank">({{c.locations|join(',')}})</a>{% endif %}</td>
+                    <td>{% if c.locations %}
+                        <a href="{{ c.bboxfinder }}" target="_blank">
+                        {{ c.bounding_box }}
+                        </a>
+                    {% endif %}
+                    </td>
 
                     <td> {% if c.runtime %} {{c.runtime|datetimeformat('%Y-%m-%d %H:%M:%S')}} {% endif %}</td>
                     <td>{{c.started_at|datetimeformat('%Y-%m-%d %H:%M:%S')}}</td>

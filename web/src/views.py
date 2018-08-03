@@ -5,14 +5,14 @@ import ujson as json
 from flask import render_template, redirect, request
 
 from smfrcore.client.api_client import ApiLocalClient, SMFRRestException
-from smfrcore.client.conf import LOGGER_FORMAT, DATE_FORMAT
+from smfrcore.utils import LOGGER_FORMAT, LOGGER_DATE_FORMAT
 
 from forms import NewCollectorForm, ExportForm
 from utils import MessageClass, add_message
 from start import app
 
 
-logging.basicConfig(level=logging.INFO, format=LOGGER_FORMAT, datefmt=DATE_FORMAT)
+logging.basicConfig(level=logging.INFO, format=LOGGER_FORMAT, datefmt=LOGGER_DATE_FORMAT)
 logger = logging.getLogger('Web')
 client = ApiLocalClient()
 
@@ -30,19 +30,26 @@ def admin():
 @app.route('/fetch_efas', methods=('GET', 'POST'))
 def fetch_efas():
     res = {}
+    status_code = 500
     if request.method == 'POST':
-        selected_events = request.form.getlist('events')
-        selected_events = [json.loads(e.replace('\'', '"')) for e in selected_events]
-        res = client.add_ondemand_collections(selected_events)
-        add_message(res, category=MessageClass.SUCCESS)
-        return redirect('/list')
+        try:
+            tzclient = request.form.get('tzclient', '+00:00')
+            selected_events = request.form.getlist('events')
+            selected_events = [json.loads(e.replace('\'', '"')) for e in selected_events]
+            [e.update({'tzclient': tzclient}) for e in selected_events]
+            res, status_code = client.add_ondemand_collections(selected_events)
+            add_message(res, category=MessageClass.SUCCESS)
+            return redirect('/list')
+        except SMFRRestException as e:
+            add_message('An error occurred: {}'.format(e), category=MessageClass.ERROR)
+            return render_template('admin.html', fetched_events=res.get('results')), status_code
     try:
         since = request.args.get('since') or 'latest'
-        res = client.fetch_efas(since)
+        res, status_code = client.fetch_efas(since)
     except SMFRRestException as e:
         add_message('An error occurred: {}'.format(e), category=MessageClass.ERROR)
     finally:
-        return render_template('admin.html', fetched_events=res.get('results')), 200
+        return render_template('admin.html', fetched_events=res.get('results')), status_code
 
 
 @app.route('/list', methods=('GET',))
@@ -51,7 +58,7 @@ def list_collections():
     return render_template('list.html', collections=res), 200
 
 
-@app.route('/_running', methods=('GET',))
+@app.route('/running', methods=('GET',))
 def list_active_collections():
     res = client.list_running_collectors()
     return render_template('list.html', collectors=res), 200
@@ -69,11 +76,6 @@ def export_tweets(collection_id):
     form = ExportForm(collection_id=collection_id)
     if form.validate_on_submit():
         pass
-        # payload = {
-        #     'config': form.config.data, 'kwfile': form.kwfile.data, 'locfile': form.locfile.data,
-        #     'runtime': form.runtime.data, 'trigger': form.trigger.data, 'nuts2': form.nuts2.data,
-        #     'forecast': form.forecast_id.data, 'tzclient': form.tzclient.data,
-        # }
     return render_template('export.html', form=form), 200
 
 
@@ -83,7 +85,7 @@ def new_collection():
     if form.validate_on_submit():
         payload = {
             'configuration': form.configuration.data, 'keywords': form.keywords.data,
-            'bounding_boxes': form.bounding_boxes.data,
+            'bounding_box': form.bounding_box.data,
             'runtime': form.runtime.data, 'trigger': form.trigger.data, 'nuts2': form.nuts2.data,
             'forecast': form.forecast_id.data, 'tzclient': form.tzclient.data,
         }
@@ -98,49 +100,42 @@ def new_collection():
     return render_template('new_collection.html', form=form), 200
 
 
-@app.route('/start/<int:collector_id>', methods=('GET',))
-def start_collector(collector_id):
+@app.route('/start/<collection_id>', methods=('GET',))
+def start_collector(collection_id):
     try:
-        _ = client.start_collector(collector_id)
-        add_message('The collection was started (collector id {})'.format(collector_id),
+        _ = client.start_collector(collection_id)
+        add_message('The collection was started (collection id {})'.format(collection_id),
                     category=MessageClass.SUCCESS)
     except SMFRRestException as e:
         add_message('An error occurred: {}'.format(e), category=MessageClass.ERROR)
         logger.error(str(e))
     finally:
-        return redirect('/list')
+        return redirect('/details/{}'.format(collection_id))
 
 
-@app.route('/startall', methods=('GET',))
-def start_all():
-    client.start_all()
-    return redirect('/list')
-
-
-@app.route('/stopall', methods=('GET',))
-def stop_all():
-    client.stop_all()
-    return redirect('/list')
-
-
-@app.route('/stop/<int:collector_id>', methods=('GET',))
-def stop_collector(collector_id):
+@app.route('/stop/<int:collection_id>', methods=('GET',))
+def stop_collector(collection_id):
     try:
-        client.stop_collector(collector_id)
-        add_message('The collection was stopped (collector id {})'.format(collector_id), category=MessageClass.SUCCESS)
+        client.stop_collector(collection_id)
+        add_message('The collection was stopped (collection id {})'.format(collection_id), category=MessageClass.SUCCESS)
     except SMFRRestException as e:
         add_message('An error occurred: {}'.format(e), category=MessageClass.ERROR)
         logger.error(str(e))
     finally:
-        return redirect('/list')
+        return redirect('/details/{}'.format(collection_id))
 
 
 @app.route('/remove/<int:collection_id>', methods=('GET',))
 def remove_collection(collection_id):
+    logger.info('removing collection %d', collection_id)
     try:
-        client.remove_collection(collection_id)
-        add_message('The collection was removed from SMFR.', category=MessageClass.SUCCESS)
+        res, _ = client.remove_collection(collection_id)
+        logger.info('removed collection %d %s', collection_id, res)
+        add_message('The collection {} was removed from SMFR.'.format(collection_id), category=MessageClass.SUCCESS)
     except SMFRRestException as e:
+        add_message('An error occurred: {}'.format(e), category=MessageClass.ERROR)
+        logger.error(str(e))
+    except Exception as e:
         add_message('An error occurred: {}'.format(e), category=MessageClass.ERROR)
         logger.error(str(e))
     finally:

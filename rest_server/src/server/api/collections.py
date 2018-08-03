@@ -20,6 +20,7 @@ from smfrcore.errors import SMFRDBError, SMFRRestException
 from server.api.clients import AnnotatorClient, GeocoderClient
 from server.api.decorators import check_identity, check_role
 from server.config import NUM_SAMPLES, RestServerConfiguration
+from server.helpers import add_collection_helper, add_collection_from_rra_event
 
 logger = logging.getLogger('RestServer API')
 
@@ -32,15 +33,32 @@ def add_collection(payload):
     :param payload: a CollectorPayload schema object (plain text)
     :return: the created collection as a dict, 201
     """
-    payload = json.loads(payload) if payload else {}
+    payload = json.loads(payload) if payload and not isinstance(payload, dict) else payload or {}
     if not payload.get('keywords'):
         payload['languages'], payload['keywords'] = RestServerConfiguration.default_keywords()
-    collection = TwitterCollection.create(**payload)
-    if collection.runtime:
-        collector = Collector(collection)
-        collector.launch()
+    payload['timezone'] = payload.get('tzclient') or '+00:00'
+    collection = add_collection_helper(**payload)
     res = CollectionSchema().dump(collection).data
     return res, 201
+
+
+# @check_role
+# @jwt_required
+def add_ondemand(payload):
+    """
+    Add a list of on demand collections running immediately which stop at given runtime parameter
+    :param payload: list of dict with following format
+    {'bbox': {'max_lat': 40.6587, 'max_lon': -1.14236, 'min_lat': 39.2267, 'min_lon': -3.16142},
+     'trigger': 'on-demand', 'forecast': '2018061500', 'keywords': 'Cuenca', 'efas_id': 1436
+     }
+    :type: list
+    :return:
+    """
+    collections = []
+    for event in payload:
+        collection = add_collection_from_rra_event(**event)
+        collections.append(collection)
+    return CollectionSchema().dump(collections, many=True).data, 201
 
 
 def get():
@@ -62,7 +80,7 @@ def get_running_collections():
     """
     out_schema = CollectionSchema()
     res = Collector.running_instances()
-    res = [c for _, c in res]
+    res = [c.collection for _, c in res]
     res = out_schema.dump(res, many=True).data
     return res, 200
 
@@ -81,7 +99,7 @@ def stop_collection(collection_id):
 
     res = Collector.running_instances()
     for _, collector in res:
-        if collection_id == collector.stored_instance.id:
+        if collection_id == collector.collection.id:
             collector.stop()
             return {}, 204
 
@@ -196,7 +214,7 @@ def geolocalize(collection_id, startdate=None, enddate=None):
 
 # @check_identity
 # @jwt_required
-def annotate(collection_id=None, lang='en', forecast_id=None, startdate=None, enddate=None):
+def annotate(collection_id, lang='en', startdate=None, enddate=None):
     """
 
     :param collection_id:
@@ -207,7 +225,7 @@ def annotate(collection_id=None, lang='en', forecast_id=None, startdate=None, en
     :return:
     """
     try:
-        res, code = AnnotatorClient.start(collection_id, lang)
+        res, code = AnnotatorClient.start(collection_id, lang, start_date=startdate, end_date=enddate)
     except SMFRRestException as e:
         return {'error': {'description': str(e)}}, 500
     else:
@@ -255,36 +273,3 @@ def fetch_efas(since='latest'):
                 else:
                     results[event['ID']].update({'keywords': cities})
     return {'results': results}, 200
-
-
-# @check_role
-# @jwt_required
-def add_ondemand(payload):
-    """
-    Add a list of on demand collections running immediately which stop at given runtime parameter
-    :param payload: list of dict with following format
-    {'bbox': {'max_lat': 40.6587, 'max_lon': -1.14236, 'min_lat': 39.2267, 'min_lon': -3.16142},
-     'trigger': 'on-demand', 'forecast': '2018061500', 'keywords': 'Cuenca', 'efas_id': 1436
-     }
-    :type: list
-    :return:
-    """
-    from daemons.collector import Collector
-    # TODO readapt for the new structure
-    collections = []
-    for event in payload:
-        event['tz'] = '+00:00'
-        collector = Collector.create_from_event(event)
-        # params for stored collector is in the form of a dict:
-        # {"trigger": "manual", "tzclient": "+02:00", "forecast": 123456789,
-        #     "kwfile": "/path/c78e0f08-98c9-4553-b8ee-a41f15a34110_kwfile.yaml",
-        #     "locfile": "/path/c78e0f08-98c9-4553-b8ee-a41f15a34110_locfile.yaml",
-        #     "config": "/path/c78e0f08-98c9-4553-b8ee-a41f15a34110_config.yaml"}
-        params = {'trigger': 'on-demand', 'forecast': event['forecast'],
-                  'tzclient': '+00:00', 'runtime': collector.runtime,
-                  'kwfile': collector.kwfile, 'locfile': collector.locfile,
-                  'config': collector.config}
-        collections.append({'efas id': event['efas_id'], 'runtime': collector.runtime, 'nuts': event.get('nuts'),
-                            'keywords': event['keywords'], 'bbox': event['bbox']})
-        collector.launch()
-    return {'results': collections}, 201

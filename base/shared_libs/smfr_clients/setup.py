@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='smfrcore-clients',
-    version='1.4',
+    version='1.5',
     packages=find_packages(),
     description='SMFR Core modules (Clients)',
     author='Domenico Nappo',

@@ -1,19 +1,21 @@
 """
 Module for API client to the SMFR Rest Server
 """
-
+import json
 import logging
 
 import requests
+from flask.json import jsonify
 from werkzeug.datastructures import FileStorage
 
-from smfrcore.client.conf import ServerConfiguration, DATE_FORMAT, LOGGER_FORMAT
+from smfrcore.client.conf import ServerConfiguration
 from smfrcore.errors import SMFRError
+from smfrcore.utils import LOGGER_FORMAT, LOGGER_DATE_FORMAT, smfr_json_encoder
 
 from .marshmallow import OnDemandPayload, CollectionPayload
 
 logging.basicConfig(level=logging.INFO if not ServerConfiguration.debug else logging.DEBUG,
-                    format=LOGGER_FORMAT, datefmt=DATE_FORMAT)
+                    format=LOGGER_FORMAT, datefmt=LOGGER_DATE_FORMAT)
 
 
 class ApiLocalClient:
@@ -70,45 +72,23 @@ class ApiLocalClient:
         else:
             return res.json()
 
-    def _post(self, endpoint, payload=None, path_kwargs=None, formdata=None, query_params=None):
+    def _post(self, endpoint, payload=None, path_kwargs=None, query_params=None):
         """
         Main method that executes POST calls
         :param query_params: dict for querystring part to put into `params` kwarg of request.post
         :param endpoint: endpoint url name (see ApiLocalClient.endpoints)
         :param payload: dict to put into `json` kwarg of request.post
         :param path_kwargs: dict used for variable replacement in endpoint paths
-        :param formdata: dict used for multipart/form-data calls (e.g. with files)
         :return: JSON text
         """
-        requests_kwargs = {'json': payload} if payload else {}
-        self.logger.info(payload)
+        requests_kwargs = {'data': json.dumps(payload, default=smfr_json_encoder)} if payload else {}
 
         if query_params:
             requests_kwargs['params'] = query_params
 
-        if formdata:
-            files = {}
-            data = {}
-
-            for k, v in formdata.items():
-                if k.endswith('_file') and v:
-                    k = k.split('_')[0]
-                    files[k] = v if isinstance(v, FileStorage) else FileStorage(open(v, 'rb'))
-                elif not k.endswith('_file') and v:
-                    data[k] = v
-
-            if files:
-                requests_kwargs['files'] = files
-                requests_kwargs['headers'] = {
-                    'Accept': '*/*',
-                    'Accept-Encoding': 'gzip, deflate, br'
-                }
-            if data:
-                requests_kwargs['data'] = data
-                self.logger.info(data)
-
         url = self._build_url(endpoint, path_kwargs)
 
+        self.logger.debug('POST %s %s', url, requests_kwargs)
         try:
             res = requests.post(url, **requests_kwargs)
             self._check_response(res)
@@ -117,8 +97,8 @@ class ApiLocalClient:
             raise e
         except ConnectionError as e:
             self.logger.error('SMFR REST API server is not listening...%s', str(e))
-            raise SMFRRestException({'status': 500, 'title': 'SMFR Rest Server is not listening',
-                                     'description': url}, status_code=500)
+            raise SMFRRestException({'error': {'description': 'SMFR Rest Server is not listening'}},
+                                    status_code=500)
         else:
             try:
                 return res.json()
@@ -149,7 +129,7 @@ class ApiLocalClient:
     def new_collection(self, input_payload):
         schema = CollectionPayload()
         payload = schema.load(input_payload).data
-        self.logger.info(payload)
+        self.logger.debug('Payload %s', input_payload)
         return self._post('new_collection', payload=payload)
 
     def signup_user(self, input_payload):
@@ -164,7 +144,7 @@ class ApiLocalClient:
         return self._post('logout_user', path_kwargs={'id': user_id})
 
     def remove_collection(self, collection_id):
-        return self._post('remove_collection', path_kwargs={'id': collection_id})
+        return self._post('remove_collection', path_kwargs={'id': collection_id}), 204
 
     def stop_collector(self, collector_id):
         return self._post('stop_collector', path_kwargs={'id': collector_id})
@@ -182,7 +162,7 @@ class ApiLocalClient:
         return self._post('geotag_collection', path_kwargs={'id': collection_id})
 
     def fetch_efas(self, since='latest'):
-        return self._get('fetch_efas', query_params={'since': since})
+        return self._get('fetch_efas', query_params={'since': since}), 200
 
     def add_ondemand_collections(self, events):
         payload = OnDemandPayload().load(events, many=True).data
@@ -192,7 +172,7 @@ class ApiLocalClient:
 class SMFRRestException(SMFRError):
     def __init__(self, response, status_code):
         err = response.get('error', {})
-        message = err.get('description', 'No details.')
+        message = err.get('description', 'No details.') if err else str(response)
         self.status_code = status_code
         self.message = message
         super().__init__(message)

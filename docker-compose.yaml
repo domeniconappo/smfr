@@ -111,27 +111,6 @@ services:
       placement:
         constraints: [ node.labels.huge == true ]
 
-  myadmin:
-    image: ${MYADMIN_IMAGE}
-    restart: always
-    container_name: myadmin
-    ports:
-      - '8383:80'
-    environment:
-      MYSQL_ROOT_PASSWORD: ${MYSQL_PASSWORD}
-      MYSQL_DATABASE: smfr
-      MYSQL_ALLOW_EMPTY_PASSWORD: 'yes'
-      PMA_ARBITRARY: 1
-    deploy:
-      restart_policy:
-        condition: on-failure
-        max_attempts: 3
-        window: 120s
-      placement:
-        constraints: [ node.labels.small == true ]
-    depends_on:
-      - mysql
-
   persister:
     restart: always
     container_name: persister
@@ -184,6 +163,7 @@ services:
       - '5556:5556'
     environment:
       LOGGING_LEVEL: ${LOGGING_LEVEL}
+      TF_CPP_MIN_LOG_LEVEL: '2'
       PYTHONUNBUFFERED: 'true'
       RESTSERVER_PORT: ${RESTSERVER_PORT}
       RESTSERVER_BASEPATH: '/1.0'
@@ -230,6 +210,7 @@ services:
       - '5557:5557'
     environment:
       LOGGING_LEVEL: ${LOGGING_LEVEL}
+      TF_CPP_MIN_LOG_LEVEL: '2'
       PYTHONUNBUFFERED: 'true'
       RESTSERVER_PORT: ${RESTSERVER_PORT}
       RESTSERVER_BASEPATH: '/1.0'

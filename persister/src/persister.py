@@ -29,7 +29,7 @@ class Persister:
     @classmethod
     def running_instance(cls):
         """
-        The _running Persister object
+        The running Persister object
         :return: Persister instance
         """
         with cls._lock:
@@ -38,7 +38,7 @@ class Persister:
     @classmethod
     def set_running(cls, inst=None):
         """
-        Set _running instance
+        Set _unning instance
         :param inst: Persister object
         """
         with cls._lock:
@@ -103,7 +103,7 @@ class Persister:
 
     def stop(self):
         """
-        Stop processing messages from queue, close KafkaConsumer and unset _running instance.
+        Stop processing messages from queue, close KafkaConsumer and unset running instance.
         """
         self.consumer.close()
         self.set_running(inst=None)

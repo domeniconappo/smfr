@@ -5,7 +5,7 @@ import logging
 from flask_restful import Resource, Api, fields, marshal_with, marshal_with_field
 
 from smfrcore.models.sqlmodels import create_app
-from smfrcore.utils import LOGGER_FORMAT, DATE_FORMAT
+from smfrcore.utils import LOGGER_FORMAT, LOGGER_DATE_FORMAT
 
 from geocoder import Geocoder
 
@@ -13,7 +13,7 @@ from geocoder import Geocoder
 app = create_app()
 api = Api(app)
 
-logging.basicConfig(level=os.environ.get('LOGGING_LEVEL', 'DEBUG'), format=LOGGER_FORMAT, datefmt=DATE_FORMAT)
+logging.basicConfig(level=os.environ.get('LOGGING_LEVEL', 'DEBUG'), format=LOGGER_FORMAT, datefmt=LOGGER_DATE_FORMAT)
 
 
 class GeocoderApi(Resource):

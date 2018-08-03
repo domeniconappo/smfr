@@ -3,14 +3,14 @@ import os
 
 from flask import Flask
 from flask_restful import Resource, Api, marshal_with, fields, marshal_with_field
-from smfrcore.utils import LOGGER_FORMAT, DATE_FORMAT
+from smfrcore.utils import LOGGER_FORMAT, LOGGER_DATE_FORMAT
 
 from annotator import Annotator
 
 app = Flask(__name__)
 api = Api(app)
 
-logging.basicConfig(level=os.environ.get('LOGGING_LEVEL', 'DEBUG'), format=LOGGER_FORMAT, datefmt=DATE_FORMAT)
+logging.basicConfig(level=os.environ.get('LOGGING_LEVEL', 'DEBUG'), format=LOGGER_FORMAT, datefmt=LOGGER_DATE_FORMAT)
 logger = logging.getLogger(__name__)
 
 

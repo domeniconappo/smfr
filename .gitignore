@@ -127,3 +127,6 @@ venv.bak/
 /cassandrasmfr/Dockerfile
 /geonames/Dockerfile
 /mysql/Dockerfile
+/install_shared_libs.sh
+ docker-compose.override.yml
+ 

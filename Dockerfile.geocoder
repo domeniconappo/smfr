@@ -14,8 +14,7 @@ RUN pip3.6 install -r requirements.txt
 COPY base/shared_libs/scripts/wait_for_it.sh /scripts/
 COPY base/shared_libs/smfr_utils/. /smfr_utils/
 COPY base/shared_libs/smfr_models/. /smfr_models/
-RUN chmod -R a+x /scripts/
-RUN pip3 install /smfr_utils/ && pip3 install /smfr_models/ && rm -R /root/.cache
+RUN chmod -R a+x /scripts/ && pip3 install /smfr_utils/ && pip3 install /smfr_models/ && rm -R /root/.cache
 
 COPY ./geocoder/src/. /geocoder
 
