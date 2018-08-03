@@ -35,16 +35,6 @@ docker-compose config > docker-compose-parsed.yaml
 # cleaning volumes from docker compose configuration
 python3 compose4deploy.py -i docker-compose-parsed.yaml -o docker-compose-4deploy.yaml
 
-#docker pull ${DOCKER_REGISTRY}/${PERSISTER_IMAGE}:${image_tag}
-#docker pull ${DOCKER_REGISTRY}/${AGGREGATOR_IMAGE}:${image_tag}
-#docker pull ${DOCKER_REGISTRY}/${ANNOTATOR_IMAGE}:${image_tag}
-#docker pull ${DOCKER_REGISTRY}/${GEOCODER_IMAGE}:${image_tag}
-#docker pull ${DOCKER_REGISTRY}/${RESTSERVER_IMAGE}:${image_tag}
-#docker pull ${DOCKER_REGISTRY}/${WEB_IMAGE}:${image_tag}
-#docker pull ${DOCKER_REGISTRY}/${MYSQL_IMAGE}:${image_tag}
-#docker pull ${DOCKER_REGISTRY}/${CASSANDRA_IMAGE}:${image_tag}
-#docker pull ${DOCKER_REGISTRY}/${GEONAMES_IMAGE}:${image_tag}
-
 docker stack deploy --with-registry-auth -c ./docker-compose-4deploy.yaml SMFR
 
 # forcing updates of images
