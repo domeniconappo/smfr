@@ -314,6 +314,8 @@ class Tweet(cqldb.Model):
         values = json.loads(message)
         obj = cls()
         for k, v in values.items():
+            if v is None:
+                continue
             if k == 'created_at':
                 v = datetime.datetime.strptime(
                     v.partition('.')[0],
@@ -337,7 +339,6 @@ class Tweet(cqldb.Model):
                 break
 
         if not full_text:
-            full_text = tweet.get('full_text') or tweet.get('extended_tweet', {}).get('full_text', '') or tweet.get(
-                'text', '')
+            full_text = tweet.get('full_text') or tweet.get('extended_tweet', {}).get('full_text', '') or tweet.get('text', '')
 
         return full_text

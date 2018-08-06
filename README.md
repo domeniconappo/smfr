@@ -159,6 +159,13 @@ $ grep vm.max_map_count /etc/sysctl.conf
 vm.max_map_count=1048575
 ```
 
+#### Cassandra tombstones
+Null values produce cell tombstones. Cassandray will abort queries if tombstones threshold is reached.
+To avoid it: set gc_grace_seconds to 0 for tweet table:
+```
+alter table smfr_persistent.tweet with gc_grace_seconds = 0;
+```
+
 #### Free some disk space from unused 'dockers'
 
 ```bash
