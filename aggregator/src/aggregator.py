@@ -158,6 +158,11 @@ def run_single_aggregation(collection_id,
             inc_annotated_counter(counter, t.annotations['flood_probability'][1], nuts2=nuts2)
     except cassandra.ReadFailure:
         logger.error('Cassandra Read failure...just exit. Hope you are lucky at next round...')
+        running_aggregators.remove(collection_id)
+        return 1
+    except Exception as e:
+        logger.error('An error occurred', str(e))
+        running_aggregators.remove(collection_id)
         return 1
 
     with flask_app.app_context():
