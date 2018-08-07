@@ -12,6 +12,7 @@ from smfrcore.models.sqlmodels import TwitterCollection, User, Nuts3, Nuts2, Agg
 from smfrcore.models.cassandramodels import Tweet
 from smfrcore.client.marshmallow import Collection as CollectionSchema, Aggregation as AggregationSchema
 from smfrcore.client.ftp import FTPEfas
+from sqlalchemy.exc import OperationalError
 
 from daemons.collector import Collector
 
@@ -67,9 +68,13 @@ def get():
     Get all collections stored in DB (active and not active)
     :return:
     """
-    collections = TwitterCollection.query.all()
-    res = CollectionSchema().dump(collections, many=True).data
-    return res, 200
+    try:
+        collections = TwitterCollection.query.all()
+        res = CollectionSchema().dump(collections, many=True).data
+    except OperationalError:
+        return {'error': {'description': 'DB link was lost. Try again'}}, 500
+    else:
+        return res, 200
 
 
 def get_running_collections():
@@ -160,38 +165,42 @@ def get_collection_details(collection_id):
     :param collection_id: int
     :return: A CollectionResponse marshmallow object
     """
-    collection = TwitterCollection.query.get(collection_id)
-    if not collection:
-        return {'error': {'description': 'No collector with this id was found'}}, 404
-    aggregation = Aggregation.query.filter_by(collection_id=collection.id).first()
+    try:
+        collection = TwitterCollection.query.get(collection_id)
+        if not collection:
+            return {'error': {'description': 'No collector with this id was found'}}, 404
+        aggregation = Aggregation.query.filter_by(collection_id=collection.id).first()
 
-    collection_schema = CollectionSchema()
-    collection_dump = collection_schema.dump(collection).data
-    aggregation_schema = AggregationSchema()
-    aggregation_dump = aggregation_schema.dump(aggregation).data
+        collection_schema = CollectionSchema()
+        collection_dump = collection_schema.dump(collection).data
+        aggregation_schema = AggregationSchema()
+        aggregation_dump = aggregation_schema.dump(aggregation).data
 
-    tweets = Tweet.get_samples(collection_id=collection_id, ttype='collected', size=NUM_SAMPLES)
-    annotated_tweets = Tweet.get_samples(collection_id=collection_id, ttype='annotated', size=NUM_SAMPLES)
-    geotagged_tweets = Tweet.get_samples(collection_id=collection_id, ttype='geotagged', size=NUM_SAMPLES)
+        tweets = Tweet.get_samples(collection_id=collection_id, ttype='collected', size=NUM_SAMPLES)
+        annotated_tweets = Tweet.get_samples(collection_id=collection_id, ttype='annotated', size=NUM_SAMPLES)
+        geotagged_tweets = Tweet.get_samples(collection_id=collection_id, ttype='geotagged', size=NUM_SAMPLES)
 
-    samples_table = []
-    annotated_table = []
-    geotagged_table = []
+        samples_table = []
+        annotated_table = []
+        geotagged_table = []
 
-    for i, t in enumerate(tweets, start=1):
-        samples_table.append(Tweet.make_table_object(i, t))
+        for i, t in enumerate(tweets, start=1):
+            samples_table.append(Tweet.make_table_object(i, t))
 
-    for i, t in enumerate(annotated_tweets, start=1):
-        annotated_table.append(Tweet.make_table_object(i, t))
+        for i, t in enumerate(annotated_tweets, start=1):
+            annotated_table.append(Tweet.make_table_object(i, t))
 
-    for i, t in enumerate(geotagged_tweets, start=1):
-        geotagged_table.append(Tweet.make_table_object(i, t))
+        for i, t in enumerate(geotagged_tweets, start=1):
+            geotagged_table.append(Tweet.make_table_object(i, t))
 
-    res = {'collection': collection_dump, 'datatable': samples_table,
-           'aggregation': aggregation_dump, 'annotation_models': AnnotatorClient.models()[0]['models'],
-           'running_annotators': AnnotatorClient.running()[0], 'running_geotaggers': GeocoderClient.running()[0],
-           'datatableannotated': annotated_table, 'datatablegeotagged': geotagged_table}
-    return res, 200
+        res = {'collection': collection_dump, 'datatable': samples_table,
+               'aggregation': aggregation_dump, 'annotation_models': AnnotatorClient.models()[0]['models'],
+               'running_annotators': AnnotatorClient.running()[0], 'running_geotaggers': GeocoderClient.running()[0],
+               'datatableannotated': annotated_table, 'datatablegeotagged': geotagged_table}
+    except OperationalError:
+        return {'error': {'description': 'DB link was lost. Try again'}}, 500
+    else:
+        return res, 200
 
 
 # @check_identity
