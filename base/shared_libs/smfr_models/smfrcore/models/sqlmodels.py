@@ -6,7 +6,7 @@ import uuid
 import arrow
 from passlib.apps import custom_app_context as pwd_context
 
-from sqlalchemy import Column, BigInteger, Integer, String, TIMESTAMP, Float, ForeignKey, inspect, Index
+from sqlalchemy import Column, BigInteger, Integer, String, TIMESTAMP, Float, ForeignKey, Index
 from sqlalchemy_utils import ChoiceType, ScalarListType, JSONType
 from flask import Flask
 
