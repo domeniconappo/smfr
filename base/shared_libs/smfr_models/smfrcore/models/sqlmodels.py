@@ -33,6 +33,9 @@ def create_app(app_name='SMFR'):
         _mysql_user, _mysql_pass, _mysql_host, _mysql_db_name
     )
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+    app.config['SQLALCHEMY_POOL_TIMEOUT'] = 360
+    app.config['SQLALCHEMY_POOL_RECYCLE'] = 120
+    app.config['SQLALCHEMY_POOL_SIZE'] = 10
     sqldb.init_app(app)
     return app
 

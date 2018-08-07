@@ -159,7 +159,6 @@ class RestServerConfiguration(metaclass=Singleton):
             self.flask_app = self.set_flaskapp(connexion_app)
             self.flask_app.config['JWT_SECRET_KEY'] = os.environ.get('SECRET_KEY', 'super-secret')
             self.jwt = JWTManager(self.flask_app)
-            self.logger.debug('Pushing application context')
             self.flask_app.app_context().push()
             self.producer = None
             up = False
@@ -198,6 +197,10 @@ class RestServerConfiguration(metaclass=Singleton):
             self.__mysql_user, self.__mysql_pass, self.mysql_host, self.mysql_db_name
         )
         app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+        app.config['SQLALCHEMY_POOL_TIMEOUT'] = 360
+        app.config['SQLALCHEMY_POOL_RECYCLE'] = 120
+        app.config['SQLALCHEMY_POOL_SIZE'] = 10
+
         app.config['CASSANDRA_HOSTS'] = [self.cassandra_host]
         app.config['CASSANDRA_KEYSPACE'] = self.cassandra_keyspace
         app.config['CASSANDRA_SETUP_KWARGS'] = {
