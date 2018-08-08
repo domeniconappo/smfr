@@ -7,4 +7,5 @@ COPY cassandrasmfr/jmxremote.access /etc/cassandra/jmxremote.access
 COPY cassandrasmfr/cassandra.yaml /etc/cassandra/cassandra.yaml
 COPY cassandrasmfr/cassandra-env.sh /etc/cassandra/cassandra-env.sh
 COPY cassandrasmfr/jvm.options /etc/cassandra/jvm.options
+COPY cassandrasmfr/limits_cassandra.conf /etc/security/limits.d/cassandra.conf
 RUN chmod 400 /etc/cassandra/jmxremote.* && chown cassandra:cassandra /etc/cassandra/*
