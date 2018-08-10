@@ -7,11 +7,9 @@ from smfrcore.utils import LOGGER_FORMAT, LOGGER_DATE_FORMAT
 
 from annotator import Annotator
 
-app = Flask(__name__)
-api = Api(app)
-
 logging.basicConfig(level=os.environ.get('LOGGING_LEVEL', 'DEBUG'), format=LOGGER_FORMAT, datefmt=LOGGER_DATE_FORMAT)
 logger = logging.getLogger(__name__)
+singleserver = bool(int(os.environ.get('SINGLENODE', 0)))
 
 
 class AnnotatorApi(Resource):
@@ -57,6 +55,9 @@ class AnnotatorModels(Resource):
         return Annotator.available_models(), 200
 
 
+app = Flask(__name__)
+api = Api(app)
+
 api.add_resource(AnnotatorApi, '/<int:collection_id>/<string:lang>/<string:action>')
 api.add_resource(RunningAnnotatorsApi, '/running')
 api.add_resource(AnnotatorModels, '/models')
@@ -64,3 +65,9 @@ logger.info('Check if there are new models...')
 Annotator.download_cnn_models()
 logger.info('Annotator Microservice ready for incoming requests')
 Annotator.log_config()
+
+# start topic consumers for pipeline
+for lang in Annotator.available_languages:
+    # if running docker compose on a single server, we just bootstrap Annotator EN to avoid out of memory errors
+    if singleserver and lang == 'en' or not singleserver:
+        Annotator.start_consumer(lang=lang)

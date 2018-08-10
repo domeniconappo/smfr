@@ -4,8 +4,6 @@ import os
 import sched
 import threading
 import time
-import uuid
-from itertools import zip_longest
 
 import yaml
 from dateutil import parser

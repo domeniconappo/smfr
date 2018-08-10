@@ -38,13 +38,13 @@
                     <td align="center">
                         <div class="btn-group btn-group-justified" role="group">
                             <div class="btn-group">
-                                <a class="btn btn-sm btn-default" href="/details/{{ c.id }}"><em class="fas fa-eye"></em></a>
+                                <a title="go to details page" class="btn btn-sm btn-default" href="/details/{{ c.id }}"><em class="fas fa-eye"></em></a>
                             </div>
                             <div class="btn-group">
                                 {% if c.status == 'Active'%}
-                                <a class="btn btn-sm btn-danger" href="/stop/{{ c.id }}"><em class="fas fa-stop"></em></a>
+                                <a class="btn btn-sm btn-danger" href="/stop/{{ c.id }}" title="stop collecting"><em class="fas fa-stop"></em></a>
                                 {%  else %}
-                                <a class="btn btn-sm btn-primary" href="/start/{{ c.id }}"><em class="fas fa-play"></em></a>
+                                <a class="btn btn-sm btn-primary" href="/start/{{ c.id }}" title="start collecting"><em class="fas fa-play"></em></a>
                                 {%  endif %}
                             </div>
                         </div>

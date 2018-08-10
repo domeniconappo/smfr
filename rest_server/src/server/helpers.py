@@ -19,7 +19,7 @@ def runtime_from_leadtime(lead_time):
     :param lead_time: number of days before the peak occurs
     :return: runtime in format %Y-%m-%d %H:%M
     """
-    runtime = datetime.datetime.now() + datetime.timedelta(days=int(lead_time))
+    runtime = datetime.datetime.now() + datetime.timedelta(days=int(lead_time) + 2)
     return runtime.strftime('%Y-%m-%d %H:%M')
 
 

@@ -59,7 +59,7 @@ class Tweet(cqldb.Model):
     TYPES = [
         ('annotated', 'Annotated'),
         ('collected', 'Collected'),
-        ('geotagged', 'Geo Tagged'),
+        ('geotagged', 'Geocoded'),
     ]
 
     tweetid = cqldb.columns.Text(primary_key=True, required=True)
@@ -165,11 +165,11 @@ class Tweet(cqldb.Model):
         """
 
         :param collection_id:
-        :param ttype:
+        :param ttype: 'annotated', 'collected' OR 'geotagged'
         :param lang: two chars lang code (e.g. en)
         :param out_format: can be 'obj', 'json' or 'dict'
         :param last_tweetid:
-        :return: smfrcore.models.cassandramodels.Tweet object, dictionary or JSON encoded
+        :return: smfrcore.models.cassandramodels.Tweet object, dictionary or JSON encoded, according out_format param
         """
         if out_format not in ('obj', 'json', 'dict'):
             raise ValueError('out_format is not valid')

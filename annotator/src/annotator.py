@@ -9,8 +9,10 @@ from subprocess import Popen, PIPE
 
 import tensorflow as tf
 import keras
-from kafka import KafkaProducer
-from kafka.errors import NoBrokersAvailable
+from cassandra import InvalidRequest
+from cassandra.cqlengine import CQLEngineException, ValidationError
+from kafka import KafkaProducer, KafkaConsumer
+from kafka.errors import NoBrokersAvailable, CommitFailedError
 from keras.preprocessing.sequence import pad_sequences
 import sklearn
 
@@ -32,9 +34,10 @@ class Annotator:
     models_path = os.path.join(os.environ.get('MODELS_PATH', '/'), 'models')
     current_models_mapping = os.path.join(models_path, 'current-model.json')
     models = models_by_language(current_models_mapping)
-
+    available_languages = list(models.keys())
     kafkaup = False
     retries = 5
+
     while (not kafkaup) and retries >= 0:
         try:
             producer = KafkaProducer(bootstrap_servers=kafka_bootstrap_server, compression_type='gzip')
@@ -43,12 +46,18 @@ class Annotator:
             time.sleep(5)
             retries -= 1
             if retries < 0:
+                logger.error('Kafka server was not listening. Exiting...')
                 sys.exit(1)
         else:
             kafkaup = True
             break
 
-    kafka_topic = os.environ.get('KAFKA_TOPIC', 'persister')
+    # persister topic
+    persister_kafka_topic = os.environ.get('PERSISTER_KAFKA_TOPIC', 'persister')
+    # consumer topic
+    annotator_kafka_topic = os.environ.get('ANNOTATOR_KAFKA_TOPIC', 'annotator')
+    # next topic in pipeline
+    geocoder_kafka_topic = os.environ.get('GEOCODER_KAFKA_TOPIC', 'geocoder')
 
     @classmethod
     def log_config(cls):
@@ -114,31 +123,34 @@ class Annotator:
                     cls._running.append((collection_id, lang))
 
                 tweets = Tweet.get_iterator(collection_id, ttype, lang=lang)
-                i = 0
-                for t in tweets:
+                for i, t in enumerate(tweets):
                     if (collection_id, lang) in cls._stop_signals:
                         cls.logger.info('Stopping annotation {} - {}'.format(collection_id, lang))
                         with cls._lock:
                             cls._stop_signals.remove((collection_id, lang))
                         break
-                    original_json = json.loads(t.tweet)
-                    text = create_text_for_cnn(original_json, [])
-                    sequences = tokenizer.texts_to_sequences([text])
-                    data = pad_sequences(sequences, maxlen=model.layers[0].input_shape[1])
-                    predictions_list = model.predict(data)
-                    flood_probability = 1. * predictions_list[:, 1][0]
-                    t.annotations = {'flood_probability': ('yes', flood_probability)}
-                    t.ttype = 'annotated'
+                    t = cls.annotate(model, t, tokenizer)
                     message = t.serialize()
                     cls.logger.debug('Sending annotated tweet to queue: %s', str(t))
-                    cls.producer.send(cls.kafka_topic, message)
-                    i += 1
+                    cls.producer.send(cls.persister_kafka_topic, message)
                     if not (i % 1000):
                         cls.logger.info('Annotated so far.... %d', i)
 
         # remove from `_running` list
         cls._running.remove((collection_id, lang))
         cls.logger.info('Annotation process terminated! Collection: {} for "{}" tweets'.format(collection_id, ttype))
+
+    @classmethod
+    def annotate(cls, model, t, tokenizer):
+        original_json = json.loads(t.tweet)
+        text = create_text_for_cnn(original_json, [])
+        sequences = tokenizer.texts_to_sequences([text])
+        data = pad_sequences(sequences, maxlen=model.layers[0].input_shape[1])
+        predictions_list = model.predict(data)
+        flood_probability = 1. * predictions_list[:, 1][0]
+        t.annotations = {'flood_probability': ('yes', flood_probability)}
+        t.ttype = 'annotated'
+        return t
 
     @classmethod
     def stop(cls, collection_id, lang):
@@ -159,9 +171,67 @@ class Annotator:
         :param collection_id: int Collection Id as it's stored in MySQL virtual_twitter_collection table
         :param lang: str two characters string denoting a language (e.g. 'en')
         """
-        t = threading.Thread(target=cls.start, args=(collection_id, lang), name='Annotator {} {}'.format(collection_id, lang))
+        t = threading.Thread(target=cls.start, args=(collection_id, lang),
+                             name='Annotator {} {}'.format(collection_id, lang))
         t.start()
 
     @classmethod
     def available_models(cls):
         return {'models': cls.models}
+
+    @classmethod
+    def start_consumer(cls, lang='en'):
+        """
+        Main method that iterate over messages coming from Kafka queue,
+        build a Tweet object and send it to next in pipeline.
+        """
+        topic = '{}_{}'.format(cls.annotator_kafka_topic, lang)
+        consumer = KafkaConsumer(topic, group_id='SMFR',
+                                 auto_offset_reset='earliest',
+                                 bootstrap_servers=cls.kafka_bootstrap_server)
+        cls.logger.info('+++++++++++++ Annotator consumer lang=%s started', lang)
+
+        graph = tf.Graph()
+        with graph.as_default():
+            session = tf.Session()
+            with session.as_default():
+                tokenizer_path = os.path.join(cls.models_path, cls.models[lang] + '.tokenizer')
+                tokenizer = sklearn.externals.joblib.load(tokenizer_path)
+                tokenizer.oov_token = None
+                model_path = os.path.join(cls.models_path, cls.models[lang] + '.model.h5')
+                model = keras.models.load_model(model_path)
+
+                try:
+                    for i, msg in enumerate(consumer):
+                        tweet = None
+                        try:
+                            msg = msg.value.decode('utf-8')
+                            tweet = Tweet.build_from_kafka_message(msg)
+                            tweet.ttype = 'annotated'
+                            cls.logger.debug('Read from queue: %s', str(tweet))
+                            tweet = cls.annotate(model, tweet, tokenizer)
+                            message = tweet.serialize()
+                            cls.logger.debug('Sending annotated tweet to queue: %s', str(tweet))
+                            cls.producer.send(cls.persister_kafka_topic, message)  # persist the annotated tweet
+                            cls.producer.send(cls.geocoder_kafka_topic, message)  # send to geocoding
+                        except (ValidationError, ValueError, TypeError, InvalidRequest) as e:
+                            cls.logger.error(e)
+                            cls.logger.error('Poison message for Cassandra: %s', str(tweet) if tweet else msg)
+                        except CQLEngineException as e:
+                            cls.logger.error(e)
+                        except Exception as e:
+                            cls.logger.error(type(e))
+                            cls.logger.error(e)
+                            cls.logger.error(msg)
+
+                except CommitFailedError:
+                    cls.logger.error('Annotator consumer was disconnected during I/O operations. Exited.')
+                except ValueError:
+                    # tipically an I/O operation on closed epoll object
+                    # as the consumer can be disconnected in another thread (see signal handling in start.py)
+                    if consumer._closed:
+                        cls.logger.info('Annotator consumer was disconnected during I/O operations. Exited.')
+                    else:
+                        consumer.close()
+                except KeyboardInterrupt:
+                    consumer.close()

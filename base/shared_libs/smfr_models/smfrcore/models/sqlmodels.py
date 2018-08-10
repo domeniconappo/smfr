@@ -4,6 +4,7 @@ import logging
 import uuid
 
 import arrow
+from arrow.parser import ParserError
 from passlib.apps import custom_app_context as pwd_context
 
 from sqlalchemy import Column, BigInteger, Integer, String, TIMESTAMP, Float, ForeignKey, Index
@@ -297,7 +298,11 @@ class TwitterCollection(SMFRModel):
         """
         if not runtime:
             return None
-        return arrow.get(runtime, 'ddd, DD MMM YYYY HH:mm:ss ZZZ').datetime.replace(tzinfo=None)
+        try:
+            res = arrow.get(runtime).datetime.replace(tzinfo=None)
+        except ParserError:
+            res = arrow.get(runtime, 'ddd, DD MMM YYYY HH:mm:ss ZZZ').datetime.replace(tzinfo=None)
+        return res
 
 
 class Nuts2(SMFRModel):

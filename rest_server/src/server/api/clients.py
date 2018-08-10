@@ -44,13 +44,23 @@ class AnnotatorClient(MicroserviceClient):
     host = MicroserviceClient.configuration.annotator_host
     port = MicroserviceClient.configuration.annotator_port
     base_uri = 'http://{}:{}'.format(host, port)
+    _models = None
 
     @classmethod
     def models(cls):
+        if cls._models:
+            return cls._models, 200
+
         url = '{}/models'.format(cls.base_uri)
         res = requests.get(url)
         cls._check_response(res, res.status_code)
-        return res.json(), res.status_code
+        cls._models = res.json()
+        return cls._models, res.status_code
+
+    @classmethod
+    def available_languages(cls):
+        models = cls.models()[0]
+        return tuple(models.keys())
 
     @classmethod
     def start(cls, collection_id, lang, start_date=None, end_date=None):

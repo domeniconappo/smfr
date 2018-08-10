@@ -8,10 +8,11 @@ import sys
 import threading
 
 import time
-from collections import Counter
 
-from kafka import KafkaProducer
-from kafka.errors import NoBrokersAvailable
+from cassandra import InvalidRequest
+from cassandra.cqlengine import ValidationError, CQLEngineException
+from kafka import KafkaProducer, KafkaConsumer
+from kafka.errors import NoBrokersAvailable, CommitFailedError
 from mordecai import Geoparser
 from shapely.geometry import Point, Polygon
 
@@ -95,7 +96,14 @@ class Geocoder:
             break
 
     min_flood_prob = float(os.environ.get('MIN_FLOOD_PROBABILITY', 0.59))
-    kafka_topic = os.environ.get('KAFKA_TOPIC', 'persister')
+    persister_kafka_topic = os.environ.get('PERSISTER_KAFKA_TOPIC', 'persister')
+    geocoder_kafka_topic = os.environ.get('GEOCODER_KAFKA_TOPIC', 'geocoder')
+
+    consumer = KafkaConsumer(geocoder_kafka_topic, group_id='SMFR',
+                             auto_offset_reset='earliest',
+                             bootstrap_servers=kafka_bootstrap_server)
+    # try to use new mordecai with 'threads'
+    tagger = Geoparser(geonames_host, threads=True)
 
     @classmethod
     def is_running_for(cls, collection_id):
@@ -141,10 +149,9 @@ class Geocoder:
             cls.stop_signals.append(collection_id)
 
     @classmethod
-    def geoparse_tweet(cls, tweet, tagger):
+    def geoparse_tweet(cls, tweet):
         """
         Mordecai geoparsing
-        :param tagger:
         :param tweet: smfrcore.models.cassandramodels.Tweet object
         :return: list of tuples of lat/lon coordinates
         """
@@ -155,7 +162,7 @@ class Geocoder:
         es_up = False
         while not es_up and retries <= 10:
             try:
-                res = tagger.geoparse(tweet.full_text)
+                res = cls.tagger.geoparse(tweet.full_text)
             except socket.timeout:
                 cls.logger.warning('ES not responding...throttling a bit')
                 time.sleep(3)
@@ -185,7 +192,7 @@ class Geocoder:
         return latlong
 
     @classmethod
-    def find_nuts_heuristic(cls, tweet, tagger):
+    def find_nuts_heuristic(cls, tweet):
         """
         The following heuristic is applied:
 
@@ -202,7 +209,6 @@ class Geocoder:
                 If there is a single NUTS2 area in the list, that NUTS2 area is returned (nuts2source="mentions")
                 Otherwise, check if user location is in one of the NUTS list and return it. If not, NULL is returned
 
-        :param tagger:
         :param tweet: Tweet object
         :return: tuple (nuts2, nuts_source, coordinates)
         """
@@ -210,7 +216,7 @@ class Geocoder:
 
         with cls.flask_app.app_context():
             no_results = (None, None, None)
-            mentions = cls.geoparse_tweet(tweet, tagger)
+            mentions = cls.geoparse_tweet(tweet)
             tweet_coords = cls.get_coordinates_from_tweet(tweet)
 
             if not mentions:
@@ -247,7 +253,7 @@ class Geocoder:
                     else:
                         # no geolocated tweet and more than one mention
                         user_location = tweet.original_tweet_as_dict['user'].get('location')
-                        res = tagger.geoparse(user_location) if user_location else None
+                        res = cls.tagger.geoparse(user_location) if user_location else None
                         if res and res[0] and 'lat' in res[0].get('geo', {}):
                             res = res[0]
                             user_coordinates = (float(res['geo']['lat']), float(res['geo']['lon']))
@@ -270,20 +276,16 @@ class Geocoder:
         :type collection_id: int
         """
         ttype = 'annotated'
-        cls.logger.info('Starting Geotagging collection: {}'.format(collection_id))
+        cls.logger.info('Starting Geocoding for collection: {}'.format(collection_id))
         cls._running.append(collection_id)
 
         tweets = Tweet.get_iterator(collection_id, ttype)
 
         errors = 0
-        c = Counter()
-
-        # try to use new mordecai with 'threads'
-        tagger = Geoparser(cls.geonames_host, threads=True)
 
         for x, t in enumerate(tweets, start=1):
             if collection_id in cls.stop_signals:
-                cls.logger.info('Stopping geotagging process {}'.format(collection_id))
+                cls.logger.info('Stopping Geocoding process {}'.format(collection_id))
                 with cls._lock:
                     cls.stop_signals.remove(collection_id)
                 break
@@ -294,32 +296,16 @@ class Geocoder:
                 # if flood_prob <= cls.min_flood_prob:
                 #     continue
 
-                t.ttype = 'geotagged'
-                nutsitem, nuts2_source, latlong = cls.find_nuts_heuristic(t, tagger)
+                nutsitem, nuts2_source, latlong = cls.find_nuts_heuristic(t)
                 if not latlong:
                     continue
 
-                t.latlong = latlong
-                t.nuts2 = str(nutsitem.id) if nutsitem and nutsitem.id is not None else None
-                t.nuts2source = nuts2_source
-
-                t.geo = {
-                    'nuts_efas_id': str(nutsitem.id) if nutsitem and nutsitem.id is not None else '',
-                    'nuts_id': str(nutsitem.nuts_id) if nutsitem and nutsitem.nuts_id is not None else '',
-                    'nuts_source': nuts2_source or '',
-                    'latitude': str(latlong[0]),
-                    'longitude': str(latlong[1]),
-                    'country': nutsitem.country if nutsitem and nutsitem.country else '',
-                    'country_code': nutsitem.country_code if nutsitem and nutsitem.country_code else '',
-                    'efas_name': nutsitem.efas_name if nutsitem and nutsitem.efas_name else '',
-                }
+                cls.set_geo_fields(latlong, nuts2_source, nutsitem, t)
 
                 message = t.serialize()
                 cls.logger.debug('Send geocoded tweet to persister: %s', str(t))
 
-                cls.producer.send(cls.kafka_topic, message)
-                counter_key = '{}#{}'.format(t.lang, nuts2_source)
-                c[counter_key] += 1
+                cls.producer.send(cls.persister_kafka_topic, message)
 
             except Exception as e:
                 cls.logger.error(type(e))
@@ -331,12 +317,90 @@ class Geocoder:
                 continue
             finally:
                 if not (x % 500):
-                    cls.logger.info('\nExaminated: %d \n===========\nGeotagged so far: %d\n %s', x, sum(c.values()), str(c))
+                    cls.logger.info('\nExaminated: %d', x)
                     # workaround for lru_cache "memory leak" problems
                     # https://benbernardblog.com/tracking-down-a-freaky-python-memory-leak/
-                    tagger.query_geonames.cache_clear()
-                    tagger.query_geonames_country.cache_clear()
+                    cls.tagger.query_geonames.cache_clear()
+                    cls.tagger.query_geonames_country.cache_clear()
 
         # remove from `_running` list
         cls._running.remove(collection_id)
-        cls.logger.info('Geotagging process terminated! Collection: {}'.format(collection_id))
+        cls.logger.info('Geotagging process terminated for collection: {}'.format(collection_id))
+
+    @classmethod
+    def set_geo_fields(cls, latlong, nuts2_source, nutsitem, t):
+        t.ttype = 'geotagged'
+        t.latlong = latlong
+        t.nuts2 = str(nutsitem.id) if nutsitem and nutsitem.id is not None else None
+        t.nuts2source = nuts2_source
+        t.geo = {
+            'nuts_efas_id': str(nutsitem.id) if nutsitem and nutsitem.id is not None else '',
+            'nuts_id': str(nutsitem.nuts_id) if nutsitem and nutsitem.nuts_id is not None else '',
+            'nuts_source': nuts2_source or '',
+            'latitude': str(latlong[0]),
+            'longitude': str(latlong[1]),
+            'country': nutsitem.country if nutsitem and nutsitem.country else '',
+            'country_code': nutsitem.country_code if nutsitem and nutsitem.country_code else '',
+            'efas_name': nutsitem.efas_name if nutsitem and nutsitem.efas_name else '',
+        }
+
+    @classmethod
+    def start_consumer(cls):
+        cls.logger.info('+++++++++++++ Geocoder consumer started')
+        try:
+            for i, msg in enumerate(cls.consumer):
+                tweet = None
+                errors = 0
+                try:
+                    msg = msg.value.decode('utf-8')
+                    tweet = Tweet.build_from_kafka_message(msg)
+                    cls.logger.debug('Read from queue: %s', str(tweet))
+                    try:
+                        # COMMENT OUT CODE BELOW: we will geolocate everything for the moment
+                        # flood_prob = t.annotations.get('flood_probability', ('', 0.0))[1]
+                        # if flood_prob <= cls.min_flood_prob:
+                        #     continue
+
+                        nutsitem, nuts2_source, latlong = cls.find_nuts_heuristic(tweet)
+                        if not latlong:
+                            continue
+
+                        cls.set_geo_fields(latlong, nuts2_source, nutsitem, tweet)
+
+                        cls.logger.debug('Send geocoded tweet to persister: %s', str(tweet))
+                        message = tweet.serialize()
+                        cls.producer.send(cls.persister_kafka_topic, message)
+
+                    except Exception as e:
+                        cls.logger.error(type(e))
+                        cls.logger.error('An error occured during geotagging: %s', str(e))
+                        errors += 1
+                        if errors >= 500:
+                            cls.logger.error('Too many errors...going to terminate geolocalization')
+                            cls.consumer.close()
+                            break
+                        continue
+                    message = tweet.serialize()
+                    cls.logger.debug('Sending geocoded tweet to queue: %s', str(tweet))
+                    cls.producer.send(cls.persister_kafka_topic, message)  # persist the annotated tweet
+                except (ValidationError, ValueError, TypeError, InvalidRequest) as e:
+                    cls.logger.error(e)
+                    cls.logger.error('Poison message for Cassandra: %s', str(tweet) if tweet else msg)
+                except CQLEngineException as e:
+                    cls.logger.error(e)
+                except Exception as e:
+                    cls.logger.error(type(e))
+                    cls.logger.error(e)
+                    cls.logger.error(msg)
+
+        except CommitFailedError:
+            cls.logger.error('Geocoder consumer was disconnected during I/O operations. Exited.')
+        except ValueError:
+            # tipically an I/O operation on closed epoll object
+            # as the consumer can be disconnected in another thread (see signal handling in start.py)
+            if cls.consumer._closed:
+                cls.logger.info('Geocoder consumer was disconnected during I/O operations. Exited.')
+            else:
+                cls.consumer.close()
+        except KeyboardInterrupt:
+            cls.consumer.close()

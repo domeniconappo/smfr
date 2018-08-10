@@ -5,6 +5,7 @@ import logging
 from multiprocessing import cpu_count
 from multiprocessing.pool import ThreadPool
 import os
+import time
 
 import cassandra
 from sqlalchemy import or_
@@ -28,9 +29,10 @@ flood_propability_ranges = ((0, 10), (10, 90), (90, 100))
 def with_logging(func):
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
-        logger.info('Running job "%s"(args="%s", kwargs="%s")' % (func.__name__, str(args), str(kwargs)))
+        time_start = time.time()
         result = func(*args, **kwargs)
-        logger.info('Job "%s" completed' % func.__name__)
+        elapsed = time.time() - time_start
+        logger.info('Job "%s" completed. Elapsed time: %s' % (func.__name__, str(timedelta(seconds=elapsed))))
         return result
     return wrapper
 
@@ -52,32 +54,34 @@ def aggregate(running_conf=None):
     """
     if not running_conf:
         raise ValueError('No parsed arguments were passed')
-    running = running_conf.running
-    everything = running_conf.all
-    background = running_conf.background
+
     with flask_app.app_context():
-        if running:
+
+        if running_conf.running:
             collections_to_aggregate = TwitterCollection.query.filter(
                 or_(
                     TwitterCollection.status == 'active',
                     TwitterCollection.stopped_at >= datetime.now() - timedelta(days=2)
                 )
             )
-        elif everything:
+        elif running_conf.all:
             collections_to_aggregate = TwitterCollection.query.all()
-        elif background:
+        elif running_conf.background:
             collections_to_aggregate = TwitterCollection.query.filter_by(trigger='background')
         else:
             raise ValueError('Aggregator must be started with a parameter: [-r (running)| -a (all) | -b (background)]')
 
         if not list(collections_to_aggregate):
             logger.info('No collections to aggregate with configuration: %s', pretty_running_conf(running_conf))
+
         aggregations_args = []
         for coll in collections_to_aggregate:
             aggregation = Aggregation.query.filter_by(collection_id=coll.id).first()
+
             if not aggregation:
                 aggregation = Aggregation(collection_id=coll.id, values={})
                 aggregation.save()
+
             aggregations_args.append(
                 (coll.id,
                  aggregation.last_tweetid_collected,
@@ -106,7 +110,7 @@ def run_single_aggregation(collection_id,
     - num_tweets_40-60
     - num_tweets_60-80
     - num_tweets_80-100
-    - NUTSID_num_tweets_60-80 etc.
+    - NUTS2ID_num_tweets_60-80 etc.
     :param collection_id:
     :param last_tweetid_collected:
     :param last_tweetid_annotated:
@@ -129,6 +133,8 @@ def run_single_aggregation(collection_id,
     last_tweetid_collected = int(last_tweetid_collected) if last_tweetid_collected else 0
     last_tweetid_annotated = int(last_tweetid_annotated) if last_tweetid_annotated else 0
     last_tweetid_geotagged = int(last_tweetid_geotagged) if last_tweetid_geotagged else 0
+
+    # init counter
     counter = Counter(initial_values)
 
     logger.info(' >>>>>>>>>>>> Starting aggregation for collection id %d' % collection_id)

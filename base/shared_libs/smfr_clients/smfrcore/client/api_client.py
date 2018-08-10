@@ -1,6 +1,7 @@
 """
 Module for API client to the SMFR Rest Server
 """
+import os
 import json
 import logging
 
@@ -14,7 +15,7 @@ from smfrcore.utils import LOGGER_FORMAT, LOGGER_DATE_FORMAT, smfr_json_encoder
 
 from .marshmallow import OnDemandPayload, CollectionPayload
 
-logging.basicConfig(level=logging.INFO if not ServerConfiguration.debug else logging.DEBUG,
+logging.basicConfig(level=os.environ.get('LOGGING_LEVEL', 'DEBUG'),
                     format=LOGGER_FORMAT, datefmt=LOGGER_DATE_FORMAT)
 
 
@@ -77,11 +78,14 @@ class ApiLocalClient:
         Main method that executes POST calls
         :param query_params: dict for querystring part to put into `params` kwarg of request.post
         :param endpoint: endpoint url name (see ApiLocalClient.endpoints)
-        :param payload: dict to put into `json` kwarg of request.post
+        :param payload: dict to put into `data` kwarg of request.post
         :param path_kwargs: dict used for variable replacement in endpoint paths
-        :return: JSON text
+        :return: dict representing JSON response
         """
-        requests_kwargs = {'data': json.dumps(payload, default=smfr_json_encoder)} if payload else {}
+        headers = {'Content-Type': 'application/json'}
+        requests_kwargs = {'headers': headers,
+                           'data': json.dumps(payload, default=smfr_json_encoder) if payload else '{}',
+                           }
 
         if query_params:
             requests_kwargs['params'] = query_params

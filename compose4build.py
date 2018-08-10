@@ -27,7 +27,7 @@ def do(image_tag):
     replace_image_variable('./mysql', 'MYSQL_BASE_IMAGE')
     replace_image_variable('./geonames', 'GEONAMES_BASE_IMAGE')
 
-    for component in ('annotator', 'geocoder', 'persister', 'restserver', 'web', 'aggregator',):
+    for component in ('annotator', 'geocoder', 'persister', 'restserver', 'web', 'aggregator', 'products',):
         docker_in = 'Dockerfile.{}'.format(component)
         docker_out = 'Dockerfile.{}.ready'.format(component)
         with open(docker_out, 'w') as fout, open(docker_in) as fin:

@@ -29,6 +29,7 @@ from flask_jwt_extended import (
 from smfrcore.auth import authenticate, identity
 from smfrcore.utils import RUNNING_IN_DOCKER
 
+
 UNDER_TESTS = any('nose2' in x for x in sys.argv)
 SERVER_BOOTSTRAP = 'gunicorn' in sys.argv[0]
 MYSQL_MIGRATION = all(os.path.basename(a) in ('flask', 'db', 'migrate') for a in sys.argv) \
@@ -104,7 +105,9 @@ class RestServerConfiguration(metaclass=Singleton):
     restserver_port = os.environ.get('RESTSERVER_PORT', 5555)
     annotator_port = os.environ.get('ANNOTATOR_PORT', 5556)
     geocoder_port = os.environ.get('GEOCODER_PORT', 5557)
-    kafka_topic = os.environ.get('KAFKA_TOPIC', 'persister')
+    persister_kafka_topic = os.environ.get('PERSISTER_KAFKA_TOPIC', 'persister')
+    annotator_kafka_topic = os.environ.get('ANNOTATOR_KAFKA_TOPIC', 'annotator')
+    geocoder_kafka_topic = os.environ.get('GEOCODER_KAFKA_TOPIC', 'geocoder')
 
     debug = not UNDER_TESTS and not os.environ.get('PRODUCTION', True)
 
@@ -179,14 +182,14 @@ class RestServerConfiguration(metaclass=Singleton):
                         self.producer = KafkaProducer(bootstrap_servers=self.kafka_bootstrap_server, compression_type='gzip')
                 except (NoHostAvailable, OperationalError, NoBrokersAvailable, socket.gaierror):
                     self.logger.error('Missing link with a db server.')
-                    self.logger.warning('Cassandra/Mysql/Kafka/ElasticSearch were not up...wait 5 seconds before retrying')
+                    self.logger.warning('C*/Mysql/Kafka/ES were not up. Wait 5 seconds before retrying')
                     sleep(5)
                     retries += 1
                 else:
                     up = True
                 finally:
                     if not up and retries >= 5:
-                        self.logger.error('Too many retries. Cannot boot because DB servers are not reachable! Exiting...')
+                        self.logger.error('Too many retries. Cannot boot as DB servers are not reachable! Exiting...')
                         sys.exit(1)
             self.log_configuration()
 
@@ -249,7 +252,7 @@ class RestServerConfiguration(metaclass=Singleton):
         self.logger.info('SMFR Rest Server and Collector manager')
         self.logger.info('======= START LOGGING Configuration =======')
         self.logger.info('+++ Kafka')
-        self.logger.info(' - Topic: {}'.format(self.kafka_topic))
+        self.logger.info(' - Topic: {}'.format(self.persister_kafka_topic))
         self.logger.info(' - Bootstrap server: {}'.format(self.kafka_bootstrap_server))
         self.logger.info('+++ Cassandra')
         self.logger.info(' - Host: {}'.format(self.flask_app.config['CASSANDRA_HOSTS']))

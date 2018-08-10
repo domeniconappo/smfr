@@ -1,0 +1,21 @@
+FROM ${SMFR_IMAGE}:${IMAGE_TAG}
+MAINTAINER Domenico Nappo <domenico.nappo@ext.ec.europa.eu>
+
+ARG http_proxy
+ARG https_proxy
+
+ENV LANG=C.UTF-8
+
+RUN mkdir -p /products && mkdir -p /config && mkdir -p /smfr_utils && mkdir -p /smfr_models && mkdir -p /scripts
+
+COPY ./products/requirements.txt /products/
+RUN pip3.6 install -r /products/requirements.txt
+COPY base/shared_libs/scripts/wait_for_it.sh /scripts/
+COPY base/shared_libs/smfr_utils/. /smfr_utils/
+COPY base/shared_libs/smfr_models/. /smfr_models/
+RUN chmod -R a+x /scripts/
+RUN pip3 install /smfr_utils/ && pip3 install /smfr_models/ && rm -R /root/.cache
+COPY ./products/src/. /products/
+
+ENTRYPOINT ["/scripts/wait_for_it.sh", "cassandrasmfr:9160"]
+CMD ["--", "python3.6", "start.py"]

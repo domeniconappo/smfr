@@ -3,7 +3,7 @@
 command=${1:-1}
 
 PROPERTY_FILE=.env
-SERVICES="web restserver geocoder annotator persister aggregator cassandrasmfr mysql"
+SERVICES="web restserver geocoder annotator persister aggregator cassandrasmfr mysql products"
 logged=0
 
 function getProperty {
@@ -67,6 +67,7 @@ if [ -n "${DOCKER_ID_USER}" ] && [ ${command} == "push" ]; then
     MYSQL_IMAGE=$(getProperty "MYSQL_IMAGE")
     CASSANDRA_IMAGE=$(getProperty "CASSANDRA_IMAGE")
     GEONAMES_IMAGE=$(getProperty "GEONAMES_IMAGE")
+    PRODUCTS_IMAGE=$(getProperty "PRODUCTS_IMAGE")
 
     echo !!! Pushing images to ${DOCKER_REGISTRY} as user ${DOCKER_ID_USER}!!!
     echo
@@ -74,6 +75,7 @@ if [ -n "${DOCKER_ID_USER}" ] && [ ${command} == "push" ]; then
     docker tag ${AGGREGATOR_IMAGE}:${image_tag} ${DOCKER_REGISTRY}/${AGGREGATOR_IMAGE}:${image_tag}
     docker tag ${ANNOTATOR_IMAGE}:${image_tag} ${DOCKER_REGISTRY}/${ANNOTATOR_IMAGE}:${image_tag}
     docker tag ${GEOCODER_IMAGE}:${image_tag} ${DOCKER_REGISTRY}/${GEOCODER_IMAGE}:${image_tag}
+    docker tag ${PRODUCTS_IMAGE}:${image_tag} ${DOCKER_REGISTRY}/${PRODUCTS_IMAGE}:${image_tag}
     docker tag ${RESTSERVER_IMAGE}:${image_tag} ${DOCKER_REGISTRY}/${RESTSERVER_IMAGE}:${image_tag}
     docker tag ${WEB_IMAGE}:${image_tag} ${DOCKER_REGISTRY}/${WEB_IMAGE}:${image_tag}
     docker tag ${MYSQL_IMAGE}:${image_tag} ${DOCKER_REGISTRY}/${MYSQL_IMAGE}:${image_tag}
@@ -84,6 +86,7 @@ if [ -n "${DOCKER_ID_USER}" ] && [ ${command} == "push" ]; then
     docker push ${DOCKER_REGISTRY}/${AGGREGATOR_IMAGE}:${image_tag}
     docker push ${DOCKER_REGISTRY}/${ANNOTATOR_IMAGE}:${image_tag}
     docker push ${DOCKER_REGISTRY}/${GEOCODER_IMAGE}:${image_tag}
+    docker push ${DOCKER_REGISTRY}/${PRODUCTS_IMAGE}:${image_tag}
     docker push ${DOCKER_REGISTRY}/${RESTSERVER_IMAGE}:${image_tag}
     docker push ${DOCKER_REGISTRY}/${WEB_IMAGE}:${image_tag}
     docker push ${DOCKER_REGISTRY}/${MYSQL_IMAGE}:${image_tag}

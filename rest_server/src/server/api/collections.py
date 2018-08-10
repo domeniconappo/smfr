@@ -265,15 +265,15 @@ def fetch_efas(since='latest'):
                 lead_time = int(event['SM_meanLT'])
                 logger.info('Fetched event for efas id %d', efas_id)
                 nuts3_data = list(Nuts3.query.with_entities(
-                    Nuts3.names, Nuts3.country_name, Nuts3.nuts_id, Nuts3.name_ascii
+                    Nuts3.country_name, Nuts3.nuts_id, Nuts3.name_ascii
                 ).filter_by(efas_id=efas_id))
                 if not nuts3_data:
                     logger.info('No NUTS3 data found for RRA event id %d', efas_id)
                     continue
                 bbox = Nuts2.nuts2_bbox(efas_id)
-                country_name = nuts3_data[0][1] if nuts3_data else ''
-                nuts_id = nuts3_data[0][2] if nuts3_data else ''
-                cities = set([s for c in nuts3_data for s in c[0].values() if c and c[0] and s] + [c[3] for c in nuts3_data if c and c[3]])
+                country_name = nuts3_data[0][0] if nuts3_data else ''
+                nuts_id = nuts3_data[0][1] if nuts3_data else ''
+                cities = set([c[2] for c in nuts3_data if c and c[2]])
                 cities = ','.join(c for c in cities)
                 if event['ID'] not in results:
                     results[event['ID']] = {'efas_id': efas_id, 'trigger': 'on-demand',

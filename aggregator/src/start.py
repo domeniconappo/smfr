@@ -25,7 +25,7 @@ if __name__ == '__main__':
     # run first job
     aggregate(running_conf=conf)
 
-    # schedule every X minutes
+    # schedule every X minutes, based on AGGREGATOR_SCHEDULING_MINUTES env variable
     schedule.every(scheduling_interval).minutes.do(aggregate, **kwargs).tag('aggregator-main')
 
     while True:

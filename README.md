@@ -34,7 +34,7 @@ Final product of SMFR is a event-related map reporting relevant tweets.
       -   The server folder where MySQL and Cassandra data folders will be mapped to.
     - `CASSANDRA_KEYSPACE=smfr_persistent`
       -   Cassandra keyspace name
-    - `KAFKA_TOPIC=persister`
+    - `PERSISTER_KAFKA_TOPIC=persister`
       - The KAFKA topic name
     - `MIN_FLOOD_PROBABILITY=0.59`
       - minimum flood probability for which the text is considered "positive"
