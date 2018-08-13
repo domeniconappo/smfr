@@ -38,7 +38,8 @@ def _cassandra_session_factory():
     cluster = Cluster(_hosts, port=_port, **cluster_kwargs) if RUNNING_IN_DOCKER else Cluster(**cluster_kwargs)
     session = cluster.connect()
     session.row_factory = dict_factory
-    session.execute("USE {}".format(_keyspace))
+    session.default_timeout = 20
+    session.execute('USE {}'.format(_keyspace))
     return session
 
 
