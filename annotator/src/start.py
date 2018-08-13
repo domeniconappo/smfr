@@ -3,19 +3,20 @@ import os
 
 from flask import Flask
 from flask_restful import Resource, Api, marshal_with, fields, marshal_with_field
-from smfrcore.utils import LOGGER_FORMAT, LOGGER_DATE_FORMAT
 
 from annotator import Annotator
 
-logging.basicConfig(level=os.environ.get('LOGGING_LEVEL', 'DEBUG'), format=LOGGER_FORMAT, datefmt=LOGGER_DATE_FORMAT)
-logger = logging.getLogger(__name__)
-singleserver = bool(int(os.environ.get('SINGLENODE', 0)))
+
+app = Flask(__name__)
+api = Api(app)
 
 
 class AnnotatorApi(Resource):
     """
     Flask Restful API for Annotator microservice (start/stop methods)
     """
+    logger = logging.getLogger(__name__)
+    logger.setLevel(os.environ.get('LOGGING_LEVEL', 'DEBUG'))
 
     @marshal_with({'error': fields.Nested({'description': fields.Raw}), 'result': fields.Raw, 'action_performed': fields.Raw})
     def put(self, collection_id, lang, action):
@@ -55,19 +56,24 @@ class AnnotatorModels(Resource):
         return Annotator.available_models(), 200
 
 
-app = Flask(__name__)
-api = Api(app)
+if __name__ == '__main__':
+    singleserver = bool(int(os.environ.get('SINGLENODE', 0)))
+    update_models = bool(int(os.environ.get('UPDATE_ANNOTATOR_MODELS', 0)))
+    
+    api.add_resource(AnnotatorApi, '/<int:collection_id>/<string:lang>/<string:action>')
+    api.add_resource(RunningAnnotatorsApi, '/running')
+    api.add_resource(AnnotatorModels, '/models')
+    if update_models:
+        Annotator.logger.info('GIT: Check if there are new models on repository...')
+        Annotator.download_cnn_models()
 
-api.add_resource(AnnotatorApi, '/<int:collection_id>/<string:lang>/<string:action>')
-api.add_resource(RunningAnnotatorsApi, '/running')
-api.add_resource(AnnotatorModels, '/models')
-logger.info('Check if there are new models...')
-Annotator.download_cnn_models()
-logger.info('Annotator Microservice ready for incoming requests')
-Annotator.log_config()
+    AnnotatorApi.logger.info('[OK] Annotator Microservice ready for incoming requests')
 
-# start topic consumers for pipeline
-for lang in Annotator.available_languages:
-    # if running docker compose on a single server, we just bootstrap Annotator EN to avoid out of memory errors
-    if singleserver and lang == 'en' or not singleserver:
-        Annotator.start_consumer(lang=lang)
+    Annotator.log_config()
+
+    # start topic consumers for pipeline
+    for language in Annotator.available_languages:
+        # if running docker compose on a single server, we just bootstrap Annotator EN to avoid out of memory errors
+        if singleserver and language == 'en' or not singleserver:
+            Annotator.logger.info('----- Starting KAFKA consumer on topic: annotator_%s', language)
+            Annotator.start_consumer(lang=language)

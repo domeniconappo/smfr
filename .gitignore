@@ -1,7 +1,18 @@
 # Created by .ignore support plugin (hsz.mobi)
-### Python template
 
+# virtualenv names
+smfr
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# IDE
 .idea
+
+# SMFR configs
 rest_server/src/config/*.yaml
 jmxremote.password
 jmxremote.access
@@ -98,14 +109,6 @@ celerybeat-schedule
 
 # SageMath parsed files
 *.sage.py
-
-# Environments
-.venv
-env/
-venv/
-ENV/
-env.bak/
-venv.bak/
 
 # Spyder project settings
 .spyderproject

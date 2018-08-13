@@ -1,7 +1,8 @@
+numpy==1.14.5
+mordecai==2.0.1
 kafka-python
 ujson
 mysqlclient
-https://github.com/openeventdata/mordecai/archive/master.zip
 flask
 flask-restful
 flask-sqlalchemy
@@ -9,3 +10,5 @@ shapely
 fiona
 gunicorn
 arrow
+keras==2.2.2
+tensorflow==1.10.0
