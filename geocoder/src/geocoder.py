@@ -345,8 +345,17 @@ class Geocoder:
         }
 
     @classmethod
+    def consumer_in_background(cls):
+        """
+        Start Geocoder consumer in background (i.e. in a different thread)
+        """
+        t = threading.Thread(target=cls.start_consumer,
+                             name='Geocoder Consumer')
+        t.start()
+
+    @classmethod
     def start_consumer(cls):
-        cls.logger.info('+++++++++++++ Geocoder consumer started')
+        cls.logger.info('+++++++++++++ Geocoder consumer starting')
         try:
             for i, msg in enumerate(cls.consumer):
                 tweet = None

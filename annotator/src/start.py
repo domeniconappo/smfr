@@ -1,11 +1,15 @@
 import logging
 import os
 
+from smfrcore.utils import LOGGER_FORMAT, LOGGER_DATE_FORMAT
+
+logging.basicConfig(level=os.environ.get('LOGGING_LEVEL', 'DEBUG'), format=LOGGER_FORMAT, datefmt=LOGGER_DATE_FORMAT)
+logger = logging.getLogger(__name__)
+logger.info('__name__ %s', __name__)
+
 from flask import Flask
 from flask_restful import Resource, Api, marshal_with, fields, marshal_with_field
-
 from annotator import Annotator
-
 
 app = Flask(__name__)
 api = Api(app)
@@ -23,7 +27,7 @@ class AnnotatorApi(Resource):
         action = action.lower()
         if action not in ('start', 'stop'):
             return {'error': {'description': 'Unknown operation {}'.format(action)}}, 400
-        if lang not in Annotator.models:
+        if lang not in Annotator.available_models()['models']:
             return {'error': {'description': 'No models for language {}'.format(lang)}}, 400
 
         if action == 'start':
@@ -58,15 +62,10 @@ class AnnotatorModels(Resource):
 
 if __name__ == '__main__':
     singleserver = bool(int(os.environ.get('SINGLENODE', 0)))
-    update_models = bool(int(os.environ.get('UPDATE_ANNOTATOR_MODELS', 0)))
-    
+
     api.add_resource(AnnotatorApi, '/<int:collection_id>/<string:lang>/<string:action>')
     api.add_resource(RunningAnnotatorsApi, '/running')
     api.add_resource(AnnotatorModels, '/models')
-    if update_models:
-        Annotator.logger.info('GIT: Check if there are new models on repository...')
-        Annotator.download_cnn_models()
-
     AnnotatorApi.logger.info('[OK] Annotator Microservice ready for incoming requests')
 
     Annotator.log_config()
