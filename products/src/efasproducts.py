@@ -58,14 +58,14 @@ class Products:
         Heatmaps and most relevant tweets for an ondemand collection
         :param collection_id: int Collection Id as it's stored in MySQL virtual_twitter_collection table
         """
-        logger.info('Production of heatmap and most relevant tweets started for collection: {}.'.format(collection_id))
+        logger.info('Production of heatmap and most relevant tweets started for collection: %d.', collection_id)
         ttype = 'geotagged'
 
         # tweets = Tweet.get_iterator(collection_id, ttype)
         # for t in tweets:
         #     pass
 
-        logger.info('Production of heatmap and most relevant tweets terminated for collection: {}.'.format(collection_id))
+        logger.info('Production of heatmap and most relevant tweets terminated for collection: %d.', collection_id)
 
     @classmethod
     def produce(cls):
