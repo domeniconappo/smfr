@@ -9,6 +9,7 @@ logger.info('__name__ %s', __name__)
 
 from flask import Flask
 from flask_restful import Resource, Api, marshal_with, fields, marshal_with_field
+
 from annotator import Annotator
 
 app = Flask(__name__)

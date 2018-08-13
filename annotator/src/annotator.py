@@ -15,7 +15,7 @@ import sklearn
 from smfrcore.models.cassandramodels import Tweet
 from smfrcore.utils import RUNNING_IN_DOCKER
 
-from utils import create_text_for_cnn, models, models_path
+from .utils import create_text_for_cnn, models, models_path
 
 logger = logging.getLogger(__name__)
 logger.info('Importing KERAS....')
