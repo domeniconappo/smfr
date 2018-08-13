@@ -96,15 +96,13 @@ class Annotator:
         """
         import tensorflow as tf
         ttype = 'collected'
+        dataset = Tweet.get_iterator(collection_id, ttype, lang=lang)
+
         graph = tf.Graph()
         with graph.as_default():
             session = tf.Session()
             with session.as_default():
-                tokenizer_path = os.path.join(models_path, models[lang] + '.tokenizer')
-                tokenizer = sklearn.externals.joblib.load(tokenizer_path)
-                tokenizer.oov_token = None
-                model_path = os.path.join(models_path, models[lang] + '.model.h5')
-                model = load_model(model_path)
+                model, tokenizer = cls.load_annotation_model(lang)
 
                 cls.logger.info('Starting Annotation collection: %s %s', collection_id, lang)
 
@@ -112,8 +110,7 @@ class Annotator:
                 with cls._lock:
                     cls._running.append((collection_id, lang))
 
-                tweets = Tweet.get_iterator(collection_id, ttype, lang=lang)
-                for i, t in enumerate(tweets):
+                for i, t in enumerate(dataset):
                     if (collection_id, lang) in cls._stop_signals:
                         cls.logger.info('Stopping annotation %s - %s', collection_id, lang)
                         with cls._lock:
@@ -132,6 +129,13 @@ class Annotator:
 
     @classmethod
     def annotate(cls, model, t, tokenizer):
+        """
+
+        :param model:
+        :param t:
+        :param tokenizer:
+        :return:
+        """
         original_json = json.loads(t.tweet)
         text = create_text_for_cnn(original_json, [])
         sequences = tokenizer.texts_to_sequences([text])
@@ -187,6 +191,7 @@ class Annotator:
         """
         import tensorflow as tf
         cls.logger.info('+++++++++++++ Annotator consumer lang=%s connected', lang)
+
         topic = '{}_{}'.format(cls.annotator_kafka_topic, lang)
 
         consumer = KafkaConsumer(
@@ -199,11 +204,7 @@ class Annotator:
         with graph.as_default():
             session = tf.Session()
             with session.as_default():
-                tokenizer_path = os.path.join(models_path, models[lang] + '.tokenizer')
-                tokenizer = sklearn.externals.joblib.load(tokenizer_path)
-                tokenizer.oov_token = None
-                model_path = os.path.join(models_path, models[lang] + '.model.h5')
-                model = load_model(model_path)
+                model, tokenizer = cls.load_annotation_model(lang)
 
                 try:
                     for i, msg in enumerate(consumer):
@@ -211,13 +212,16 @@ class Annotator:
                         try:
                             msg = msg.value.decode('utf-8')
                             tweet = Tweet.build_from_kafka_message(msg)
-                            tweet.ttype = 'annotated'
                             cls.logger.debug('Read from queue: %s', str(tweet))
+                            tweet.ttype = 'annotated'
                             tweet = cls.annotate(model, tweet, tokenizer)
                             message = tweet.serialize()
                             cls.logger.debug('Sending annotated tweet to queue: %s', str(tweet))
-                            cls.producer.send(cls.persister_kafka_topic, message)  # persist the annotated tweet
-                            cls.producer.send(cls.geocoder_kafka_topic, message)  # send to geocoding
+
+                            # persist the annotated tweet
+                            cls.producer.send(cls.persister_kafka_topic, message)
+                            # send annotated tweet to geocoding
+                            cls.producer.send(cls.geocoder_kafka_topic, message)
                         except (ValidationError, ValueError, TypeError, InvalidRequest) as e:
                             cls.logger.error(e)
                             cls.logger.error('Poison message for Cassandra: %s', str(tweet) if tweet else msg)
@@ -239,3 +243,12 @@ class Annotator:
                         consumer.close()
                 except KeyboardInterrupt:
                     consumer.close()
+
+    @classmethod
+    def load_annotation_model(cls, lang):
+        tokenizer_path = os.path.join(models_path, models[lang] + '.tokenizer')
+        tokenizer = sklearn.externals.joblib.load(tokenizer_path)
+        tokenizer.oov_token = None
+        model_path = os.path.join(models_path, models[lang] + '.model.h5')
+        model = load_model(model_path)
+        return model, tokenizer

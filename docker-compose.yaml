@@ -6,7 +6,7 @@ services:
     build:
       context: ./
       dockerfile: cassandrasmfr/Dockerfile
-    image: ${CASSANDRA_IMAGE}:${image_tag}
+    image: ${DOCKER_REGISTRY}/${CASSANDRA_IMAGE}:${image_tag}
     restart: always
     # From host, connect to DB with `docker exec -it cassandrasmfr cqlsh`
     volumes:
@@ -40,7 +40,7 @@ services:
 
   kafka:
     restart: always
-    image: ${KAFKA_IMAGE}
+    image: ${DOCKER_REGISTRY}/${KAFKA_IMAGE}
     container_name: kafka
     hostname: kafka
     environment:
@@ -64,7 +64,7 @@ services:
     build:
       context: ./
       dockerfile: mysql/Dockerfile
-    image: ${MYSQL_IMAGE}:${image_tag}
+    image: ${DOCKER_REGISTRY}/${MYSQL_IMAGE}:${image_tag}
     restart: always
     container_name: mysql
     # From host, connect to DB with `mysql -h 127.0.0.1 -p` (if you have mysql client installed)
@@ -92,7 +92,7 @@ services:
         http_proxy: ${http_proxy}
         https_proxy: ${https_proxy}
       dockerfile: geonames/Dockerfile
-    image: ${GEONAMES_IMAGE}:${image_tag}
+    image: ${DOCKER_REGISTRY}/${GEONAMES_IMAGE}:${image_tag}
     restart: always
     working_dir: /geonames
     container_name: geonames
@@ -115,7 +115,7 @@ services:
   persister:
     restart: always
     container_name: persister
-    image: ${PERSISTER_IMAGE}:${image_tag}
+    image: ${DOCKER_REGISTRY}/${PERSISTER_IMAGE}:${image_tag}
     build:
       context: ./
       args:
@@ -151,7 +151,7 @@ services:
   annotator:
     restart: always
     container_name: annotator
-    image: ${ANNOTATOR_IMAGE}:${image_tag}
+    image: ${DOCKER_REGISTRY}/${ANNOTATOR_IMAGE}:${image_tag}
     build:
       context: ./
       dockerfile: Dockerfile.annotator.ready
@@ -196,7 +196,7 @@ services:
   geocoder:
     restart: always
     container_name: geocoder
-    image: ${GEOCODER_IMAGE}:${image_tag}
+    image: ${DOCKER_REGISTRY}/${GEOCODER_IMAGE}:${image_tag}
     build:
       context: ./
       dockerfile: Dockerfile.geocoder.ready
@@ -242,7 +242,7 @@ services:
   aggregator:
     restart: on-failure
     container_name: aggregator
-    image: ${AGGREGATOR_IMAGE}:${image_tag}
+    image: ${DOCKER_REGISTRY}/${AGGREGATOR_IMAGE}:${image_tag}
     build:
       context: ./
       dockerfile: Dockerfile.aggregator.ready
@@ -282,7 +282,7 @@ services:
   products:
     restart: on-failure
     container_name: products
-    image: ${PRODUCTS_IMAGE}:${image_tag}
+    image: ${DOCKER_REGISTRY}/${PRODUCTS_IMAGE}:${image_tag}
     build:
       context: ./
       dockerfile: Dockerfile.products.ready
@@ -322,7 +322,7 @@ services:
   restserver:
     restart: always
     container_name: restserver
-    image: ${RESTSERVER_IMAGE}:${image_tag}
+    image: ${DOCKER_REGISTRY}/${RESTSERVER_IMAGE}:${image_tag}
     build:
       context: ./
       dockerfile: Dockerfile.restserver.ready
@@ -385,7 +385,7 @@ services:
   web:
     restart: always
     container_name: web
-    image: ${WEB_IMAGE}:${image_tag}
+    image: ${DOCKER_REGISTRY}/${WEB_IMAGE}:${image_tag}
     build:
       context: ./
       dockerfile: Dockerfile.web.ready

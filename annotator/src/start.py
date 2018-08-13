@@ -60,7 +60,7 @@ class AnnotatorModels(Resource):
         return Annotator.available_models(), 200
 
 
-if __name__ == '__main__':
+if __name__ == 'start':
     singleserver = bool(int(os.environ.get('SINGLENODE', 0)))
 
     api.add_resource(AnnotatorApi, '/<int:collection_id>/<string:lang>/<string:action>')
