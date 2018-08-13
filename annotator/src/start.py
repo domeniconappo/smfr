@@ -76,4 +76,4 @@ if __name__ == '__main__':
         # if running docker compose on a single server, we just bootstrap Annotator EN to avoid out of memory errors
         if singleserver and language == 'en' or not singleserver:
             Annotator.logger.info('----- Starting KAFKA consumer on topic: annotator_%s', language)
-            Annotator.start_consumer(lang=language)
+            Annotator.consumer_in_background(language)
