@@ -7,12 +7,10 @@ import time
 import ujson as json
 from subprocess import Popen, PIPE
 
-from keras.models import load_model
 from cassandra import InvalidRequest
 from cassandra.cqlengine import CQLEngineException, ValidationError
 from kafka import KafkaProducer, KafkaConsumer
 from kafka.errors import NoBrokersAvailable, CommitFailedError
-from keras.preprocessing.sequence import pad_sequences
 import sklearn
 
 from smfrcore.models.cassandramodels import Tweet
@@ -21,6 +19,13 @@ from smfrcore.utils import RUNNING_IN_DOCKER, LOGGER_FORMAT, LOGGER_DATE_FORMAT
 from utils import create_text_for_cnn, models_by_language
 
 logging.basicConfig(level=os.environ.get('LOGGING_LEVEL', 'DEBUG'), format=LOGGER_FORMAT, datefmt=LOGGER_DATE_FORMAT)
+logger = logging.getLogger(__name__)
+
+logger.info('Importing KERAS....')
+start = time.time()
+from keras.models import load_model
+from keras.preprocessing.sequence import pad_sequences
+logger.info('Importing KERAS took %f s', (time.time() - start) / 1000)
 
 
 class Annotator:

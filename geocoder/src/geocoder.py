@@ -103,7 +103,7 @@ class Geocoder:
                              auto_offset_reset='earliest',
                              bootstrap_servers=kafka_bootstrap_server)
     # try to use new mordecai with 'threads'
-    tagger = Geoparser(geonames_host, threads=True)
+    tagger = Geoparser(geonames_host)
 
     @classmethod
     def is_running_for(cls, collection_id):
