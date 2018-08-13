@@ -7,8 +7,7 @@ import time
 import ujson as json
 from subprocess import Popen, PIPE
 
-import tensorflow as tf
-import keras
+from keras.models import load_model
 from cassandra import InvalidRequest
 from cassandra.cqlengine import CQLEngineException, ValidationError
 from kafka import KafkaProducer, KafkaConsumer
@@ -17,9 +16,11 @@ from keras.preprocessing.sequence import pad_sequences
 import sklearn
 
 from smfrcore.models.cassandramodels import Tweet
-from smfrcore.utils import RUNNING_IN_DOCKER
+from smfrcore.utils import RUNNING_IN_DOCKER, LOGGER_FORMAT, LOGGER_DATE_FORMAT
 
 from utils import create_text_for_cnn, models_by_language
+
+logging.basicConfig(level=os.environ.get('LOGGING_LEVEL', 'DEBUG'), format=LOGGER_FORMAT, datefmt=LOGGER_DATE_FORMAT)
 
 
 class Annotator:
@@ -41,6 +42,7 @@ class Annotator:
     while (not kafkaup) and retries >= 0:
         try:
             producer = KafkaProducer(bootstrap_servers=kafka_bootstrap_server, compression_type='gzip')
+            logger.info('[OK] KAFKA Producer')
         except NoBrokersAvailable:
             logger.warning('Waiting for Kafka to boot...')
             time.sleep(5)
@@ -105,6 +107,7 @@ class Annotator:
         :param lang: str two characters string denoting a language (e.g. 'en')
                      or 'multilang' for multilanguage annotations
         """
+        import tensorflow as tf
         ttype = 'collected'
         graph = tf.Graph()
         with graph.as_default():
@@ -114,9 +117,9 @@ class Annotator:
                 tokenizer = sklearn.externals.joblib.load(tokenizer_path)
                 tokenizer.oov_token = None
                 model_path = os.path.join(cls.models_path, cls.models[lang] + '.model.h5')
-                model = keras.models.load_model(model_path)
+                model = load_model(model_path)
 
-                cls.logger.info('Starting Annotation collection: {} {}'.format(collection_id, lang))
+                cls.logger.info('Starting Annotation collection: %s %s', collection_id, lang)
 
                 # add tuple (collection_id, language) to `_running` list
                 with cls._lock:
@@ -125,7 +128,7 @@ class Annotator:
                 tweets = Tweet.get_iterator(collection_id, ttype, lang=lang)
                 for i, t in enumerate(tweets):
                     if (collection_id, lang) in cls._stop_signals:
-                        cls.logger.info('Stopping annotation {} - {}'.format(collection_id, lang))
+                        cls.logger.info('Stopping annotation %s - %s', collection_id, lang)
                         with cls._lock:
                             cls._stop_signals.remove((collection_id, lang))
                         break
@@ -138,7 +141,7 @@ class Annotator:
 
         # remove from `_running` list
         cls._running.remove((collection_id, lang))
-        cls.logger.info('Annotation process terminated! Collection: {} for "{}" tweets'.format(collection_id, ttype))
+        cls.logger.info('Annotation process terminated! Collection: %s for "%s" tweets', collection_id, ttype)
 
     @classmethod
     def annotate(cls, model, t, tokenizer):
@@ -186,10 +189,13 @@ class Annotator:
         build a Tweet object and send it to next in pipeline.
         """
         topic = '{}_{}'.format(cls.annotator_kafka_topic, lang)
-        consumer = KafkaConsumer(topic, group_id='SMFR',
-                                 auto_offset_reset='earliest',
-                                 bootstrap_servers=cls.kafka_bootstrap_server)
-        cls.logger.info('+++++++++++++ Annotator consumer lang=%s started', lang)
+        consumer = KafkaConsumer(
+            topic, group_id='SMFR',
+            auto_offset_reset='earliest',
+            bootstrap_servers=cls.kafka_bootstrap_server
+        )
+        cls.logger.info('+++++++++++++ Annotator consumer lang=%s connected', lang)
+        import tensorflow as tf
 
         graph = tf.Graph()
         with graph.as_default():
@@ -199,7 +205,7 @@ class Annotator:
                 tokenizer = sklearn.externals.joblib.load(tokenizer_path)
                 tokenizer.oov_token = None
                 model_path = os.path.join(cls.models_path, cls.models[lang] + '.model.h5')
-                model = keras.models.load_model(model_path)
+                model = load_model(model_path)
 
                 try:
                     for i, msg in enumerate(consumer):

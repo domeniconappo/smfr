@@ -146,7 +146,7 @@ services:
         max_attempts: 3
         window: 120s
       placement:
-        constraints: [ node.labels.medium == true ]
+        constraints: [ node.labels.large == true ]
 
   annotator:
     restart: always
