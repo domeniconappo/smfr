@@ -315,7 +315,7 @@ services:
     - cassandrasmfr
     deploy:
       placement:
-        constraints: [ node.labels.huge == true ]
+        constraints: [ node.labels.medium == true ]
       restart_policy:
         condition: on-failure
         max_attempts: 3
@@ -382,7 +382,7 @@ services:
         max_attempts: 3
         window: 120s
       placement:
-        constraints: [ node.labels.large == true ]
+        constraints: [ node.labels.huge == true ]
 
   web:
     restart: always
