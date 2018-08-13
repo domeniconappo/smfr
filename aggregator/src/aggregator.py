@@ -167,7 +167,7 @@ def run_single_aggregation(collection_id,
         running_aggregators.remove(collection_id)
         return 1
     except Exception as e:
-        logger.error('An error occurred', str(e))
+        logger.error('An error occurred: %s', str(e))
         running_aggregators.remove(collection_id)
         return 1
 
