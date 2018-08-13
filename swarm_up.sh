@@ -10,6 +10,7 @@ function getProperty {
 
 export image_tag=`cat VERSION | grep "VERSION" | cut -d'=' -f2`
 
+echo Bootstrapping SMFR VERSION ${image_tag}
 
 DOCKER_ID_USER=$(getProperty "DOCKER_ID_USER")
 DOCKER_ID_PASSWORD=$(getProperty "DOCKER_ID_PASSWORD")
