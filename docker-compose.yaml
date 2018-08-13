@@ -309,7 +309,6 @@ services:
       MYSQL_PASSWORD: ${MYSQL_PASSWORD}
       http_proxy: ${http_proxy}
       https_proxy: ${https_proxy}
-    command: -- python3.6 start.py
     depends_on:
     - mysql
     - cassandrasmfr
