@@ -183,6 +183,16 @@ class Annotator:
         return {'models': cls.models}
 
     @classmethod
+    def consumer_in_background(cls, lang):
+        """
+        Start Annotator for a collection in background (i.e. in a different thread)
+        :param lang: str two characters string denoting a language (e.g. 'en')
+        """
+        t = threading.Thread(target=cls.start_consumer, args=(lang,),
+                             name='Annotator Consumer {}'.format(lang))
+        t.start()
+
+    @classmethod
     def start_consumer(cls, lang='en'):
         """
         Main method that iterate over messages coming from Kafka queue,
