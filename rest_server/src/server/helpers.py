@@ -25,7 +25,8 @@ def runtime_from_leadtime(lead_time):
 
 def add_collection_from_rra_event(**event):
     runtime = runtime_from_leadtime(event['lead_time'])
-    data = {'trigger': event['trigger'], 'runtime': runtime, 'locations': event['bbox'],
+    data = {'trigger': event['trigger'], 'runtime': runtime,
+            'locations': event['bbox'], 'use_pipeline': True,
             'timezone': event.get('tzclient', '+00:00'), 'keywords': event['keywords'],
             'nuts2': event['efas_id'], 'forecast_id': int(event['forecast'])}
     collection = add_collection_helper(**data)

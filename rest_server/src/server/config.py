@@ -109,7 +109,7 @@ class RestServerConfiguration(metaclass=Singleton):
     annotator_kafka_topic = os.environ.get('ANNOTATOR_KAFKA_TOPIC', 'annotator')
     geocoder_kafka_topic = os.environ.get('GEOCODER_KAFKA_TOPIC', 'geocoder')
 
-    debug = not UNDER_TESTS and not os.environ.get('PRODUCTION', True)
+    debug = not UNDER_TESTS and os.environ.get('DEVELOPMENT', True)
 
     logger_level = logging.ERROR if UNDER_TESTS else logging.getLevelName(os.environ.get('LOGGING_LEVEL', 'DEBUG').upper())
     logger = logging.getLogger('RestServer config')

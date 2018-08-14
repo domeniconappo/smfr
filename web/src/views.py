@@ -85,7 +85,7 @@ def new_collection():
     if form.validate_on_submit():
         payload = {
             'configuration': form.configuration.data, 'keywords': form.keywords.data,
-            'bounding_box': form.bounding_box.data,
+            'bounding_box': form.bounding_box.data, 'use_pipeline': form.use_pipeline,
             'runtime': form.runtime.data, 'trigger': form.trigger.data, 'nuts2': form.nuts2.data,
             'forecast': form.forecast_id.data, 'tzclient': form.tzclient.data,
         }
@@ -154,15 +154,15 @@ def collection_details(collection_id):
         return render_template('details.html', data=res), 200
 
 
-@app.route('/annotate/<int:collection_id>/<string:lang>', methods=('GET',))
-def annotate_collection(collection_id, lang):
+@app.route('/annotate/<int:collection_id>', methods=('GET',))
+def annotate_collection(collection_id):
     try:
-        client.start_annotation(collection_id, lang)
+        client.start_annotation(collection_id)
     except SMFRRestException as e:
         add_message('An error occurred: {}'.format(e), category=MessageClass.ERROR)
         logger.error(str(e))
     else:
-        add_message('Classification started for collection: language: {}'.format(lang), category=MessageClass.SUCCESS)
+        add_message('Classification started for collection: {}'.format(collection_id), category=MessageClass.SUCCESS)
     finally:
         return redirect('/details/{}'.format(collection_id))
 

@@ -39,6 +39,7 @@ class Collection(BaseSchema):
     stopped_at = DateTime()
     bboxfinder = fields.String()
     bounding_box = fields.String()
+    use_pipeline = fields.Boolean()
 
 
 class CollectionPayload(BaseSchema):
@@ -50,6 +51,7 @@ class CollectionPayload(BaseSchema):
     keywords = fields.String()
     bounding_box = fields.Field()
     configuration = fields.Field()
+    use_pipeline = fields.Boolean()
 
 
 class OnDemandPayload(BaseSchema):

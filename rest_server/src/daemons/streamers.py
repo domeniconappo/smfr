@@ -49,8 +49,9 @@ class CollectorStreamer(TwythonStreamer):
                 message = tweet.serialize()
                 self.logger.debug('\n\nSending to persister queue: %s\n', str(tweet))
                 self.producer.send(self.persister_kafka_topic, message)
-                # send to next topic in the pipeline in case of on demand collections
-                if self.collection.is_ondemand and lang in AnnotatorClient.available_languages():
+                # send to next topic in the pipeline in case collection.use_pipeline == True
+                # On Demand collections always use pipelines
+                if self.collection.is_using_pipeline and lang in AnnotatorClient.available_languages():
                     topic = '{}_{}'.format(self.annotator_kafka_topic, lang)
                     self.producer.send(topic, message)
 

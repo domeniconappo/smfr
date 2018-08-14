@@ -12,6 +12,8 @@ services:
     volumes:
       - '${SMFR_DATADIR}/cassandra:/var/lib/cassandra:rw'
     container_name: cassandrasmfr
+    networks:
+      - back-tier
     ports:
       - '9042:9042'
       - '9160:9160'
@@ -52,6 +54,9 @@ services:
     ports:
       - '9092:9092'
       - '2181:2181'
+    networks:
+      - back-tier
+
     deploy:
       restart_policy:
         condition: on-failure
@@ -77,6 +82,9 @@ services:
       MYSQL_ROOT_PASSWORD: ${MYSQL_PASSWORD}
       MYSQL_DATABASE: ${MYSQL_DBNAME}
       MYSQL_ALLOW_EMPTY_PASSWORD: 'yes'
+    networks:
+      - back-tier
+
     deploy:
       restart_policy:
         condition: on-failure
@@ -99,6 +107,9 @@ services:
     ports:
       - '9200:9200'
       - '9300:9300'
+    networks:
+      - back-tier
+
     environment:
       bootstrap.memory_lock: 'true'
       discovery.type: 'single-node'
@@ -137,6 +148,9 @@ services:
       https_proxy: ${https_proxy}
     volumes:
       - './persister/src:/persister'
+    networks:
+      - back-tier
+
     depends_on:
       - kafka
       - cassandrasmfr
@@ -162,6 +176,9 @@ services:
     working_dir: /annotator
     ports:
       - '5556:5556'
+    networks:
+      - back-tier
+
     environment:
       LOGGING_LEVEL: ${LOGGING_LEVEL}
       TF_CPP_MIN_LOG_LEVEL: '2'
@@ -169,6 +186,7 @@ services:
       KERAS_BACKEND: tensorflow
       PERSISTER_KAFKA_TOPIC: ${PERSISTER_KAFKA_TOPIC}
       ANNOTATOR_KAFKA_TOPIC: ${ANNOTATOR_KAFKA_TOPIC}
+      DEVELOPMENT: ${DEVELOPMENT}
       KAFKA_BOOTSTRAP_SERVER: ${KAFKA_BOOTSTRAP_SERVER}
       CASSANDRA_HOST: ${CASSANDRA_HOST}
       CASSANDRA_PORT: ${CASSANDRA_PORT}
@@ -226,6 +244,9 @@ services:
       MYSQL_PASSWORD: ${MYSQL_PASSWORD}
       http_proxy: ${http_proxy}
       https_proxy: ${https_proxy}
+    networks:
+      - back-tier
+
     depends_on:
       - kafka
       - cassandrasmfr
@@ -240,6 +261,8 @@ services:
         constraints: [ node.labels.huge == true ]
 
   aggregator:
+    networks:
+      - back-tier
     restart: on-failure
     container_name: aggregator
     image: ${DOCKER_REGISTRY}/${AGGREGATOR_IMAGE}:${image_tag}
@@ -268,6 +291,7 @@ services:
       http_proxy: ${http_proxy}
       https_proxy: ${https_proxy}
     command: -- python3.6 start.py --${AGGREGATOR_RUN_CONF}
+
     depends_on:
       - mysql
       - cassandrasmfr
@@ -308,6 +332,8 @@ services:
 #      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
 #      http_proxy: ${http_proxy}
 #      https_proxy: ${https_proxy}
+#    networks:
+#      - back-tier
 #    depends_on:
 #    - mysql
 #    - cassandrasmfr
@@ -321,6 +347,9 @@ services:
 
   restserver:
     restart: always
+    networks:
+      - front-tier
+      - back-tier
     container_name: restserver
     image: ${DOCKER_REGISTRY}/${RESTSERVER_IMAGE}:${image_tag}
     build:
@@ -349,7 +378,7 @@ services:
       FLASK_APP: smfr.py
       SERVER_PATH_UPLOADS: /smfr/uploads/
       CQLENG_ALLOW_SCHEMA_MANAGEMENT: 1
-      PRODUCTION: ${PRODUCTION}
+      DEVELOPMENT: ${DEVELOPMENT}
       RESTSERVER_BASEPATH: '/1.0'
       FTP_USER: ${FTP_USER}
       FTP_PASS: ${FTP_PASS}
@@ -406,6 +435,8 @@ services:
     depends_on:
       - restserver
       - aggregator
+    networks:
+      - front-tier
     deploy:
       restart_policy:
         condition: on-failure
@@ -418,4 +449,5 @@ volumes:
   geonames_index:
 
 networks:
-  front
+  front-tier:
+  back-tier:

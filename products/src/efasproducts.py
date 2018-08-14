@@ -26,27 +26,6 @@ class Products:
     """
     Products component implementation
     """
-    _running = []
-    _stop_signals = []
-    _lock = threading.RLock()
-    kafka_bootstrap_server = '{}:9092'.format('kafka' if RUNNING_IN_DOCKER else '127.0.0.1')
-
-    kafkaup = False
-    retries = 5
-    while (not kafkaup) and retries >= 0:
-        try:
-            producer = KafkaProducer(bootstrap_servers=kafka_bootstrap_server, compression_type='gzip')
-        except NoBrokersAvailable:
-            logger.warning('Waiting for Kafka to boot...')
-            time.sleep(5)
-            retries -= 1
-            if retries < 0:
-                sys.exit(1)
-        else:
-            kafkaup = True
-            break
-
-    persister_kafka_topic = os.environ.get('PERSISTER_KAFKA_TOPIC', 'persister')
 
     @classmethod
     def log_config(cls):
@@ -65,7 +44,7 @@ class Products:
         # for t in tweets:
         #     pass
 
-        logger.info('Production of heatmap and most relevant tweets terminated for collection: %d.', collection_id)
+        logger.info('Production of shapefile "heatmap" and most relevant tweets terminated for collection: %d.', collection_id)
 
     @classmethod
     def produce(cls):

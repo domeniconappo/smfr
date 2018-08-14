@@ -1,6 +1,2 @@
-ujson
-flask
-flask-restful
-gunicorn
 kafka-python
 schedule

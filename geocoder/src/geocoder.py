@@ -170,7 +170,7 @@ class Geocoder:
                 retries += 1
             else:
                 es_up = True
-
+        # FIXME: hard coded minimum country confidence from mordecai
         for result in res:
             if result.get('country_conf', 0) < 0.4 or 'lat' not in result.get('geo', {}):
                 continue
@@ -276,57 +276,26 @@ class Geocoder:
         :param collection_id: MySQL id of collection as it's stored in virtual_twitter_collection table
         :type collection_id: int
         """
-        ttype = 'annotated'
         cls.logger.info('Starting Geocoding for collection: {}'.format(collection_id))
-        cls._running.append(collection_id)
+        with cls._lock:
+            cls._running.append(collection_id)
 
-        tweets = Tweet.get_iterator(collection_id, ttype)
+        ttype = 'annotated'
+        dataset = Tweet.get_iterator(collection_id, ttype)
 
-        errors = 0
-
-        for x, t in enumerate(tweets, start=1):
+        for i, tweet in enumerate(dataset, start=1):
             if collection_id in cls.stop_signals:
                 cls.logger.info('Stopping Geocoding process {}'.format(collection_id))
                 with cls._lock:
                     cls.stop_signals.remove(collection_id)
                 break
 
-            try:
-                # COMMENT OUT CODE BELOW: we will geolocate everything for the moment
-                # flood_prob = t.annotations.get('flood_probability', ('', 0.0))[1]
-                # if flood_prob <= cls.min_flood_prob:
-                #     continue
+            message = tweet.serialize()
+            cls.producer.send(cls.geocoder_kafka_topic, message)
 
-                nutsitem, nuts2_source, latlong = cls.find_nuts_heuristic(t)
-                if not latlong:
-                    continue
-
-                cls.set_geo_fields(latlong, nuts2_source, nutsitem, t)
-
-                message = t.serialize()
-                cls.logger.debug('Send geocoded tweet to persister: %s', str(t))
-
-                cls.producer.send(cls.persister_kafka_topic, message)
-
-            except Exception as e:
-                cls.logger.error(type(e))
-                cls.logger.error('An error occured during geotagging: %s', str(e))
-                errors += 1
-                if errors >= 100:
-                    cls.logger.error('Too many errors...going to terminate geolocalization')
-                    break
-                continue
-            finally:
-                if not (x % 500):
-                    cls.logger.info('\nExaminated: %d', x)
-                    # workaround for lru_cache "memory leak" problems
-                    # https://benbernardblog.com/tracking-down-a-freaky-python-memory-leak/
-                    cls.tagger.query_geonames.cache_clear()
-                    cls.tagger.query_geonames_country.cache_clear()
-
-        # remove from `_running` list
+            # remove from `_running` list
         cls._running.remove(collection_id)
-        cls.logger.info('Geotagging process terminated for collection: {}'.format(collection_id))
+        cls.logger.info('Geocoding process terminated! Collection: %s', collection_id)
 
     @classmethod
     def set_geo_fields(cls, latlong, nuts2_source, nutsitem, t):

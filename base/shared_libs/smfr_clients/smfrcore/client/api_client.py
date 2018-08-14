@@ -159,8 +159,8 @@ class ApiLocalClient:
     def get_collection(self, collection_id):
         return self._get('collection_details', path_kwargs={'id': collection_id})
 
-    def start_annotation(self, collection_id, lang='en'):
-        return self._post('annotate_collection', path_kwargs={'id': collection_id}, query_params={'lang': lang})
+    def start_annotation(self, collection_id):
+        return self._post('annotate_collection', path_kwargs={'id': collection_id})
 
     def start_geotagging(self, collection_id):
         return self._post('geotag_collection', path_kwargs={'id': collection_id})

@@ -86,7 +86,7 @@ def empty_dbs():
 
     if not configuration.debug:
         click.echo('Cannot empty dbs: not a development instance!')
-        click.echo('Set production to False in config.yaml')
+        click.echo('Set DEVELOPMENT env variable to 1 in .env')
         sys.exit(1)
 
     # removing all MySQL tables

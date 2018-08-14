@@ -223,18 +223,16 @@ def geolocalize(collection_id, startdate=None, enddate=None):
 
 # @check_identity
 # @jwt_required
-def annotate(collection_id, lang='en', startdate=None, enddate=None):
+def annotate(collection_id, startdate=None, enddate=None):
     """
 
     :param collection_id:
-    :param lang:
-    :param forecast_id:
     :param startdate:
     :param enddate:
     :return:
     """
     try:
-        res, code = AnnotatorClient.start(collection_id, lang, start_date=startdate, end_date=enddate)
+        res, code = AnnotatorClient.start(collection_id, start_date=startdate, end_date=enddate)
     except SMFRRestException as e:
         return {'error': {'description': str(e)}}, 500
     else:

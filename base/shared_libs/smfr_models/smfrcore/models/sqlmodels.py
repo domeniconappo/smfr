@@ -7,7 +7,7 @@ import arrow
 from arrow.parser import ParserError
 from passlib.apps import custom_app_context as pwd_context
 
-from sqlalchemy import Column, BigInteger, Integer, String, TIMESTAMP, Float, ForeignKey, Index
+from sqlalchemy import Column, BigInteger, Integer, String, TIMESTAMP, Float, ForeignKey, Index, Boolean
 from sqlalchemy_utils import ChoiceType, ScalarListType, JSONType
 from flask import Flask
 
@@ -119,6 +119,8 @@ class CollectorConfiguration(SMFRModel):
     consumer_secret = Column(String(200), nullable=False)
     access_token = Column(String(200), nullable=False)
     access_token_secret = Column(String(200), nullable=False)
+    user_id = Column(Integer, ForeignKey('users.id'))
+    user = sqldb.relationship('User', backref=sqldb.backref('users', uselist=False))
 
     @classmethod
     def create(cls, config):
@@ -188,6 +190,7 @@ class TwitterCollection(SMFRModel):
     configuration_id = Column(Integer, ForeignKey('collector_configuration.id'))
     configuration = sqldb.relationship('CollectorConfiguration', lazy='subquery',
                                        backref=sqldb.backref('collector_configuration', uselist=False))
+    use_pipeline = Column(Boolean, nullable=False, default=False)
 
     def __str__(self):
         return 'Collection<{o.id}: {o.forecast_id} - {o.trigger}>'.format(o=self)
@@ -287,6 +290,10 @@ class TwitterCollection(SMFRModel):
     @property
     def is_ondemand(self):
         return self.trigger == self.TRIGGER_ONDEMAND
+
+    @property
+    def is_using_pipeline(self):
+        return self.is_ondemand or self.use_pipeline
 
     @classmethod
     def convert_runtime(cls, runtime):

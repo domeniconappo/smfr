@@ -24,19 +24,17 @@ class AnnotatorApi(Resource):
     logger.setLevel(os.environ.get('LOGGING_LEVEL', 'DEBUG'))
 
     @marshal_with({'error': fields.Nested({'description': fields.Raw}), 'result': fields.Raw, 'action_performed': fields.Raw})
-    def put(self, collection_id, lang, action):
+    def put(self, collection_id, action):
         action = action.lower()
         if action not in ('start', 'stop'):
             return {'error': {'description': 'Unknown operation {}'.format(action)}}, 400
-        if lang not in Annotator.available_models()['models']:
-            return {'error': {'description': 'No models for language {}'.format(lang)}}, 400
 
         if action == 'start':
-            if Annotator.is_running_for(collection_id, lang):
-                return {'error': {'description': 'Annotator already running {}-{}'.format(collection_id, lang)}}, 400
-            Annotator.launch_in_background(collection_id, lang)
+            if Annotator.is_running_for(collection_id):
+                return {'error': {'description': 'Annotator already running (collection: {})'.format(collection_id)}}, 400
+            Annotator.launch_in_background(collection_id)
         elif action == 'stop':
-            Annotator.stop(collection_id, lang)
+            Annotator.stop(collection_id)
 
         return {'result': 'success', 'action_performed': action}, 201
 
@@ -62,9 +60,8 @@ class AnnotatorModels(Resource):
 
 
 if __name__ == 'start':
-    singleserver = bool(int(os.environ.get('SINGLENODE', 0)))
 
-    api.add_resource(AnnotatorApi, '/<int:collection_id>/<string:lang>/<string:action>')
+    api.add_resource(AnnotatorApi, '/<int:collection_id>/<string:action>')
     api.add_resource(RunningAnnotatorsApi, '/running')
     api.add_resource(AnnotatorModels, '/models')
     AnnotatorApi.logger.info('[OK] Annotator Microservice ready for incoming requests')
@@ -72,8 +69,10 @@ if __name__ == 'start':
     Annotator.log_config()
 
     # start topic consumers for pipeline
+    development = bool(int(os.environ.get('DEVELOPMENT', 0)))
     for language in Annotator.available_languages:
-        # if running docker compose on a single server, we just bootstrap Annotator EN to avoid out of memory errors
-        if singleserver and language == 'en' or not singleserver:
+        # if running docker compose on a single server/development,
+        # we just bootstrap Annotator EN to avoid eating the whole memory
+        if development and language == 'en' or not development:
             Annotator.logger.info('----- Starting KAFKA consumer on topic: annotator_%s', language)
             Annotator.consumer_in_background(language)

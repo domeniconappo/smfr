@@ -34,6 +34,15 @@
             <p class="col-sm-5 help-block">{{ form.trigger.errors[0] }}</p>
 
         </div>
+        <legend>Set pipeline for annotating and geocoding tweets as they are collected</legend>
+        <div class="form-group {% if form.use_pipeline.errors %} has-error {% endif %}">
+            {{form.use_pipeline.label(class="col-sm-4")}}
+            <div class="col-sm-3">
+            {{ form.use_pipeline(class="radio") }}
+            </div>
+            <p class="col-sm-5 help-block">{{ form.use_pipeline.errors[0] }}</p>
+
+        </div>
     </fieldset>
     <fieldset>
         <legend>{{ form.configuration.label.text }}</legend>

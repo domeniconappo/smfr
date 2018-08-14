@@ -32,7 +32,9 @@ class Annotator:
     _running = []
     _stop_signals = []
     _lock = threading.RLock()
+
     logger = logging.getLogger(__name__)
+
     kafka_bootstrap_server = '{}:9092'.format('kafka' if RUNNING_IN_DOCKER else '127.0.0.1')
     available_languages = list(models.keys())
     kafkaup = False
@@ -77,55 +79,46 @@ class Annotator:
         return cls._running
 
     @classmethod
-    def is_running_for(cls, collection_id, lang):
+    def is_running_for(cls, collection_id):
         """
         Return True if annotation is running for (collection_id, lang) couple. False otherwise
         :param collection_id: int Collection Id as it's stored in MySQL virtual_twitter_collection table
         :param lang: str two characters string denoting a language (e.g. 'en')
         :return: bool True if annotation is running for (collection_id, lang) couple
         """
-        return (collection_id, lang) in cls._running
+        return collection_id in cls._running
 
     @classmethod
-    def start(cls, collection_id, lang):
+    def start(cls, collection_id):
         """
         Annotation process for a collection using a specified language model.
         :param collection_id: int Collection Id as it's stored in MySQL virtual_twitter_collection table
         :param lang: str two characters string denoting a language (e.g. 'en')
                      or 'multilang' for multilanguage annotations
         """
-        import tensorflow as tf
+        cls.logger.info('Starting Annotation collection: %s', collection_id)
+        with cls._lock:
+            cls._running.append(collection_id)
         ttype = 'collected'
-        dataset = Tweet.get_iterator(collection_id, ttype, lang=lang)
+        dataset = Tweet.get_iterator(collection_id, ttype)
 
-        graph = tf.Graph()
-        with graph.as_default():
-            session = tf.Session()
-            with session.as_default():
-                model, tokenizer = cls.load_annotation_model(lang)
-
-                cls.logger.info('Starting Annotation collection: %s %s', collection_id, lang)
-
-                # add tuple (collection_id, language) to `_running` list
+        for i, tweet in enumerate(dataset, start=1):
+            if collection_id in cls._stop_signals:
+                cls.logger.info('Stopping annotation %s', collection_id)
                 with cls._lock:
-                    cls._running.append((collection_id, lang))
+                    cls._stop_signals.remove(collection_id)
+                break
+            lang = tweet.lang
+            if lang not in cls.available_languages:
+                cls.logger.debug('Skipping tweet %s - language %s', tweet.tweetid, lang)
 
-                for i, t in enumerate(dataset):
-                    if (collection_id, lang) in cls._stop_signals:
-                        cls.logger.info('Stopping annotation %s - %s', collection_id, lang)
-                        with cls._lock:
-                            cls._stop_signals.remove((collection_id, lang))
-                        break
-                    t = cls.annotate(model, t, tokenizer)
-                    message = t.serialize()
-                    cls.logger.debug('Sending annotated tweet to queue: %s', str(t))
-                    cls.producer.send(cls.persister_kafka_topic, message)
-                    if not (i % 1000):
-                        cls.logger.info('Annotated so far.... %d', i)
+            message = tweet.serialize()
+            topic = '{}_{}'.format(cls.annotator_kafka_topic, lang)
+            cls.producer.send(topic, message)
 
         # remove from `_running` list
-        cls._running.remove((collection_id, lang))
-        cls.logger.info('Annotation process terminated! Collection: %s for "%s" tweets', collection_id, ttype)
+        cls._running.remove(collection_id)
+        cls.logger.info('Annotation process terminated! Collection: %s', collection_id)
 
     @classmethod
     def annotate(cls, model, t, tokenizer):
@@ -147,16 +140,16 @@ class Annotator:
         return t
 
     @classmethod
-    def stop(cls, collection_id, lang):
+    def stop(cls, collection_id):
         """
         Stop signal for a running annotation process. If the Annotator is not running, operation is ignored.
         :param collection_id: int Collection Id as it's stored in MySQL virtual_twitter_collection table
         :param lang: str two characters string denoting a language (e.g. 'en')
         """
         with cls._lock:
-            if not cls.is_running_for(collection_id, lang):
+            if not cls.is_running_for(collection_id):
                 return
-            cls._stop_signals.append((collection_id, lang))
+            cls._stop_signals.append(collection_id)
 
     @classmethod
     def launch_in_background(cls, collection_id, lang):
@@ -174,7 +167,7 @@ class Annotator:
         return {'models': models}
 
     @classmethod
-    def consumer_in_background(cls, lang):
+    def consumer_in_background(cls, lang='en'):
         """
         Start Annotator consumer in background (i.e. in a different thread)
         :param lang: str two characters string denoting a language (e.g. 'en')

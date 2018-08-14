@@ -1,5 +1,5 @@
-from flask_wtf import FlaskForm, Form
-from wtforms import StringField, RadioField, FileField, HiddenField, FieldList, FormField, FloatField
+from flask_wtf import FlaskForm
+from wtforms import StringField, RadioField, HiddenField, FormField, FloatField, BooleanField
 from wtforms.fields.html5 import DateTimeField
 from wtforms.validators import DataRequired, Optional
 
@@ -38,6 +38,7 @@ class NewCollectorForm(FlaskForm):
     runtime = DateTimeField('Run until...', format='%Y-%m-%d %H:%M', validators=(Optional(),))
     nuts2 = StringField('NUTS2 Code', validators=(Optional(),))
     tzclient = HiddenField('tzclient', validators=(Optional(),))
+    use_pipeline = BooleanField('Use Pipeline', default=False)
 
 
 class ExportForm(FlaskForm):
