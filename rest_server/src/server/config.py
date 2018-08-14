@@ -40,8 +40,8 @@ CONFIG_STORE_PATH = os.environ.get('SERVER_PATH_UPLOADS', os.path.join(os.path.d
 CONFIG_FOLDER = '/configuration/' if RUNNING_IN_DOCKER else os.path.join(os.path.dirname(__file__), '../config/')
 NUM_SAMPLES = os.environ.get('NUM_SAMPLES', 100)
 
-logging.getLogger('cassandra').setLevel(logging.ERROR)
-logging.getLogger('kafka').setLevel(logging.ERROR)
+logging.getLogger('cassandra').setLevel(logging.WARNING)
+logging.getLogger('kafka').setLevel(logging.WARNING)
 logging.getLogger('connexion').setLevel(logging.ERROR)
 logging.getLogger('swagger_spec_validator').setLevel(logging.ERROR)
 logging.getLogger('urllib3').setLevel(logging.ERROR)

@@ -16,13 +16,17 @@ api = Api(app)
 logging.basicConfig(level=os.environ.get('LOGGING_LEVEL', 'DEBUG'), format=LOGGER_FORMAT, datefmt=LOGGER_DATE_FORMAT)
 
 
+logging.getLogger('cassandra').setLevel(logging.WARNING)
+logging.getLogger('kafka').setLevel(logging.WARNING)
+
+
+logger = logging.getLogger(__name__)
+
+
 class GeocoderApi(Resource):
     """
     Flask Restful API for Geocoder microservice
     """
-
-    logger = logging.getLogger(__name__)
-    logger.setLevel(logging.getLevelName(os.environ.get('LOGGING_LEVEL', 'DEBUG')))
 
     @marshal_with(
         {'error': fields.Nested({'description': fields.Raw}),
@@ -48,8 +52,6 @@ class RunningGeotaggersApi(Resource):
     Flask Restful API for Geocoder microservice for `/running` endpoint
     """
 
-    logger = logging.getLogger(__name__)
-
     @marshal_with_field(fields.List(fields.Integer))
     def get(self):
         return Geocoder.running(), 200
@@ -57,5 +59,5 @@ class RunningGeotaggersApi(Resource):
 
 api.add_resource(GeocoderApi, '/<int:collection_id>/<string:action>')
 api.add_resource(RunningGeotaggersApi, '/running')
-GeocoderApi.logger.info('Geocoder Microservice ready for incoming requests')
+logger.info('Geocoder Microservice ready for incoming requests')
 Geocoder.consumer_in_background()

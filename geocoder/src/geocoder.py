@@ -21,6 +21,9 @@ from smfrcore.models.sqlmodels import Nuts2, create_app
 from smfrcore.utils import RUNNING_IN_DOCKER
 
 
+logger = logging.getLogger(__name__)
+
+
 class Nuts2Finder:
 
     """
@@ -28,7 +31,6 @@ class Nuts2Finder:
     Warning: the method does not return NUTS2 code but the NUTS2 id as it's stored in EFAS NUTS2 table.
     TODO: Evaluate if it's better to refactor to a function instead of keeping this onemethod static class
     """
-    logger = logging.getLogger(__name__)
 
     @classmethod
     def _is_in_poly(cls, point, geo):
@@ -48,7 +50,7 @@ class Nuts2Finder:
         """
         point = Point(float(lon), float(lat))
         nuts2_candidates = Nuts2.get_nuts2(lat, lon)
-        cls.logger.debug('Returned %d nuts2 geometries to check', len(nuts2_candidates))
+        logger.debug('Returned %d nuts2 geometries to check', len(nuts2_candidates))
 
         for nuts2 in nuts2_candidates:
             geometry = nuts2.geometry[0]
@@ -60,7 +62,7 @@ class Nuts2Finder:
                     if cls._is_in_poly(point, subgeometry):
                         return nuts2
 
-        cls.logger.debug('No NUTS2 polygons is containing the point %s', str(point))
+        logger.debug('No NUTS2 polygons is containing the point %s', str(point))
         return None
 
 
@@ -165,7 +167,7 @@ class Geocoder:
             try:
                 res = cls.tagger.geoparse(tweet.full_text)
             except socket.timeout:
-                cls.logger.warning('ES not responding...throttling a bit')
+                logger.warning('ES not responding...throttling a bit')
                 time.sleep(3)
                 retries += 1
             else:
@@ -226,7 +228,7 @@ class Geocoder:
                     if nuts2:
                         coordinates = tweet_coords
                         nuts_source = 'coordinates'
-                        cls.logger.debug('Found Nuts from tweet geo... - coordinates')
+                        logger.debug('Found Nuts from tweet geo... - coordinates')
                         return nuts2, nuts_source, coordinates
                 return no_results
             else:
@@ -238,7 +240,7 @@ class Geocoder:
                         if nuts2 == nuts2_from_tweet:
                             coordinates = latlong
                             nuts_source = 'coordinates-and-mentions'
-                            cls.logger.debug('Found Nuts from tweet geo and mentions... - coordinates-and-mentions')
+                            logger.debug('Found Nuts from tweet geo and mentions... - coordinates-and-mentions')
                             return nuts2, nuts_source, coordinates
                     return no_results
                 else:
@@ -247,7 +249,7 @@ class Geocoder:
                         nuts2 = Nuts2Finder.find_nuts2(*coordinates)
                         if nuts2:
                             nuts_source = 'mentions'
-                            cls.logger.debug('Found Nuts... - Exactly one mention')
+                            logger.debug('Found Nuts... - Exactly one mention')
                             return nuts2, nuts_source, coordinates
 
                         return no_results
@@ -265,7 +267,7 @@ class Geocoder:
                                 if nuts2 == user_nuts2:
                                     coordinates = latlong
                                     nuts_source = 'mentions-and-user'
-                                    cls.logger.debug('Found Nuts... - User location')
+                                    logger.debug('Found Nuts... - User location')
                                     return nuts2, nuts_source, coordinates
                         return no_results
 
@@ -276,7 +278,7 @@ class Geocoder:
         :param collection_id: MySQL id of collection as it's stored in virtual_twitter_collection table
         :type collection_id: int
         """
-        cls.logger.info('Starting Geocoding for collection: {}'.format(collection_id))
+        logger.info('Starting Geocoding for collection: {}'.format(collection_id))
         with cls._lock:
             cls._running.append(collection_id)
 
@@ -285,7 +287,7 @@ class Geocoder:
 
         for i, tweet in enumerate(dataset, start=1):
             if collection_id in cls.stop_signals:
-                cls.logger.info('Stopping Geocoding process {}'.format(collection_id))
+                logger.info('Stopping Geocoding process {}'.format(collection_id))
                 with cls._lock:
                     cls.stop_signals.remove(collection_id)
                 break
@@ -295,7 +297,7 @@ class Geocoder:
 
             # remove from `_running` list
         cls._running.remove(collection_id)
-        cls.logger.info('Geocoding process terminated! Collection: %s', collection_id)
+        logger.info('Geocoding process terminated! Collection: %s', collection_id)
 
     @classmethod
     def set_geo_fields(cls, latlong, nuts2_source, nutsitem, t):
@@ -319,13 +321,12 @@ class Geocoder:
         """
         Start Geocoder consumer in background (i.e. in a different thread)
         """
-        t = threading.Thread(target=cls.start_consumer,
-                             name='Geocoder Consumer')
+        t = threading.Thread(target=cls.start_consumer, name='Geocoder Consumer')
         t.start()
 
     @classmethod
     def start_consumer(cls):
-        cls.logger.info('+++++++++++++ Geocoder consumer starting')
+        logger.info('+++++++++++++ Geocoder consumer starting')
         try:
             for i, msg in enumerate(cls.consumer):
                 tweet = None
@@ -333,7 +334,7 @@ class Geocoder:
                 try:
                     msg = msg.value.decode('utf-8')
                     tweet = Tweet.build_from_kafka_message(msg)
-                    cls.logger.debug('Read from queue: %s', str(tweet))
+                    logger.debug('Read from queue: %s', str(tweet))
                     try:
                         # COMMENT OUT CODE BELOW: we will geolocate everything for the moment
                         # flood_prob = t.annotations.get('flood_probability', ('', 0.0))[1]
@@ -346,35 +347,35 @@ class Geocoder:
 
                         cls.set_geo_fields(latlong, nuts2_source, nutsitem, tweet)
                         message = tweet.serialize()
-                        cls.logger.debug('Send geocoded tweet to persister: %s', str(tweet))
+                        logger.debug('Send geocoded tweet to persister: %s', str(tweet))
                         cls.producer.send(cls.persister_kafka_topic, message)
 
                     except Exception as e:
-                        cls.logger.error(type(e))
-                        cls.logger.error('An error occured during geotagging: %s', str(e))
+                        logger.error(type(e))
+                        logger.error('An error occured during geotagging: %s', str(e))
                         errors += 1
                         if errors >= 500:
-                            cls.logger.error('Too many errors...going to terminate geolocalization')
+                            logger.error('Too many errors...going to terminate geolocalization')
                             cls.consumer.close()
                             break
                         continue
                 except (ValidationError, ValueError, TypeError, InvalidRequest) as e:
-                    cls.logger.error(e)
-                    cls.logger.error('Poison message for Cassandra: %s', str(tweet) if tweet else msg)
+                    logger.error(e)
+                    logger.error('Poison message for Cassandra: %s', str(tweet) if tweet else msg)
                 except CQLEngineException as e:
-                    cls.logger.error(e)
+                    logger.error(e)
                 except Exception as e:
-                    cls.logger.error(type(e))
-                    cls.logger.error(e)
-                    cls.logger.error(msg)
+                    logger.error(type(e))
+                    logger.error(e)
+                    logger.error(msg)
 
         except CommitFailedError:
-            cls.logger.error('Geocoder consumer was disconnected during I/O operations. Exited.')
+            logger.error('Geocoder consumer was disconnected during I/O operations. Exited.')
         except ValueError:
             # tipically an I/O operation on closed epoll object
             # as the consumer can be disconnected in another thread (see signal handling in start.py)
             if cls.consumer._closed:
-                cls.logger.info('Geocoder consumer was disconnected during I/O operations. Exited.')
+                logger.info('Geocoder consumer was disconnected during I/O operations. Exited.')
             else:
                 cls.consumer.close()
         except KeyboardInterrupt:
