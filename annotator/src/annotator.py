@@ -5,7 +5,6 @@ import threading
 import time
 
 import ujson as json
-from subprocess import Popen, PIPE
 
 from cassandra import InvalidRequest
 from cassandra.cqlengine import CQLEngineException, ValidationError
@@ -14,13 +13,11 @@ from kafka.errors import NoBrokersAvailable, CommitFailedError
 import sklearn
 
 from smfrcore.models.cassandramodels import Tweet
-from smfrcore.utils import RUNNING_IN_DOCKER, LOGGER_FORMAT, LOGGER_DATE_FORMAT
+from smfrcore.utils import RUNNING_IN_DOCKER
 
-from helpers import create_text_for_cnn, models, models_path, models_by_language
+from helpers import create_text_for_cnn, models, models_path
 
-logging.basicConfig(level=os.environ.get('LOGGING_LEVEL', 'DEBUG'), format=LOGGER_FORMAT, datefmt=LOGGER_DATE_FORMAT)
 logger = logging.getLogger(__name__)
-
 logger.info('Importing KERAS....')
 start = time.time()
 from keras.models import load_model
@@ -37,9 +34,6 @@ class Annotator:
     _lock = threading.RLock()
     logger = logging.getLogger(__name__)
     kafka_bootstrap_server = '{}:9092'.format('kafka' if RUNNING_IN_DOCKER else '127.0.0.1')
-    models_path = os.path.join(os.environ.get('MODELS_PATH', '/'), 'models')
-    current_models_mapping = os.path.join(models_path, 'current-model.json')
-    models = models_by_language(current_models_mapping)
     available_languages = list(models.keys())
     kafkaup = False
     retries = 5
@@ -68,22 +62,10 @@ class Annotator:
 
     @classmethod
     def log_config(cls):
-        cls.logger.info('CNN Models folder %s', cls.models_path)
+        cls.logger.info('CNN Models folder %s', models_path)
         cls.logger.info('Loaded models')
-        for lang, model in cls.models.items():
+        for lang, model in models.items():
             cls.logger.info('%s --> %s', lang, model)
-
-    @classmethod
-    def download_cnn_models(cls):
-
-        git_command = ['/usr/bin/git', 'pull', 'origin', 'master']
-        repository = os.path.join(Annotator.models_path, '../')
-
-        git_query = Popen(git_command, cwd=repository, stdout=PIPE, stderr=PIPE)
-        git_status, error = git_query.communicate()
-        cls.logger.info(git_status)
-        cls.logger.info(error)
-        cls.models = models_by_language(cls.current_models_mapping)
 
     @classmethod
     def running(cls):
@@ -114,15 +96,13 @@ class Annotator:
         """
         import tensorflow as tf
         ttype = 'collected'
+        dataset = Tweet.get_iterator(collection_id, ttype, lang=lang)
+
         graph = tf.Graph()
         with graph.as_default():
             session = tf.Session()
             with session.as_default():
-                tokenizer_path = os.path.join(cls.models_path, cls.models[lang] + '.tokenizer')
-                tokenizer = sklearn.externals.joblib.load(tokenizer_path)
-                tokenizer.oov_token = None
-                model_path = os.path.join(cls.models_path, cls.models[lang] + '.model.h5')
-                model = load_model(model_path)
+                model, tokenizer = cls.load_annotation_model(lang)
 
                 cls.logger.info('Starting Annotation collection: %s %s', collection_id, lang)
 
@@ -130,8 +110,7 @@ class Annotator:
                 with cls._lock:
                     cls._running.append((collection_id, lang))
 
-                tweets = Tweet.get_iterator(collection_id, ttype, lang=lang)
-                for i, t in enumerate(tweets):
+                for i, t in enumerate(dataset):
                     if (collection_id, lang) in cls._stop_signals:
                         cls.logger.info('Stopping annotation %s - %s', collection_id, lang)
                         with cls._lock:
@@ -150,6 +129,13 @@ class Annotator:
 
     @classmethod
     def annotate(cls, model, t, tokenizer):
+        """
+
+        :param model:
+        :param t:
+        :param tokenizer:
+        :return:
+        """
         original_json = json.loads(t.tweet)
         text = create_text_for_cnn(original_json, [])
         sequences = tokenizer.texts_to_sequences([text])
@@ -185,12 +171,12 @@ class Annotator:
 
     @classmethod
     def available_models(cls):
-        return {'models': cls.models}
+        return {'models': models}
 
     @classmethod
     def consumer_in_background(cls, lang):
         """
-        Start Annotator for a collection in background (i.e. in a different thread)
+        Start Annotator consumer in background (i.e. in a different thread)
         :param lang: str two characters string denoting a language (e.g. 'en')
         """
         t = threading.Thread(target=cls.start_consumer, args=(lang,),
@@ -203,25 +189,23 @@ class Annotator:
         Main method that iterate over messages coming from Kafka queue,
         build a Tweet object and send it to next in pipeline.
         """
+        import tensorflow as tf
+        cls.logger.info('+++++++++++++ Annotator consumer lang=%s connected', lang)
+
         topic = '{}_{}'.format(cls.annotator_kafka_topic, lang)
+
         consumer = KafkaConsumer(
             topic, group_id='ANNOTATOR',
             auto_offset_reset='earliest',
             bootstrap_servers=cls.kafka_bootstrap_server,
             session_timeout_ms=30000, heartbeat_interval_ms=10000
         )
-        cls.logger.info('+++++++++++++ Annotator consumer lang=%s connected', lang)
-        import tensorflow as tf
 
         graph = tf.Graph()
         with graph.as_default():
             session = tf.Session()
             with session.as_default():
-                tokenizer_path = os.path.join(cls.models_path, cls.models[lang] + '.tokenizer')
-                tokenizer = sklearn.externals.joblib.load(tokenizer_path)
-                tokenizer.oov_token = None
-                model_path = os.path.join(cls.models_path, cls.models[lang] + '.model.h5')
-                model = load_model(model_path)
+                model, tokenizer = cls.load_annotation_model(lang)
 
                 try:
                     for i, msg in enumerate(consumer):
@@ -229,13 +213,16 @@ class Annotator:
                         try:
                             msg = msg.value.decode('utf-8')
                             tweet = Tweet.build_from_kafka_message(msg)
-                            tweet.ttype = 'annotated'
                             cls.logger.debug('Read from queue: %s', str(tweet))
+                            tweet.ttype = 'annotated'
                             tweet = cls.annotate(model, tweet, tokenizer)
                             message = tweet.serialize()
                             cls.logger.debug('Sending annotated tweet to queue: %s', str(tweet))
-                            cls.producer.send(cls.persister_kafka_topic, message)  # persist the annotated tweet
-                            cls.producer.send(cls.geocoder_kafka_topic, message)  # send to geocoding
+
+                            # persist the annotated tweet
+                            cls.producer.send(cls.persister_kafka_topic, message)
+                            # send annotated tweet to geocoding
+                            cls.producer.send(cls.geocoder_kafka_topic, message)
                         except (ValidationError, ValueError, TypeError, InvalidRequest) as e:
                             cls.logger.error(e)
                             cls.logger.error('Poison message for Cassandra: %s', str(tweet) if tweet else msg)
@@ -257,3 +244,12 @@ class Annotator:
                         consumer.close()
                 except KeyboardInterrupt:
                     consumer.close()
+
+    @classmethod
+    def load_annotation_model(cls, lang):
+        tokenizer_path = os.path.join(models_path, models[lang] + '.tokenizer')
+        tokenizer = sklearn.externals.joblib.load(tokenizer_path)
+        tokenizer.oov_token = None
+        model_path = os.path.join(models_path, models[lang] + '.model.h5')
+        model = load_model(model_path)
+        return model, tokenizer

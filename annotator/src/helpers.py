@@ -1,6 +1,8 @@
 import math
 import re
 import os
+import logging
+from subprocess import Popen, PIPE
 
 import ujson
 import geotext
@@ -19,6 +21,9 @@ regexp = {
     'newlines': re.compile(r'\n'),
     'double_spaces': re.compile(r'\s{2,}'),
 }
+models_path = os.path.join(os.environ.get('MODELS_PATH', '/'), 'models')
+current_models_mapping = os.path.join(models_path, 'current-model.json')
+logger = logging.getLogger(__name__)
 
 
 def replace_locations_loc_text(raw_text, locations):
@@ -142,3 +147,17 @@ def models_by_language(path):
             res = ujson.load(f)
     return res.get('model-by-language', {})
 
+
+def update_models():
+
+    git_command = ['/usr/bin/git', 'pull', 'origin', 'master']
+    repository = os.path.join(models_path, '../')
+
+    git_query = Popen(git_command, cwd=repository, stdout=PIPE, stderr=PIPE)
+    git_status, error = git_query.communicate()
+    logger.info(git_status)
+    logger.info(error)
+    return models_by_language(current_models_mapping)
+
+
+models = update_models()

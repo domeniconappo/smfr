@@ -346,8 +346,17 @@ class Geocoder:
         }
 
     @classmethod
+    def consumer_in_background(cls):
+        """
+        Start Geocoder consumer in background (i.e. in a different thread)
+        """
+        t = threading.Thread(target=cls.start_consumer,
+                             name='Geocoder Consumer')
+        t.start()
+
+    @classmethod
     def start_consumer(cls):
-        cls.logger.info('+++++++++++++ Geocoder consumer started')
+        cls.logger.info('+++++++++++++ Geocoder consumer starting')
         try:
             for i, msg in enumerate(cls.consumer):
                 tweet = None
@@ -367,9 +376,8 @@ class Geocoder:
                             continue
 
                         cls.set_geo_fields(latlong, nuts2_source, nutsitem, tweet)
-
-                        cls.logger.debug('Send geocoded tweet to persister: %s', str(tweet))
                         message = tweet.serialize()
+                        cls.logger.debug('Send geocoded tweet to persister: %s', str(tweet))
                         cls.producer.send(cls.persister_kafka_topic, message)
 
                     except Exception as e:
@@ -381,9 +389,6 @@ class Geocoder:
                             cls.consumer.close()
                             break
                         continue
-                    message = tweet.serialize()
-                    cls.logger.debug('Sending geocoded tweet to queue: %s', str(tweet))
-                    cls.producer.send(cls.persister_kafka_topic, message)  # persist the annotated tweet
                 except (ValidationError, ValueError, TypeError, InvalidRequest) as e:
                     cls.logger.error(e)
                     cls.logger.error('Poison message for Cassandra: %s', str(tweet) if tweet else msg)
