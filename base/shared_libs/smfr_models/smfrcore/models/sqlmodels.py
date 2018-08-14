@@ -120,7 +120,7 @@ class CollectorConfiguration(SMFRModel):
     access_token = Column(String(200), nullable=False)
     access_token_secret = Column(String(200), nullable=False)
     user_id = Column(Integer, ForeignKey('users.id'))
-    user = sqldb.relationship('User', backref=sqldb.backref('users', uselist=False))
+    user = sqldb.relationship('User', backref=sqldb.backref('configurations', uselist=True))
 
     @classmethod
     def create(cls, config):
@@ -185,12 +185,12 @@ class TwitterCollection(SMFRModel):
     started_at = Column(TIMESTAMP, nullable=True)
     stopped_at = Column(TIMESTAMP, nullable=True)
     runtime = Column(TIMESTAMP, nullable=True)
+    use_pipeline = Column(Boolean, nullable=False, default=False)
     user_id = Column(Integer, ForeignKey('users.id'))
-    user = sqldb.relationship('User', backref=sqldb.backref('users', uselist=False))
+    user = sqldb.relationship('User', backref=sqldb.backref('collections', uselist=True))
     configuration_id = Column(Integer, ForeignKey('collector_configuration.id'))
     configuration = sqldb.relationship('CollectorConfiguration', lazy='subquery',
-                                       backref=sqldb.backref('collector_configuration', uselist=False))
-    use_pipeline = Column(Boolean, nullable=False, default=False)
+                                       backref=sqldb.backref('collections', uselist=True))
 
     def __str__(self):
         return 'Collection<{o.id}: {o.forecast_id} - {o.trigger}>'.format(o=self)
@@ -447,7 +447,7 @@ class Aggregation(SMFRModel):
 
     id = Column(Integer, primary_key=True, autoincrement=True, nullable=False)
     collection_id = Column(Integer, ForeignKey('virtual_twitter_collection.id'))
-    collection = sqldb.relationship('TwitterCollection', backref=sqldb.backref('twitter_collection', uselist=False))
+    collection = sqldb.relationship('TwitterCollection', backref=sqldb.backref('aggregation', uselist=False))
     values = Column(JSONType, nullable=False)
     last_tweetid_collected = Column(BigInteger, nullable=True)
     last_tweetid_annotated = Column(BigInteger, nullable=True)

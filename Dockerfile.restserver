@@ -26,6 +26,8 @@ COPY base/shared_libs/scripts/wait_for_it.sh /scripts/
 COPY base/shared_libs/smfr_utils/. /smfr_utils/
 COPY base/shared_libs/smfr_clients/. /smfr_clients/
 COPY base/shared_libs/smfr_models/. /smfr_models/
+COPY ./rest_server/src/run_server.sh /scripts/
+
 RUN chmod -R a+x /scripts/ && pip3 install /smfr_utils/ \
  && pip3 install /smfr_clients/ && pip3 install /smfr_models/ && rm -R /root/.cache
 
@@ -35,4 +37,4 @@ COPY ./rest_server/src/config/flood_keywords.yaml /configuration/flood_keywords.
 
 EXPOSE 5555
 ENTRYPOINT ["/scripts/wait_for_it.sh", "cassandrasmfr:9160"]
-CMD ["--", "gunicorn", "-b", "0.0.0.0:5555", "--workers", "1", "--log-level", "warning", "--timeout", "240", "--threads", "4", "--worker-class", "gthread", "--reload", "--access-logfile", "-", "--name", "restserver", "start:app"]
+CMD ["--", "/scripts/run_server.sh"]

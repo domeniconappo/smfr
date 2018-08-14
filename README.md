@@ -97,32 +97,23 @@ yellow open   geonames 23vFz20STbudmqktmHVOLg   1   1   11139265            0   
 
 #### MySQL
 
-Whenever new models (or new fields) are added to the mysql schema, follow these steps to update DB.
-On development:
+Whenever new models (or new fields) are added to the mysql schema, follow these steps to update DB (development only).
+
 - start MySQL container only (other containers will exit due unsynched db)
 - install models package in a virtualenv
 - then execute flask alembic commands
 
 ```bash
-./singlenode_up.sh mysql
-pip install base/shared_libs/smfr_models/
-cd rest_server/src
-export FLASK__APP=smfr.py
-flask db migrate
-flask db upgrade
+$ ./singlenode_up.sh mysql
+$ ./install_shared_libs.sh
+$ cd rest_server/src
+$ export FLASK__APP=smfr.py
+$ flask db migrate
+$ flask db upgrade
 ```
 
-On dockerized server, once the migrations are under SCM and the service `restserver` has started:
+The last command `flask db upgrade` that performs the actual schema migration, could be omitted as it's executed at each startup of the rest server image anyway.
 
-```bash
-docker exec restserver flask db upgrade
-```
-
-If smfr_restserver image has problems to start due "unsynched" db tables, try the following command
-
-```bash
-docker run -e FLASK_APP=smfr.py --entrypoint='flask' smfr_restserver 'db upgrade'
-```
 
 From host, connect to MySQL DB as the docker root user with `mysql -h 127.0.0.1 -p` (if you have mysql client installed) or just use docker exec:
 `docker exec -it mysql mysql -h 127.0.0.1 -p`
