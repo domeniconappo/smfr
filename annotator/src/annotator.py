@@ -16,7 +16,7 @@ import sklearn
 from smfrcore.models.cassandramodels import Tweet
 from smfrcore.utils import RUNNING_IN_DOCKER, LOGGER_FORMAT, LOGGER_DATE_FORMAT
 
-from utils import create_text_for_cnn, models_by_language
+from helpers import create_text_for_cnn, models, models_path, models_by_language
 
 logging.basicConfig(level=os.environ.get('LOGGING_LEVEL', 'DEBUG'), format=LOGGER_FORMAT, datefmt=LOGGER_DATE_FORMAT)
 logger = logging.getLogger(__name__)
@@ -205,9 +205,10 @@ class Annotator:
         """
         topic = '{}_{}'.format(cls.annotator_kafka_topic, lang)
         consumer = KafkaConsumer(
-            topic, group_id='SMFR',
+            topic, group_id='ANNOTATOR',
             auto_offset_reset='earliest',
-            bootstrap_servers=cls.kafka_bootstrap_server
+            bootstrap_servers=cls.kafka_bootstrap_server,
+            session_timeout_ms=30000, heartbeat_interval_ms=10000
         )
         cls.logger.info('+++++++++++++ Annotator consumer lang=%s connected', lang)
         import tensorflow as tf

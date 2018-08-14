@@ -418,3 +418,6 @@ services:
 
 volumes:
   geonames_index:
+
+networks:
+  front

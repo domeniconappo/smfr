@@ -56,6 +56,7 @@ else
 fi
 
 # push images
+echo
 
 if [ -n "${DOCKER_ID_USER}" ] && [ ${command} == "push" ]; then
     PERSISTER_IMAGE=$(getProperty "PERSISTER_IMAGE")
@@ -71,16 +72,6 @@ if [ -n "${DOCKER_ID_USER}" ] && [ ${command} == "push" ]; then
 
     echo !!! Pushing images to ${DOCKER_REGISTRY} as user ${DOCKER_ID_USER}!!!
     echo
-    docker tag ${PERSISTER_IMAGE}:${image_tag} ${DOCKER_REGISTRY}/${PERSISTER_IMAGE}:${image_tag}
-    docker tag ${AGGREGATOR_IMAGE}:${image_tag} ${DOCKER_REGISTRY}/${AGGREGATOR_IMAGE}:${image_tag}
-    docker tag ${ANNOTATOR_IMAGE}:${image_tag} ${DOCKER_REGISTRY}/${ANNOTATOR_IMAGE}:${image_tag}
-    docker tag ${GEOCODER_IMAGE}:${image_tag} ${DOCKER_REGISTRY}/${GEOCODER_IMAGE}:${image_tag}
-    docker tag ${PRODUCTS_IMAGE}:${image_tag} ${DOCKER_REGISTRY}/${PRODUCTS_IMAGE}:${image_tag}
-    docker tag ${RESTSERVER_IMAGE}:${image_tag} ${DOCKER_REGISTRY}/${RESTSERVER_IMAGE}:${image_tag}
-    docker tag ${WEB_IMAGE}:${image_tag} ${DOCKER_REGISTRY}/${WEB_IMAGE}:${image_tag}
-    docker tag ${MYSQL_IMAGE}:${image_tag} ${DOCKER_REGISTRY}/${MYSQL_IMAGE}:${image_tag}
-    docker tag ${CASSANDRA_IMAGE}:${image_tag} ${DOCKER_REGISTRY}/${CASSANDRA_IMAGE}:${image_tag}
-    docker tag ${GEONAMES_IMAGE}:${image_tag} ${DOCKER_REGISTRY}/${GEONAMES_IMAGE}:${image_tag}
 
     docker push ${DOCKER_REGISTRY}/${PERSISTER_IMAGE}:${image_tag}
     docker push ${DOCKER_REGISTRY}/${AGGREGATOR_IMAGE}:${image_tag}

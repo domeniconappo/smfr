@@ -99,9 +99,10 @@ class Geocoder:
     persister_kafka_topic = os.environ.get('PERSISTER_KAFKA_TOPIC', 'persister')
     geocoder_kafka_topic = os.environ.get('GEOCODER_KAFKA_TOPIC', 'geocoder')
 
-    consumer = KafkaConsumer(geocoder_kafka_topic, group_id='SMFR',
+    consumer = KafkaConsumer(geocoder_kafka_topic, group_id='GEOCODER',
                              auto_offset_reset='earliest',
-                             bootstrap_servers=kafka_bootstrap_server)
+                             bootstrap_servers=kafka_bootstrap_server,
+                             session_timeout_ms=30000, heartbeat_interval_ms=10000)
     # try to use new mordecai with 'threads'
     tagger = Geoparser(geonames_host)
 
