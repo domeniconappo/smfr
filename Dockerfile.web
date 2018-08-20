@@ -10,7 +10,8 @@ RUN apt-get update && apt-get -y dist-upgrade && apt-get -y install apt-utils &&
 RUN pip3 install -U pip
 
 # build uwsgi and python plugin
-RUN mkdir -p /app && mkdir -p /smfr_clients && mkdir -p /smfr_utils && mkdir -p /smfr_models && mkdir -p /scripts \
+RUN mkdir -p /app && mkdir -p /smfr_libs && mkdir -p /smfr_clients && mkdir -p /smfr_utils \
+ && mkdir -p /smfr_libs/smfr_models && mkdir -p /smfr_libs/scripts \
  && mkdir -p /uwsgi && cd /uwsgi && wget https://projects.unbit.it/downloads/uwsgi-2.0.15.tar.gz \
  && tar xzvf uwsgi-2.0.15.tar.gz \
  && cd /uwsgi/uwsgi-2.0.15/ && python3.5 uwsgiconfig.py --build core \
@@ -22,11 +23,12 @@ RUN mkdir -p /app && mkdir -p /smfr_clients && mkdir -p /smfr_utils && mkdir -p 
 COPY ./web/requirements.txt /requirements.txt
 RUN pip3 install -r /requirements.txt && apt-get autoremove -y && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-COPY base/shared_libs/scripts/wait_for_it.sh /scripts/
-COPY base/shared_libs/smfr_utils/. /smfr_utils/
-COPY base/shared_libs/smfr_clients/. /smfr_clients/
-COPY base/shared_libs/smfr_models/. /smfr_models/
-RUN chmod -R a+x /scripts/ && pip3 install /smfr_utils/ && pip3 install /smfr_clients/ && rm -R /root/.cache
+COPY base/shared_libs/scripts/wait_for_it.sh /smfr_libs/scripts/
+COPY base/shared_libs/smfr_utils/. /smfr_libs/smfr_utils/
+COPY base/shared_libs/smfr_clients/. /smfr_libs/smfr_clients/
+COPY base/shared_libs/smfr_models/. /smfr_libs/smfr_models/
+RUN chmod -R a+x /smfr_libs/scripts/ && pip3 install /smfr_libs/smfr_utils/ \
+ && pip3 install /smfr_libs/smfr_clients/ && rm -R /root/.cache
 EXPOSE 8888
 
 # Custom Supervisord config

@@ -9,8 +9,8 @@ ENV GIT_REPO_MODELS ${models_repo}
 ENV MODELS_PATH /models
 ENV LANG=C.UTF-8
 
-RUN mkdir -p /annotator && mkdir -p /config && mkdir -p /smfr_models/ \
-    && mkdir -p /smfr_utils && mkdir -p /scripts
+RUN mkdir -p /annotator && mkdir -p /config && mkdir -p /smfr_libs && mkdir -p /smfr_libs/smfr_models/ \
+    && mkdir -p /smfr_libs/smfr_utils && mkdir -p /smfr_libs/scripts
 COPY ./annotator/requirements.txt /annotator/
 
 RUN pip3.6 install -r /annotator/requirements.txt
@@ -19,10 +19,11 @@ RUN git init ${MODELS_PATH}/ && cd ${MODELS_PATH}/ && git remote add origin ${GI
     git config core.sparsecheckout true && echo "models/*" >> .git/info/sparse-checkout && \
     git pull --depth=1 origin master && cd -
 
-COPY base/shared_libs/scripts/wait_for_it.sh /scripts/
-COPY base/shared_libs/smfr_utils/. /smfr_utils/
-COPY base/shared_libs/smfr_models/. /smfr_models/
-RUN chmod -R a+x /scripts/ && pip3 install /smfr_utils/ && pip3 install /smfr_models/ && rm -R /root/.cache
+COPY base/shared_libs/scripts/wait_for_it.sh /smfr_libs/scripts/
+COPY base/shared_libs/smfr_utils/. /smfr_libs/smfr_utils/
+COPY base/shared_libs/smfr_models/. /smfr_libs/smfr_models/
+RUN chmod -R a+x /smfr_libs/scripts/ && pip3 install /smfr_libs/smfr_utils/ \
+ && pip3 install /smfr_libs/smfr_models/ && rm -R /root/.cache
 COPY ./annotator/src/. /annotator
 
 EXPOSE 5556

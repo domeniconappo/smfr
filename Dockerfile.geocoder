@@ -3,7 +3,8 @@ MAINTAINER Domenico Nappo <domenico.nappo@ext.ec.europa.eu>
 
 ENV LANG=C.UTF-8
 
-RUN mkdir -p /smfr_utils && mkdir -p /smfr_models && mkdir -p /scripts && mkdir -p /geocoder && mkdir -p /config \
+RUN mkdir -p /smfr_libs && mkdir -p /smfr_libs/smfr_utils && mkdir -p /smfr_libs/smfr_models \
+ && mkdir -p /smfr_libs/scripts && mkdir -p /geocoder && mkdir -p /config \
     && pip3.6 install spacy && python3.6 -m spacy download en_core_web_lg
 
 ARG http_proxy
@@ -11,10 +12,11 @@ ARG https_proxy
 
 COPY ./geocoder/requirements.txt ./
 RUN pip3.6 install -r requirements.txt
-COPY base/shared_libs/scripts/wait_for_it.sh /scripts/
-COPY base/shared_libs/smfr_utils/. /smfr_utils/
-COPY base/shared_libs/smfr_models/. /smfr_models/
-RUN chmod -R a+x /scripts/ && pip3 install /smfr_utils/ && pip3 install /smfr_models/ && rm -R /root/.cache
+COPY base/shared_libs/scripts/wait_for_it.sh /smfr_libs/scripts/
+COPY base/shared_libs/smfr_utils/. /smfr_libs/smfr_utils/
+COPY base/shared_libs/smfr_models/. /smfr_libs/smfr_models/
+RUN chmod -R a+x /smfr_libs/scripts/ && pip3 install /smfr_libs/smfr_utils/ \
+ && pip3 install /smfr_libs/smfr_models/ && rm -R /root/.cache
 
 COPY ./geocoder/src/. /geocoder
 
