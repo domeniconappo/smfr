@@ -9,7 +9,7 @@ from decimal import Decimal
 
 import numpy as np
 import ujson as json
-from cassandra.cluster import Cluster, default_lbp_factory
+from cassandra.cluster import Cluster, default_lbp_factory, EXEC_PROFILE_DEFAULT, ExecutionProfile
 from cassandra.cqlengine.connection import register_connection, set_default_connection
 from cassandra.query import dict_factory
 from cassandra.auth import PlainTextAuthProvider
@@ -29,16 +29,18 @@ _hosts = [os.environ.get('CASSANDRA_HOST', 'cassandrasmfr')]
 _port = os.environ.get('CASSANDRA_PORT', 9042)
 _cassandra_user = os.environ.get('CASSANDRA_USER')
 _cassandra_password = os.environ.get('CASSANDRA_PASSWORD')
+_profile = ExecutionProfile(request_timeout=100, load_balancing_policy=default_lbp_factory(),
+                            row_factory=dict_factory)
 
 
 def _cassandra_session_factory():
     cluster_kwargs = {'compression': True,
                       'auth_provider': PlainTextAuthProvider(username=_cassandra_user, password=_cassandra_password),
-                      'load_balancing_policy': default_lbp_factory()}
+                      'execution_profiles': {EXEC_PROFILE_DEFAULT: _profile}}
     cluster = Cluster(_hosts, port=_port, **cluster_kwargs) if RUNNING_IN_DOCKER else Cluster(**cluster_kwargs)
     session = cluster.connect()
     session.row_factory = dict_factory
-    session.default_timeout = 20
+    session.default_timeout = 60
     session.execute('USE {}'.format(_keyspace))
     return session
 

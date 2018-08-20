@@ -58,26 +58,30 @@
                                        </tr>
                                        {% endif %}
                                        <tr>
-                                           <th colspan="2">Languages</th>
-                                           <td colspan="2">{{ data.collection.languages|join(', ') }}</td>
+                                           <th>Languages</th>
+                                           <td>{{ data.collection.languages|join(', ') }}</td>
                                            <th>Last started (UTC)</th>
                                            <td>{{ data.collection.started_at|datetimeformat('%Y-%m-%d %H:%M:%S') }}</td>
                                            <th>Last stopped (UTC)</th>
                                            <td>{{ data.collection.stopped_at|datetimeformat('%Y-%m-%d %H:%M:%S') }}</td>
+                                           <th>Pipeline activated</th>
+                                           <td>{% if data.collection.is_using_pipeline %} YES {% else %} NO {% endif %}</td>
                                        </tr>
+
                                        {% if data.collection.runtime %}
                                        <tr>
                                            <th colspan="4">Run until (local time)</th>
                                            <td colspan="4">{{ data.collection.runtime|datetimeformat('%Y-%m-%d %H:%M') }}</td>
                                        </tr>
                                        {% endif %}
+
                                        {% if data.collection.nuts2 %}
                                        <tr>
                                            <th colspan="4">NUTS2</th>
                                            <td colspan="4">{{ data.collection.nuts2 }}</td>
                                        </tr>
                                        {% endif %}
-                                          </tbody>
+                                       </tbody>
                                    </table>
 
 	                           </div>
@@ -146,7 +150,9 @@
                                    <div class="btn-group btn-group-justified" role="group">
                                        <div class="btn-group">
                                            {% set test = data.collection.id in data.running_geotaggers %}
-                                            <a {% if test %}title="Geotagging is currently running for this collection" class="btn btn-default disabled"{% else %} title="Start geotagging for annotated tweets in this collection" class="btn btn-default"{% endif %}
+                                            <a {% if test %}title="Geotagging is currently running for this collection" class="btn btn-default disabled"
+                                               {% elif data.collection.is_using_pipeline %}title="Pipeline is active for this collection" class="btn btn-default disabled"
+                                               {% else %} title="Start geotagging for annotated tweets in this collection" class="btn btn-default"{% endif %}
                                                href="/geolocalize/{{ data.collection.id }}"><em class="fas fa-globe"></em> Start Geocoding</a>
                                        </div>
                                    </div>
@@ -154,7 +160,9 @@
                                     <div class="btn-group btn-group-justified" role="group">
                                        <div class="btn-group">
                                            {% set test = data.collection.id in data.running_annotators %}
-                                            <a {% if test %}title="Annotator is currently running for this collection" class="btn btn-default disabled"{% else %} title="Start geotagging for annotated tweets in this collection" class="btn btn-default"{% endif %}
+                                            <a {% if test %}title="Annotator is currently running for this collection" class="btn btn-default disabled"
+                                               {% elif data.collection.is_using_pipeline %}title="Pipeline is active for this collection" class="btn btn-default disabled"
+                                               {% else %} title="Start geotagging for annotated tweets in this collection" class="btn btn-default"{% endif %}
                                                href="/annotate/{{ data.collection.id }}"><em class="fas fa-tasks"></em> Start Annotation</a>
                                        </div>
                                    </div>

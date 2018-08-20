@@ -39,7 +39,7 @@ class Collection(BaseSchema):
     stopped_at = DateTime()
     bboxfinder = fields.String()
     bounding_box = fields.String()
-    use_pipeline = fields.Boolean()
+    is_using_pipeline = fields.Boolean()
 
 
 class CollectionPayload(BaseSchema):

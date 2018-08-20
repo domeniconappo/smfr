@@ -350,7 +350,7 @@ definitions:
         type: string
       bounding_box:
         type: string
-      use_pipeline:
+      is_using_pipeline:
         type: boolean
 
   CollectionPayload:
@@ -377,7 +377,6 @@ definitions:
         type: object
       use_pipeline:
         type: boolean
-
 
   OnDemandPayload:
     type: object
