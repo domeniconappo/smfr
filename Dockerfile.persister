@@ -14,8 +14,9 @@ COPY base/shared_libs/scripts/wait_for_it.sh /smfr_libs/scripts/
 COPY base/shared_libs/smfr_utils/. /smfr_libs/smfr_utils/
 COPY base/shared_libs/smfr_clients/. /smfr_libs/smfr_clients/
 COPY base/shared_libs/smfr_models/. /smfr_libs/smfr_models/
-RUN chmod -R a+x /smfr_libs/scripts/ && pip3 install /smfr_utils/ && pip3 install /smfr_models/ && rm -R /root/.cache
+RUN chmod -R a+x /smfr_libs/scripts/ && pip3 install /smfr_libs/smfr_utils/ \
+ && pip3 install /smfr_libs/smfr_models/ && rm -R /root/.cache
 COPY ./persister/src/. /persister
 
-ENTRYPOINT ["/scripts/wait_for_it.sh", "cassandrasmfr:9160"]
+ENTRYPOINT ["/smfr_libs/scripts/wait_for_it.sh", "cassandrasmfr:9160"]
 CMD ["--", "python3.6", "start.py"]

@@ -37,5 +37,5 @@ COPY ./rest_server/src/config/admin_collector.yaml /configuration/admin_collecto
 COPY ./rest_server/src/config/flood_keywords.yaml /configuration/flood_keywords.yaml
 
 EXPOSE 5555
-ENTRYPOINT ["/scripts/wait_for_it.sh", "cassandrasmfr:9160"]
+ENTRYPOINT ["/smfr_libs/scripts/wait_for_it.sh", "cassandrasmfr:9160"]
 CMD ["--", "/scripts/run_server.sh"]

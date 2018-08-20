@@ -41,5 +41,5 @@ COPY ./web/conf/site.conf /etc/nginx/conf.d/site.conf
 COPY ./web/conf/uwsgi.ini /etc/uwsgi/uwsgi.ini
 
 COPY ./web/src/. /app/
-ENTRYPOINT ["/scripts/wait_for_it.sh", "restserver:5555"]
+ENTRYPOINT ["/smfr_libs/scripts/wait_for_it.sh", "restserver:5555"]
 CMD ["--", "/usr/bin/supervisord"]
