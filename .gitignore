@@ -126,10 +126,11 @@ celerybeat-schedule
 # dbs
 *.sql
 *.db
+
+# processed Dockerfiles
 /base/Dockerfile
 /cassandrasmfr/Dockerfile
 /geonames/Dockerfile
 /mysql/Dockerfile
-/install_shared_libs.sh
  docker-compose.override.yml
  
