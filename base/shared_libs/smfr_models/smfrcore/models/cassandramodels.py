@@ -31,7 +31,8 @@ def _cassandra_session_factory():
     _port = os.environ.get('CASSANDRA_PORT', 9042)
     _cassandra_user = os.environ.get('CASSANDRA_USER')
     _cassandra_password = os.environ.get('CASSANDRA_PASSWORD')
-    _profile = ExecutionProfile(request_timeout=100, load_balancing_policy=default_lbp_factory(),
+    _profile = ExecutionProfile(request_timeout=100,
+                                load_balancing_policy=default_lbp_factory(),
                                 row_factory=named_tuple_factory)
 
     cluster_kwargs = {'compression': True, 'execution_profiles': {EXEC_PROFILE_DEFAULT: _profile},

@@ -9,13 +9,12 @@ ARG download_folder
 ENV INSTALL_PATH /rest_server
 ENV LANG=C.UTF-8
 
-RUN apt-get update && apt-get install -y mariadb-client && mkdir -p /smfr_libs \
- && mkdir -p /smfr_libs/smfr_clients && mkdir -p /smfr_libs/smfr_utils \
- && mkdir -p /smfr_libs/smfr_models && mkdir -p /smfr_libs/scripts && mkdir -p /rest_server \
+RUN apt-get update && apt-get install -y mariadb-client \
+ && mkdir -p /scripts && mkdir -p /restserver && mkdir -p /restserver/smfrcore \
  && mkdir -p /configuration && mkdir -p /smfr/uploads/ && mkdir -p ~/.ssh/ && mkdir -p ${download_folder}
 
-COPY ./rest_server/requirements.txt /rest_server
-RUN pip3.6 install -r /rest_server/requirements.txt
+COPY ./rest_server/requirements.txt /restserver
+RUN pip3.6 install -r /restserver/requirements.txt
 
 # Clean up APT
 RUN apt-get autoremove -y && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
@@ -23,19 +22,18 @@ ENV PATH=/usr/local/mysql/bin/:$PATH
 
 RUN ssh-keyscan -t rsa ${ftp_host} >> ~/.ssh/known_hosts
 
-COPY base/shared_libs/scripts/wait_for_it.sh /smfr_libs/scripts/
-COPY base/shared_libs/smfr_utils/. /smfr_libs/smfr_utils/
-COPY base/shared_libs/smfr_clients/. /smfr_libs/smfr_clients/
-COPY base/shared_libs/smfr_models/. /smfr_libs/smfr_models/
-COPY ./rest_server/src/run_server.sh /smfr_libs/scripts/
+COPY base/shared_libs/scripts/wait_for_it.sh /scripts/
+COPY base/shared_libs/smfr_utils/smfrcore/. /restserver/smfrcore/
+COPY base/shared_libs/smfr_clients/smfrcore/. /restserver/smfrcore/
+COPY base/shared_libs/smfr_models/smfrcore/. /restserver/smfrcore/
+COPY ./rest_server/src/run_server.sh /scripts/
 
-RUN chmod -R a+x /smfr_libs/scripts/ && pip3 install /smfr_libs/smfr_utils/ \
- && pip3 install /smfr_libs/smfr_clients/ && pip3 install /smfr_libs/smfr_models/ && rm -R /root/.cache
+RUN chmod -R a+x /scripts/ && rm -R /root/.cache
 
-COPY ./rest_server/src/. /rest_server
+COPY ./rest_server/src/. /restserver
 COPY ./rest_server/src/config/admin_collector.yaml /configuration/admin_collector.yaml
 COPY ./rest_server/src/config/flood_keywords.yaml /configuration/flood_keywords.yaml
 
 EXPOSE 5555
-ENTRYPOINT ["/smfr_libs/scripts/wait_for_it.sh", "cassandrasmfr:9160"]
+ENTRYPOINT ["/scripts/wait_for_it.sh", "cassandrasmfr:9160"]
 CMD ["--", "/scripts/run_server.sh"]

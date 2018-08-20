@@ -176,6 +176,7 @@ services:
     working_dir: /annotator
     ports:
       - '5556:5556'
+      - '6006:6006'
     networks:
       - back-tier
 
@@ -226,6 +227,7 @@ services:
       - './geocoder/src:/geocoder'
     ports:
       - '5557:5557'
+      - '6006:6006'
     environment:
       LOGGING_LEVEL: ${LOGGING_LEVEL}
       TF_CPP_MIN_LOG_LEVEL: '2'

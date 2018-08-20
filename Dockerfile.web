@@ -6,13 +6,12 @@ ARG https_proxy
 
 ENV LANG=C.UTF-8
 
-RUN apt-get update && apt-get -y dist-upgrade && apt-get -y install apt-utils && apt-get -y install net-tools nginx supervisor
-RUN pip3 install -U pip
+RUN apt-get update && apt-get -y dist-upgrade && apt-get -y install apt-utils \
+ && apt-get -y install net-tools nginx supervisor && pip3 install -U pip
 
 # build uwsgi and python plugin
-RUN mkdir -p /app && mkdir -p /smfr_libs && mkdir -p /smfr_clients && mkdir -p /smfr_utils \
- && mkdir -p /smfr_libs/smfr_models && mkdir -p /smfr_libs/scripts \
- && mkdir -p /uwsgi && cd /uwsgi && wget https://projects.unbit.it/downloads/uwsgi-2.0.15.tar.gz \
+RUN mkdir -p /app && mkdir -p /app/smfrcore \
+ && mkdir -p /scripts && mkdir -p /uwsgi && cd /uwsgi && wget https://projects.unbit.it/downloads/uwsgi-2.0.15.tar.gz \
  && tar xzvf uwsgi-2.0.15.tar.gz \
  && cd /uwsgi/uwsgi-2.0.15/ && python3.5 uwsgiconfig.py --build core \
  && python3.5 uwsgiconfig.py --plugin plugins/python core && UWSGI_PROFILE=core python3.5 setup.py install \
@@ -20,15 +19,15 @@ RUN mkdir -p /app && mkdir -p /smfr_libs && mkdir -p /smfr_clients && mkdir -p /
 # fix ImportError: No module named '_sysconfigdata_m'
  && ln -fs /usr/lib/python3.5/plat-x86_64-linux-gnu/_sysconfigdata_m.py /usr/lib/python3.5/
 
-COPY ./web/requirements.txt /requirements.txt
-RUN pip3 install -r /requirements.txt && apt-get autoremove -y && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+COPY ./web/requirements.txt /app/requirements.txt
+RUN pip3 install -r /app/requirements.txt && apt-get autoremove -y \
+ && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-COPY base/shared_libs/scripts/wait_for_it.sh /smfr_libs/scripts/
-COPY base/shared_libs/smfr_utils/. /smfr_libs/smfr_utils/
-COPY base/shared_libs/smfr_clients/. /smfr_libs/smfr_clients/
-COPY base/shared_libs/smfr_models/. /smfr_libs/smfr_models/
-RUN chmod -R a+x /smfr_libs/scripts/ && pip3 install /smfr_libs/smfr_utils/ \
- && pip3 install /smfr_libs/smfr_clients/ && rm -R /root/.cache
+COPY base/shared_libs/scripts/wait_for_it.sh /scripts/
+COPY base/shared_libs/smfr_utils/smfrcore/. /app/smfrcore/
+COPY base/shared_libs/smfr_clients/smfrcore/. /app/smfrcore/
+
+RUN chmod -R a+x /scripts/ && rm -R /root/.cache
 EXPOSE 8888
 
 # Custom Supervisord config
@@ -41,5 +40,5 @@ COPY ./web/conf/site.conf /etc/nginx/conf.d/site.conf
 COPY ./web/conf/uwsgi.ini /etc/uwsgi/uwsgi.ini
 
 COPY ./web/src/. /app/
-ENTRYPOINT ["/smfr_libs/scripts/wait_for_it.sh", "restserver:5555"]
+ENTRYPOINT ["/scripts/wait_for_it.sh", "restserver:5555"]
 CMD ["--", "/usr/bin/supervisord"]

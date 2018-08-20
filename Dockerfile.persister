@@ -7,16 +7,15 @@ ENV http_proxy ${http_proxy}
 ENV https_proxy ${https_proxy}
 ENV LANG C.UTF-8
 
-RUN mkdir -p /persister && mkdir -p /config && mkdir -p /smfr_libs \
- && mkdir -p /smfr_libs/smfr_clients && mkdir -p /smfr_libs/smfr_utils \
- && mkdir -p /smfr_libs/smfr_models && mkdir -p /smfr_libs/scripts
-COPY base/shared_libs/scripts/wait_for_it.sh /smfr_libs/scripts/
-COPY base/shared_libs/smfr_utils/. /smfr_libs/smfr_utils/
-COPY base/shared_libs/smfr_clients/. /smfr_libs/smfr_clients/
-COPY base/shared_libs/smfr_models/. /smfr_libs/smfr_models/
-RUN chmod -R a+x /smfr_libs/scripts/ && pip3 install /smfr_libs/smfr_utils/ \
- && pip3 install /smfr_libs/smfr_models/ && rm -R /root/.cache
+RUN mkdir -p /persister && mkdir -p /persister/smfrcore && mkdir -p /config && mkdir -p /scripts
+
+COPY base/shared_libs/scripts/wait_for_it.sh /scripts/
+COPY base/shared_libs/smfr_utils/smfrcore/. /persister/smfrcore/
+COPY base/shared_libs/smfr_clients/smfrcore/. /persister/smfrcore/
+COPY base/shared_libs/smfr_models/smfrcore/. /persister/smfrcore/
+
+RUN chmod -R a+x /scripts/ && rm -R /root/.cache
 COPY ./persister/src/. /persister
 
-ENTRYPOINT ["/smfr_libs/scripts/wait_for_it.sh", "cassandrasmfr:9160"]
+ENTRYPOINT ["/scripts/wait_for_it.sh", "cassandrasmfr:9160"]
 CMD ["--", "python3.6", "start.py"]
