@@ -10,6 +10,8 @@ function getProperty {
 
 export image_tag=`cat VERSION | grep "VERSION" | cut -d'=' -f2`
 
+echo
+echo
 echo -------------------------- -------------------------- -------------------------- --------------------------
 echo "                                        Bootstrapping SMFR VERSION ${image_tag}"
 echo -------------------------- -------------------------- -------------------------- --------------------------
