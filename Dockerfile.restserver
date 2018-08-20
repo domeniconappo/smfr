@@ -29,7 +29,7 @@ COPY base/shared_libs/smfr_clients/. /smfr_libs/smfr_clients/
 COPY base/shared_libs/smfr_models/. /smfr_libs/smfr_models/
 COPY ./rest_server/src/run_server.sh /smfr_libs/scripts/
 
-RUN chmod -R a+x /scripts/ && pip3 install /smfr_libs/smfr_utils/ \
+RUN chmod -R a+x /smfr_libs/scripts/ && pip3 install /smfr_libs/smfr_utils/ \
  && pip3 install /smfr_libs/smfr_clients/ && pip3 install /smfr_libs/smfr_models/ && rm -R /root/.cache
 
 COPY ./rest_server/src/. /rest_server
