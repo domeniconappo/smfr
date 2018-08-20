@@ -11,7 +11,7 @@ import numpy as np
 import ujson as json
 from cassandra.cluster import Cluster, default_lbp_factory, EXEC_PROFILE_DEFAULT, ExecutionProfile
 from cassandra.cqlengine.connection import register_connection, set_default_connection
-from cassandra.query import dict_factory
+from cassandra.query import named_tuple_factory
 from cassandra.auth import PlainTextAuthProvider
 from cassandra.util import OrderedMapSerializedKey
 from flask_cqlalchemy import CQLAlchemy
@@ -30,7 +30,7 @@ _port = os.environ.get('CASSANDRA_PORT', 9042)
 _cassandra_user = os.environ.get('CASSANDRA_USER')
 _cassandra_password = os.environ.get('CASSANDRA_PASSWORD')
 _profile = ExecutionProfile(request_timeout=100, load_balancing_policy=default_lbp_factory(),
-                            row_factory=dict_factory)
+                            row_factory=named_tuple_factory)
 
 
 def _cassandra_session_factory():
@@ -39,8 +39,6 @@ def _cassandra_session_factory():
                       'execution_profiles': {EXEC_PROFILE_DEFAULT: _profile}}
     cluster = Cluster(_hosts, port=_port, **cluster_kwargs) if RUNNING_IN_DOCKER else Cluster(**cluster_kwargs)
     session = cluster.connect()
-    session.row_factory = dict_factory
-    session.default_timeout = 60
     session.execute('USE {}'.format(_keyspace))
     return session
 
@@ -124,11 +122,15 @@ class Tweet(cqldb.Model):
 
     @classmethod
     def to_obj(cls, row):
-        return cls(**row)
+        return cls(**row._asdict())
+
+    @classmethod
+    def to_tuple(cls, row):
+        return row
 
     @classmethod
     def to_dict(cls, row):
-        return row
+        return row._asdict()
 
     @classmethod
     def to_json(cls, row):
@@ -137,34 +139,35 @@ class Tweet(cqldb.Model):
         :param row: dictionary representing a row in Cassandra tweet table
         :return: A dictionary that can be serialized
         """
-        for k, v in row.items():
+        res = {}
+        for k, v in row._asdict().items():
             if isinstance(v, (np.float32, np.float64, Decimal)):
-                row[k] = float(v)
+                res[k] = float(v)
             elif isinstance(v, (np.int32, np.int64)):
-                row[k] = int(v)
+                res[k] = int(v)
             elif isinstance(v, datetime.datetime):
-                row[k] = v.isoformat()
+                res[k] = v.isoformat()
             elif isinstance(v, tuple):
-                row[k] = [float(i) if isinstance(i, (np.float32, np.float64, Decimal)) else i for i in v]
+                res[k] = [float(i) if isinstance(i, (np.float32, np.float64, Decimal)) else i for i in v]
             elif isinstance(v, OrderedMapSerializedKey):
                 # cassandra Map column
-                res = {}
+                innerres = {}
                 for inner_k, inner_v in v.items():
                     if isinstance(inner_v, tuple):
                         encoded_v = [float(i) if isinstance(i, (np.float32, np.float64, Decimal)) else i for i in
                                      inner_v]
                         try:
-                            res[inner_k] = dict((encoded_v,))
+                            innerres[inner_k] = dict((encoded_v,))
                         except ValueError:
-                            res[inner_k] = (encoded_v[0], encoded_v[1])
+                            innerres[inner_k] = (encoded_v[0], encoded_v[1])
                     else:
-                        res[inner_k] = inner_v
+                        innerres[inner_k] = inner_v
 
-                row[k] = res
-        return row
+                res[k] = innerres
+        return res
 
     @classmethod
-    def get_iterator(cls, collection_id, ttype, lang=None, out_format='obj', last_tweetid=None):
+    def get_iterator(cls, collection_id, ttype, lang=None, out_format='tuple', last_tweetid=None):
         """
 
         :param collection_id:
@@ -174,7 +177,7 @@ class Tweet(cqldb.Model):
         :param last_tweetid:
         :return: smfrcore.models.cassandramodels.Tweet object, dictionary or JSON encoded, according out_format param
         """
-        if out_format not in ('obj', 'json', 'dict'):
+        if out_format not in ('obj', 'json', 'dict', 'tuple'):
             raise ValueError('out_format is not valid')
 
         if not hasattr(cls, 'stmt'):
@@ -206,31 +209,31 @@ class Tweet(cqldb.Model):
         )
 
     @classmethod
-    def make_table_object(cls, numrow, tweet_dict):
+    def make_table_object(cls, numrow, tweet_tuple):
         """
         Return dictionary that can be used in HTML5 tables / Jinja templates
         :param numrow: int: numrow
-        :param tweet_dict: dict representing Tweet row in smfr_persistent.tweet column family
+        :param tweet_tuple: namedtuple representing Tweet row in smfr_persistent.tweet column family
         :return:
         """
-        tweet_obj = cls(**tweet_dict)
-        tweet_dict['tweet'] = json.loads(tweet_dict['tweet'])
-        full_text = tweet_obj.full_text
-        tweet_dict['tweet']['full_text'] = full_text
-        twid = tweet_dict['tweetid']
+        original_tweet = json.loads(tweet_tuple.tweet)
+        full_text = tweet_tuple.full_text
+        twid = tweet_tuple.tweetid
+
         obj = {
             'rownum': numrow,
             'Full Text': full_text,
             'Tweet id': '<a href="https://twitter.com/statuses/{}">{}</a>'.format(twid, twid),
-            'original_tweet': tweet_obj.original_tweet_as_string,
-            'Type': tweet_dict['ttype'],
-            'Lang': tweet_dict['lang'] or '-',
-            'Annotations': tweet_obj.pretty_annotations,
+            'original_tweet': json.dumps(original_tweet, indent=2, sort_keys=True),
+            'Type': tweet_tuple.ttype,
+            'Lang': tweet_tuple.lang or '-',
+            'Annotations': Tweet.pretty_annotations(tweet_tuple.annotations),
+
             'LatLon': '<a href="https://www.openstreetmap.org/#map=13/{}/{}" target="_blank">lat: {}, lon: {}</a>'.format(
-                tweet_obj.latlong[0], tweet_obj.latlong[1], tweet_obj.latlong[0], tweet_obj.latlong[1]
-            ) if tweet_obj.latlong else '',
-            'Collected at': tweet_dict['created_at'] or '',
-            'Tweeted at': tweet_dict['tweet']['created_at'] or ''
+                tweet_tuple.latlong[0], tweet_tuple.latlong[1], tweet_tuple.latlong[0], tweet_tuple.latlong[1]
+            ) if tweet_tuple.latlong else '',
+            'Collected at': tweet_tuple.created_at or '',
+            'Tweeted at': original_tweet['created_at'] or ''
         }
         return obj
 
@@ -261,24 +264,39 @@ class Tweet(cqldb.Model):
         """
         return json.loads(self.tweet)
 
-    @property
-    def pretty_annotations(self):
-        if not self.annotations:
+    @classmethod
+    def pretty_annotations(cls, annotations):
+        if not annotations:
             return '-'
         out = ''
-        for k, v in self.annotations.items():
+        for k, v in annotations.items():
             out += '{}: {} - {}\n'.format(k, v[0], v[1])
 
         return '<pre>{}</pre>'.format(out)
 
     def serialize(self):
         """
-        Method to serialize object to Kafka
+        Method to serialize Tweet object to Kafka
         :return: string version in JSON format
         """
 
         outdict = {}
         for k, v in self.__dict__['_values'].items():
+            if isinstance(v.value, (datetime.datetime, datetime.date)):
+                outdict[k] = v.value.isoformat()
+            else:
+                outdict[k] = v.value
+        return json.dumps(outdict, ensure_ascii=False).encode('utf-8')
+
+    @classmethod
+    def serializetuple(cls, row):
+        """
+        Method to serialize Tweet object to Kafka
+        :return: string version in JSON format
+        """
+
+        outdict = {}
+        for k, v in row._asdict().items():
             if isinstance(v.value, (datetime.datetime, datetime.date)):
                 outdict[k] = v.value.isoformat()
             else:
@@ -304,7 +322,7 @@ class Tweet(cqldb.Model):
                 microsecond=0),
             ttype=ttype,
             nuts2=collection.nuts2 if isinstance(collection, TwitterCollection) else '',
-            annotations={}, lang=tweet['lang'], geo={}, tweet=json.dumps(tweet, ensure_ascii=False),
+            lang=tweet['lang'], tweet=json.dumps(tweet, ensure_ascii=False),
         )
 
     @classmethod

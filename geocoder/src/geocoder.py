@@ -292,7 +292,7 @@ class Geocoder:
                     cls.stop_signals.remove(collection_id)
                 break
 
-            message = tweet.serialize()
+            message = Tweet.serializetuple(tweet)
             cls.producer.send(cls.geocoder_kafka_topic, message)
 
             # remove from `_running` list

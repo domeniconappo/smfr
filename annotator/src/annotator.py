@@ -112,7 +112,8 @@ class Annotator:
             if lang not in cls.available_languages:
                 cls.logger.debug('Skipping tweet %s - language %s', tweet.tweetid, lang)
 
-            message = tweet.serialize()
+            # message = tweet.serialize()
+            message = Tweet.serializetuple(tweet)
             topic = '{}_{}'.format(cls.annotator_kafka_topic, lang)
             cls.producer.send(topic, message)
 

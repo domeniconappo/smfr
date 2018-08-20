@@ -1,8 +1,9 @@
 from setuptools import setup, find_packages
 
+
 setup(
     name='smfrcore-models',
-    version='1.5',
+    version='1.6',
     packages=find_packages(),
     description='SMFR Core modules (models)',
     author='Domenico Nappo',
