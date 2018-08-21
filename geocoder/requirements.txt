@@ -6,9 +6,12 @@ mysqlclient
 flask
 flask-restful
 flask-sqlalchemy
+flask-jwt-extended
 shapely
 fiona
 gunicorn
 arrow
 keras==2.2.2
 tensorflow==1.10.0
+PyYAML
+PyJWT

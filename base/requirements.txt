@@ -3,9 +3,8 @@ kafka-python
 cassandra-driver
 requests
 gunicorn
-numpy<1.15.0
+numpy==1.14.5
 cython
-tensorflow
 flask
 flask-sqlalchemy
 flask-cqlalchemy
@@ -13,3 +12,5 @@ sqlalchemy_utils
 ujson
 PassLib
 PyYAML
+PyJWT
+tensorflow==1.10.0

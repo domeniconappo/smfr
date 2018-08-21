@@ -6,16 +6,20 @@ ARG https_proxy
 
 ENV LANG=C.UTF-8
 
-RUN mkdir -p /aggregator && mkdir -p /aggregator/smfrcore && mkdir -p /config && mkdir -p /scripts
-
-COPY ./aggregator/requirements.txt /aggregator/
-RUN pip3.6 install -r /aggregator/requirements.txt
+RUN mkdir -p /aggregator && mkdir -p /requirements \
+ && mkdir -p /aggregator/smfrcore && mkdir -p /config && mkdir -p /scripts
 
 COPY base/shared_libs/scripts/wait_for_it.sh /scripts/
-COPY base/shared_libs/smfr_utils/smfrcore/. /aggregator/smfrcore/
-COPY base/shared_libs/smfr_models/smfrcore/. /aggregator/smfrcore/
-RUN chmod -R a+x /scripts/ && rm -R /root/.cache
+COPY base/shared_libs/smfr_utils/. /smfr_libs/utils/
+COPY base/shared_libs/smfr_models/. /smfr_libs/models/
+COPY ./aggregator/requirements.txt /requirements/
+
+RUN pip3.6 install -r /requirements/requirements.txt && pip3.6 install /smfr_libs/utils/ \
+ && pip3.6 install /smfr_libs/models/ \
+ && chmod -R a+x /scripts/ && rm -R /root/.cache
+
 COPY ./aggregator/src/. /aggregator/
+WORKDIR /aggregator
 
 ENTRYPOINT ["/scripts/wait_for_it.sh", "cassandrasmfr:9160"]
 CMD ["--", "python3.6", "start.py", "-r"]

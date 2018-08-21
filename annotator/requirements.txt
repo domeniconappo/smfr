@@ -8,6 +8,9 @@ tensorflow==1.10.0
 ujson
 flask
 flask-restful
+flask-jwt-extended
 gunicorn
 kafka-python
 arrow
+PyYAML
+PyJWT

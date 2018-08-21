@@ -3,6 +3,7 @@ mysqlclient
 ujson
 kafka-python
 arrow
+PyJWT
 
 Flask
 gunicorn

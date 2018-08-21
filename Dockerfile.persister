@@ -7,15 +7,20 @@ ENV http_proxy ${http_proxy}
 ENV https_proxy ${https_proxy}
 ENV LANG C.UTF-8
 
-RUN mkdir -p /persister && mkdir -p /persister/smfrcore && mkdir -p /config && mkdir -p /scripts
+RUN mkdir -p /persister && mkdir -p /requirements \
+ && mkdir -p /persister/smfrcore && mkdir -p /config && mkdir -p /scripts
 
 COPY base/shared_libs/scripts/wait_for_it.sh /scripts/
-COPY base/shared_libs/smfr_utils/smfrcore/. /persister/smfrcore/
-COPY base/shared_libs/smfr_clients/smfrcore/. /persister/smfrcore/
-COPY base/shared_libs/smfr_models/smfrcore/. /persister/smfrcore/
+COPY base/shared_libs/smfr_utils/. /smfr_libs/utils/
+COPY base/shared_libs/smfr_models/. /smfr_libs/models/
+COPY ./persister/requirements.txt /requirements/
 
-RUN chmod -R a+x /scripts/ && rm -R /root/.cache
+RUN pip3.6 install -r /requirements/requirements.txt && pip3.6 install /smfr_libs/utils/ \
+ && pip3.6 install /smfr_libs/models/ \
+ && chmod -R a+x /scripts/ && rm -R /root/.cache
+
 COPY ./persister/src/. /persister
+WORKDIR /persister
 
 ENTRYPOINT ["/scripts/wait_for_it.sh", "cassandrasmfr:9160"]
 CMD ["--", "python3.6", "start.py"]

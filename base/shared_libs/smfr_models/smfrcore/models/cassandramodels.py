@@ -9,8 +9,8 @@ from decimal import Decimal
 
 import numpy as np
 import ujson as json
-from cassandra.cluster import Cluster, default_lbp_factory, EXEC_PROFILE_DEFAULT, ExecutionProfile
-from cassandra.cqlengine.connection import register_connection, set_default_connection
+from cassandra.cluster import Cluster, default_lbp_factory
+from cassandra.cqlengine.connection import Connection, DEFAULT_CONNECTION, _connections
 from cassandra.query import named_tuple_factory
 from cassandra.auth import PlainTextAuthProvider
 from cassandra.util import OrderedMapSerializedKey
@@ -24,28 +24,21 @@ logger = logging.getLogger('models')
 logger.setLevel(os.environ.get('LOGGING_LEVEL', 'DEBUG'))
 cqldb = CQLAlchemy()
 
+_keyspace = os.environ.get('CASSANDRA_KEYSPACE', 'smfr_persistent')
+_hosts = [os.environ.get('CASSANDRA_HOST', 'cassandrasmfr')]
+_port = os.environ.get('CASSANDRA_PORT', 9042)
+_cassandra_user = os.environ.get('CASSANDRA_USER')
+_cassandra_password = os.environ.get('CASSANDRA_PASSWORD')
 
-def _cassandra_session_factory():
-    _keyspace = os.environ.get('CASSANDRA_KEYSPACE', 'smfr_persistent')
-    _hosts = [os.environ.get('CASSANDRA_HOST', 'cassandrasmfr')]
-    _port = os.environ.get('CASSANDRA_PORT', 9042)
-    _cassandra_user = os.environ.get('CASSANDRA_USER')
-    _cassandra_password = os.environ.get('CASSANDRA_PASSWORD')
-    _profile = ExecutionProfile(request_timeout=100,
-                                load_balancing_policy=default_lbp_factory(),
-                                row_factory=named_tuple_factory)
+cluster_kwargs = {'compression': True, 'load_balancing_policy': default_lbp_factory(),
+                  'auth_provider': PlainTextAuthProvider(username=_cassandra_user, password=_cassandra_password)}
+cassandra_cluster = Cluster(_hosts, port=_port, **cluster_kwargs) if RUNNING_IN_DOCKER else Cluster(**cluster_kwargs)
+cassandra_session = cassandra_cluster.connect()
+cassandra_session.default_timeout = 120
+cassandra_session.default_fetch_size = os.environ.get('CASSANDRA_FETCH_SIZE', 1000)
 
-    cluster_kwargs = {'compression': True, 'execution_profiles': {EXEC_PROFILE_DEFAULT: _profile},
-                      'auth_provider': PlainTextAuthProvider(username=_cassandra_user, password=_cassandra_password)}
-    cluster = Cluster(_hosts, port=_port, **cluster_kwargs) if RUNNING_IN_DOCKER else Cluster(**cluster_kwargs)
-    session = cluster.connect()
-    session.execute('USE {}'.format(_keyspace))
-    return session
-
-
-_session = _cassandra_session_factory()
-register_connection(str(_session), session=_session)
-set_default_connection(str(_session))
+cassandra_default_connection = Connection.from_session(DEFAULT_CONNECTION, session=cassandra_session)
+_connections[DEFAULT_CONNECTION] = cassandra_default_connection
 
 
 class Tweet(cqldb.Model):
@@ -54,8 +47,8 @@ class Tweet(cqldb.Model):
     """
     __keyspace__ = _keyspace
 
-    session = _session
-    session.default_fetch_size = os.environ.get('CASSANDRA_FETCH_SIZE', 1000)
+    session = cassandra_session
+    session.row_factory = named_tuple_factory
 
     TYPES = [
         ('annotated', 'Annotated'),
@@ -191,7 +184,7 @@ class Tweet(cqldb.Model):
 
         lang = lang.lower() if lang else None
         for row in results:
-            if lang and row.get('lang') != lang:
+            if lang and row.lang != lang:
                 continue
             yield getattr(cls, 'to_{}'.format(out_format))(row)
 
@@ -201,11 +194,13 @@ class Tweet(cqldb.Model):
         Generate prepared SQL statements for existing tables
         """
         cls.samples_stmt = cls.session.prepare(
-            "SELECT * FROM tweet WHERE collectionid=? AND ttype=? ORDER BY tweetid DESC LIMIT ?"
+            'SELECT * FROM {}.tweet WHERE collectionid=? AND ttype=? ORDER BY tweetid DESC LIMIT ?'.format(cls.__keyspace__)
         )
-        cls.stmt = cls.session.prepare("SELECT * FROM tweet WHERE collectionid=? AND ttype=? ORDER BY tweetid DESC")
+        cls.stmt = cls.session.prepare(
+            'SELECT * FROM {}.tweet WHERE collectionid=? AND ttype=? ORDER BY tweetid DESC'.format(cls.__keyspace__)
+        )
         cls.stmt_with_last_tweetid = cls.session.prepare(
-            "SELECT * FROM tweet WHERE collectionid=? AND ttype=? AND tweet_id>?"
+            'SELECT * FROM {}.tweet WHERE collectionid=? AND ttype=? AND tweet_id>?'.format(cls.__keyspace__)
         )
 
     @classmethod
@@ -217,7 +212,7 @@ class Tweet(cqldb.Model):
         :return:
         """
         original_tweet = json.loads(tweet_tuple.tweet)
-        full_text = tweet_tuple.full_text
+        full_text = cls.get_full_text(tweet_tuple)
         twid = tweet_tuple.tweetid
 
         obj = {
@@ -329,8 +324,8 @@ class Tweet(cqldb.Model):
     def build_from_kafka_message(cls, message):
         """
 
-        :param message:
-        :return:
+        :param message: json string from Kafka queue
+        :return: Tweet object
         """
         values = json.loads(message)
         obj = cls()
@@ -363,3 +358,8 @@ class Tweet(cqldb.Model):
             full_text = tweet.get('full_text') or tweet.get('extended_tweet', {}).get('full_text', '') or tweet.get('text', '')
 
         return full_text
+
+    @classmethod
+    def get_full_text(cls, tweet_tuple):
+        tweet = cls.to_obj(tweet_tuple)
+        return tweet.full_text

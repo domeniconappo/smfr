@@ -2,6 +2,31 @@ version: '3.4'
 
 services:
 
+  kafka:
+    restart: always
+    image: ${DOCKER_REGISTRY}/${KAFKA_IMAGE}
+    container_name: kafka
+    hostname: kafka
+    environment:
+      ADVERTISED_PORT: 9092
+      ADVERTISED_HOST: kafka
+      AUTO_CREATE_TOPICS: "true"  # true by default anyway
+    depends_on:
+    - cassandrasmfr
+    ports:
+    - '9092:9092'
+    - '2181:2181'
+    networks:
+    - back-tier
+
+    deploy:
+      restart_policy:
+        condition: on-failure
+        max_attempts: 3
+        window: 120s
+      placement:
+        constraints: [ node.labels.medium == true ]
+
   cassandrasmfr:
     build:
       context: ./
@@ -39,31 +64,6 @@ services:
         window: 60s
       placement:
         constraints: [ node.labels.large == true ]
-
-  kafka:
-    restart: always
-    image: ${DOCKER_REGISTRY}/${KAFKA_IMAGE}
-    container_name: kafka
-    hostname: kafka
-    environment:
-      ADVERTISED_PORT: 9092
-      ADVERTISED_HOST: kafka
-      AUTO_CREATE_TOPICS: "true"  # true by default anyway
-    depends_on:
-      - cassandrasmfr
-    ports:
-      - '9092:9092'
-      - '2181:2181'
-    networks:
-      - back-tier
-
-    deploy:
-      restart_policy:
-        condition: on-failure
-        max_attempts: 3
-        window: 120s
-      placement:
-        constraints: [ node.labels.medium == true ]
 
   mysql:
     build:
