@@ -17,6 +17,9 @@ if __name__ == '__main__':
                         help='If passed, aggregate only background collections now')
     parser.add_argument('-r', '--running', action='store_true', default=False,
                         help='If passed, aggregate running or recently (<6 hours) stopped collections')
+    parser.add_argument('-c', '--collections', nargs=argparse.ZERO_OR_MORE, type=int,
+                        help='If passed as a list of space separated numbers, '
+                             'aggregate on collection represented by these ids.')
 
     conf = parser.parse_args()
     logger.info('Configuration: %s every %s minutes', pretty_running_conf(conf), scheduling_interval)

@@ -11,6 +11,8 @@ from cassandra.cqlengine import CQLEngineException, ValidationError
 from kafka import KafkaProducer, KafkaConsumer
 from kafka.errors import NoBrokersAvailable, CommitFailedError
 import sklearn
+from keras.models import load_model
+from keras.preprocessing.sequence import pad_sequences
 
 from smfrcore.models.cassandramodels import Tweet
 from smfrcore.utils import RUNNING_IN_DOCKER
@@ -18,11 +20,7 @@ from smfrcore.utils import RUNNING_IN_DOCKER
 from helpers import create_text_for_cnn, models, models_path
 
 logger = logging.getLogger(__name__)
-logger.info('Importing KERAS....')
-start = time.time()
-from keras.models import load_model
-from keras.preprocessing.sequence import pad_sequences
-logger.info('Importing KERAS took %f s', (time.time() - start) / 1000)
+DEVELOPMENT = bool(int(os.environ.get('DEVELOPMENT', 0)))
 
 
 class Annotator:
@@ -109,10 +107,9 @@ class Annotator:
                     cls._stop_signals.remove(collection_id)
                 break
             lang = tweet.lang
-            if lang not in cls.available_languages:
+            if lang not in cls.available_languages or DEVELOPMENT and lang != 'en':
                 cls.logger.debug('Skipping tweet %s - language %s', tweet.tweetid, lang)
 
-            # message = tweet.serialize()
             message = Tweet.serializetuple(tweet)
             topic = '{}_{}'.format(cls.annotator_kafka_topic, lang)
             cls.producer.send(topic, message)
@@ -153,14 +150,13 @@ class Annotator:
             cls._stop_signals.append(collection_id)
 
     @classmethod
-    def launch_in_background(cls, collection_id, lang):
+    def launch_in_background(cls, collection_id):
         """
         Start Annotator for a collection in background (i.e. in a different thread)
         :param collection_id: int Collection Id as it's stored in MySQL virtual_twitter_collection table
-        :param lang: str two characters string denoting a language (e.g. 'en')
         """
-        t = threading.Thread(target=cls.start, args=(collection_id, lang),
-                             name='Annotator {} {}'.format(collection_id, lang))
+        t = threading.Thread(target=cls.start, args=(collection_id,),
+                             name='Annotator {}'.format(collection_id))
         t.start()
 
     @classmethod

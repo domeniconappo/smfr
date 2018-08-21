@@ -286,17 +286,10 @@ class Tweet(cqldb.Model):
     @classmethod
     def serializetuple(cls, row):
         """
-        Method to serialize Tweet object to Kafka
+        Method to serialize a tuple representing a row in Cassandra tweet table
         :return: string version in JSON format
         """
-
-        outdict = {}
-        for k, v in row._asdict().items():
-            if isinstance(v.value, (datetime.datetime, datetime.date)):
-                outdict[k] = v.value.isoformat()
-            else:
-                outdict[k] = v.value
-        return json.dumps(outdict, ensure_ascii=False).encode('utf-8')
+        return cls.to_obj(row).serialize()
 
     @classmethod
     def build_from_tweet(cls, collection, tweet, ttype='collected'):
