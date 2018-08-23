@@ -192,7 +192,7 @@ def run_single_aggregation(collection_id,
 
 def pretty_running_conf(conf):
     for k, v in vars(conf).items():
-        if v and k != 'collections':
+        if k != 'collections' and v:
             return 'Aggregation on {} collections'.format(k)
-        else:
+        elif k == 'collections' and v:
             return 'Aggregation on collections: {}'.format(v)

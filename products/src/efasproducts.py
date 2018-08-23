@@ -40,9 +40,9 @@ class Products:
         logger.info('Production of heatmap and most relevant tweets started for collection: %d.', collection_id)
         ttype = 'geotagged'
 
-        # tweets = Tweet.get_iterator(collection_id, ttype)
-        # for t in tweets:
-        #     pass
+        tweets = Tweet.get_iterator(collection_id, ttype)
+        for t in tweets:
+            pass
 
         logger.info('Production of shapefile "heatmap" and most relevant tweets terminated for collection: %d.', collection_id)
 
