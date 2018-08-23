@@ -12,7 +12,7 @@ import time
 from cassandra import InvalidRequest
 from cassandra.cqlengine import ValidationError, CQLEngineException
 from kafka import KafkaProducer, KafkaConsumer
-from kafka.errors import NoBrokersAvailable, CommitFailedError
+from kafka.errors import NoBrokersAvailable, CommitFailedError, KafkaTimeoutError
 from mordecai import Geoparser
 from shapely.geometry import Point, Polygon
 
@@ -21,7 +21,8 @@ from smfrcore.models.sqlmodels import Nuts2, create_app
 from smfrcore.utils import RUNNING_IN_DOCKER
 
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger('GEOCODER')
+logger.setLevel(os.environ.get('LOGGING_LEVEL', 'DEBUG'))
 
 
 class Nuts2Finder:
@@ -82,11 +83,20 @@ class Geocoder:
 
     # FIXME duplicated code (same as Annotator)
     # TODO Need a class in shared_lib where to put common code for microservices like this
-    kafkaup = False
     retries = 5
-    while (not kafkaup) and retries >= 0:
+    persister_kafka_topic = os.environ.get('PERSISTER_KAFKA_TOPIC', 'persister')
+    geocoder_kafka_topic = os.environ.get('GEOCODER_KAFKA_TOPIC', 'geocoder')
+
+    while retries >= 0:
         try:
-            producer = KafkaProducer(bootstrap_servers=kafka_bootstrap_server, compression_type='gzip')
+            producer = KafkaProducer(bootstrap_servers=kafka_bootstrap_server, retries=5,
+                                     compression_type='gzip', buffer_memory=134217728,
+                                     batch_size=1048576)
+            logger.info('[OK] KAFKA Producer')
+            consumer = KafkaConsumer(geocoder_kafka_topic, group_id='GEOCODER',
+                                     auto_offset_reset='earliest',
+                                     bootstrap_servers=kafka_bootstrap_server,
+                                     session_timeout_ms=40000, heartbeat_interval_ms=15000)
         except NoBrokersAvailable:
             logger.warning('Waiting for Kafka to boot...')
             time.sleep(5)
@@ -94,18 +104,8 @@ class Geocoder:
             if retries < 0:
                 sys.exit(1)
         else:
-            kafkaup = True
             break
 
-    min_flood_prob = float(os.environ.get('MIN_FLOOD_PROBABILITY', 0.59))
-    persister_kafka_topic = os.environ.get('PERSISTER_KAFKA_TOPIC', 'persister')
-    geocoder_kafka_topic = os.environ.get('GEOCODER_KAFKA_TOPIC', 'geocoder')
-
-    consumer = KafkaConsumer(geocoder_kafka_topic, group_id='GEOCODER',
-                             auto_offset_reset='earliest',
-                             bootstrap_servers=kafka_bootstrap_server,
-                             session_timeout_ms=30000, heartbeat_interval_ms=10000)
-    # try to use new mordecai with 'threads'
     tagger = Geoparser(geonames_host)
 
     @classmethod
@@ -168,13 +168,13 @@ class Geocoder:
                 res = cls.tagger.geoparse(tweet.full_text)
             except socket.timeout:
                 logger.warning('ES not responding...throttling a bit')
-                time.sleep(3)
+                time.sleep(5)
                 retries += 1
             else:
                 es_up = True
         # FIXME: hard coded minimum country confidence from mordecai
         for result in res:
-            if result.get('country_conf', 0) < 0.4 or 'lat' not in result.get('geo', {}):
+            if result.get('country_conf', 0) < 0.5 or 'lat' not in result.get('geo', {}):
                 continue
             latlong_list.append((float(result['geo']['lat']), float(result['geo']['lon'])))
         return latlong_list
@@ -278,7 +278,7 @@ class Geocoder:
         :param collection_id: MySQL id of collection as it's stored in virtual_twitter_collection table
         :type collection_id: int
         """
-        logger.info('Starting Geocoding for collection: {}'.format(collection_id))
+        logger.info('>>>>>>>>>>>> Starting Geocoding for collection: {}'.format(collection_id))
         with cls._lock:
             cls._running.append(collection_id)
 
@@ -286,18 +286,25 @@ class Geocoder:
         dataset = Tweet.get_iterator(collection_id, ttype)
 
         for i, tweet in enumerate(dataset, start=1):
-            if collection_id in cls.stop_signals:
-                logger.info('Stopping Geocoding process {}'.format(collection_id))
-                with cls._lock:
-                    cls.stop_signals.remove(collection_id)
-                break
+            try:
+                if collection_id in cls.stop_signals:
+                    logger.info('Stopping Geocoding process {}'.format(collection_id))
+                    with cls._lock:
+                        cls.stop_signals.remove(collection_id)
+                    break
 
-            message = Tweet.serializetuple(tweet)
-            cls.producer.send(cls.geocoder_kafka_topic, message)
+                message = Tweet.serializetuple(tweet)
+                logger.debug('Sending tweet to GEOCODER %s', tweet.tweetid)
+                cls.producer.send(cls.geocoder_kafka_topic, message)
+            except KafkaTimeoutError as e:
+                logger.error(e)
+                logger.error('Kafka has problems to allocate memory for the message: throttling')
+                time.sleep(10)
 
             # remove from `_running` list
-        cls._running.remove(collection_id)
-        logger.info('Geocoding process terminated! Collection: %s', collection_id)
+        with cls._lock:
+            cls._running.remove(collection_id)
+        logger.info('<<<<<<<<<<<<< Geocoding process terminated! Collection: %s', collection_id)
 
     @classmethod
     def set_geo_fields(cls, latlong, nuts2_source, nutsitem, t):
@@ -334,7 +341,7 @@ class Geocoder:
                 try:
                     msg = msg.value.decode('utf-8')
                     tweet = Tweet.build_from_kafka_message(msg)
-                    logger.debug('Read from queue: %s', str(tweet))
+                    logger.debug('Read from queue: %s', tweet.tweetid)
                     try:
                         # COMMENT OUT CODE BELOW: we will geolocate everything for the moment
                         # flood_prob = t.annotations.get('flood_probability', ('', 0.0))[1]
@@ -343,11 +350,12 @@ class Geocoder:
 
                         nutsitem, nuts2_source, latlong = cls.find_nuts_heuristic(tweet)
                         if not latlong:
+                            logger.debug('Cannot geocode. Skipping: %s', tweet.tweetid)
                             continue
 
                         cls.set_geo_fields(latlong, nuts2_source, nutsitem, tweet)
                         message = tweet.serialize()
-                        logger.debug('Send geocoded tweet to persister: %s', str(tweet))
+                        logger.debug('Send geocoded tweet to PERSISTER: %s', str(tweet.geo))
                         cls.producer.send(cls.persister_kafka_topic, message)
 
                     except Exception as e:

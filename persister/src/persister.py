@@ -1,17 +1,22 @@
 import os
 import logging
+import sys
 import threading
+import time
 from collections import namedtuple
 
 from cassandra import InvalidRequest
 from cassandra.cqlengine import ValidationError, CQLEngineException
 from kafka import KafkaConsumer
-from kafka.errors import CommitFailedError
+from kafka.errors import CommitFailedError, NoBrokersAvailable
 
 from smfrcore.models.cassandramodels import Tweet
 
 
 PersisterConfiguration = namedtuple('PersisterConfiguration', ['persister_kafka_topic', 'kafka_bootstrap_server'])
+
+logger = logging.getLogger('PERSISTER')
+logger.setLevel(os.environ.get('LOGGING_LEVEL', 'DEBUG'))
 
 
 class Persister:
@@ -19,12 +24,12 @@ class Persister:
         Persister component to save Tweet messages in Cassandra.
         It listens to the Kafka queue, build a Tweet object from messages and save it in Cassandra.
         """
-    config = PersisterConfiguration(persister_kafka_topic=os.environ.get('PERSISTER_KAFKA_TOPIC', 'persister'),
-                                    kafka_bootstrap_server=os.environ.get('KAFKA_BOOTSTRAP_SERVER', 'kafka:9092'))
+    config = PersisterConfiguration(
+        persister_kafka_topic=os.environ.get('PERSISTER_KAFKA_TOPIC', 'persister'),
+        kafka_bootstrap_server=os.environ.get('KAFKA_BOOTSTRAP_SERVER', 'kafka:9094'),
+    )
     _running_instance = None
     _lock = threading.RLock()
-
-    logger = logging.getLogger(__name__)
 
     @classmethod
     def running_instance(cls):
@@ -52,23 +57,36 @@ class Persister:
         persister = cls()
         t_cons = threading.Thread(target=persister.start, name='Persister {}'.format(id(persister)), daemon=True)
         t_cons.start()
-        assert cls.running_instance() == persister
 
     def __init__(self, group_id='SMFR', auto_offset_reset='earliest'):
         self.topic = self.config.persister_kafka_topic
         self.bootstrap_server = self.config.kafka_bootstrap_server
         self.auto_offset_reset = auto_offset_reset
         self.group_id = group_id
-        self.consumer = KafkaConsumer(self.topic, group_id=self.group_id,
-                                      auto_offset_reset=self.auto_offset_reset,
-                                      bootstrap_servers=self.bootstrap_server)
+
+        retries = 5
+
+        while retries >= 0:
+            try:
+                self.consumer = KafkaConsumer(self.topic, group_id=self.group_id,
+                                              auto_offset_reset=self.auto_offset_reset,
+                                              bootstrap_servers=self.bootstrap_server,
+                                              session_timeout_ms=40000, heartbeat_interval_ms=15000)
+            except NoBrokersAvailable:
+                logger.warning('Waiting for Kafka to boot...')
+                time.sleep(5)
+                retries -= 1
+                if retries < 0:
+                    sys.exit(1)
+            else:
+                break
 
     def start(self):
         """
         Main method that iterate over messages coming from Kafka queue, build a Tweet object and save it in Cassandra
         """
 
-        self.logger.info('Persister started %s', str(self))
+        logger.info('Persister started %s', str(self))
         self.set_running(inst=self)
 
         try:
@@ -77,25 +95,25 @@ class Persister:
                 try:
                     msg = msg.value.decode('utf-8')
                     tweet = Tweet.build_from_kafka_message(msg)
-                    self.logger.debug('Read from queue: %s', str(tweet))
+                    logger.debug('Read from queue: %s', str(tweet))
                     tweet.save()
                 except (ValidationError, ValueError, TypeError, InvalidRequest) as e:
-                    self.logger.error(e)
-                    self.logger.error('Poison message for Cassandra: %s', str(tweet) if tweet else msg)
+                    logger.error(e)
+                    logger.error('Poison message for Cassandra: %s', str(tweet) if tweet else msg)
                 except CQLEngineException as e:
-                    self.logger.error(e)
+                    logger.error(e)
                 except Exception as e:
-                    self.logger.error(type(e))
-                    self.logger.error(e)
-                    self.logger.error(msg)
+                    logger.error(type(e))
+                    logger.error(e)
+                    logger.error(msg)
 
         except CommitFailedError:
-            self.logger.error('Persister was disconnected during I/O operations. Exited.')
+            logger.error('Persister was disconnected during I/O operations. Exited.')
         except ValueError:
             # tipically an I/O operation on closed epoll object
             # as the consumer can be disconnected in another thread (see signal handling in start.py)
             if self.consumer._closed:
-                self.logger.info('Persister was disconnected during I/O operations. Exited.')
+                logger.info('Persister was disconnected during I/O operations. Exited.')
             elif self.running_instance() and not self.consumer._closed:
                 self.running_instance().stop()
         except KeyboardInterrupt:
@@ -107,7 +125,7 @@ class Persister:
         """
         self.consumer.close()
         self.set_running(inst=None)
-        self.logger.info('Persister connection closed!')
+        logger.info('Persister connection closed!')
 
     def __str__(self):
         return 'Persister ({}): {}@{}:{}'.format(id(self), self.topic, self.bootstrap_server, self.group_id)

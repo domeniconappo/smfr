@@ -90,7 +90,7 @@ class RestServerConfiguration(metaclass=Singleton):
     Constructor accepts a connexion app object.
     """
     geonames_host = '127.0.0.1' if not RUNNING_IN_DOCKER else 'geonames'
-    kafka_host = '127.0.0.1' if not RUNNING_IN_DOCKER else 'kafka'
+    kafka_bootstrap_server = '127.0.0.1' if not RUNNING_IN_DOCKER else os.environ.get('KAFKA_BOOTSTRAP_SERVER', 'kafka:9094')
     mysql_host = '127.0.0.1' if not RUNNING_IN_DOCKER else os.environ.get('MYSQL_HOST', 'mysql')
     __mysql_user = os.environ.get('MYSQL_USER', 'root')
     __mysql_pass = os.environ.get('MYSQL_PASSWORD', 'example')
@@ -98,7 +98,6 @@ class RestServerConfiguration(metaclass=Singleton):
     annotator_host = '127.0.0.1' if not RUNNING_IN_DOCKER else 'annotator'
     geocoder_host = '127.0.0.1' if not RUNNING_IN_DOCKER else 'geocoder'
     restserver_host = '127.0.0.1' if not RUNNING_IN_DOCKER else 'restserver'
-    kafka_bootstrap_server = '{}:9092'.format(kafka_host)
 
     cassandra_keyspace = '{}{}'.format(os.environ.get('CASSANDRA_KEYSPACE', 'smfr_persistent'), '_test' if UNDER_TESTS else '')
     mysql_db_name = '{}{}'.format(os.environ.get('MYSQL_DBNAME', 'smfr'), '_test' if UNDER_TESTS else '')

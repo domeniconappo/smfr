@@ -1,5 +1,5 @@
-geotext ~= 0.3.0
-nltk ~= 3.1
+geotext~=0.3.0
+nltk~=3.1
 Keras==2.2.2
 numpy==1.14.5
 scikit-learn
@@ -9,8 +9,11 @@ ujson
 flask
 flask-restful
 flask-jwt-extended
-gunicorn
 kafka-python
+cassandra-driver
+mysqlclient
+sqlalchemy
 arrow
 PyYAML
 PyJWT
+gunicorn

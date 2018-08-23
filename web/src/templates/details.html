@@ -147,6 +147,18 @@
                                    <h4>Classification</h4>
 	                           </div>
 	                           <div class="panel-body">
+
+                                   <div class="btn-group btn-group-justified" role="group">
+                                       <div class="btn-group">
+                                           {% set test = data.collection.id in data.running_annotators %}
+                                            <a {% if test %}title="Annotator is currently running for this collection" class="btn btn-default disabled"
+                                               {% elif data.collection.is_using_pipeline %}title="Pipeline is active for this collection" class="btn btn-default disabled"
+                                               {% else %} title="Start geotagging for annotated tweets in this collection" class="btn btn-default"{% endif %}
+                                               href="/annotate/{{ data.collection.id }}"><em class="fas fa-tasks"></em> Start Annotation</a>
+                                       </div>
+                                   </div>
+
+                                   <hr />
                                    <div class="btn-group btn-group-justified" role="group">
                                        <div class="btn-group">
                                            {% set test = data.collection.id in data.running_geotaggers %}
@@ -154,16 +166,6 @@
                                                {% elif data.collection.is_using_pipeline %}title="Pipeline is active for this collection" class="btn btn-default disabled"
                                                {% else %} title="Start geotagging for annotated tweets in this collection" class="btn btn-default"{% endif %}
                                                href="/geolocalize/{{ data.collection.id }}"><em class="fas fa-globe"></em> Start Geocoding</a>
-                                       </div>
-                                   </div>
-                                   <hr />
-                                    <div class="btn-group btn-group-justified" role="group">
-                                       <div class="btn-group">
-                                           {% set test = data.collection.id in data.running_annotators %}
-                                            <a {% if test %}title="Annotator is currently running for this collection" class="btn btn-default disabled"
-                                               {% elif data.collection.is_using_pipeline %}title="Pipeline is active for this collection" class="btn btn-default disabled"
-                                               {% else %} title="Start geotagging for annotated tweets in this collection" class="btn btn-default"{% endif %}
-                                               href="/annotate/{{ data.collection.id }}"><em class="fas fa-tasks"></em> Start Annotation</a>
                                        </div>
                                    </div>
                                </div>

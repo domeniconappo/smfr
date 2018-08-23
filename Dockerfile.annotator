@@ -30,4 +30,4 @@ WORKDIR /annotator
 
 EXPOSE 5556 6006
 ENTRYPOINT ["/scripts/wait_for_it.sh", "cassandrasmfr:9160"]
-CMD ["--", "gunicorn", "-b", "0.0.0.0:5556", "--workers", "1", "--log-level", "warning", "--timeout", "240", "--threads", "2", "--worker-class", "gthread", "--reload", "--access-logfile", "-", "--name", "annotator", "start:app"]
+CMD ["--", "gunicorn", "-b", "0.0.0.0:5556", "--workers", "1", "--log-level", "warning", "--timeout", "240", "--threads", "4", "--worker-class", "gthread", "--reload", "--access-logfile", "-", "--name", "annotator", "start:app"]

@@ -13,14 +13,11 @@ from geocoder import Geocoder
 app = create_app()
 api = Api(app)
 
-logging.basicConfig(level=os.environ.get('LOGGING_LEVEL', 'DEBUG'), format=LOGGER_FORMAT, datefmt=LOGGER_DATE_FORMAT)
-
-
+logging.basicConfig(format=LOGGER_FORMAT, datefmt=LOGGER_DATE_FORMAT)
+logger = logging.getLogger('GEOCODER')
+logger.setLevel(os.environ.get('LOGGING_LEVEL', 'DEBUG'))
 logging.getLogger('cassandra').setLevel(logging.WARNING)
 logging.getLogger('kafka').setLevel(logging.WARNING)
-
-
-logger = logging.getLogger(__name__)
 
 
 class GeocoderApi(Resource):
@@ -57,7 +54,8 @@ class RunningGeotaggersApi(Resource):
         return Geocoder.running(), 200
 
 
-api.add_resource(GeocoderApi, '/<int:collection_id>/<string:action>')
-api.add_resource(RunningGeotaggersApi, '/running')
-logger.info('Geocoder Microservice ready for incoming requests')
-Geocoder.consumer_in_background()
+if __name__ == 'start':
+    api.add_resource(GeocoderApi, '/<int:collection_id>/<string:action>')
+    api.add_resource(RunningGeotaggersApi, '/running')
+    logger.info('Geocoder Microservice ready for incoming requests')
+    Geocoder.consumer_in_background()

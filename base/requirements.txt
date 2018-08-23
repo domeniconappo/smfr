@@ -1,8 +1,8 @@
 arrow
 kafka-python
 cassandra-driver
+mysqlclient
 requests
-gunicorn
 numpy==1.14.5
 cython
 flask
@@ -14,3 +14,4 @@ PassLib
 PyYAML
 PyJWT
 tensorflow==1.10.0
+gunicorn

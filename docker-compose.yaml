@@ -2,22 +2,80 @@ version: '3.4'
 
 services:
 
+#  kafka:
+#    restart: always
+#    image: ${DOCKER_REGISTRY}/${KAFKA_IMAGE}
+#    container_name: kafka
+#    hostname: kafka
+#    environment:
+#      ADVERTISED_PORT: 9092
+#      ADVERTISED_HOST: kafka
+#      AUTO_CREATE_TOPICS: "true"  # true by default anyway
+#    depends_on:
+#    - cassandrasmfr
+#    ports:
+#    - '9092:9092'
+#    - '2181:2181'
+#    networks:
+#    - back-tier
+#
+#    deploy:
+#      restart_policy:
+#        condition: on-failure
+#        max_attempts: 3
+#        window: 120s
+#      placement:
+#        constraints: [ node.labels.medium == true ]
+
+  zookeeper:
+    restart: always
+    image: ${DOCKER_REGISTRY}/${ZOOKEEPER_IMAGE}
+    container_name: zookeeper
+    hostname: zookeeper
+    ports:
+    - '2181:2181'
+    networks:
+    - back-tier
+
+    deploy:
+      restart_policy:
+        condition: on-failure
+        max_attempts: 3
+        window: 120s
+      placement:
+        constraints: [ node.labels.medium == true ]
+
   kafka:
     restart: always
     image: ${DOCKER_REGISTRY}/${KAFKA_IMAGE}
     container_name: kafka
     hostname: kafka
     environment:
-      ADVERTISED_PORT: 9092
-      ADVERTISED_HOST: kafka
-      AUTO_CREATE_TOPICS: "true"  # true by default anyway
-    depends_on:
-    - cassandrasmfr
+#      HOSTNAME_COMMAND: "docker info | grep ^Name: | cut -d' ' -f 2"
+      HOSTNAME_COMMAND: "echo kafka"
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INSIDE:PLAINTEXT,OUTSIDE:PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: INSIDE://:9092,OUTSIDE://kafka:9094
+      KAFKA_INTER_BROKER_LISTENER_NAME: OUTSIDE
+      KAFKA_LISTENERS: INSIDE://:9092,OUTSIDE://kafka:9094
+#      BROKER_ID_COMMAND: -1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'true'  # true by default anyway
+      KAFKA_CREATE_TOPICS: '${PERSISTER_KAFKA_TOPIC}:1:1,${ANNOTATOR_KAFKA_TOPIC}:1:1,${GEOCODER_KAFKA_TOPIC}:1:1'
+      KAFKA_MAX_BLOCK_MS: 30000
+      KAFKA_REQUEST_TIMEOUT_MS: 60000
+      KAFKA_MAX_POLL_RECORDS: 100
+      KAFKA_MAX_POLL_INTERVAL_MS: 30000
     ports:
-    - '9092:9092'
-    - '2181:2181'
+      - target: 9094
+        published: 9094
+        protocol: tcp
+        mode: host
     networks:
     - back-tier
+    depends_on:
+    - zookeeper
+    volumes:
+    - /var/run/docker.sock:/var/run/docker.sock
 
     deploy:
       restart_policy:
@@ -194,6 +252,10 @@ services:
       CASSANDRA_USER: ${CASSANDRA_USER}
       CASSANDRA_PASSWORD: ${CASSANDRA_PASSWORD}
       CASSANDRA_KEYSPACE: ${CASSANDRA_KEYSPACE}
+      MYSQL_HOST: mysql
+      MYSQL_DBNAME: ${MYSQL_DBNAME}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
       MODELS_PATH: /models
       GIT_REPO_MODELS: ${GIT_REPO_MODELS}
       http_proxy: ${http_proxy}
@@ -232,7 +294,6 @@ services:
       LOGGING_LEVEL: ${LOGGING_LEVEL}
       TF_CPP_MIN_LOG_LEVEL: '2'
       PYTHONUNBUFFERED: 'true'
-      MIN_FLOOD_PROBABILITY: ${MIN_FLOOD_PROBABILITY}
       PERSISTER_KAFKA_TOPIC: ${PERSISTER_KAFKA_TOPIC}
       GEOCODER_KAFKA_TOPIC: ${GEOCODER_KAFKA_TOPIC}
       CASSANDRA_HOST: ${CASSANDRA_HOST}

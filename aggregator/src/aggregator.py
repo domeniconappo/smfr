@@ -17,7 +17,7 @@ from smfrcore.models.sqlmodels import TwitterCollection, Aggregation, create_app
 
 logging.basicConfig(level=os.environ.get('LOGGING_LEVEL', 'DEBUG'), format=LOGGER_FORMAT, datefmt=LOGGER_DATE_FORMAT)
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger('AGGREGATOR')
 logging.getLogger('cassandra').setLevel(logging.ERROR)
 
 flask_app = create_app()
@@ -192,5 +192,7 @@ def run_single_aggregation(collection_id,
 
 def pretty_running_conf(conf):
     for k, v in vars(conf).items():
-        if v:
+        if v and k != 'collections':
             return 'Aggregation on {} collections'.format(k)
+        else:
+            return 'Aggregation on collections: {}'.format(v)

@@ -17,7 +17,7 @@ from cassandra.util import OrderedMapSerializedKey
 from flask_cqlalchemy import CQLAlchemy
 
 from smfrcore.utils import RUNNING_IN_DOCKER, LOGGER_FORMAT, LOGGER_DATE_FORMAT
-from smfrcore.models.sqlmodels import TwitterCollection
+from smfrcore.models.sqlmodels import TwitterCollection, create_app
 
 logging.basicConfig(format=LOGGER_FORMAT, datefmt=LOGGER_DATE_FORMAT)
 logger = logging.getLogger('models')
@@ -39,6 +39,9 @@ cassandra_session.default_fetch_size = os.environ.get('CASSANDRA_FETCH_SIZE', 10
 
 cassandra_default_connection = Connection.from_session(DEFAULT_CONNECTION, session=cassandra_session)
 _connections[DEFAULT_CONNECTION] = cassandra_default_connection
+
+
+flask_app = create_app()
 
 
 class Tweet(cqldb.Model):
@@ -104,14 +107,27 @@ class Tweet(cqldb.Model):
     """
     Language of the tweet
     """
+    cache_collections = {}
+    """
+    simple dict to hold TwitterCollection objects (temporary caching solution!)
+    """
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
     def __str__(self):
         return '\nTweet\n{o.nuts2}\n' \
-               '{o.created_at} - {o.lang}: {o.full_text:.120}' \
+               '{o.created_at} - \n{o.lang}: {o.full_text:.120}' \
                '\nGeo: {o.geo}\nAnnotations: {o.annotations}'.format(o=self)
+
+    @property
+    def use_pipeline(self):
+        if self.collectionid in self.cache_collections:
+            return self.cache_collections[self.collectionid].is_using_pipeline
+        with flask_app.app_context():
+            collection = TwitterCollection.query.get(self.collectionid)
+        self.cache_collections[self.collectionid] = collection
+        return collection.is_using_pipeline
 
     @classmethod
     def to_obj(cls, row):
