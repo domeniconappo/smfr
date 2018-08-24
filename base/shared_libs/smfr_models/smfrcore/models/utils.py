@@ -1,6 +1,15 @@
+import os
+
 import jwt
 from flask import jsonify
 from werkzeug.exceptions import BadRequest
+
+
+def get_cassandra_hosts():
+    if not bool(int(os.environ.get('CASSANDRA_USE_CLUSTER', 0))):
+        return [os.environ.get('CASSANDRA_HOST', 'cassandrasmfr')]
+
+    return os.environ.get('CASSANDRA_NODES', 'cassandrasmfr,cassandra-node-1,cassandra-node-2').split(',')
 
 
 def error_response(status_code, message):

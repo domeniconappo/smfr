@@ -2,30 +2,6 @@ version: '3.4'
 
 services:
 
-#  kafka:
-#    restart: always
-#    image: ${DOCKER_REGISTRY}/${KAFKA_IMAGE}
-#    container_name: kafka
-#    hostname: kafka
-#    environment:
-#      ADVERTISED_PORT: 9092
-#      ADVERTISED_HOST: kafka
-#      AUTO_CREATE_TOPICS: "true"  # true by default anyway
-#    depends_on:
-#    - cassandrasmfr
-#    ports:
-#    - '9092:9092'
-#    - '2181:2181'
-#    networks:
-#    - back-tier
-#
-#    deploy:
-#      restart_policy:
-#        condition: on-failure
-#        max_attempts: 3
-#        window: 120s
-#      placement:
-#        constraints: [ node.labels.medium == true ]
 
   zookeeper:
     restart: always
@@ -51,13 +27,11 @@ services:
     container_name: kafka
     hostname: kafka
     environment:
-#      HOSTNAME_COMMAND: "docker info | grep ^Name: | cut -d' ' -f 2"
       HOSTNAME_COMMAND: "echo kafka"
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INSIDE:PLAINTEXT,OUTSIDE:PLAINTEXT
       KAFKA_ADVERTISED_LISTENERS: INSIDE://:9092,OUTSIDE://kafka:9094
       KAFKA_INTER_BROKER_LISTENER_NAME: OUTSIDE
       KAFKA_LISTENERS: INSIDE://:9092,OUTSIDE://kafka:9094
-#      BROKER_ID_COMMAND: -1
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
       KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'true'  # true by default anyway
       KAFKA_CREATE_TOPICS: '${PERSISTER_KAFKA_TOPIC}:1:1,${ANNOTATOR_KAFKA_TOPIC}:1:1,${GEOCODER_KAFKA_TOPIC}:1:1'
@@ -114,6 +88,8 @@ services:
       CASSANDRA_START_RPC: "true"
       CASSANDRA_LISTEN_ADDRESS: auto
       CASSANDRA_RPC_ADDRESS: 0.0.0.0
+      CASSANDRA_BROADCAST_ADDRESS: cassandrasmfr
+      CASSANDRA_NUM_TOKENS: 8
       LOCAL_JMX: "no"
     deploy:
       restart_policy:
@@ -122,6 +98,69 @@ services:
         window: 60s
       placement:
         constraints: [ node.labels.large == true ]
+
+  cassandra-node-1:
+    image: ${DOCKER_REGISTRY}/${CASSANDRA_IMAGE}:${image_tag}
+    command: /bin/bash -c "echo 'Waiting for seed node' && sleep 60 && /docker-entrypoint.sh cassandra -f"
+    environment:
+      CASSANDRA_SEEDS: cassandrasmfr
+      CASSANDRA_BROADCAST_ADDRESS: cassandra-node-1
+      MAX_HEAP_SIZE: 16G
+      HEAP_NEWSIZE: 2048M
+      JVM_OPTS: -Xms8g -Xmx16g -Dcom.sun.management.jmxremote.authenticate=true -Dcom.sun.management.jmxremote.password.file=/etc/cassandra/jmxremote.password -Dcom.sun.management.jmxremote.access.file=/etc/cassandra/jmxremote.access
+      CASSANDRA_START_RPC: "true"
+      CASSANDRA_LISTEN_ADDRESS: auto
+      CASSANDRA_RPC_ADDRESS: 0.0.0.0
+      CASSANDRA_NUM_TOKENS: 16
+      LOCAL_JMX: "no"
+    ports:
+      - '7000:7000'
+    networks:
+      - back-tier
+    volumes:
+      - volume-cassandra-1:/var/lib/cassandra
+    depends_on:
+      - cassandrasmfr
+    deploy:
+      restart_policy:
+        condition: on-failure
+        max_attempts: 3
+        window: 60s
+      placement:
+        constraints: [ node.labels.huge == true ]
+
+    # you cannot have multiple nodes join the cluster at the same time when
+    # cassandra.consistent.rangemovement is true so we further delay it to give it time to stabilize
+    cassandra-node-2:
+      image: ${DOCKER_REGISTRY}/${CASSANDRA_IMAGE}:${image_tag}
+      command: /bin/bash -c "echo 'Waiting for seed node' && sleep 90 && /docker-entrypoint.sh cassandra -f"
+      environment:
+        CASSANDRA_SEEDS: cassandrasmfr
+        CASSANDRA_BROADCAST_ADDRESS: cassandra-node-2
+        CASSANDRA_NUM_TOKENS: 2
+        MAX_HEAP_SIZE: 4G
+        HEAP_NEWSIZE: 1024M
+        JVM_OPTS: -Xms2g -Xmx4g -Dcom.sun.management.jmxremote.authenticate=true -Dcom.sun.management.jmxremote.password.file=/etc/cassandra/jmxremote.password -Dcom.sun.management.jmxremote.access.file=/etc/cassandra/jmxremote.access
+        CASSANDRA_START_RPC: "true"
+        CASSANDRA_LISTEN_ADDRESS: auto
+        CASSANDRA_RPC_ADDRESS: 0.0.0.0
+        LOCAL_JMX: "no"
+      ports:
+        - '7000:7000'
+      networks:
+        - back-tier
+      volumes:
+        - volume-cassandra-2:/var/lib/cassandra
+      depends_on:
+        - cassandrasmfr
+        - cassandra-node-1
+      deploy:
+        restart_policy:
+          condition: on-failure
+          max_attempts: 3
+          window: 90s
+        placement:
+          constraints: [ node.labels.medium == true ]
 
   mysql:
     build:
@@ -142,7 +181,6 @@ services:
       MYSQL_ALLOW_EMPTY_PASSWORD: 'yes'
     networks:
       - back-tier
-
     deploy:
       restart_policy:
         condition: on-failure
@@ -167,7 +205,6 @@ services:
       - '9300:9300'
     networks:
       - back-tier
-
     environment:
       bootstrap.memory_lock: 'true'
       discovery.type: 'single-node'
@@ -202,13 +239,14 @@ services:
       CASSANDRA_USER: ${CASSANDRA_USER}
       CASSANDRA_PASSWORD: ${CASSANDRA_PASSWORD}
       CASSANDRA_KEYSPACE: ${CASSANDRA_KEYSPACE}
+      CASSANDRA_USE_CLUSTER: ${CASSANDRA_USE_CLUSTER}
+      CASSANDRA_NODES: ${CASSANDRA_NODES}
       http_proxy: ${http_proxy}
       https_proxy: ${https_proxy}
     volumes:
       - './persister/src:/persister'
     networks:
       - back-tier
-
     depends_on:
       - kafka
       - cassandrasmfr
@@ -252,6 +290,8 @@ services:
       CASSANDRA_USER: ${CASSANDRA_USER}
       CASSANDRA_PASSWORD: ${CASSANDRA_PASSWORD}
       CASSANDRA_KEYSPACE: ${CASSANDRA_KEYSPACE}
+      CASSANDRA_USE_CLUSTER: ${CASSANDRA_USE_CLUSTER}
+      CASSANDRA_NODES: ${CASSANDRA_NODES}
       MYSQL_HOST: mysql
       MYSQL_DBNAME: ${MYSQL_DBNAME}
       MYSQL_USER: ${MYSQL_USER}
@@ -301,6 +341,8 @@ services:
       CASSANDRA_USER: ${CASSANDRA_USER}
       CASSANDRA_PASSWORD: ${CASSANDRA_PASSWORD}
       CASSANDRA_KEYSPACE: ${CASSANDRA_KEYSPACE}
+      CASSANDRA_USE_CLUSTER: ${CASSANDRA_USE_CLUSTER}
+      CASSANDRA_NODES: ${CASSANDRA_NODES}
       MYSQL_HOST: mysql
       MYSQL_DBNAME: ${MYSQL_DBNAME}
       MYSQL_USER: ${MYSQL_USER}
@@ -346,6 +388,8 @@ services:
       CASSANDRA_PORT: ${CASSANDRA_PORT}
       CASSANDRA_USER: ${CASSANDRA_USER}
       CASSANDRA_PASSWORD: ${CASSANDRA_PASSWORD}
+      CASSANDRA_USE_CLUSTER: ${CASSANDRA_USE_CLUSTER}
+      CASSANDRA_NODES: ${CASSANDRA_NODES}
       AGGREGATOR_SCHEDULING_MINUTES: ${AGGREGATOR_SCHEDULING_MINUTES}
       MYSQL_HOST: mysql
       MYSQL_DBNAME: ${MYSQL_DBNAME}
@@ -435,6 +479,8 @@ services:
       CASSANDRA_USER: ${CASSANDRA_USER}
       CASSANDRA_PASSWORD: ${CASSANDRA_PASSWORD}
       CASSANDRA_KEYSPACE: ${CASSANDRA_KEYSPACE}
+      CASSANDRA_USE_CLUSTER: ${CASSANDRA_USE_CLUSTER}
+      CASSANDRA_NODES: ${CASSANDRA_NODES}
       RESTSERVER_PORT: ${RESTSERVER_PORT}
       ANNOTATOR_PORT: ${ANNOTATOR_PORT}
       GEOCODER_PORT: ${GEOCODER_PORT}
@@ -510,6 +556,8 @@ services:
 
 volumes:
   geonames_index:
+  volume-cassandra-1:
+  volume-cassandra-2:
 
 networks:
   front-tier:

@@ -18,6 +18,8 @@ from flask_cqlalchemy import CQLAlchemy
 
 from smfrcore.utils import RUNNING_IN_DOCKER, LOGGER_FORMAT, LOGGER_DATE_FORMAT
 from smfrcore.models.sqlmodels import TwitterCollection, create_app
+from smfrcore.models.utils import get_cassandra_hosts
+
 
 logging.basicConfig(format=LOGGER_FORMAT, datefmt=LOGGER_DATE_FORMAT)
 logger = logging.getLogger('models')
@@ -25,13 +27,15 @@ logger.setLevel(os.environ.get('LOGGING_LEVEL', 'DEBUG'))
 cqldb = CQLAlchemy()
 
 _keyspace = os.environ.get('CASSANDRA_KEYSPACE', 'smfr_persistent')
-_hosts = [os.environ.get('CASSANDRA_HOST', 'cassandrasmfr')]
 _port = os.environ.get('CASSANDRA_PORT', 9042)
 _cassandra_user = os.environ.get('CASSANDRA_USER')
 _cassandra_password = os.environ.get('CASSANDRA_PASSWORD')
 
 cluster_kwargs = {'compression': True, 'load_balancing_policy': default_lbp_factory(),
                   'auth_provider': PlainTextAuthProvider(username=_cassandra_user, password=_cassandra_password)}
+
+
+_hosts = get_cassandra_hosts()
 cassandra_cluster = Cluster(_hosts, port=_port, **cluster_kwargs) if RUNNING_IN_DOCKER else Cluster(**cluster_kwargs)
 cassandra_session = cassandra_cluster.connect()
 cassandra_session.default_timeout = 120
