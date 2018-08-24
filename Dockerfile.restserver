@@ -6,7 +6,6 @@ ARG https_proxy
 ARG ftp_host
 ARG download_folder
 
-ENV INSTALL_PATH /rest_server
 ENV LANG=C.UTF-8
 
 RUN apt-get update && apt-get install -y mariadb-client \

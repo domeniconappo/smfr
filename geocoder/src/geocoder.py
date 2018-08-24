@@ -76,8 +76,8 @@ class Geocoder:
     stop_signals = []
     _lock = threading.RLock()
     logger = logging.getLogger(__name__)
-    geonames_host = '127.0.0.1' if not RUNNING_IN_DOCKER else 'geonames'
-    kafka_bootstrap_server = '{}:9092'.format('kafka' if RUNNING_IN_DOCKER else '127.0.0.1')
+    geonames_host = 'geonames' if RUNNING_IN_DOCKER else '127.0.0.1'
+    kafka_bootstrap_server = os.environ.get('KAFKA_BOOTSTRAP_SERVER', 'kafka:9094') if RUNNING_IN_DOCKER else '127.0.0.1:9094'
 
     flask_app = create_app()
 
@@ -93,7 +93,8 @@ class Geocoder:
                                      compression_type='gzip', buffer_memory=134217728,
                                      batch_size=1048576)
             logger.info('[OK] KAFKA Producer')
-            consumer = KafkaConsumer(geocoder_kafka_topic, group_id='GEOCODER',
+            consumer = KafkaConsumer(geocoder_kafka_topic, check_crcs=False,
+                                     max_poll_records=100, max_poll_interval_ms=600000,
                                      auto_offset_reset='earliest',
                                      bootstrap_servers=kafka_bootstrap_server,
                                      session_timeout_ms=40000, heartbeat_interval_ms=15000)
@@ -357,6 +358,8 @@ class Geocoder:
                         message = tweet.serialize()
                         logger.debug('Send geocoded tweet to PERSISTER: %s', str(tweet.geo))
                         cls.producer.send(cls.persister_kafka_topic, message)
+                        if not (i % 1000):
+                            logger.info('Geotagged so far %d', i)
 
                     except Exception as e:
                         logger.error(type(e))

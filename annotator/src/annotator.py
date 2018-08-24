@@ -34,7 +34,7 @@ class Annotator:
     _stop_signals = []
     _lock = threading.RLock()
 
-    kafka_bootstrap_server = '{}:9092'.format('kafka' if RUNNING_IN_DOCKER else '127.0.0.1')
+    kafka_bootstrap_server = os.environ.get('KAFKA_BOOTSTRAP_SERVER', 'kafka:9094') if RUNNING_IN_DOCKER else '127.0.0.1:9094'
     available_languages = list(models.keys())
     retries = 5
 
@@ -184,8 +184,8 @@ class Annotator:
         topic = '{}_{}'.format(cls.annotator_kafka_topic, lang)
 
         consumer = KafkaConsumer(
-            topic, group_id='ANNOTATOR',
-            auto_offset_reset='earliest',
+            topic, check_crcs=False,
+            auto_offset_reset='earliest', max_poll_records=100, max_poll_interval_ms=600000,
             bootstrap_servers=cls.kafka_bootstrap_server,
             session_timeout_ms=40000, heartbeat_interval_ms=15000
         )
@@ -214,6 +214,8 @@ class Annotator:
                             if tweet.use_pipeline:
                                 logger.debug('Sending annotated tweet to GEOCODER: %s', tweet.annotations)
                                 cls.producer.send(cls.geocoder_kafka_topic, message)
+                            if not (i % 1000):
+                                logger.info('%s: Annotated so far %d', lang.capitalize(), i)
                         except (ValidationError, ValueError, TypeError, InvalidRequest) as e:
                             logger.error(e)
                             logger.error('Poison message for Cassandra: %s', tweet if tweet else msg)

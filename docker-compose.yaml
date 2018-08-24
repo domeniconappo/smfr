@@ -99,68 +99,68 @@ services:
       placement:
         constraints: [ node.labels.large == true ]
 
-  cassandra-node-1:
-    image: ${DOCKER_REGISTRY}/${CASSANDRA_IMAGE}:${image_tag}
-    command: /bin/bash -c "echo 'Waiting for seed node' && sleep 60 && /docker-entrypoint.sh cassandra -f"
-    environment:
-      CASSANDRA_SEEDS: cassandrasmfr
-      CASSANDRA_BROADCAST_ADDRESS: cassandra-node-1
-      MAX_HEAP_SIZE: 16G
-      HEAP_NEWSIZE: 2048M
-      JVM_OPTS: -Xms8g -Xmx16g -Dcom.sun.management.jmxremote.authenticate=true -Dcom.sun.management.jmxremote.password.file=/etc/cassandra/jmxremote.password -Dcom.sun.management.jmxremote.access.file=/etc/cassandra/jmxremote.access
-      CASSANDRA_START_RPC: "true"
-      CASSANDRA_LISTEN_ADDRESS: auto
-      CASSANDRA_RPC_ADDRESS: 0.0.0.0
-      CASSANDRA_NUM_TOKENS: 16
-      LOCAL_JMX: "no"
-    ports:
-      - '7000:7000'
-    networks:
-      - back-tier
-    volumes:
-      - volume-cassandra-1:/var/lib/cassandra
-    depends_on:
-      - cassandrasmfr
-    deploy:
-      restart_policy:
-        condition: on-failure
-        max_attempts: 3
-        window: 60s
-      placement:
-        constraints: [ node.labels.huge == true ]
-
-    # you cannot have multiple nodes join the cluster at the same time when
-    # cassandra.consistent.rangemovement is true so we further delay it to give it time to stabilize
-    cassandra-node-2:
-      image: ${DOCKER_REGISTRY}/${CASSANDRA_IMAGE}:${image_tag}
-      command: /bin/bash -c "echo 'Waiting for seed node' && sleep 90 && /docker-entrypoint.sh cassandra -f"
-      environment:
-        CASSANDRA_SEEDS: cassandrasmfr
-        CASSANDRA_BROADCAST_ADDRESS: cassandra-node-2
-        CASSANDRA_NUM_TOKENS: 2
-        MAX_HEAP_SIZE: 4G
-        HEAP_NEWSIZE: 1024M
-        JVM_OPTS: -Xms2g -Xmx4g -Dcom.sun.management.jmxremote.authenticate=true -Dcom.sun.management.jmxremote.password.file=/etc/cassandra/jmxremote.password -Dcom.sun.management.jmxremote.access.file=/etc/cassandra/jmxremote.access
-        CASSANDRA_START_RPC: "true"
-        CASSANDRA_LISTEN_ADDRESS: auto
-        CASSANDRA_RPC_ADDRESS: 0.0.0.0
-        LOCAL_JMX: "no"
-      ports:
-        - '7000:7000'
-      networks:
-        - back-tier
-      volumes:
-        - volume-cassandra-2:/var/lib/cassandra
-      depends_on:
-        - cassandrasmfr
-        - cassandra-node-1
-      deploy:
-        restart_policy:
-          condition: on-failure
-          max_attempts: 3
-          window: 90s
-        placement:
-          constraints: [ node.labels.medium == true ]
+#  cassandra-node-1:
+#    image: ${DOCKER_REGISTRY}/${CASSANDRA_IMAGE}:${image_tag}
+#    command: /bin/bash -c "echo 'Waiting for seed node' && sleep 60 && /docker-entrypoint.sh cassandra -f"
+#    environment:
+#      CASSANDRA_SEEDS: cassandrasmfr
+#      CASSANDRA_BROADCAST_ADDRESS: cassandra-node-1
+#      MAX_HEAP_SIZE: 16G
+#      HEAP_NEWSIZE: 2048M
+#      JVM_OPTS: -Xms8g -Xmx16g -Dcom.sun.management.jmxremote.authenticate=true -Dcom.sun.management.jmxremote.password.file=/etc/cassandra/jmxremote.password -Dcom.sun.management.jmxremote.access.file=/etc/cassandra/jmxremote.access
+#      CASSANDRA_START_RPC: "true"
+#      CASSANDRA_LISTEN_ADDRESS: auto
+#      CASSANDRA_RPC_ADDRESS: 0.0.0.0
+#      CASSANDRA_NUM_TOKENS: 16
+#      LOCAL_JMX: "no"
+#    ports:
+#      - '7000:7000'
+#    networks:
+#      - back-tier
+#    volumes:
+#      - volume-cassandra-1:/var/lib/cassandra
+#    depends_on:
+#      - cassandrasmfr
+#    deploy:
+#      restart_policy:
+#        condition: on-failure
+#        max_attempts: 3
+#        window: 60s
+#      placement:
+#        constraints: [ node.labels.huge == true ]
+#
+#    # you cannot have multiple nodes join the cluster at the same time when
+#    # cassandra.consistent.rangemovement is true so we further delay it to give it time to stabilize
+#    cassandra-node-2:
+#      image: ${DOCKER_REGISTRY}/${CASSANDRA_IMAGE}:${image_tag}
+#      command: /bin/bash -c "echo 'Waiting for seed node' && sleep 90 && /docker-entrypoint.sh cassandra -f"
+#      environment:
+#        CASSANDRA_SEEDS: cassandrasmfr
+#        CASSANDRA_BROADCAST_ADDRESS: cassandra-node-2
+#        CASSANDRA_NUM_TOKENS: 2
+#        MAX_HEAP_SIZE: 4G
+#        HEAP_NEWSIZE: 1024M
+#        JVM_OPTS: -Xms2g -Xmx4g -Dcom.sun.management.jmxremote.authenticate=true -Dcom.sun.management.jmxremote.password.file=/etc/cassandra/jmxremote.password -Dcom.sun.management.jmxremote.access.file=/etc/cassandra/jmxremote.access
+#        CASSANDRA_START_RPC: "true"
+#        CASSANDRA_LISTEN_ADDRESS: auto
+#        CASSANDRA_RPC_ADDRESS: 0.0.0.0
+#        LOCAL_JMX: "no"
+#      ports:
+#        - '7000:7000'
+#      networks:
+#        - back-tier
+#      volumes:
+#        - volume-cassandra-2:/var/lib/cassandra
+#      depends_on:
+#        - cassandrasmfr
+#        - cassandra-node-1
+#      deploy:
+#        restart_policy:
+#          condition: on-failure
+#          max_attempts: 3
+#          window: 90s
+#        placement:
+#          constraints: [ node.labels.medium == true ]
 
   mysql:
     build:
