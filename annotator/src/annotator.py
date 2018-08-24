@@ -84,7 +84,7 @@ class Annotator:
         Annotation process for a collection using a specified language model.
         :param collection_id: int Collection Id as it's stored in MySQL virtual_twitter_collection table
         """
-        logger.info('>>>>>>>>>>>> Starting Annotation collection: %s', collection_id)
+        logger.info('>>>>>>>>>>>> Starting Annotation tweets selection for collection: %s', collection_id)
         with cls._lock:
             cls._running.append(collection_id)
         ttype = 'collected'
@@ -115,7 +115,7 @@ class Annotator:
         # remove from `_running` list
         with cls._lock:
             cls._running.remove(collection_id)
-        logger.info('<<<<<<<<<<<<< Annotation process terminated! Collection: %s', collection_id)
+        logger.info('<<<<<<<<<<<<< Annotation tweets selection terminated for collection: %s', collection_id)
 
     @classmethod
     def annotate(cls, model, t, tokenizer):
@@ -185,6 +185,7 @@ class Annotator:
 
         consumer = KafkaConsumer(
             topic, check_crcs=False,
+            group_id='ANNOTATOR-{}'.format(lang),
             auto_offset_reset='earliest', max_poll_records=100, max_poll_interval_ms=600000,
             bootstrap_servers=cls.kafka_bootstrap_server,
             session_timeout_ms=40000, heartbeat_interval_ms=15000
@@ -197,7 +198,7 @@ class Annotator:
                 model, tokenizer = cls.load_annotation_model(lang)
 
                 try:
-                    for i, msg in enumerate(consumer):
+                    for i, msg in enumerate(consumer, start=1):
                         tweet = None
                         try:
                             msg = msg.value.decode('utf-8')

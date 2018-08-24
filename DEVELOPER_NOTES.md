@@ -67,18 +67,20 @@ ID                            HOSTNAME            STATUS              AVAILABILI
 to5yzzql1ok0dr6x8r9lfn1rm *   D01RI1303463        Ready               Active              Leader              18.03.1-ce
 ```
 
-Set these ID values in .env convifguration file, where NODE0 is the manager's ID and NODE1 and NODE2 are the workers' IDs:
-
-```ini
-NODE0=to5yzzql1ok0dr6x8r9lfn1rm
-NODE1=3jvsn4my7acqzjhvb09nfa6l0
-NODE2=5xvoosrucfqumbzzzie3incea
-```
-
-To deploy:
+Then, add labels `huge`, `large`, `medium` and `small` , based on machines hardware to honour deployment constraints.
+Execute commands from a manager node like the one below:
 
 ```bash
-$  ./swarm_up.sh
+$ docker node update --label-add large=true D01RI1303463
+```
+
+
+
+### To deploy/undeploy:
+
+```bash
+$ ./swarm_up.sh
+$ ./swarm_down.sh
 ```
 
 
@@ -100,55 +102,6 @@ To add a worker to this swarm, run the following command:
 ```
 
 
-### SWARM Troubleshooting
-
-Need to open ports on all hosts participating in a Swarm cluster.
-Also, Cassandra ports must be open as well.
-
-On manager node
-
-```bash
-sudo iptables -A INPUT -p tcp --dport 22 -j ACCEPT
-sudo iptables -A INPUT -p tcp --dport 2376 -j ACCEPT
-sudo iptables -A INPUT -p tcp --dport 2377 -j ACCEPT
-sudo iptables -A INPUT -p tcp --dport 7946 -j ACCEPT
-sudo iptables -A INPUT -p udp --dport 7946 -j ACCEPT
-sudo iptables -A INPUT -p udp --dport 4789 -j ACCEPT
-sudo iptables -A INPUT -p tcp --dport 9042 -j ACCEPT
-sudo iptables -A INPUT -p tcp --dport 9160 -j ACCEPT
-sudo iptables -A INPUT -p tcp --dport 7000 -j ACCEPT
-sudo iptables -A INPUT -p tcp --dport 7001 -j ACCEPT
-sudo iptables -A INPUT -p tcp --dport 7199 -j ACCEPT
-sudo iptables -A INPUT -p udp --dport 9042 -j ACCEPT
-sudo iptables -A INPUT -p udp --dport 9160 -j ACCEPT
-sudo iptables -A INPUT -p udp --dport 7000 -j ACCEPT
-sudo iptables -A INPUT -p udp --dport 7001 -j ACCEPT
-sudo iptables -A INPUT -p udp --dport 7199 -j ACCEPT
-sudo netfilter-persistent save
-sudo systemctl restart docker
-```
-
-On all worker nodes
-
-```bash
-sudo iptables -A INPUT -p tcp --dport 22 -j ACCEPT
-sudo iptables -A INPUT -p tcp --dport 2376 -j ACCEPT
-sudo iptables -A INPUT -p tcp --dport 7946 -j ACCEPT
-sudo iptables -A INPUT -p udp --dport 7946 -j ACCEPT
-sudo iptables -A INPUT -p udp --dport 4789 -j ACCEPT
-sudo iptables -A INPUT -p udp --dport 9042 -j ACCEPT
-sudo iptables -A INPUT -p udp --dport 9160 -j ACCEPT
-sudo iptables -A INPUT -p udp --dport 7000 -j ACCEPT
-sudo iptables -A INPUT -p udp --dport 7001 -j ACCEPT
-sudo iptables -A INPUT -p udp --dport 7199 -j ACCEPT
-sudo iptables -A INPUT -p tcp --dport 9042 -j ACCEPT
-sudo iptables -A INPUT -p tcp --dport 9160 -j ACCEPT
-sudo iptables -A INPUT -p tcp --dport 7000 -j ACCEPT
-sudo iptables -A INPUT -p tcp --dport 7001 -j ACCEPT
-sudo iptables -A INPUT -p tcp --dport 7199 -j ACCEPT
-sudo netfilter-persistent save
-sudo systemctl restart docker
-```
 
 # Docker upgrade
 
@@ -164,7 +117,7 @@ sudo mount -t cgroup -o none,name=systemd cgroup /sys/fs/cgroup/systemd
 
 
 ID                            HOSTNAME            STATUS              AVAILABILITY        MANAGER STATUS      ENGINE VERSION
-5xvoosrucfqumbzzzie3incea     D01RI1000318        Ready               Active                                  18.03.1-ce
-3jvsn4my7acqzjhvb09nfa6l0     D01RI1303461        Ready               Active                                  18.03.1-ce
-to5yzzql1ok0dr6x8r9lfn1rm *   D01RI1303463        Ready               Active              Leader              18.03.1-ce
-cjpbop0od87ouh7twov42ffhr     srv-floodsrisk      Ready               Active                                  18.03.1-ce
+qs3rsmr6fw5wnhv0prejj4kku     D01RI1000318        Ready               Active                                  18.03.1-ce
+cs66xxcbv7y1oof539sxmyif5     D01RI1303461        Ready               Active              Reachable           18.03.1-ce
+obii6o2zg744viqdw7mnb3s6a *   D01RI1303463        Ready               Active              Leader              18.03.1-ce
+th5ywa0t7z15990eufgxfr9tg     srv-floodsrisk      Ready               Active              Reachable           18.03.1-ce

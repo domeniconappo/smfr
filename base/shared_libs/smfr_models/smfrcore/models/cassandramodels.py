@@ -56,11 +56,13 @@ class Tweet(cqldb.Model):
 
     session = cassandra_session
     session.row_factory = named_tuple_factory
-
+    ANNOTATED_TYPE = 'annotated'
+    COLLECTED_TYPE = 'collected'
+    GEOTAGGED_TYPE = 'geotagged'
     TYPES = [
-        ('annotated', 'Annotated'),
-        ('collected', 'Collected'),
-        ('geotagged', 'Geocoded'),
+        (ANNOTATED_TYPE, 'Annotated'),
+        (COLLECTED_TYPE, 'Collected'),
+        (GEOTAGGED_TYPE, 'Geocoded'),
     ]
 
     tweetid = cqldb.columns.Text(primary_key=True, required=True)

@@ -3,7 +3,7 @@ import logging
 import sys
 import threading
 import time
-from collections import namedtuple
+from collections import namedtuple, Counter
 
 from cassandra import InvalidRequest
 from cassandra.cqlengine import ValidationError, CQLEngineException
@@ -58,7 +58,7 @@ class Persister:
         t_cons = threading.Thread(target=persister.start, name='Persister {}'.format(id(persister)), daemon=True)
         t_cons.start()
 
-    def __init__(self, group_id='SMFR', auto_offset_reset='earliest'):
+    def __init__(self, group_id='PERSISTER', auto_offset_reset='earliest'):
         self.topic = self.config.persister_kafka_topic
         self.bootstrap_server = self.config.kafka_bootstrap_server
         self.auto_offset_reset = auto_offset_reset
@@ -71,7 +71,7 @@ class Persister:
                 self.consumer = KafkaConsumer(self.topic, group_id=self.group_id,
                                               auto_offset_reset=self.auto_offset_reset,
                                               bootstrap_servers=self.bootstrap_server,
-                                              session_timeout_ms=40000, heartbeat_interval_ms=15000)
+                                              session_timeout_ms=90000, heartbeat_interval_ms=15000)
             except NoBrokersAvailable:
                 logger.warning('Waiting for Kafka to boot...')
                 time.sleep(5)
@@ -88,15 +88,18 @@ class Persister:
 
         logger.info('Persister started %s', str(self))
         self.set_running(inst=self)
-
+        counter = Counter({Tweet.ANNOTATED_TYPE: 0, Tweet.COLLECTED_TYPE: 0, Tweet.GEOTAGGED_TYPE: 0})
         try:
-            for i, msg in enumerate(self.consumer):
+            for i, msg in enumerate(self.consumer, start=1):
                 tweet = None
                 try:
                     msg = msg.value.decode('utf-8')
                     tweet = Tweet.build_from_kafka_message(msg)
-                    logger.debug('Read from queue: %s', str(tweet))
+                    logger.debug('Read from queue: %s', tweet.tweetid)
                     tweet.save()
+                    counter[tweet.ttype] += 1
+                    if not (i % 5000):
+                        logger.info('Saved since last restart TOTAL: %d \n%s', i, str(counter))
                 except (ValidationError, ValueError, TypeError, InvalidRequest) as e:
                     logger.error(e)
                     logger.error('Poison message for Cassandra: %s', str(tweet) if tweet else msg)

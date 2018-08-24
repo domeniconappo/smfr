@@ -93,7 +93,9 @@ class Geocoder:
                                      compression_type='gzip', buffer_memory=134217728,
                                      batch_size=1048576)
             logger.info('[OK] KAFKA Producer')
-            consumer = KafkaConsumer(geocoder_kafka_topic, check_crcs=False,
+            consumer = KafkaConsumer(geocoder_kafka_topic,
+                                     group_id='GEOCODER',
+                                     check_crcs=False,
                                      max_poll_records=100, max_poll_interval_ms=600000,
                                      auto_offset_reset='earliest',
                                      bootstrap_servers=kafka_bootstrap_server,
@@ -279,7 +281,7 @@ class Geocoder:
         :param collection_id: MySQL id of collection as it's stored in virtual_twitter_collection table
         :type collection_id: int
         """
-        logger.info('>>>>>>>>>>>> Starting Geocoding for collection: {}'.format(collection_id))
+        logger.info('>>>>>>>>>>>> Starting Geocoding tweets selection for collection: %d', collection_id)
         with cls._lock:
             cls._running.append(collection_id)
 
@@ -289,7 +291,7 @@ class Geocoder:
         for i, tweet in enumerate(dataset, start=1):
             try:
                 if collection_id in cls.stop_signals:
-                    logger.info('Stopping Geocoding process {}'.format(collection_id))
+                    logger.info('Stopping Geocoding process %d', collection_id)
                     with cls._lock:
                         cls.stop_signals.remove(collection_id)
                     break
@@ -305,7 +307,7 @@ class Geocoder:
             # remove from `_running` list
         with cls._lock:
             cls._running.remove(collection_id)
-        logger.info('<<<<<<<<<<<<< Geocoding process terminated! Collection: %s', collection_id)
+        logger.info('<<<<<<<<<<<<< Geocoding tweets selection terminated for collection: %s', collection_id)
 
     @classmethod
     def set_geo_fields(cls, latlong, nuts2_source, nutsitem, t):
@@ -336,7 +338,7 @@ class Geocoder:
     def start_consumer(cls):
         logger.info('+++++++++++++ Geocoder consumer starting')
         try:
-            for i, msg in enumerate(cls.consumer):
+            for i, msg in enumerate(cls.consumer, start=1):
                 tweet = None
                 errors = 0
                 try:
@@ -356,23 +358,23 @@ class Geocoder:
 
                         cls.set_geo_fields(latlong, nuts2_source, nutsitem, tweet)
                         message = tweet.serialize()
-                        logger.debug('Send geocoded tweet to PERSISTER: %s', str(tweet.geo))
+                        logger.debug('Send geocoded tweet to PERSISTER: %s', tweet.geo)
                         cls.producer.send(cls.persister_kafka_topic, message)
                         if not (i % 1000):
                             logger.info('Geotagged so far %d', i)
 
                     except Exception as e:
                         logger.error(type(e))
-                        logger.error('An error occured during geotagging: %s', str(e))
+                        logger.error('An error occured during geotagging: %s', e)
                         errors += 1
                         if errors >= 500:
-                            logger.error('Too many errors...going to terminate geolocalization')
+                            logger.error('Too many errors...going to terminate geocoding')
                             cls.consumer.close()
                             break
                         continue
                 except (ValidationError, ValueError, TypeError, InvalidRequest) as e:
                     logger.error(e)
-                    logger.error('Poison message for Cassandra: %s', str(tweet) if tweet else msg)
+                    logger.error('Poison message for Cassandra: %s', tweet or msg)
                 except CQLEngineException as e:
                     logger.error(e)
                 except Exception as e:
