@@ -454,6 +454,7 @@ class Aggregation(SMFRModel):
     last_tweetid_geotagged = Column(BigInteger, nullable=True)
     timestamp_start = Column(TIMESTAMP, nullable=True)
     timestamp_end = Column(TIMESTAMP, nullable=True)
+    relevant_tweets = Column(JSONType, nullable=True)
 
     def save(self):
         # we need 'merge' method because objects can be attached to db sessions in different threads

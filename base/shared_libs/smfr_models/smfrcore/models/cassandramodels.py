@@ -38,7 +38,7 @@ cluster_kwargs = {'compression': True, 'load_balancing_policy': default_lbp_fact
 _hosts = get_cassandra_hosts()
 cassandra_cluster = Cluster(_hosts, port=_port, **cluster_kwargs) if RUNNING_IN_DOCKER else Cluster(**cluster_kwargs)
 cassandra_session = cassandra_cluster.connect()
-cassandra_session.default_timeout = 120
+cassandra_session.default_timeout = None
 cassandra_session.default_fetch_size = os.environ.get('CASSANDRA_FETCH_SIZE', 1000)
 
 cassandra_default_connection = Connection.from_session(DEFAULT_CONNECTION, session=cassandra_session)
@@ -200,15 +200,18 @@ class Tweet(cqldb.Model):
 
         if last_tweetid:
             results = cls.session.execute(cls.stmt_with_last_tweetid,
-                                          parameters=(collection_id, ttype, int(last_tweetid)))
+                                          parameters=(collection_id, ttype, int(last_tweetid)),
+                                          timeout=None)
         else:
-            results = cls.session.execute(cls.stmt, parameters=(collection_id, ttype))
+            results = cls.session.execute(cls.stmt, parameters=(collection_id, ttype),
+                                          timeout=600)
 
         lang = lang.lower() if lang else None
-        for row in results:
-            if lang and row.lang != lang:
-                continue
-            yield getattr(cls, 'to_{}'.format(out_format))(row)
+        return (getattr(cls, 'to_{}'.format(out_format))(row) for row in results if not lang or row.lang == lang)
+        # for row in results:
+        #     if lang and row.lang != lang:
+        #         continue
+        #     yield getattr(cls, 'to_{}'.format(out_format))(row)
 
     @classmethod
     def generate_prepared_statements(cls):

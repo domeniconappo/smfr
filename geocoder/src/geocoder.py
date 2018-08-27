@@ -101,7 +101,7 @@ class Geocoder:
                                      bootstrap_servers=kafka_bootstrap_server,
                                      session_timeout_ms=40000, heartbeat_interval_ms=15000)
         except NoBrokersAvailable:
-            logger.warning('Waiting for Kafka to boot...')
+            logger.warning('Waiting for Kafka to boot...retry')
             time.sleep(5)
             retries -= 1
             if retries < 0:
@@ -139,7 +139,7 @@ class Geocoder:
         :type collection_id: int
         """
         t = threading.Thread(target=cls.start, args=(collection_id,),
-                             name='Geocoder collection id: {}'.format(collection_id))
+                             name='Geocoder {}'.format(collection_id))
         t.start()
 
     @classmethod
@@ -175,7 +175,9 @@ class Geocoder:
                 retries += 1
             else:
                 es_up = True
+        logger.debug('Mordecai res %s', res)
         # FIXME: hard coded minimum country confidence from mordecai
+
         for result in res:
             if result.get('country_conf', 0) < 0.5 or 'lat' not in result.get('geo', {}):
                 continue
@@ -195,6 +197,7 @@ class Geocoder:
             coords = t.get('coordinates', {}).get('coordinates') or t.get('geo', {}).get('coordinates')
             if coords:
                 latlong = coords[1], coords[0]
+        logger.debug('coordinates from tweet %s', latlong)
         return latlong
 
     @classmethod
@@ -220,59 +223,58 @@ class Geocoder:
         """
         # TODO refactor to use shorter private methods
 
-        with cls.flask_app.app_context():
-            no_results = (None, None, None)
-            mentions = cls.geoparse_tweet(tweet)
-            tweet_coords = cls.get_coordinates_from_tweet(tweet)
+        no_results = (None, None, None)
+        mentions = cls.geoparse_tweet(tweet)
+        tweet_coords = cls.get_coordinates_from_tweet(tweet)
 
-            if not mentions:
-                if tweet_coords:
-                    nuts2 = Nuts2Finder.find_nuts2(*tweet_coords)
-                    if nuts2:
-                        coordinates = tweet_coords
-                        nuts_source = 'coordinates'
-                        logger.debug('Found Nuts from tweet geo... - coordinates')
+        if not mentions:
+            if tweet_coords:
+                nuts2 = Nuts2Finder.find_nuts2(*tweet_coords)
+                if nuts2:
+                    coordinates = tweet_coords
+                    nuts_source = 'coordinates'
+                    logger.debug('Found Nuts from tweet geo... - coordinates')
+                    return nuts2, nuts_source, coordinates
+            return no_results
+        else:
+            if tweet_coords and len(mentions) > 1:
+                nuts2_from_tweet = Nuts2Finder.find_nuts2(*tweet_coords)
+                for latlong in mentions:
+                    # checking the list of mentioned places coordinates
+                    nuts2 = Nuts2Finder.find_nuts2(*latlong)
+                    if nuts2 and  nuts2_from_tweet and nuts2.id == nuts2_from_tweet.id:
+                        coordinates = latlong
+                        nuts_source = 'coordinates-and-mentions'
+                        logger.debug('Found Nuts from tweet geo and mentions... - coordinates-and-mentions')
                         return nuts2, nuts_source, coordinates
                 return no_results
             else:
-                if tweet_coords and len(mentions) > 1:
-                    nuts2_from_tweet = Nuts2Finder.find_nuts2(*tweet_coords)
-                    for latlong in mentions:
-                        # checking the list of mentioned places coordinates
-                        nuts2 = Nuts2Finder.find_nuts2(*latlong)
-                        if nuts2 == nuts2_from_tweet:
-                            coordinates = latlong
-                            nuts_source = 'coordinates-and-mentions'
-                            logger.debug('Found Nuts from tweet geo and mentions... - coordinates-and-mentions')
-                            return nuts2, nuts_source, coordinates
+                if len(mentions) == 1:
+                    coordinates = mentions[0]
+                    nuts2 = Nuts2Finder.find_nuts2(*coordinates)
+                    if nuts2:
+                        nuts_source = 'mentions'
+                        logger.debug('Found Nuts... - Exactly one mention')
+                        return nuts2, nuts_source, coordinates
+
                     return no_results
                 else:
-                    if len(mentions) == 1:
-                        coordinates = mentions[0]
-                        nuts2 = Nuts2Finder.find_nuts2(*coordinates)
-                        if nuts2:
-                            nuts_source = 'mentions'
-                            logger.debug('Found Nuts... - Exactly one mention')
-                            return nuts2, nuts_source, coordinates
-
-                        return no_results
-                    else:
-                        # no geolocated tweet and more than one mention
-                        user_location = tweet.original_tweet_as_dict['user'].get('location')
-                        res = cls.tagger.geoparse(user_location) if user_location else None
-                        if res and res[0] and 'lat' in res[0].get('geo', {}):
-                            res = res[0]
-                            user_coordinates = (float(res['geo']['lat']), float(res['geo']['lon']))
-                            user_nuts2 = Nuts2Finder.find_nuts2(*user_coordinates)
-                            for latlong in mentions:
-                                # checking the list of mentioned places coordinates
-                                nuts2 = Nuts2Finder.find_nuts2(*latlong)
-                                if nuts2 == user_nuts2:
-                                    coordinates = latlong
-                                    nuts_source = 'mentions-and-user'
-                                    logger.debug('Found Nuts... - User location')
-                                    return nuts2, nuts_source, coordinates
-                        return no_results
+                    # no geolocated tweet and more than one mention
+                    user_location = tweet.original_tweet_as_dict['user'].get('location')
+                    res = cls.tagger.geoparse(user_location) if user_location else None
+                    if res and res[0] and 'lat' in res[0].get('geo', {}):
+                        res = res[0]
+                        user_coordinates = (float(res['geo']['lat']), float(res['geo']['lon']))
+                        user_nuts2 = Nuts2Finder.find_nuts2(*user_coordinates)
+                        for latlong in mentions:
+                            # checking the list of mentioned places coordinates
+                            nuts2 = Nuts2Finder.find_nuts2(*latlong)
+                            if nuts2 == user_nuts2:
+                                coordinates = latlong
+                                nuts_source = 'mentions-and-user'
+                                logger.debug('Found Nuts... - User location')
+                                return nuts2, nuts_source, coordinates
+                    return no_results
 
     @classmethod
     def start(cls, collection_id):
@@ -338,49 +340,50 @@ class Geocoder:
     def start_consumer(cls):
         logger.info('+++++++++++++ Geocoder consumer starting')
         try:
-            for i, msg in enumerate(cls.consumer, start=1):
-                tweet = None
-                errors = 0
-                try:
-                    msg = msg.value.decode('utf-8')
-                    tweet = Tweet.build_from_kafka_message(msg)
-                    logger.debug('Read from queue: %s', tweet.tweetid)
+            with cls.flask_app.app_context():
+                for i, msg in enumerate(cls.consumer, start=1):
+                    tweet = None
+                    errors = 0
                     try:
-                        # COMMENT OUT CODE BELOW: we will geolocate everything for the moment
-                        # flood_prob = t.annotations.get('flood_probability', ('', 0.0))[1]
-                        # if flood_prob <= cls.min_flood_prob:
-                        #     continue
+                        msg = msg.value.decode('utf-8')
+                        tweet = Tweet.build_from_kafka_message(msg)
+                        logger.debug('Read from queue: %s', tweet.tweetid)
+                        try:
+                            # COMMENT OUT CODE BELOW: we will geolocate everything for the moment
+                            # flood_prob = t.annotations.get('flood_probability', ('', 0.0))[1]
+                            # if flood_prob <= cls.min_flood_prob:
+                            #     continue
 
-                        nutsitem, nuts2_source, latlong = cls.find_nuts_heuristic(tweet)
-                        if not latlong:
-                            logger.debug('Cannot geocode. Skipping: %s', tweet.tweetid)
+                            nutsitem, nuts2_source, latlong = cls.find_nuts_heuristic(tweet)
+                            if not latlong:
+                                logger.debug('Cannot geocode. Skipping: %s', tweet.tweetid)
+                                continue
+
+                            cls.set_geo_fields(latlong, nuts2_source, nutsitem, tweet)
+                            message = tweet.serialize()
+                            logger.debug('Send geocoded tweet to PERSISTER: %s', tweet.geo)
+                            cls.producer.send(cls.persister_kafka_topic, message)
+                            if not (i % 1000):
+                                logger.info('Geotagged so far %d', i)
+
+                        except Exception as e:
+                            logger.error(type(e))
+                            logger.error('An error occured during geotagging: %s', e)
+                            errors += 1
+                            if errors >= 500:
+                                logger.error('Too many errors...going to terminate geocoding')
+                                cls.consumer.close()
+                                break
                             continue
-
-                        cls.set_geo_fields(latlong, nuts2_source, nutsitem, tweet)
-                        message = tweet.serialize()
-                        logger.debug('Send geocoded tweet to PERSISTER: %s', tweet.geo)
-                        cls.producer.send(cls.persister_kafka_topic, message)
-                        if not (i % 1000):
-                            logger.info('Geotagged so far %d', i)
-
+                    except (ValidationError, ValueError, TypeError, InvalidRequest) as e:
+                        logger.error(e)
+                        logger.error('Poison message for Cassandra: %s', tweet or msg)
+                    except CQLEngineException as e:
+                        logger.error(e)
                     except Exception as e:
                         logger.error(type(e))
-                        logger.error('An error occured during geotagging: %s', e)
-                        errors += 1
-                        if errors >= 500:
-                            logger.error('Too many errors...going to terminate geocoding')
-                            cls.consumer.close()
-                            break
-                        continue
-                except (ValidationError, ValueError, TypeError, InvalidRequest) as e:
-                    logger.error(e)
-                    logger.error('Poison message for Cassandra: %s', tweet or msg)
-                except CQLEngineException as e:
-                    logger.error(e)
-                except Exception as e:
-                    logger.error(type(e))
-                    logger.error(e)
-                    logger.error(msg)
+                        logger.error(e)
+                        logger.error(msg)
 
         except CommitFailedError:
             logger.error('Geocoder consumer was disconnected during I/O operations. Exited.')

@@ -24,6 +24,7 @@ flask_app = create_app()
 
 running_aggregators = set()
 flood_propability_ranges = ((0, 10), (10, 90), (90, 100))
+relevant_tweets_number = int(os.environ.get('NUM_RELEVANT_TWEETS', 5))
 
 
 def with_logging(func):
@@ -102,7 +103,7 @@ def aggregate(running_conf=None):
 def run_single_aggregation(collection_id,
                            last_tweetid_collected, last_tweetid_annotated, last_tweetid_geotagged,
                            timestamp_start, timestamp_end,
-                           initial_values):
+                           initial_values, relevant_tweets):
     """
     Calculating stats with attributes:
     - NUTS2

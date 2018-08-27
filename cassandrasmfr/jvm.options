@@ -181,7 +181,7 @@
 # The example below assumes a modern 8-core+ machine for decent
 # times. If in doubt, and if you do not particularly want to tweak, go
 # 100 MB per physical CPU core.
-#-Xmn800M
+-Xmn800M
 
 ###################################
 # EXPIRATION DATE OVERFLOW POLICY #
@@ -200,23 +200,23 @@
 
 ### CMS Settings
 
--XX:+UseParNewGC
--XX:+UseConcMarkSweepGC
--XX:+CMSParallelRemarkEnabled
--XX:SurvivorRatio=8
--XX:MaxTenuringThreshold=1
--XX:CMSInitiatingOccupancyFraction=75
--XX:+UseCMSInitiatingOccupancyOnly
--XX:CMSWaitDuration=10000
--XX:+CMSParallelInitialMarkEnabled
--XX:+CMSEdenChunksRecordAlways
+#-XX:+UseParNewGC
+#-XX:+UseConcMarkSweepGC
+#-XX:+CMSParallelRemarkEnabled
+#-XX:SurvivorRatio=8
+#-XX:MaxTenuringThreshold=1
+#-XX:CMSInitiatingOccupancyFraction=75
+#-XX:+UseCMSInitiatingOccupancyOnly
+#-XX:CMSWaitDuration=10000
+#-XX:+CMSParallelInitialMarkEnabled
+#-XX:+CMSEdenChunksRecordAlways
 # some JVMs will fill up their heap when accessed via JMX, see CASSANDRA-6541
--XX:+CMSClassUnloadingEnabled
+#-XX:+CMSClassUnloadingEnabled
 
 ### G1 Settings (experimental, comment previous section and uncomment section below to enable)
 
 ## Use the Hotspot garbage-first collector.
-#-XX:+UseG1GC
+-XX:+UseG1GC
 #
 ## Have the JVM do less remembered set work during STW, instead
 ## preferring concurrent GC. Reduces p99.9 latency.
