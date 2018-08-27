@@ -26,7 +26,8 @@ COPY base/shared_libs/scripts/wait_for_it.sh /scripts/
 COPY base/shared_libs/smfr_utils/. /smfr_libs/utils/
 COPY base/shared_libs/smfr_clients/. /smfr_libs/clients/
 
-RUN pip3 install -r /requirements/requirements.txt && pip3 install /smfr_libs/utils/ \
+RUN pip3 install -r /requirements/requirements.txt
+RUN pip3 install /smfr_libs/utils/ \
  && pip3 install /smfr_libs/clients/ \
  && chmod -R a+x /scripts/ && rm -R /root/.cache
 

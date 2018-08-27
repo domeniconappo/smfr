@@ -13,6 +13,7 @@ from sqlalchemy import or_
 from smfrcore.utils import LOGGER_FORMAT, LOGGER_DATE_FORMAT
 
 from smfrcore.models.sqlmodels import TwitterCollection, Aggregation, create_app
+from smfrcore.models.cassandramodels import Tweet
 
 
 logging.basicConfig(level=os.environ.get('LOGGING_LEVEL', 'DEBUG'), format=LOGGER_FORMAT, datefmt=LOGGER_DATE_FORMAT)
@@ -24,7 +25,28 @@ flask_app = create_app()
 
 running_aggregators = set()
 flood_propability_ranges = ((0, 10), (10, 90), (90, 100))
-relevant_tweets_number = int(os.environ.get('NUM_RELEVANT_TWEETS', 5))
+
+
+class MostRelevantTweets:
+
+    def __init__(self, size, initial=None):
+        self.size = size
+        self._tweets = sorted(initial, key=lambda t: t['annotations']['flood_probability'][1], reverse=True) if initial else []
+        self._tweets = self._tweets[:self.size]
+        self.max_prob = initial[0]['annotations']['flood_probability'][1] if initial else 0
+        self.min_prob = initial[self.size - 1]['annotations']['flood_probability'][1] if initial else 1
+
+    @property
+    def values(self):
+        return self._tweets
+
+    def push_if_relevant(self, item):
+        if item.annotations['flood_probability'][1] >= self.min_prob:
+            self._tweets.append(Tweet.to_json(item))
+            self._tweets = sorted(self._tweets, key=lambda t: t['annotations']['flood_probability'][1], reverse=True)
+            self._tweets = self._tweets[:self.size]
+            self.max_prob = self._tweets[0]['annotations']['flood_probability'][1]
+            self.min_prob = self._tweets[self.size - 1]['annotations']['flood_probability'][1]
 
 
 def with_logging(func):
@@ -83,7 +105,7 @@ def aggregate(running_conf=None):
             aggregation = Aggregation.query.filter_by(collection_id=coll.id).first()
 
             if not aggregation:
-                aggregation = Aggregation(collection_id=coll.id, values={})
+                aggregation = Aggregation(collection_id=coll.id, values={}, relevant_tweets=[])
                 aggregation.save()
 
             aggregations_args.append(
@@ -103,7 +125,7 @@ def aggregate(running_conf=None):
 def run_single_aggregation(collection_id,
                            last_tweetid_collected, last_tweetid_annotated, last_tweetid_geotagged,
                            timestamp_start, timestamp_end,
-                           initial_values, relevant_tweets):
+                           initial_values, initial_relevant_tweets):
     """
     Calculating stats with attributes:
     - NUTS2
@@ -115,6 +137,7 @@ def run_single_aggregation(collection_id,
     - num_tweets_60-80
     - num_tweets_80-100
     - NUTS2ID_num_tweets_60-80 etc.
+    :param initial_relevant_tweets:
     :param collection_id:
     :param last_tweetid_collected:
     :param last_tweetid_annotated:
@@ -124,11 +147,12 @@ def run_single_aggregation(collection_id,
     :param initial_values:
     :return:
     """
-    from smfrcore.models.cassandramodels import Tweet
 
     if collection_id in running_aggregators:
         logger.warning('!!!!!! Previous aggregation for collection id %d is not finished yet !!!!!!' % collection_id)
         return 0
+    relevant_tweets_number = int(os.environ.get('NUM_RELEVANT_TWEETS', 5))
+    relevant_tweets = MostRelevantTweets(relevant_tweets_number, initial=initial_relevant_tweets)
     max_collected_tweetid = 0
     max_annotated_tweetid = 0
     max_geotagged_tweetid = 0
@@ -158,7 +182,7 @@ def run_single_aggregation(collection_id,
             max_annotated_tweetid = max(max_annotated_tweetid, t.tweet_id)
             counter['annotated'] += 1
             inc_annotated_counter(counter, t.annotations['flood_probability'][1])
-            # TODO put here most representative tweets logic....?
+            relevant_tweets.push_if_relevant(t)
 
         geotagged_tweets = Tweet.get_iterator(collection_id, 'geotagged', last_tweetid=last_tweetid_geotagged)
         for t in geotagged_tweets:
@@ -185,9 +209,11 @@ def run_single_aggregation(collection_id,
         aggregation.timestamp_start = last_timestamp_start if last_timestamp_start != datetime(2100, 12, 30) else None
         aggregation.timestamp_end = last_timestamp_end if last_timestamp_end != datetime(1970, 1, 1) else None
         aggregation.values = dict(counter)
+        aggregation.relevant_tweets = relevant_tweets.values
         aggregation.save()
-        logger.info(' <<<<<<<<<<< Aggregation terminated for collection %d: %s', collection_id, str(aggregation.values))
         running_aggregators.remove(collection_id)
+
+    logger.info(' <<<<<<<<<<< Aggregation terminated for collection %d: %s', collection_id, str(aggregation.values))
     return 0
 
 

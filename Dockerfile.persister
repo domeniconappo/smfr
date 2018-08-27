@@ -15,7 +15,8 @@ COPY base/shared_libs/smfr_utils/. /smfr_libs/utils/
 COPY base/shared_libs/smfr_models/. /smfr_libs/models/
 COPY ./persister/requirements.txt /requirements/
 
-RUN pip3.6 install -r /requirements/requirements.txt && pip3.6 install /smfr_libs/utils/ \
+RUN pip3.6 install -r /requirements/requirements.txt
+RUN pip3.6 install /smfr_libs/utils/ \
  && pip3.6 install /smfr_libs/models/ \
  && chmod -R a+x /scripts/ && rm -R /root/.cache
 

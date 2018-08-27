@@ -137,6 +137,10 @@ class Tweet(cqldb.Model):
 
     @classmethod
     def to_obj(cls, row):
+        """
+        :param row: a tuple representing a row in Cassandra tweet table
+        :return: A Tweet object
+        """
         return cls(**row._asdict())
 
     @classmethod
@@ -145,13 +149,17 @@ class Tweet(cqldb.Model):
 
     @classmethod
     def to_dict(cls, row):
+        """
+        :param row: a tuple representing a row in Cassandra tweet table
+        :return: A dictionary that can be serialized
+        """
         return row._asdict()
 
     @classmethod
     def to_json(cls, row):
         """
         Needs to be encoded because of OrderedMapSerializedKey and other specific Cassandra objects
-        :param row: dictionary representing a row in Cassandra tweet table
+        :param row: a tuple representing a row in Cassandra tweet table
         :return: A dictionary that can be serialized
         """
         res = {}
