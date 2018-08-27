@@ -19,7 +19,7 @@ services:
         max_attempts: 3
         window: 120s
       placement:
-        constraints: [ node.labels.medium == true ]
+        constraints: [ node.labels.huge == true ]
 
   kafka:
     restart: always
@@ -58,7 +58,7 @@ services:
         max_attempts: 3
         window: 120s
       placement:
-        constraints: [ node.labels.medium == true ]
+        constraints: [ node.labels.huge == true ]
 
   cassandrasmfr:
     build:
@@ -218,7 +218,7 @@ services:
         max_attempts: 3
         window: 120s
       placement:
-        constraints: [ node.labels.huge == true ]
+        constraints: [ node.labels.medium == true ]
 
   persister:
     restart: always
@@ -365,7 +365,7 @@ services:
         max_attempts: 3
         window: 120s
       placement:
-        constraints: [ node.labels.huge == true ]
+        constraints: [ node.labels.medium == true ]
 
   aggregator:
     networks:
@@ -520,7 +520,7 @@ services:
         max_attempts: 3
         window: 120s
       placement:
-        constraints: [ node.labels.huge == true ]
+        constraints: [ node.labels.large == true ]
 
   web:
     restart: always

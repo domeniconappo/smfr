@@ -181,16 +181,6 @@ class Annotator:
         import tensorflow as tf
         logger.info('+++++++++++++ Annotator consumer lang=%s connected', lang)
 
-        topic = '{}_{}'.format(cls.annotator_kafka_topic, lang)
-
-        consumer = KafkaConsumer(
-            topic, check_crcs=False,
-            group_id='ANNOTATOR-{}'.format(lang),
-            auto_offset_reset='earliest', max_poll_records=100, max_poll_interval_ms=600000,
-            bootstrap_servers=cls.kafka_bootstrap_server,
-            session_timeout_ms=40000, heartbeat_interval_ms=15000
-        )
-
         graph = tf.Graph()
         with graph.as_default():
             session = tf.Session()
@@ -198,6 +188,16 @@ class Annotator:
                 model, tokenizer = cls.load_annotation_model(lang)
 
                 try:
+                    topic = '{}_{}'.format(cls.annotator_kafka_topic, lang)
+
+                    consumer = KafkaConsumer(
+                        topic, check_crcs=False,
+                        group_id='ANNOTATOR-{}'.format(lang),
+                        auto_offset_reset='earliest', max_poll_records=100, max_poll_interval_ms=1000000,
+                        bootstrap_servers=cls.kafka_bootstrap_server,
+                        session_timeout_ms=60000, heartbeat_interval_ms=60000
+                    )
+
                     for i, msg in enumerate(consumer, start=1):
                         tweet = None
                         try:
