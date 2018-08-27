@@ -13,7 +13,6 @@ from sqlalchemy import or_
 from smfrcore.utils import LOGGER_FORMAT, LOGGER_DATE_FORMAT
 
 from smfrcore.models.sqlmodels import TwitterCollection, Aggregation, create_app
-from smfrcore.models.cassandramodels import Tweet
 
 
 logging.basicConfig(level=os.environ.get('LOGGING_LEVEL', 'DEBUG'), format=LOGGER_FORMAT, datefmt=LOGGER_DATE_FORMAT)
@@ -33,20 +32,20 @@ class MostRelevantTweets:
         self.size = size
         self._tweets = sorted(initial, key=lambda t: t['annotations']['flood_probability'][1], reverse=True) if initial else []
         self._tweets = self._tweets[:self.size]
-        self.max_prob = initial[0]['annotations']['flood_probability'][1] if initial else 0
-        self.min_prob = initial[self.size - 1]['annotations']['flood_probability'][1] if initial else 1
+        self.max_prob = self._tweets[0]['annotations']['flood_probability'][1] if initial else 1
+        self.min_prob = self._tweets[-1]['annotations']['flood_probability'][1] if initial else 0
 
     @property
     def values(self):
         return self._tweets
 
     def push_if_relevant(self, item):
-        if item.annotations['flood_probability'][1] >= self.min_prob:
-            self._tweets.append(Tweet.to_json(item))
+        if item['annotations']['flood_probability'][1] >= self.min_prob:
+            self._tweets.append(item)
             self._tweets = sorted(self._tweets, key=lambda t: t['annotations']['flood_probability'][1], reverse=True)
             self._tweets = self._tweets[:self.size]
             self.max_prob = self._tweets[0]['annotations']['flood_probability'][1]
-            self.min_prob = self._tweets[self.size - 1]['annotations']['flood_probability'][1]
+            self.min_prob = self._tweets[-1]['annotations']['flood_probability'][1]
 
 
 def with_logging(func):
@@ -114,7 +113,7 @@ def aggregate(running_conf=None):
                  aggregation.last_tweetid_annotated,
                  aggregation.last_tweetid_geotagged,
                  aggregation.timestamp_start, aggregation.timestamp_end,
-                 aggregation.values)
+                 aggregation.values, aggregation.relevant_tweets)
             )
 
         # cpu_count() - 1 aggregation threads running at same time
@@ -147,6 +146,7 @@ def run_single_aggregation(collection_id,
     :param initial_values:
     :return:
     """
+    from smfrcore.models.cassandramodels import Tweet
 
     if collection_id in running_aggregators:
         logger.warning('!!!!!! Previous aggregation for collection id %d is not finished yet !!!!!!' % collection_id)
@@ -182,7 +182,7 @@ def run_single_aggregation(collection_id,
             max_annotated_tweetid = max(max_annotated_tweetid, t.tweet_id)
             counter['annotated'] += 1
             inc_annotated_counter(counter, t.annotations['flood_probability'][1])
-            relevant_tweets.push_if_relevant(t)
+            relevant_tweets.push_if_relevant(Tweet.to_json(t))
 
         geotagged_tweets = Tweet.get_iterator(collection_id, 'geotagged', last_tweetid=last_tweetid_geotagged)
         for t in geotagged_tweets:
