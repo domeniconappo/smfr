@@ -29,3 +29,11 @@ pre {
 a.btn.disabled {
     pointer-events: auto;
 }
+
+.color-red {
+  color: 	#8B0000;
+}
+
+.color-blu {
+  color: #547ea7;
+}

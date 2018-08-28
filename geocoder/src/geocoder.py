@@ -157,6 +157,7 @@ class Geocoder:
     def geoparse_tweet(cls, tweet, tagger):
         """
         Mordecai geoparsing
+        :param tagger: mordecai.Geoparser instance
         :param tweet: smfrcore.models.cassandramodels.Tweet object
         :return: list of tuples of lat/lon coordinates
         """
@@ -217,64 +218,77 @@ class Geocoder:
                 If there is a single NUTS2 area in the list, that NUTS2 area is returned (nuts2source="mentions")
                 Otherwise, check if user location is in one of the NUTS list and return it. If not, NULL is returned
 
-        :param tagger:
+        :param tagger: mordecai.Geoparser instance
         :param tweet: Tweet object
         :return: tuple (nuts2, nuts_source, coordinates)
         """
-        # TODO refactor to use shorter private methods
 
-        no_results = (None, None, None)
         mentions = cls.geoparse_tweet(tweet, tagger)
         tweet_coords = cls.get_coordinates_from_tweet(tweet)
+        user_location = tweet.original_tweet_as_dict['user'].get('location')
+        coordinates, nuts2, nuts_source = None, None, None
 
-        if not mentions:
-            if tweet_coords:
-                nuts2 = Nuts2Finder.find_nuts2(*tweet_coords)
-                if nuts2:
-                    coordinates = tweet_coords
-                    nuts_source = 'coordinates'
-                    logger.debug('Found Nuts from tweet geo... - coordinates')
-                    return nuts2, nuts_source, coordinates
-            return no_results
-        else:
-            if tweet_coords and len(mentions) > 1:
-                nuts2_from_tweet = Nuts2Finder.find_nuts2(*tweet_coords)
-                for latlong in mentions:
-                    # checking the list of mentioned places coordinates
-                    nuts2 = Nuts2Finder.find_nuts2(*latlong)
-                    if nuts2 and  nuts2_from_tweet and nuts2.id == nuts2_from_tweet.id:
-                        coordinates = latlong
-                        nuts_source = 'coordinates-and-mentions'
-                        logger.debug('Found Nuts from tweet geo and mentions... - coordinates-and-mentions')
-                        return nuts2, nuts_source, coordinates
-                return no_results
-            else:
-                if len(mentions) == 1:
-                    coordinates = mentions[0]
-                    nuts2 = Nuts2Finder.find_nuts2(*coordinates)
-                    if nuts2:
-                        nuts_source = 'mentions'
-                        logger.debug('Found Nuts... - Exactly one mention')
-                        return nuts2, nuts_source, coordinates
+        if tweet_coords:
+            coordinates, nuts2, nuts_source = cls._nuts_from_tweet_coords(mentions, tweet_coords)
+        elif len(mentions) == 1:
+            coordinates, nuts2, nuts_source = cls._nuts_from_one_mention(mentions)
+        elif user_location:
+            # no geolocated tweet and one or more mentions...try to get location from user
+            coordinates, nuts2, nuts_source = cls._nuts_from_user_location(mentions, tagger, user_location)
+        return coordinates, nuts2, nuts_source
 
-                    return no_results
-                else:
-                    # no geolocated tweet and more than one mention
-                    user_location = tweet.original_tweet_as_dict['user'].get('location')
-                    res = tagger.geoparse(user_location) if user_location else None
-                    if res and res[0] and 'lat' in res[0].get('geo', {}):
-                        res = res[0]
-                        user_coordinates = (float(res['geo']['lat']), float(res['geo']['lon']))
-                        user_nuts2 = Nuts2Finder.find_nuts2(*user_coordinates)
-                        for latlong in mentions:
-                            # checking the list of mentioned places coordinates
-                            nuts2 = Nuts2Finder.find_nuts2(*latlong)
-                            if nuts2 == user_nuts2:
-                                coordinates = latlong
-                                nuts_source = 'mentions-and-user'
-                                logger.debug('Found Nuts... - User location')
-                                return nuts2, nuts_source, coordinates
-                    return no_results
+    @classmethod
+    def _nuts_from_user_location(cls, mentions, tagger, user_location):
+        coordinates, nuts2, nuts_source = None, None, None
+        res = tagger.geoparse(user_location)
+        if res and res[0] and 'lat' in res[0].get('geo', {}):
+            res = res[0]
+            user_coordinates = (float(res['geo']['lat']), float(res['geo']['lon']))
+            nuts2user = Nuts2Finder.find_nuts2(*user_coordinates)
+            for latlong in mentions:
+                # checking the list of mentioned places coordinates
+                nuts2mentions = Nuts2Finder.find_nuts2(*latlong)
+                if nuts2mentions.id == nuts2user.id:
+                    coordinates = latlong
+                    nuts_source = 'mentions-and-user'
+                    nuts2 = nuts2mentions
+                    logger.debug('Found Nuts... - User location')
+        return coordinates, nuts2, nuts_source
+
+    @classmethod
+    def _nuts_from_one_mention(cls, mentions):
+        nuts2, nuts_source = None, None
+        coordinates = mentions[0]
+        nuts2mention = Nuts2Finder.find_nuts2(*coordinates)
+        if nuts2mention:
+            nuts_source = 'mentions'
+            nuts2 = nuts2mention
+            logger.debug('Found Nuts... - Exactly one mention')
+        return coordinates, nuts2, nuts_source
+
+    @classmethod
+    def _nuts_from_tweet_coords(cls, mentions, tweet_coords):
+        coordinates, nuts2, nuts_source = None, None, None
+        nuts2tweet = Nuts2Finder.find_nuts2(*tweet_coords)
+        if not mentions and nuts2tweet:
+            coordinates = tweet_coords
+            nuts_source = 'coordinates'
+            logger.debug('Found Nuts from tweet geo... - coordinates')
+            nuts2 = nuts2tweet
+            # return nuts2tweet, nuts_source, coordinates
+        elif len(mentions) > 1:
+            for latlong in mentions:
+                # checking the list of mentioned places coordinates
+                nuts2mention = Nuts2Finder.find_nuts2(*latlong)
+                if nuts2mention and nuts2tweet and nuts2tweet.id == nuts2mention.id:
+                    coordinates = latlong
+                    nuts2 = nuts2tweet
+                    nuts_source = 'coordinates-and-mentions'
+                    logger.debug('Found Nuts from tweet geo and mentions... - coordinates-and-mentions')
+                    # return nuts2tweet, nuts_source, coordinates
+        elif len(mentions) == 1:
+            coordinates, nuts2, nuts_source = cls._nuts_from_one_mention(mentions)
+        return coordinates, nuts2, nuts_source
 
     @classmethod
     def start(cls, collection_id):
