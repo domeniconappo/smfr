@@ -187,6 +187,8 @@ class Tweet(cqldb.Model):
                         innerres[inner_k] = inner_v
 
                 res[k] = innerres
+            else:
+                res[k] = v
         return res
 
     @classmethod

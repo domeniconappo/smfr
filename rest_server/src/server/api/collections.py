@@ -239,6 +239,38 @@ def annotate(collection_id, startdate=None, enddate=None):
         return res, code
 
 
+# @check_identity
+# @jwt_required
+def stopgeolocalize(collection_id):
+    """
+
+    :param collection_id:
+    :return:
+    """
+    try:
+        res, code = GeocoderClient.stop(collection_id)
+    except SMFRRestException as e:
+        return {'error': {'description': str(e)}}, 500
+    else:
+        return res, code
+
+
+# @check_identity
+# @jwt_required
+def stopannotate(collection_id):
+    """
+
+    :param collection_id:
+    :return:
+    """
+    try:
+        res, code = AnnotatorClient.stop(collection_id)
+    except SMFRRestException as e:
+        return {'error': {'description': str(e)}}, 500
+    else:
+        return res, code
+
+
 # @check_role
 # @jwt_required
 def fetch_efas(since='latest'):

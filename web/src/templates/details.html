@@ -151,10 +151,21 @@
                                    <div class="btn-group btn-group-justified" role="group">
                                        <div class="btn-group">
                                            {% set test = data.collection.id in data.running_annotators %}
-                                            <a {% if test %}title="Annotator is currently running for this collection" class="btn btn-default disabled"
-                                               {% elif data.collection.is_using_pipeline %}title="Pipeline is active for this collection" class="btn btn-default disabled"
-                                               {% else %} title="Start geotagging for annotated tweets in this collection" class="btn btn-default"{% endif %}
-                                               href="/annotate/{{ data.collection.id }}"><em class="fas fa-tasks"></em> Start Annotation</a>
+                                           {% if test %}
+                                            <a title="Stop annotation for this collection" class="btn btn-danger"
+                                               href="/annotate/{{ data.collection.id }}/stop">
+                                                <em class="fas fa-tasks"></em> Stop Annotation
+                                            </a>
+                                           {% elif data.collection.is_using_pipeline %}
+                                            <a title="Pipeline is active for this collection" class="btn btn-default disabled" href="#">
+                                                <em class="fas fa-tasks"></em> Annotating with pipeline
+                                            </a>
+                                           {% else %}
+                                            <a  title="Start annotating for this collection" class="btn btn-success"
+                                               href="/annotate/{{ data.collection.id }}/start">
+                                                <em class="fas fa-tasks"></em> Start Annotation
+                                            </a>
+                                           {% endif %}
                                        </div>
                                    </div>
 
@@ -162,10 +173,19 @@
                                    <div class="btn-group btn-group-justified" role="group">
                                        <div class="btn-group">
                                            {% set test = data.collection.id in data.running_geotaggers %}
-                                            <a {% if test %}title="Geotagging is currently running for this collection" class="btn btn-default disabled"
-                                               {% elif data.collection.is_using_pipeline %}title="Pipeline is active for this collection" class="btn btn-default disabled"
-                                               {% else %} title="Start geotagging for annotated tweets in this collection" class="btn btn-default"{% endif %}
-                                               href="/geolocalize/{{ data.collection.id }}"><em class="fas fa-globe"></em> Start Geocoding</a>
+                                           {% if test %}
+                                            <a title="Stop geocoding for this collection" class="btn btn-danger"
+                                               href="/geolocalize/{{ data.collection.id }}/stop"><em class="fas fa-globe"></em> Stop Geocoding</a>
+                                           {% elif data.collection.is_using_pipeline %}
+                                            <a title="Pipeline is active for this collection" class="btn btn-default disabled" href="#">
+                                                   <em class="fas fa-tasks"></em> Geocoding with pipeline
+                                            </a>
+                                           {% else %}
+                                            <a title="Start geocoding annotated tweets for this collection" class="btn btn-success"
+                                               href="/geolocalize/{{ data.collection.id }}/start">
+                                                <em class="fas fa-globe"></em> Start Geocoding
+                                            </a>
+                                           {% endif %}
                                        </div>
                                    </div>
                                </div>

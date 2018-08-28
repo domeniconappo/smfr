@@ -109,7 +109,6 @@ class Geocoder:
         else:
             break
 
-    tagger = Geoparser(geonames_host)
 
     @classmethod
     def is_running_for(cls, collection_id):
@@ -155,7 +154,7 @@ class Geocoder:
             cls.stop_signals.append(collection_id)
 
     @classmethod
-    def geoparse_tweet(cls, tweet):
+    def geoparse_tweet(cls, tweet, tagger):
         """
         Mordecai geoparsing
         :param tweet: smfrcore.models.cassandramodels.Tweet object
@@ -168,7 +167,7 @@ class Geocoder:
         es_up = False
         while not es_up and retries <= 10:
             try:
-                res = cls.tagger.geoparse(tweet.full_text)
+                res = tagger.geoparse(tweet.full_text)
             except socket.timeout:
                 logger.warning('ES not responding...throttling a bit')
                 time.sleep(5)
@@ -201,7 +200,7 @@ class Geocoder:
         return latlong
 
     @classmethod
-    def find_nuts_heuristic(cls, tweet):
+    def find_nuts_heuristic(cls, tweet, tagger):
         """
         The following heuristic is applied:
 
@@ -218,13 +217,14 @@ class Geocoder:
                 If there is a single NUTS2 area in the list, that NUTS2 area is returned (nuts2source="mentions")
                 Otherwise, check if user location is in one of the NUTS list and return it. If not, NULL is returned
 
+        :param tagger:
         :param tweet: Tweet object
         :return: tuple (nuts2, nuts_source, coordinates)
         """
         # TODO refactor to use shorter private methods
 
         no_results = (None, None, None)
-        mentions = cls.geoparse_tweet(tweet)
+        mentions = cls.geoparse_tweet(tweet, tagger)
         tweet_coords = cls.get_coordinates_from_tweet(tweet)
 
         if not mentions:
@@ -261,7 +261,7 @@ class Geocoder:
                 else:
                     # no geolocated tweet and more than one mention
                     user_location = tweet.original_tweet_as_dict['user'].get('location')
-                    res = cls.tagger.geoparse(user_location) if user_location else None
+                    res = tagger.geoparse(user_location) if user_location else None
                     if res and res[0] and 'lat' in res[0].get('geo', {}):
                         res = res[0]
                         user_coordinates = (float(res['geo']['lat']), float(res['geo']['lon']))
@@ -340,6 +340,7 @@ class Geocoder:
     def start_consumer(cls):
         logger.info('+++++++++++++ Geocoder consumer starting')
         try:
+            tagger = Geoparser(cls.geonames_host)
             with cls.flask_app.app_context():
                 for i, msg in enumerate(cls.consumer, start=1):
                     tweet = None
@@ -354,14 +355,14 @@ class Geocoder:
                             # if flood_prob <= cls.min_flood_prob:
                             #     continue
 
-                            nutsitem, nuts2_source, latlong = cls.find_nuts_heuristic(tweet)
+                            nutsitem, nuts2_source, latlong = cls.find_nuts_heuristic(tweet, tagger)
                             if not latlong:
-                                logger.debug('Cannot geocode. Skipping: %s', tweet.tweetid)
+                                logger.debug('Skipping: %s, no coordinates', tweet.tweetid)
                                 continue
 
                             cls.set_geo_fields(latlong, nuts2_source, nutsitem, tweet)
                             message = tweet.serialize()
-                            logger.debug('Send geocoded tweet to PERSISTER: %s', tweet.geo)
+                            logger.info('Send geocoded tweet to PERSISTER: %s', tweet.geo)
                             cls.producer.send(cls.persister_kafka_topic, message)
                             if not (i % 1000):
                                 logger.info('Geotagged so far %d', i)

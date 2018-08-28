@@ -195,7 +195,7 @@ paths:
             type: object
             $ref: '#/definitions/CollectionResponse'
 
-  /collections/{collection_id}/geo:
+  /collections/{collection_id}/startgeo:
     post:
       tags: [collections]
       operationId: server.api.collections.geolocalize
@@ -215,12 +215,13 @@ paths:
           type: string
           format: date-time
           description: End date
-      summary: Start Geotagging annotated tweets for this collection
+      summary: Starting Geotagging annotated tweets for this collection
       responses:
         204:
-          description: Annotated tweets are starting to be geotagged...
+          description: Starting geocoding
 
-  /collections/{collection_id}/annotate:
+
+  /collections/{collection_id}/startannotate:
     post:
       tags: [collections]
       operationId: server.api.collections.annotate
@@ -240,10 +241,41 @@ paths:
           type: string
           format: date-time
           description: End date
-      summary: Annotate (classify) tweets for this collection
+      summary: Annotate tweets for this collection
       responses:
         204:
-          description: Collected tweets are starting to be annotated...
+          description: Starting annotation
+
+  /collections/{collection_id}/stopgeo:
+    post:
+      tags: [collections]
+      operationId: server.api.collections.stopgeolocalize
+      parameters:
+      - in: path
+        name: collection_id
+        type: integer
+        required: true
+        description: Collection ID as stored in MySQL DB
+      summary: Stop Geotagging
+      responses:
+        204:
+          description: Stopping geocoding
+
+
+  /collections/{collection_id}/stopannotate:
+    post:
+      tags: [collections]
+      operationId: server.api.collections.stopannotate
+      parameters:
+      - in: path
+        name: collection_id
+        type: integer
+        required: true
+        description: Collection ID as stored in MySQL DB
+      summary: Stop annotation
+      responses:
+        204:
+          description: Stooping annotation
 
   /collections/fetch_efas:
     get:

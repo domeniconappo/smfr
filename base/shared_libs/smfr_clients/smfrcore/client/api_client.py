@@ -33,8 +33,10 @@ class ApiLocalClient:
         'list_inactive_collectors': '/collections/inactive',
         'remove_collection': '/collections/{id}/remove',
         'collection_details': '/collections/{id}',
-        'annotate_collection': '/collections/{id}/annotate',
-        'geotag_collection': '/collections/{id}/geo',
+        'annotate_collection_start': '/collections/{id}/startannotate',
+        'geotag_collection_start': '/collections/{id}/startgeo',
+        'annotate_collection_stop': '/collections/{id}/stopannotate',
+        'geotag_collection_stop': '/collections/{id}/stopgeo',
         'signup_user': '/users',
         'signin_user': '/users/signin',
         'fetch_efas': '/collections/fetch_efas',
@@ -160,10 +162,16 @@ class ApiLocalClient:
         return self._get('collection_details', path_kwargs={'id': collection_id})
 
     def start_annotation(self, collection_id):
-        return self._post('annotate_collection', path_kwargs={'id': collection_id})
+        return self._post('annotate_collection_start', path_kwargs={'id': collection_id})
 
     def start_geotagging(self, collection_id):
-        return self._post('geotag_collection', path_kwargs={'id': collection_id})
+        return self._post('geotag_collection_start', path_kwargs={'id': collection_id})
+
+    def stop_annotation(self, collection_id):
+        return self._post('annotate_collection_stop', path_kwargs={'id': collection_id})
+
+    def stop_geotagging(self, collection_id):
+        return self._post('geotag_collection_stop', path_kwargs={'id': collection_id})
 
     def fetch_efas(self, since='latest'):
         return self._get('fetch_efas', query_params={'since': since}), 200

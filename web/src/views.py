@@ -154,21 +154,21 @@ def collection_details(collection_id):
         return render_template('details.html', data=res), 200
 
 
-@app.route('/annotate/<int:collection_id>', methods=('GET',))
-def annotate_collection(collection_id):
+@app.route('/annotate/<int:collection_id>/start', methods=('GET',))
+def startannotate_collection(collection_id):
     try:
         client.start_annotation(collection_id)
     except SMFRRestException as e:
         add_message('An error occurred: {}'.format(e), category=MessageClass.ERROR)
         logger.error(str(e))
     else:
-        add_message('Classification started for collection: {}'.format(collection_id), category=MessageClass.SUCCESS)
+        add_message('Annotation started for collection: {}'.format(collection_id), category=MessageClass.SUCCESS)
     finally:
         return redirect('/details/{}'.format(collection_id))
 
 
-@app.route('/geolocalize/<int:collection_id>', methods=('GET',))
-def geolocalize_collection(collection_id):
+@app.route('/geolocalize/<int:collection_id>/start', methods=('GET',))
+def startgeolocalize_collection(collection_id):
     try:
         client.start_geotagging(collection_id)
     except SMFRRestException as e:
@@ -176,6 +176,32 @@ def geolocalize_collection(collection_id):
         logger.error(str(e))
     else:
         add_message('Geocoding started for collection', category=MessageClass.SUCCESS)
+    finally:
+        return redirect('/details/{}'.format(collection_id))
+
+
+@app.route('/annotate/<int:collection_id>/stop', methods=('GET',))
+def stopannotate_collection(collection_id):
+    try:
+        client.stop_annotation(collection_id)
+    except SMFRRestException as e:
+        add_message('An error occurred: {}'.format(e), category=MessageClass.ERROR)
+        logger.error(str(e))
+    else:
+        add_message('Annotation stoppped for collection: {}'.format(collection_id), category=MessageClass.SUCCESS)
+    finally:
+        return redirect('/details/{}'.format(collection_id))
+
+
+@app.route('/geolocalize/<int:collection_id>/stop', methods=('GET',))
+def stopgeolocalize_collection(collection_id):
+    try:
+        client.stop_geotagging(collection_id)
+    except SMFRRestException as e:
+        add_message('An error occurred: {}'.format(e), category=MessageClass.ERROR)
+        logger.error(str(e))
+    else:
+        add_message('Geocoding stopped for collection', category=MessageClass.SUCCESS)
     finally:
         return redirect('/details/{}'.format(collection_id))
 

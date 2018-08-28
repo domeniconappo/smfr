@@ -28,24 +28,26 @@ flood_propability_ranges = ((0, 10), (10, 90), (90, 100))
 
 class MostRelevantTweets:
 
-    def __init__(self, size, initial=None):
-        self.size = size
-        self._tweets = sorted(initial, key=lambda t: t['annotations']['flood_probability'][1], reverse=True) if initial else []
-        self._tweets = self._tweets[:self.size]
-        self.max_prob = self._tweets[0]['annotations']['flood_probability'][1] if initial else 1
-        self.min_prob = self._tweets[-1]['annotations']['flood_probability'][1] if initial else 0
+    @classmethod
+    def _sortkey(cls, t):
+        return t['annotations']['flood_probability']['yes']
+
+    def __init__(self, maxsize, initial=None):
+        self.maxsize = maxsize
+        self._tweets = sorted(initial, key=self._sortkey, reverse=True) if initial else []
+        self._tweets = self._tweets[:self.maxsize]
+        self.min_prob = self._tweets[-1]['annotations']['flood_probability']['yes'] if initial else 0
 
     @property
     def values(self):
         return self._tweets
 
     def push_if_relevant(self, item):
-        if item['annotations']['flood_probability'][1] >= self.min_prob:
+        if item['annotations']['flood_probability']['yes'] >= self.min_prob or len(self._tweets) < self.maxsize:
             self._tweets.append(item)
-            self._tweets = sorted(self._tweets, key=lambda t: t['annotations']['flood_probability'][1], reverse=True)
-            self._tweets = self._tweets[:self.size]
-            self.max_prob = self._tweets[0]['annotations']['flood_probability'][1]
-            self.min_prob = self._tweets[-1]['annotations']['flood_probability'][1]
+            self._tweets = sorted(self._tweets, key=self._sortkey, reverse=True)
+            self._tweets = self._tweets[:self.maxsize]
+            self.min_prob = self._tweets[-1]['annotations']['flood_probability']['yes']
 
 
 def with_logging(func):
@@ -195,7 +197,7 @@ def run_single_aggregation(collection_id,
         running_aggregators.remove(collection_id)
         return 1
     except Exception as e:
-        logger.error('An error occurred: %s', str(e))
+        logger.error('An error occurred: %s %s', type(e), e)
         running_aggregators.remove(collection_id)
         return 1
 
