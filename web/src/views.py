@@ -175,7 +175,7 @@ def startgeolocalize_collection(collection_id):
         add_message('An error occurred: {}'.format(e), category=MessageClass.ERROR)
         logger.error(str(e))
     else:
-        add_message('Geocoding started for collection', category=MessageClass.SUCCESS)
+        add_message('Geocoding started for collection: {}'.format(collection_id), category=MessageClass.SUCCESS)
     finally:
         return redirect('/details/{}'.format(collection_id))
 
@@ -201,7 +201,7 @@ def stopgeolocalize_collection(collection_id):
         add_message('An error occurred: {}'.format(e), category=MessageClass.ERROR)
         logger.error(str(e))
     else:
-        add_message('Geocoding stopped for collection', category=MessageClass.SUCCESS)
+        add_message('Geocoding stopped for collection: {}'.format(collection_id), category=MessageClass.SUCCESS)
     finally:
         return redirect('/details/{}'.format(collection_id))
 

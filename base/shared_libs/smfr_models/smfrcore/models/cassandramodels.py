@@ -214,14 +214,10 @@ class Tweet(cqldb.Model):
                                           timeout=None)
         else:
             results = cls.session.execute(cls.stmt, parameters=(collection_id, ttype),
-                                          timeout=600)
+                                          timeout=None)
 
         lang = lang.lower() if lang else None
         return (getattr(cls, 'to_{}'.format(out_format))(row) for row in results if not lang or row.lang == lang)
-        # for row in results:
-        #     if lang and row.lang != lang:
-        #         continue
-        #     yield getattr(cls, 'to_{}'.format(out_format))(row)
 
     @classmethod
     def generate_prepared_statements(cls):
