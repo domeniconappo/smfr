@@ -217,7 +217,7 @@ fi
 
 # stop the jvm on OutOfMemoryError as it can result in some data corruption
 # uncomment the preferred option
-# ExitOnOutOfMemoryError and CrashOnOutOfMemoryError require a JRE greater or equals to 1.7 update 101 or 1.8 update 92
+# ExitOnOutOfMemoryError and CrashOnOutOfMemoryError require a JRE greater or equals to 1.7 update_nutstables 101 or 1.8 update_nutstables 92
 # For OnOutOfMemoryError we cannot use the JVM_OPTS variables because bash commands split words
 # on white spaces without taking quotes into account
 # JVM_OPTS="$JVM_OPTS -XX:+ExitOnOutOfMemoryError"

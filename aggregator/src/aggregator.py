@@ -190,10 +190,10 @@ def run_single_aggregation(collection_id,
         for t in geotagged_tweets:
             max_geotagged_tweetid = max(max_geotagged_tweetid, t.tweet_id)
             counter['geotagged'] += 1
-            nuts2 = t.geo.get('nuts_id') or t.geo.get('efas_id')
-            inc_annotated_counter(counter, t.annotations['flood_probability'][1], nuts2=nuts2)
-    except cassandra.ReadFailure:
-        logger.error('Cassandra Read failure...just exit. Hope you are lucky at next round...')
+            efas_id = t.geo.get('efas_id')
+            inc_annotated_counter(counter, t.annotations['flood_probability'][1], nuts2=efas_id)
+    except cassandra.ReadFailure as e:
+        logger.error('Cassandra Read failure: %s', e)
         running_aggregators.remove(collection_id)
         return 1
     except Exception as e:

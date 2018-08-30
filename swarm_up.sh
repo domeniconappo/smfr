@@ -1,12 +1,6 @@
 #!/usr/bin/env bash
 
-PROPERTY_FILE=.env
-
-function getProperty {
-   PROP_KEY=$1
-   PROP_VALUE=`cat ${PROPERTY_FILE} | grep -v "#${PROP_KEY}" | grep "${PROP_KEY}" | cut -d'=' -f2`
-   echo ${PROP_VALUE}
-}
+source functions.sh
 
 export image_tag=`cat VERSION | grep "VERSION" | cut -d'=' -f2`
 
@@ -40,7 +34,7 @@ PRODUCTS_IMAGE=$(getProperty "PRODUCTS_IMAGE")
 docker-compose config > docker-compose-parsed.yaml
 
 # cleaning volumes from docker compose configuration
-python3 compose4deploy.py -i docker-compose-parsed.yaml -o docker-compose-4deploy.yaml
+python3 scripts/compose4deploy.py -i docker-compose-parsed.yaml -o docker-compose-4deploy.yaml
 
 docker stack deploy --with-registry-auth -c ./docker-compose-4deploy.yaml SMFR
 
@@ -54,7 +48,7 @@ docker service update SMFR_persister --detach=false --with-registry-auth --image
 docker service update SMFR_annotator --detach=false --with-registry-auth --image ${DOCKER_REGISTRY}/${ANNOTATOR_IMAGE}:${image_tag}
 docker service update SMFR_geocoder --detach=false --with-registry-auth --image ${DOCKER_REGISTRY}/${GEOCODER_IMAGE}:${image_tag}
 docker service update SMFR_aggregator --detach=false --with-registry-auth --image ${DOCKER_REGISTRY}/${AGGREGATOR_IMAGE}:${image_tag}
-#docker service update SMFR_products --detach=false --with-registry-auth --image ${DOCKER_REGISTRY}/${PRODUCTS_IMAGE}:${image_tag}
+#docker service update_nutstables SMFR_products --detach=false --with-registry-auth --image ${DOCKER_REGISTRY}/${PRODUCTS_IMAGE}:${image_tag}
 
 docker service update SMFR_restserver --detach=false --with-registry-auth --image ${DOCKER_REGISTRY}/${RESTSERVER_IMAGE}:${image_tag}
 docker service update SMFR_web --detach=false --with-registry-auth --image ${DOCKER_REGISTRY}/${WEB_IMAGE}:${image_tag}

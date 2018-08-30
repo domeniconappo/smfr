@@ -830,8 +830,8 @@
 
 			var ampm = o[hour < 12 ? 'amNames' : 'pmNames'][0];
 
-			// If the update was done in the input field, the input field should not be updated.
-			// If the update was done using the sliders, update the input field.
+			// If the update_nutstables was done in the input field, the input field should not be updated.
+			// If the update_nutstables was done using the sliders, update_nutstables the input field.
 			var hasChanged = (
 						hour !== parseInt(this.hour,10) || // sliders should all be numeric
 						minute !== parseInt(this.minute,10) ||
@@ -909,7 +909,7 @@
 		},
 
 		/*
-		* update our input with the new date time..
+		* update_nutstables our input with the new date time..
 		*/
 		_updateDateTime: function (dp_inst) {
 			dp_inst = this.inst || dp_inst;
@@ -1513,7 +1513,7 @@
 		var tp_inst = this._get(inst, 'timepicker');
 		if (tp_inst) {
 			var altField = tp_inst._defaults.altField;
-			if (altField) { // update alternate field too
+			if (altField) { // update_nutstables alternate field too
 				var altFormat = tp_inst._defaults.altFormat || tp_inst._defaults.dateFormat,
 					date = this._getDate(inst),
 					formatCfg = $.datepicker._getFormatConfig(inst),

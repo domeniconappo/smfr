@@ -21,6 +21,7 @@ RUN pip3.6 install /smfr_libs/utils/ \
  && chmod -R a+x /scripts/ && rm -R /root/.cache
 
 COPY ./geocoder/src/. /geocoder
+COPY ./geocoder/config/countries.json /config/
 WORKDIR /geocoder
 
 EXPOSE 5557 6006

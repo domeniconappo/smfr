@@ -1,16 +1,12 @@
 #!/usr/bin/env bash
 
+source functions.sh
+
 command=${1:-1}
 
-PROPERTY_FILE=.env
 SERVICES="web restserver geocoder annotator persister aggregator cassandrasmfr mysql products"
 logged=0
 
-function getProperty {
-   PROP_KEY=$1
-   PROP_VALUE=`cat ${PROPERTY_FILE} | grep -v "#${PROP_KEY}" | grep "${PROP_KEY}" | cut -d'=' -f2`
-   echo ${PROP_VALUE}
-}
 
 export image_tag=`cat VERSION | grep "VERSION" | cut -d'=' -f2`
 
@@ -31,7 +27,7 @@ if [ ! -d ${SMFR_DATADIR} ]; then
 fi
 
 # building with docker-compose
-python3 compose4build.py ${image_tag}
+python3 scripts/compose4build.py ${image_tag}
 
 # build base image
 docker build --build-arg http_proxy=${http_proxy} --build-arg https_proxy=${http_proxy} -t smfr_base:${image_tag} base/.

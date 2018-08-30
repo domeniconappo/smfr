@@ -97,29 +97,36 @@ yellow open   geonames 23vFz20STbudmqktmHVOLg   1   1   11139265            0   
 
 #### MySQL
 
-Whenever new models (or new fields) are added to the mysql schema, follow these steps to update DB (development only).
-
-- start MySQL container only (other containers will exit due unsynched db)
-- install models package in a virtualenv
-- then execute flask alembic commands
+Whenever new models (or new fields) are added to the mysql schema, execute the following script to update SMFR DB.
 
 ```bash
-$ ./singlenode_up.sh mysql
-$ ./install_shared_libs.sh
-$ cd rest_server/src
-$ export FLASK__APP=smfr.py
-$ flask db migrate
-$ flask db upgrade
+$ ./upgrade_db.sh
 ```
 
-The last command `flask db upgrade` that performs the actual schema migration, could be omitted as it's executed at each startup of the rest server image anyway.
+The script will:
 
+- start MySQL container only
+- install models package in a virtualenv
+- execute flask alembic commands
+- shutdown MySQL container
 
-From host, connect to MySQL DB as the docker root user with `mysql -h 127.0.0.1 -p` (if you have mysql client installed) or just use docker exec:
-`docker exec -it mysql mysql -h 127.0.0.1 -p`
+The last command `flask db upgrade` that performs the actual schema migration,
+it's executed at each startup of the rest server image anyway so upgrade_db.sh is used in DEV phase only, to add migrations files.
 
 **_Note: You have to create migrations in development and push them to GIT repo.
 Then you have to apply migrations on all systems where SMFR runs (dev, test, prod etc.)_**
+
+##### Upgrading Nuts tables
+
+When a new version of nuts tables is available (compressed json files are under scripts/seeds/data/ repository folder), execute:
+
+```bash
+$ ./upgrade_nuts_tables.sh
+```
+
+
+**_Tip: From host, connect to MySQL DB by using docker exec:_**
+`docker exec -it mysql mysql -h 127.0.0.1 -p`
 
 
 #### Cassandra

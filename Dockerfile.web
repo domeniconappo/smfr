@@ -6,7 +6,7 @@ ARG https_proxy
 
 ENV LANG=C.UTF-8
 
-RUN apt-get update && apt-get -y dist-upgrade && apt-get -y install apt-utils \
+RUN apt-get update_nutstables && apt-get -y dist-upgrade && apt-get -y install apt-utils \
  && apt-get -y install net-tools nginx supervisor && pip3 install -U pip
 
 # build uwsgi and python plugin

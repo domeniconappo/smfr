@@ -787,13 +787,13 @@
 		
 		/**
 		 * Update a table cell or row - this method will accept either a single value to
-		 * update the cell with, an array of values with one element for each column or
+		 * update_nutstables the cell with, an array of values with one element for each column or
 		 * an object in the same format as the original data source. The function is
 		 * self-referencing in order to make the multi column updates easier.
-		 *  @param {object|array|string} mData Data to update the cell/row with
-		 *  @param {node|int} mRow TR element you want to update or the aoData index
-		 *  @param {int} [iColumn] The column to update, give as null or undefined to
-		 *    update a whole row.
+		 *  @param {object|array|string} mData Data to update_nutstables the cell/row with
+		 *  @param {node|int} mRow TR element you want to update_nutstables or the aoData index
+		 *  @param {int} [iColumn] The column to update_nutstables, give as null or undefined to
+		 *    update_nutstables a whole row.
 		 *  @param {bool} [bRedraw=true] Redraw the table or not
 		 *  @param {bool} [bAction=true] Perform pre-draw actions or not
 		 *  @returns {int} 0 on success, 1 on error
@@ -803,7 +803,7 @@
 		 *  @example
 		 *    $(document).ready(function() {
 		 *      var oTable = $('#example').dataTable();
-		 *      oTable.fnUpdate( 'Example update', 0, 0 ); // Single cell
+		 *      oTable.fnUpdate( 'Example update_nutstables', 0, 0 ); // Single cell
 		 *      oTable.fnUpdate( ['a', 'b', 'c', 'd', 'e'], $('tbody tr')[0] ); // Row
 		 *    } );
 		 */
@@ -2859,7 +2859,7 @@
 	
 	/**
 	 * Mark cached data as invalid such that a re-read of the data will occur when
-	 * the cached data is next requested. Also update from the data source object.
+	 * the cached data is next requested. Also update_nutstables from the data source object.
 	 *
 	 * @param {object} settings DataTables settings object
 	 * @param {int}    rowIdx   Row index to invalidate
@@ -2897,7 +2897,7 @@
 				.data;
 		}
 		else {
-			// Reading from data object, update the DOM
+			// Reading from data object, update_nutstables the DOM
 			var cells = row.anCells;
 	
 			if ( cells ) {
@@ -3345,7 +3345,7 @@
 					while ( aoLocal[i][j+iColspan] !== undefined &&
 					        aoLocal[i][j].cell == aoLocal[i][j+iColspan].cell )
 					{
-						/* Must update the applied array over the rows for the columns */
+						/* Must update_nutstables the applied array over the rows for the columns */
 						for ( k=0 ; k<iRowspan ; k++ )
 						{
 							aApplied[i+k][j+iColspan] = 1;
@@ -4874,7 +4874,7 @@
 			plugin.fnInit( settings, node, redraw );
 		}
 	
-		/* Add a draw callback for the pagination on first instance, to update the paging display */
+		/* Add a draw callback for the pagination on first instance, to update_nutstables the paging display */
 		if ( ! features.p )
 		{
 			node.id = settings.sTableId+'_paginate';
@@ -4915,7 +4915,7 @@
 	 *  @param {object} settings DataTables settings object
 	 *  @param {string|int} action Paging action to take: "first", "previous",
 	 *    "next" or "last" or page number to jump to (integer)
-	 *  @param [bool] redraw Automatically draw the update or not
+	 *  @param [bool] redraw Automatically draw the update_nutstables or not
 	 *  @returns {bool} true page has changed, false - no change
 	 *  @memberof DataTable#oApi
 	 */
@@ -6034,7 +6034,7 @@
 		var aSort = _fnSortFlatten( settings );
 		var oAria = settings.oLanguage.oAria;
 	
-		// ARIA attributes - need to loop all columns, to update all (removing old
+		// ARIA attributes - need to loop all columns, to update_nutstables all (removing old
 		// attributes as needed)
 		for ( var i=0, iLen=columns.length ; i<iLen ; i++ )
 		{
@@ -8261,7 +8261,7 @@
 				} );
 			} );
 	
-			// Column visibility change - update the colspan
+			// Column visibility change - update_nutstables the colspan
 			api.on( colvisEvent, function ( e, ctx, idx, vis ) {
 				if ( settings !== ctx ) {
 					return;
@@ -14777,7 +14777,7 @@
 		header: {
 			_: function ( settings, cell, column, classes ) {
 				// No additional mark-up required
-				// Attach a sort listener to update on sort - note that using the
+				// Attach a sort listener to update_nutstables on sort - note that using the
 				// `DT` namespace will allow the event to be removed automatically
 				// on destroy, while the `dt` namespaced event is the one we are
 				// listening for
@@ -14811,7 +14811,7 @@
 					)
 					.appendTo( cell );
 	
-				// Attach a sort listener to update on sort
+				// Attach a sort listener to update_nutstables on sort
 				$(settings.nTable).on( 'order.dt.DT', function ( e, ctx, sorting, columns ) {
 					if ( settings !== ctx ) {
 						return;

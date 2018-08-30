@@ -330,6 +330,7 @@ class Nuts2(SMFRModel):
     country = Column(String(500))
     geometry = Column(JSONType, nullable=False)
     country_code = Column(String(5))
+    country_code3 = Column(String(5))
     min_lon = Column(Float)
     max_lon = Column(Float)
     min_lat = Column(Float)
@@ -361,6 +362,10 @@ class Nuts2(SMFRModel):
         """
         rows = cls.query.filter(Nuts2.min_lon <= lon, Nuts2.max_lon >= lon, Nuts2.min_lat <= lat, Nuts2.max_lat >= lat)
         return list(rows)
+
+    @classmethod
+    def by_country_code(cls, code):
+        return list(cls.query.filter_by(country_code3=code.upper()))
 
     @classmethod
     def from_feature(cls, feature):
@@ -407,6 +412,7 @@ class Nuts3(SMFRModel):
     country_name = Column(String(500), nullable=False)
     nuts_id = Column(String(10), nullable=True)
     country_code = Column(String(5), nullable=False)
+    country_code3 = Column(String(5))
 
     @classmethod
     def from_feature(cls, feature):
@@ -436,6 +442,13 @@ class Nuts3(SMFRModel):
                    names=names_by_lang,
                    properties=additional_props
                    )
+
+    def save(self):
+        # we need 'merge' method because objects can be attached to db sessions in different threads
+        attached_obj = sqldb.session.merge(self)
+        sqldb.session.add(attached_obj)
+        sqldb.session.commit()
+        self.id = attached_obj.id
 
 
 class Aggregation(SMFRModel):
