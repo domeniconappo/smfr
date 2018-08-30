@@ -61,14 +61,6 @@ def with_logging(func):
     return wrapper
 
 
-def inc_annotated_counter(counter, flood_probability, nuts2=None):
-    flood_probability *= 100
-    for range_a, range_b in flood_propability_ranges:
-        if range_a < flood_probability <= range_b:
-            counter_key = '{}num_tweets_{}-{}'.format('{}_'.format(nuts2) if nuts2 else '', range_a, range_b)
-            counter[counter_key] += 1
-
-
 @with_logging
 def aggregate(running_conf=None):
     """
@@ -121,6 +113,15 @@ def aggregate(running_conf=None):
         # cpu_count() - 1 aggregation threads running at same time
         with ThreadPool(cpu_count() - 1) as p:
             p.starmap(run_single_aggregation, aggregations_args)
+
+
+def inc_annotated_counter(counter, flood_probability, nuts2=None):
+    flood_probability *= 100
+    for range_a, range_b in flood_propability_ranges:
+        if range_a < flood_probability <= range_b:
+            counter_key = '{}_num_tweets_{}-{}'.format(nuts2, range_a, range_b)
+            counter[counter_key] += 1
+            break
 
 
 def run_single_aggregation(collection_id,
@@ -191,7 +192,8 @@ def run_single_aggregation(collection_id,
             max_geotagged_tweetid = max(max_geotagged_tweetid, t.tweet_id)
             counter['geotagged'] += 1
             efas_id = t.geo.get('efas_id')
-            inc_annotated_counter(counter, t.annotations['flood_probability'][1], nuts2=efas_id)
+            nuts_id = t.geo.get('nuts_id', 'N/A')
+            inc_annotated_counter(counter, t.annotations['flood_probability'][1], nuts2='%s_%s' % (efas_id, nuts_id))
     except cassandra.ReadFailure as e:
         logger.error('Cassandra Read failure: %s', e)
         running_aggregators.remove(collection_id)
