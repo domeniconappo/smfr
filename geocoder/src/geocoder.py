@@ -34,7 +34,7 @@ class Nuts2Finder:
     Helper class with Nuts2 methods for finding Nuts2 and countries
     Warning: the method does not return NUTS2 code but the NUTS2 id as it's stored in EFAS NUTS2 table.
     """
-    with tarfile.open('/config/countries.json', 'r:gz') as tar:
+    with tarfile.open('/config/countries.json.tar.gz', 'r:gz') as tar:
         archive = tar.getmembers()[0]
         init_f = tar.extractfile(archive)
         countries = ujson.load(init_f)
