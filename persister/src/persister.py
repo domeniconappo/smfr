@@ -102,7 +102,7 @@ class Persister:
                         logger.info('Saved since last restart TOTAL: %d \n%s', i, str(counter))
                 except (ValidationError, ValueError, TypeError, InvalidRequest) as e:
                     logger.error(e)
-                    logger.error('Poison message for Cassandra: %s', str(tweet) if tweet else msg)
+                    logger.error('Poison message for Cassandra: %s', tweet or msg)
                 except CQLEngineException as e:
                     logger.error(e)
                 except Exception as e:

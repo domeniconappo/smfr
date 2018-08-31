@@ -342,7 +342,7 @@ class Geocoder:
             'latitude': str(latlong[0]),
             'longitude': str(latlong[1]),
             'country': country if not nuts2 or not nuts2.country else nuts2.country,
-            'is_european': is_european,
+            'is_european': str(is_european),  # Map<Text, Text> fields must have text values (bool are not allowed)
             'country_code': country_code,
             'efas_name': nuts2.efas_name if nuts2 and nuts2.efas_name else '',
             'place': place,

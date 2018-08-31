@@ -290,6 +290,10 @@ class Tweet(cqldb.Model):
         """
         return json.loads(self.tweet)
 
+    @property
+    def is_european(self):
+        return self.geo.get('is_european', 'False') in ('True', 'Yes', 'true', 'yes', 1)
+
     @classmethod
     def pretty_annotations(cls, annotations):
         if not annotations:

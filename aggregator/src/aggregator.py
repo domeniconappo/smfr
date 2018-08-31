@@ -207,7 +207,7 @@ def run_single_aggregation(collection_id,
             max_geotagged_tweetid = max(max_geotagged_tweetid, t.tweet_id)
             counter['geotagged'] += 1
             counter['{}_geotagged'.format(t.lang)] += 1
-            geoloc_id = t.geo['nuts_efas_id'] or 'G%s' % t.geo.get('geonameid', 'N/A')
+            geoloc_id = t.geo['nuts_efas_id'] or 'G%s' % (t.geo['geonameid'] or 'N/A')
             nuts_id = t.geo['nuts_id']
             geo_identifier = '%s_%s' % (geoloc_id, nuts_id) if nuts_id else geoloc_id
             inc_annotated_counter(counter, t.annotations['flood_probability'][1], place_id=geo_identifier)
