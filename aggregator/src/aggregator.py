@@ -43,7 +43,13 @@ class MostRelevantTweets:
         return self._tweets
 
     def push_if_relevant(self, item):
-        if item['annotations']['flood_probability']['yes'] >= self.min_prob or len(self._tweets) < self.maxsize:
+        """
+
+        :param item: Tweet dictionary
+        :return:
+        """
+        flood_probability = item['annotations']['flood_probability']['yes']
+        if flood_probability >= self.min_prob or len(self._tweets) < self.maxsize:
             self._tweets.append(item)
             self._tweets = sorted(self._tweets, key=self._sortkey, reverse=True)
             self._tweets = self._tweets[:self.maxsize]
@@ -115,11 +121,19 @@ def aggregate(running_conf=None):
             p.starmap(run_single_aggregation, aggregations_args)
 
 
-def inc_annotated_counter(counter, flood_probability, nuts2=None):
+def inc_annotated_counter(counter, flood_probability, place_id=None):
+    """
+
+    :param counter:
+    :param flood_probability:
+    :param place_id: string composed like <efas_id>_<nuts_id>
+    :return:
+    """
     flood_probability *= 100
+    key = functools.partial('num_tweets_{}-{}'.format) if place_id is None else functools.partial('{}_num_tweets_{}-{}'.format)
     for range_a, range_b in flood_propability_ranges:
         if range_a < flood_probability <= range_b:
-            counter_key = '{}_num_tweets_{}-{}'.format(nuts2, range_a, range_b)
+            counter_key = key(range_a, range_b) if place_id is None else key(place_id, range_a, range_b)
             counter[counter_key] += 1
             break
 
@@ -179,21 +193,27 @@ def run_single_aggregation(collection_id,
             last_timestamp_start = min(last_timestamp_start, t.created_at)
             last_timestamp_end = max(last_timestamp_end, t.created_at)
             counter['collected'] += 1
+            counter['{}_collected'.format(t.lang)] += 1
 
         annotated_tweets = Tweet.get_iterator(collection_id, 'annotated', last_tweetid=last_tweetid_annotated)
         for t in annotated_tweets:
             max_annotated_tweetid = max(max_annotated_tweetid, t.tweet_id)
             counter['annotated'] += 1
+            counter['{}_annotated'.format(t.lang)] += 1
             inc_annotated_counter(counter, t.annotations['flood_probability'][1])
-            relevant_tweets.push_if_relevant(Tweet.to_json(t))
 
         geotagged_tweets = Tweet.get_iterator(collection_id, 'geotagged', last_tweetid=last_tweetid_geotagged)
         for t in geotagged_tweets:
             max_geotagged_tweetid = max(max_geotagged_tweetid, t.tweet_id)
             counter['geotagged'] += 1
-            efas_id = t.geo.get('efas_id')
-            nuts_id = t.geo.get('nuts_id', 'N/A')
-            inc_annotated_counter(counter, t.annotations['flood_probability'][1], nuts2='%s_%s' % (efas_id, nuts_id))
+            counter['{}_geotagged'.format(t.lang)] += 1
+            geoloc_id = t.geo['nuts_efas_id'] or 'G%s' % t.geo.get('geonameid', 'N/A')
+            nuts_id = t.geo['nuts_id']
+            geo_identifier = '%s_%s' % (geoloc_id, nuts_id) if nuts_id else geoloc_id
+            inc_annotated_counter(counter, t.annotations['flood_probability'][1], place_id=geo_identifier)
+            if t.geo['is_european']:
+                # we only show european relevant tweets...
+                relevant_tweets.push_if_relevant(Tweet.to_json(t))
     except cassandra.ReadFailure as e:
         logger.error('Cassandra Read failure: %s', e)
         running_aggregators.remove(collection_id)
