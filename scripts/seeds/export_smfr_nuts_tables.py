@@ -17,7 +17,7 @@ def make_tarfile(output_filename, source_dir):
 
 
 def export():
-    current_export_date = datetime.datetime.now().strftime('%Y%m%d')
+    current_export_date = datetime.datetime.now().strftime('%Y%m%d%H%M')
     pathnuts2 = os.path.join(os.path.dirname(__file__), 'data/{}_smfr_nuts2.json'.format(current_export_date))
     pathnuts3 = os.path.join(os.path.dirname(__file__), 'data/{}_smfr_nuts3.json'.format(current_export_date))
 
@@ -37,6 +37,7 @@ def export():
 
     os.unlink(pathnuts2)
     os.unlink(pathnuts3)
+
 
 if __name__ == '__main__':
     sys.exit(export())
