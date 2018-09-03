@@ -14,6 +14,7 @@ venv.bak/
 
 # SMFR configs
 rest_server/src/config/*.yaml
+scripts/seeds/data/*.json
 jmxremote.password
 jmxremote.access
 .env

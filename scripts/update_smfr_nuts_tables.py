@@ -1,15 +1,25 @@
 import os
 import sys
 import tarfile
-
+import glob
 import json
 
 from smfrcore.models.sqlmodels import Nuts2, Nuts3, create_app, sqldb
 from sqlalchemy.orm import Session
 
 
+def get_most_updated():
+    export_dates = sorted([os.path.basename(p).split('_')[0]
+                           for p in glob.glob(os.path.join(os.path.dirname(__file__),
+                                                           'seeds/data/*_smfr_*.json.tar.gz'))
+                           ], reverse=True
+                          )
+    return export_dates[0]
+
+
 def objects_from_json(table):
-    path = os.path.join(os.path.dirname(__file__), 'seeds/data/smfr_{}.json.tar.gz'.format(table))
+    newer_date = get_most_updated()
+    path = os.path.join(os.path.dirname(__file__), 'seeds/data/{}_smfr_{}.json.tar.gz'.format(newer_date, table))
     with tarfile.open(path, 'r:gz') as tar:
         archive = tar.getmembers()[0]
         init_f = tar.extractfile(archive)
