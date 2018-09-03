@@ -252,7 +252,6 @@
                                                 <th>Tweet id</th>
                                                 <th>Annotations</th>
                                                 <th>Tweeted at</th>
-                                                <th>Collected at</th>
                                                 <th>Lang</th>
                                                 <th>Full text</th>
                                             </tr>
@@ -264,7 +263,6 @@
                                                 <th>Tweet id</th>
                                                 <th>Annotations</th>
                                                 <th>Tweeted at</th>
-                                                <th>Collected at</th>
                                                 <th>Lang</th>
                                                 <th>Full text</th>
                                             </tr>
@@ -292,10 +290,8 @@
                                                 <th>Tweet id</th>
                                                 <th>Annotations</th>
                                                 <th>Lat/Lon</th>
+                                                <th>Geo</th>
                                                 <th>Tweeted at</th>
-                                                <th>Collected at</th>
-                                                <th>Lang</th>
-                                                <th>Full text</th>
                                             </tr>
                                         </thead>
                                         <tfoot>
@@ -305,10 +301,8 @@
                                                 <th>Tweet id</th>
                                                 <th>Annotations</th>
                                                 <th>Lat/Lon</th>
+                                                <th>Geo</th>
                                                 <th>Tweeted at</th>
-                                                <th>Collected at</th>
-                                                <th>Lang</th>
-                                                <th>Full text</th>
                                             </tr>
                                         </tfoot>
 
@@ -398,9 +392,8 @@
                     },
                     { "data": "rownum", "orderable": false },
                     { "data": "Tweet id" },
-                    { "data": "Annotations" },
+                    { "data": "Annotations", "orderable": false },
                     { "data": "Tweeted at" },
-                    { "data": "Collected at" },
                     { "data": "Lang" },
                     { "data": "Full Text", "orderable": false}
                 ],
@@ -440,12 +433,10 @@
                     },
                     { "data": "rownum", "orderable": false },
                     { "data": "Tweet id" },
-                    { "data": "Annotations" },
+                    { "data": "Annotations", "orderable": false },
                     { "data": "LatLon" },
+                    { "data": "Geo", "orderable": false },
                     { "data": "Tweeted at" },
-                    { "data": "Collected at" },
-                    { "data": "Lang" },
-                    { "data": "Full Text", "orderable": false}
                 ],
                 "order": [[1, 'asc']]
             } );

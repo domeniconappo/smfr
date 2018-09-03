@@ -6,7 +6,7 @@ import unicodedata
 
 from sqlalchemy import or_
 
-from smfrcore.models.sqlmodels import Nuts2, Nuts3, create_app
+from smfrcore.models import Nuts2, Nuts3, create_app
 
 
 if __name__ == '__main__':

@@ -12,7 +12,7 @@ from sqlalchemy import or_
 
 from smfrcore.utils import LOGGER_FORMAT, LOGGER_DATE_FORMAT
 
-from smfrcore.models.sqlmodels import TwitterCollection, Aggregation, create_app
+from smfrcore.models import TwitterCollection, Aggregation, create_app
 
 
 logging.basicConfig(level=os.environ.get('LOGGING_LEVEL', 'DEBUG'), format=LOGGER_FORMAT, datefmt=LOGGER_DATE_FORMAT)
@@ -79,28 +79,14 @@ def aggregate(running_conf=None):
 
     with flask_app.app_context():
 
-        if running_conf.running:
-            collections_to_aggregate = TwitterCollection.query.filter(
-                or_(
-                    TwitterCollection.status == 'active',
-                    TwitterCollection.stopped_at >= datetime.now() - timedelta(days=2)
-                )
-            )
-        elif running_conf.all:
-            collections_to_aggregate = TwitterCollection.query.all()
-        elif running_conf.background:
-            collections_to_aggregate = TwitterCollection.query.filter_by(trigger='background')
-        elif running_conf.collections:
-            collections_to_aggregate = TwitterCollection.query.filter(TwitterCollection.id.in_(running_conf.collections)).all()
-        else:
-            raise ValueError('Aggregator must be started with a parameter: '
-                             '[-c id1,...,idN | -r (running)| -a (all) | -b (background)]')
+        collections = find_collections_to_aggregate(running_conf)
 
-        if not list(collections_to_aggregate):
+        if not list(collections):
             logger.info('No collections to aggregate with configuration: %s', pretty_running_conf(running_conf))
+            return
 
         aggregations_args = []
-        for coll in collections_to_aggregate:
+        for coll in collections:
             aggregation = Aggregation.query.filter_by(collection_id=coll.id).first()
 
             if not aggregation:
@@ -119,6 +105,27 @@ def aggregate(running_conf=None):
         # cpu_count() - 1 aggregation threads running at same time
         with ThreadPool(cpu_count() - 1) as p:
             p.starmap(run_single_aggregation, aggregations_args)
+
+
+def find_collections_to_aggregate(running_conf):
+    if running_conf.running:
+        collections_to_aggregate = TwitterCollection.query.filter(
+            or_(
+                TwitterCollection.status == 'active',
+                TwitterCollection.stopped_at >= datetime.now() - timedelta(days=2)
+            )
+        )
+    elif running_conf.all:
+        collections_to_aggregate = TwitterCollection.query.all()
+    elif running_conf.background:
+        collections_to_aggregate = TwitterCollection.query.filter_by(trigger='background')
+    elif running_conf.collections:
+        collections_to_aggregate = TwitterCollection.query.filter(
+            TwitterCollection.id.in_(running_conf.collections)).all()
+    else:
+        raise ValueError('Aggregator must be started with a parameter: '
+                         '[-c id1,...,idN | -r (running)| -a (all) | -b (background)]')
+    return collections_to_aggregate
 
 
 def inc_annotated_counter(counter, flood_probability, place_id=None):
@@ -163,7 +170,7 @@ def run_single_aggregation(collection_id,
     :param initial_values:
     :return:
     """
-    from smfrcore.models.cassandramodels import Tweet
+    from smfrcore.models import Tweet
 
     if collection_id in running_aggregators:
         logger.warning('!!!!!! Previous aggregation for collection id %d is not finished yet !!!!!!' % collection_id)

@@ -333,7 +333,8 @@ services:
       - '5557:5557'
       - '6007:6006'
     environment:
-      LOGGING_LEVEL: ${LOGGING_LEVEL}
+#      LOGGING_LEVEL: ${LOGGING_LEVEL}
+      LOGGING_LEVEL: INFO
       TF_CPP_MIN_LOG_LEVEL: '2'
       PYTHONUNBUFFERED: 'true'
       PERSISTER_KAFKA_TOPIC: ${PERSISTER_KAFKA_TOPIC}
@@ -545,7 +546,6 @@ services:
       - '8888:8888'
     depends_on:
       - restserver
-      - aggregator
     networks:
       - front-tier
     deploy:

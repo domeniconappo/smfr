@@ -1,6 +1,6 @@
 import datetime
 
-from smfrcore.models.sqlmodels import TwitterCollection
+from smfrcore.models import TwitterCollection
 
 from daemons.collector import Collector
 

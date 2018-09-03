@@ -17,7 +17,7 @@ import shutil
 import jsonlines
 import ujson
 
-from smfrcore.models.cassandramodels import Tweet
+from smfrcore.models import Tweet
 
 from scripts.utils import ParserHelpOnError, CustomJSONEncoder
 

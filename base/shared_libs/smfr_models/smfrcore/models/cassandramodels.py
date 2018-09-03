@@ -259,7 +259,8 @@ class Tweet(cqldb.Model):
                 tweet_tuple.latlong[0], tweet_tuple.latlong[1], tweet_tuple.latlong[0], tweet_tuple.latlong[1]
             ) if tweet_tuple.latlong else '',
             'Collected at': tweet_tuple.created_at or '',
-            'Tweeted at': original_tweet['created_at'] or ''
+            'Tweeted at': original_tweet['created_at'] or '',
+            'Geo': Tweet.pretty_geo(tweet_tuple.geo),
         }
         return obj
 
@@ -298,11 +299,15 @@ class Tweet(cqldb.Model):
     def pretty_annotations(cls, annotations):
         if not annotations:
             return '-'
-        out = ''
-        for k, v in annotations.items():
-            out += '{}: {} - {}\n'.format(k, v[0], v[1])
+        out = ['{}: {} - {}'.format(k, v[0], v[1]) for k, v in annotations.items()]
+        return '<pre>{}</pre>'.format('/n'.join(out))
 
-        return '<pre>{}</pre>'.format(out)
+    @classmethod
+    def pretty_geo(cls, geo):
+        if not geo:
+            return '-'
+        out = ['{}: {}'.format(k, v) for k, v in geo.items() if v]
+        return '<pre>{}</pre>'.format('/n'.join(out))
 
     def serialize(self):
         """

@@ -10,7 +10,7 @@ from cassandra.cqlengine import ValidationError, CQLEngineException
 from kafka import KafkaConsumer
 from kafka.errors import CommitFailedError, NoBrokersAvailable
 
-from smfrcore.models.cassandramodels import Tweet
+from smfrcore.models import Tweet
 
 
 PersisterConfiguration = namedtuple('PersisterConfiguration', ['persister_kafka_topic', 'kafka_bootstrap_server'])
@@ -95,7 +95,7 @@ class Persister:
                 try:
                     msg = msg.value.decode('utf-8')
                     tweet = Tweet.build_from_kafka_message(msg)
-                    logger.debug('Read from queue: %s', tweet.tweetid)
+                    logger.debug('Saving tweet: %s', tweet.tweetid)
                     tweet.save()
                     counter[tweet.ttype] += 1
                     if not (i % 5000):

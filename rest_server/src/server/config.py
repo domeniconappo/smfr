@@ -134,7 +134,7 @@ class RestServerConfiguration(metaclass=Singleton):
         retries = 1
         while not up and retries <= 5:
             try:
-                from smfrcore.models.sqlmodels import sqldb
+                from smfrcore.models import sqldb
                 sqldb.init_app(app)
                 cls.db_mysql = sqldb
                 cls.migrate = Migrate(app, cls.db_mysql)
@@ -168,8 +168,7 @@ class RestServerConfiguration(metaclass=Singleton):
 
             while not up and retries <= 5:
                 try:
-                    from smfrcore.models.sqlmodels import sqldb
-                    from smfrcore.models.cassandramodels import cqldb
+                    from smfrcore.models import sqldb, cqldb
                     sqldb.init_app(self.flask_app)
                     cqldb.init_app(self.flask_app)
                     self.db_mysql = sqldb

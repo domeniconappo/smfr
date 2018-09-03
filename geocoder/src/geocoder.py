@@ -19,8 +19,7 @@ from kafka.errors import NoBrokersAvailable, CommitFailedError, KafkaTimeoutErro
 from mordecai import Geoparser
 from shapely.geometry import Point, Polygon
 
-from smfrcore.models.cassandramodels import Tweet
-from smfrcore.models.sqlmodels import Nuts2, create_app
+from smfrcore.models import Tweet, Nuts2, create_app
 from smfrcore.utils import RUNNING_IN_DOCKER
 
 
@@ -171,6 +170,49 @@ class Geocoder:
             cls.stop_signals.append(collection_id)
 
     @classmethod
+    def start(cls, collection_id):
+        """
+        Main Geocoder method. It's usually executed in a background thread.
+        :param collection_id: MySQL id of collection as it's stored in virtual_twitter_collection table
+        :type collection_id: int
+        """
+        logger.info('>>>>>>>>>>>> Starting Geocoding tweets selection for collection: %d', collection_id)
+        with cls._lock:
+            cls._running.append(collection_id)
+
+        ttype = 'annotated'
+        dataset = Tweet.get_iterator(collection_id, ttype)
+
+        for i, tweet in enumerate(dataset, start=1):
+            try:
+                if collection_id in cls.stop_signals:
+                    logger.info('Stopping Geocoding process %d', collection_id)
+                    with cls._lock:
+                        cls.stop_signals.remove(collection_id)
+                    break
+
+                message = Tweet.serializetuple(tweet)
+                logger.debug('Sending tweet to GEOCODER %s', tweet.tweetid)
+                cls.producer.send(cls.geocoder_kafka_topic, message)
+            except KafkaTimeoutError as e:
+                logger.error(e)
+                logger.error('Kafka has problems to allocate memory for the message: throttling')
+                time.sleep(10)
+
+            # remove from `_running` list
+        with cls._lock:
+            cls._running.remove(collection_id)
+        logger.info('<<<<<<<<<<<<< Geocoding tweets selection terminated for collection: %s', collection_id)
+
+    @classmethod
+    def consumer_in_background(cls):
+        """
+        Start Geocoder consumer in background (i.e. in a different thread)
+        """
+        t = threading.Thread(target=cls.start_consumer, name='Geocoder Consumer')
+        t.start()
+
+    @classmethod
     def geoparse_tweet(cls, tweet, tagger):
         """
         Mordecai geoparsing
@@ -198,7 +240,8 @@ class Geocoder:
         for result in res:
             if result.get('country_conf', 0) < 0.5 or 'lat' not in result.get('geo', {}):
                 continue
-            mentions_list.append((float(result['geo']['lat']), float(result['geo']['lon']),
+            mentions_list.append((float(result['geo']['lat']),
+                                  float(result['geo']['lon']),
                                   result['geo'].get('country_code3', ''),
                                   result['geo'].get('place_name', ''),
                                   result['geo'].get('geonameid', '')))
@@ -260,7 +303,7 @@ class Geocoder:
 
     @classmethod
     def _nuts_from_user_location(cls, mentions, tagger, user_location):
-        coordinates, nuts2, nuts_source, country_code, place, geonameid = None, None, None, '', '', ''
+        coordinates, nuts2, nuts_source, country_code, place, geonameid = None, None, '', '', '', ''
         res = tagger.geoparse(user_location)
         if res and res[0] and 'lat' in res[0].get('geo', {}):
             res = res[0]
@@ -281,7 +324,7 @@ class Geocoder:
                     place = mention[3]
                     geonameid = mention[4]
                     logger.debug('Found Nuts... - User location')
-
+                    break
         return coordinates, nuts2, nuts_source, country_code, place, geonameid
 
     @classmethod
@@ -329,7 +372,7 @@ class Geocoder:
         return coordinates, nuts2, nuts_source, country_code, place, geonameid
 
     @classmethod
-    def set_geo_fields(cls, latlong, nuts2_source, nuts2, country_code, place, geonameid, t):
+    def set_geo_fields(cls, latlong,nuts2, nuts2_source, country_code, place, geonameid, t):
         t.ttype = 'geotagged'
         t.latlong = latlong
         t.nuts2 = str(nuts2.efas_id) if nuts2 else None
@@ -348,49 +391,6 @@ class Geocoder:
             'place': place,
             'geonameid': geonameid,
         }
-
-    @classmethod
-    def start(cls, collection_id):
-        """
-        Main Geocoder method. It's usually executed in a background thread.
-        :param collection_id: MySQL id of collection as it's stored in virtual_twitter_collection table
-        :type collection_id: int
-        """
-        logger.info('>>>>>>>>>>>> Starting Geocoding tweets selection for collection: %d', collection_id)
-        with cls._lock:
-            cls._running.append(collection_id)
-
-        ttype = 'annotated'
-        dataset = Tweet.get_iterator(collection_id, ttype)
-
-        for i, tweet in enumerate(dataset, start=1):
-            try:
-                if collection_id in cls.stop_signals:
-                    logger.info('Stopping Geocoding process %d', collection_id)
-                    with cls._lock:
-                        cls.stop_signals.remove(collection_id)
-                    break
-
-                message = Tweet.serializetuple(tweet)
-                logger.debug('Sending tweet to GEOCODER %s', tweet.tweetid)
-                cls.producer.send(cls.geocoder_kafka_topic, message)
-            except KafkaTimeoutError as e:
-                logger.error(e)
-                logger.error('Kafka has problems to allocate memory for the message: throttling')
-                time.sleep(10)
-
-            # remove from `_running` list
-        with cls._lock:
-            cls._running.remove(collection_id)
-        logger.info('<<<<<<<<<<<<< Geocoding tweets selection terminated for collection: %s', collection_id)
-
-    @classmethod
-    def consumer_in_background(cls):
-        """
-        Start Geocoder consumer in background (i.e. in a different thread)
-        """
-        t = threading.Thread(target=cls.start_consumer, name='Geocoder Consumer')
-        t.start()
 
     @classmethod
     def start_consumer(cls):
@@ -416,7 +416,7 @@ class Geocoder:
                                 logger.debug('Skipping: %s, no coordinates', tweet.tweetid)
                                 continue
 
-                            cls.set_geo_fields(coordinates, nuts_source, nuts2, country_code, place, geonameid, tweet)
+                            cls.set_geo_fields(coordinates, nuts2, nuts_source, country_code, place, geonameid, tweet)
                             message = tweet.serialize()
                             logger.info('Send geocoded tweet to PERSISTER: %s', tweet.geo)
                             cls.producer.send(cls.persister_kafka_topic, message)

@@ -5,7 +5,7 @@ import tarfile
 import ujson
 from sqlalchemy import or_
 
-from smfrcore.models.sqlmodels import Nuts2, Nuts3, create_app
+from smfrcore.models import Nuts2, Nuts3, create_app
 
 
 def _country_code2(cc3, country_value):

@@ -4,7 +4,7 @@ import tarfile
 import glob
 import json
 
-from smfrcore.models.sqlmodels import Nuts2, Nuts3, create_app, sqldb
+from smfrcore.models import Nuts2, Nuts3, create_app, sqldb
 from sqlalchemy.orm import Session
 
 

@@ -1,10 +1,9 @@
 import logging
 from datetime import datetime
 
-from smfrcore.models.cassandramodels import Tweet
 from twython import TwythonStreamer
 
-from smfrcore.models.sqlmodels import TwitterCollection
+from smfrcore.models import Tweet, TwitterCollection
 
 from daemons.utils import safe_langdetect, tweet_normalization_aggressive
 from server.config import RestServerConfiguration

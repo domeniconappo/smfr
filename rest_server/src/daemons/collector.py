@@ -8,7 +8,7 @@ import time
 import yaml
 from dateutil import parser
 
-from smfrcore.models.sqlmodels import TwitterCollection
+from smfrcore.models import TwitterCollection
 
 from daemons.streamers import CollectorStreamer
 from server.config import RestServerConfiguration, CONFIG_FOLDER

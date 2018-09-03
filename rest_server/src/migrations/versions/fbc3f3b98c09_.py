@@ -14,7 +14,7 @@ import sqlalchemy_utils
 from alembic import op
 import sqlalchemy as sa
 
-from smfrcore.models.sqlmodels import Nuts2, Nuts3, TwitterCollection, User
+from smfrcore.models import Nuts2, Nuts3, TwitterCollection, User
 
 # revision identifiers, used by Alembic.
 revision = 'fbc3f3b98c09'

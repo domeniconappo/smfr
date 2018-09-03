@@ -5,7 +5,7 @@ import datetime
 
 import json
 
-from smfrcore.models.sqlmodels import Nuts2, Nuts3, create_app
+from smfrcore.models import Nuts2, Nuts3, create_app
 
 app = create_app()
 app.app_context().push()

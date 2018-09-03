@@ -11,8 +11,7 @@ from multiprocessing.pool import ThreadPool
 from kafka import KafkaProducer
 from kafka.errors import NoBrokersAvailable
 
-from smfrcore.models.cassandramodels import Tweet
-from smfrcore.models.sqlmodels import TwitterCollection
+from smfrcore.models import Tweet, TwitterCollection
 from smfrcore.utils import RUNNING_IN_DOCKER, LOGGER_FORMAT, LOGGER_DATE_FORMAT
 from sqlalchemy import or_
 

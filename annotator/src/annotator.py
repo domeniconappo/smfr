@@ -14,7 +14,7 @@ import sklearn
 from keras.models import load_model
 from keras.preprocessing.sequence import pad_sequences
 
-from smfrcore.models.cassandramodels import Tweet
+from smfrcore.models import Tweet
 from smfrcore.utils import RUNNING_IN_DOCKER, LOGGER_FORMAT, LOGGER_DATE_FORMAT
 
 from helpers import create_text_for_cnn, models, models_path

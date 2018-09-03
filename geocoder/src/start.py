@@ -4,7 +4,7 @@ import logging
 
 from flask_restful import Resource, Api, fields, marshal_with, marshal_with_field
 
-from smfrcore.models.sqlmodels import create_app
+from smfrcore.models import create_app
 from smfrcore.utils import LOGGER_FORMAT, LOGGER_DATE_FORMAT
 
 from geocoder import Geocoder

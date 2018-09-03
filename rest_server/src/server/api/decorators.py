@@ -3,7 +3,7 @@ from functools import wraps
 from flask import abort
 from flask_jwt_extended import get_jwt_identity
 
-from smfrcore.models.sqlmodels import User
+from smfrcore.models import User
 
 
 # TODO MAKE IT WORKING..NOW IT'S FAKE

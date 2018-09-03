@@ -1,7 +1,7 @@
 from flask import request, abort
 from flask_jwt_extended import jwt_required, create_access_token, current_user, get_current_user, get_jwt_identity
 
-from smfrcore.models.sqlmodels import User
+from smfrcore.models import User
 from smfrcore.client.marshmallow import User as UserSchema
 
 from server.api.decorators import check_identity, check_role

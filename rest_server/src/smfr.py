@@ -79,7 +79,7 @@ def start_collector(collector):
 def empty_dbs():
     """Reset databases! Warning! Issue the command only in DEV environments"""
     from server.config import RestServerConfiguration
-    from smfrcore.models.cassandramodels import Tweet
+    from smfrcore.models import Tweet
     from cassandra.cqlengine.connection import get_session
 
     configuration = RestServerConfiguration()
@@ -110,7 +110,7 @@ def empty_dbs():
 def set_language(collectionid, ttype):
     """Set language for collected tweets"""
     from daemons.utils import safe_langdetect, tweet_normalization_aggressive
-    from smfrcore.models.cassandramodels import Tweet
+    from smfrcore.models import Tweet
 
     tweets = Tweet.get_iterator(int(collectionid), ttype)
     for t in tweets:
@@ -132,6 +132,6 @@ def set_language(collectionid, ttype):
 @click.option('--password', '-p', required=True)
 def add_admin(name, email, password):
     """Add an admin user to DB"""
-    from smfrcore.models.sqlmodels import User
+    from smfrcore.models import User
     user = User.create(name=name, email=email, password=password, role='admin')
     click.echo('User created {}'.format(user))
