@@ -218,7 +218,7 @@ def run_single_aggregation(collection_id,
             nuts_id = t.geo['nuts_id']
             geo_identifier = '%s_%s' % (geoloc_id, nuts_id) if nuts_id else geoloc_id
             inc_annotated_counter(counter, t.annotations['flood_probability'][1], place_id=geo_identifier)
-            if t.geo['is_european']:
+            if t.geo['nuts_efas_id'] or t.geo['is_european']:
                 # we only show european relevant tweets...
                 relevant_tweets.push_if_relevant(Tweet.to_json(t))
     except cassandra.ReadFailure as e:

@@ -41,6 +41,7 @@ class CollectorStreamer(TwythonStreamer):
         if 'text' in data:
             lang = safe_langdetect(tweet_normalization_aggressive(data['text'])) if not self.collection.is_ondemand else None
             languages = self.collection.languages
+
             if self.collection.is_ondemand or lang == 'en' or lang in languages:
                 data['lang'] = lang
                 tweet = Tweet.build_from_tweet(self.collection, data, ttype='collected')

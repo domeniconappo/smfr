@@ -32,6 +32,7 @@ class Collector:
     logger.setLevel(RestServerConfiguration.logger_level)
     server_conf = RestServerConfiguration()
     defaults = {'kwfile': os.path.join(CONFIG_FOLDER, 'flood_keywords.yaml'),
+
                 'config': os.path.join(CONFIG_FOLDER, 'admin_collector.yaml'),
                 }
 
@@ -53,6 +54,7 @@ class Collector:
                     'https': os.environ.get('https_proxy') or os.environ['http_proxy']
                 }
             }
+
         self.streamer = CollectorStreamer(
             tw_api_account.consumer_key,
             tw_api_account.consumer_secret,

@@ -300,14 +300,14 @@ class Tweet(cqldb.Model):
         if not annotations:
             return '-'
         out = ['{}: {} - {}'.format(k, v[0], v[1]) for k, v in annotations.items()]
-        return '<pre>{}</pre>'.format('/n'.join(out))
+        return '<pre>{}</pre>'.format('\n'.join(out))
 
     @classmethod
     def pretty_geo(cls, geo):
         if not geo:
             return '-'
         out = ['{}: {}'.format(k, v) for k, v in geo.items() if v]
-        return '<pre>{}</pre>'.format('/n'.join(out))
+        return '<pre>{}</pre>'.format('\n'.join(out))
 
     def serialize(self):
         """
