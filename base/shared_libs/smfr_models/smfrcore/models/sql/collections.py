@@ -147,11 +147,11 @@ class TwitterCollection(SMFRModel):
             existing = cls.query.filter_by(efas_id=data['efas_id']).first()
             if existing:
                 obj = existing
-            obj.status = cls.ACTIVE_STATUS  # force active status for new on demand collections
-            if obj.stopped_at > obj.started_at:
-                # an existing efas on demand collection was not active
-                # set started_at now
-                obj.startet_at = datetime.datetime.utcnow()
+                if obj.stopped_at > obj.started_at:
+                    # an existing efas on demand collection was not active
+                    # set started_at now
+                    obj.startet_at = datetime.datetime.utcnow()
+            obj.status = cls.ACTIVE_STATUS  # force active status when creating/updating on demand collections
 
         obj.efas_id = data.get('efas_id')
         obj.trigger = trigger
