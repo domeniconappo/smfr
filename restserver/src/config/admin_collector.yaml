@@ -1,0 +1,12 @@
+twitterbg:
+    consumer_key: VtZn9ut1vrMWa02CA7LYIri1W
+    consumer_secret: XJ9hirEDDgVaJJeKN2JBdU0vwXWqfOSW1DE4WuoXM2yY2csbv4
+    access_token: 20317330-IcDbXvhYdXoRbcBSPjayUmxSNrFGerESP31O9Wxju
+    access_token_secret: GL8rZel3VNuX00n24DA8LjM27bwIVGzl18KxBkYmQ9s1U
+twitterod:
+    consumer_key: Ee1MLC2sPy9zwe8km6Nws6bJX
+    consumer_secret: mrP2y3x03zaDOqwCmhUKPEYHXniK5IrZCZATzCFmZ4uXiIjyNC
+    access_token: 20317330-uqo8KjZBMvdgR8pG2mVam9JvJH67T46jMsz0UJkzh
+    access_token_secret: Htof42A6tOwdhS28AyS7lLguqVqNCGtLUxCeQfoxgFMEH
+max_keywords: 400
+max_bbox: 25

@@ -4,7 +4,7 @@ from collections import namedtuple
 import ujson as json
 import fiona
 
-from smfrcore.models.sqlmodels import Nuts3
+from smfrcore.models.sql import Nuts3
 from scripts.utils import ParserHelpOnError
 
 

@@ -1,0 +1,1740 @@
+FID,COUNTRY,ISO_CODE,ISO_CC,ISO_SUB,NUTS_ID,CNTR_CODE,EFAS_name,ID
+1403, , , , ,ES111,ES,A Coruna,1410
+1363, , , , ,CH033,CH,Aargau,1364
+132,Georgia,GEAB,GE,AB, , ,Abkhazia,132
+133,Italy,IT65,IT,65, , ,Abruzzo,133
+913, , , , ,ITF1,IT,Abruzzo,1218
+134,Egypt,EGDK,EG,DK, , ,Ad Daqahliyah,134
+135,Turkey,TR01,TR,1, , ,Adana,135
+136,Turkey,TR01,TR,1, , ,Adana,136
+1289, , , , ,TR62,TR,Adana,1274
+137,Turkey,TR02,TR,2, , ,Adiyaman,137
+1263,Algeria,DZ01,DZ,1, , ,Adrar,1118
+138,Greece,GR69,GR,69, , ,Agio Oros,138
+139,Greece,GR69,GR,69, , ,Agio Oros,139
+140,Turkey,TR04,TR,4, , ,Agri,140
+1298, , , , ,TRA2,TR,Agri,1283
+1543, , , , ,FR711,FR,Ain,1552
+141,Algeria,DZ44,DZ,44, , ,Ain Defla,141
+6,Algeria,DZ46,DZ,46, , ,Ain Temouchent,0
+7,Algeria,DZ46,DZ,46, , ,Ain Temouchent,1
+8,Algeria,DZ46,DZ,46, , ,Ain Temouchent,2
+1484, , , , ,FR221,FR,Aisne,1493
+142,Georgia,GEAJ,GE,AJ, , ,Ajaria,142
+143,Libya,LYAJ,LY,AJ, , ,Ajdabiya,143
+144,Libya,LYAJ,LY,AJ, , ,Ajdabiya,144
+145,Jordan,JOAJ,JO,AJ, , ,Ajlun,145
+146,Norway,NO02,NO,2, , ,Akershus,146
+147,Norway,NO02,NO,2, , ,Akershus,147
+148,Norway,NO02,NO,2, , ,Akershus,148
+1728, , , , ,NO012,NO,Akershus,1610
+149,Turkey,TR68,TR,68, , ,Aksaray,149
+160,Iraq,IQAN,IQ,AN, , ,Al Anbar,151
+150,Jordan,JOAQ,JO,AQ, , ,Al Aqaba,150
+161,Egypt,EGBA,EG,BA, , ,Al Bahr al Ahmar,152
+162,Egypt,EGBA,EG,BA, , ,Al Bahr al Ahmar,153
+163,Egypt,EGBA,EG,BA, , ,Al Bahr al Ahmar,154
+164,Jordan,JOBA,JO,BA, , ,Al Balqa,155
+165,Egypt,EGBH,EG,BH, , ,Al Buhayrah,156
+166,Egypt,EGBH,EG,BH, , ,Al Buhayrah,157
+167,Libya,LYBU,LY,BU, , ,Al Butnan,158
+168,Libya,LYBU,LY,BU, , ,Al Butnan,159
+169,Egypt,EGFYM,EG,FYM, , ,Al Fayyum,160
+170,Egypt,EGGH,EG,GH, , ,Al Gharbiyah,161
+171,Syria,SYHA,SY,HA, , ,Al Hasakah,162
+172,Libya,LYHZ,LY,HZ, , ,Al Hizam al Akdar,163
+173,Saudi Arabia,SA08,SA,8, , ,Al Hudud ash Shamaliyah,164
+174,Egypt,EGALX,EG,ALX, , ,Al Iskandariyah,165
+175,Egypt,EGALX,EG,ALX, , ,Al Iskandariyah,166
+176,Egypt,EGIS,EG,IS, , ,Al Ismailiyah,167
+177,Egypt,EGIS,EG,IS, , ,Al Ismailiyah,168
+178,Egypt,EGIS,EG,IS, , ,Al Ismailiyah,169
+179,Egypt,EGIS,EG,IS, , ,Al Ismailiyah,170
+180,Egypt,EGIS,EG,IS, , ,Al Ismailiyah,171
+181,Libya,LYJA,LY,JA, , ,Al Jabal al Akhdar,172
+182,Saudi Arabia,SA12,SA,12, , ,Al Jawf,173
+183,Saudi Arabia,SA12,SA,12, , ,Al Jawf,174
+184,Libya,LYJI,LY,JI, , ,Al Jifarah,175
+185,Egypt,EGGZ,EG,GZ, , ,Al Jizah,176
+186,Libya,LYJU,LY,JU, , ,Al Jufrah,177
+187,Jordan,JOKA,JO,KA, , ,Al Karak,178
+188,Syria,SYLA,SY,LA, , ,Al Ladhiqiyah,179
+189,Syria,SYLA,SY,LA, , ,Al Ladhiqiyah,180
+190,Saudi Arabia,SA03,SA,3, , ,Al Madinah,181
+191,Jordan,JOMA,JO,MA, , ,Al Mafraq,182
+192,Libya,LYMJ,LY,MJ, , ,Al Marj,183
+193,Libya,LYMB,LY,MB, , ,Al Marqab,184
+194,Libya,LYMB,LY,MB, , ,Al Marqab,185
+195,Egypt,EGMNF,EG,MNF, , ,Al Minufiyah,186
+196,Egypt,EGMN,EG,MN, , ,Al Minya,187
+197,Egypt,EGC,EG,C, , ,Al Qahirah,188
+198,Egypt,EGKB,EG,KB, , ,Al Qalyubiyah,189
+199,Saudi Arabia,SA05,SA,5, , ,Al Qasim,190
+200,Libya,LYQB,LY,QB, , ,Al Qubbah,191
+201,Syria,SYQU,SY,QU, , ,Al Qunaytirah,192
+202,Egypt,EGWAD,EG,WAD, , ,Al Wadi al Jadid,193
+203,Libya,LYWA,LY,WA, , ,Al Wahah,194
+1471, , , , ,FI200,FI,Aland,1480
+204,Finland,FIAL,FI,AL, , ,Aland Islands,195
+205,Finland,FIAL,FI,AL, , ,Aland Islands,196
+206,Finland,FIAL,FI,AL, , ,Aland Islands,197
+1409, , , , ,ES211,ES,Alava,1416
+1639, , , , ,RO121,RO,Alba,1662
+1427, , , , ,ES421,ES,Albacete,1434
+1630, , , , ,PT183,PT,Alentejo Central,1653
+1628, , , , ,PT181,PT,Alentejo Litoral,1651
+1613, , , , ,PT150,PT,Algarve,1636
+207,Algeria,DZ16,DZ,16, , ,Alger,198
+208,Algeria,DZ16,DZ,16, , ,Alger,199
+1438, , , , ,ES521,ES,Alicante / Alacant,1445
+1551, , , , ,FR721,FR,Allier,1560
+1444, , , , ,ES611,ES,Almeria,1451
+1560, , , , ,FR821,FR,Alpes-de-Haute-Provence,1569
+1562, , , , ,FR823,FR,Alpes-Maritimes,1571
+1629, , , , ,PT182,PT,Alto Alentejo,1652
+1612, , , , ,PT118,PT,Alto Tras-os-Montes,1635
+209,Latvia,LVAL,LV,AL, , ,Aluksnes Aprinkis,200
+210,Lithuania,LTAL,LT,AL, , ,Alytaus Apskritis,201
+1576, , , , ,LT001,LT,Alytaus apskritis,1585
+211,Jordan,JOAM,JO,AM, , ,Amman,202
+212,Iraq,IQNA,IQ,NA, , ,An Najaf,203
+213,Libya,LYNQ,LY,NQ, , ,An Nuqat al Khams,204
+214,Greece,GRI,GR,I, , ,Anatoliki Makedonia Kai Thraki,205
+215,Greece,GRI,GR,I, , ,Anatoliki Makedonia Kai Thraki,206
+216,Greece,GRI,GR,I, , ,Anatoliki Makedonia Kai Thraki,207
+889, , , , ,EL11,EL,"Anatoliki Makedonia, THraki",1194
+9,Spain,ESAN,ES,AN, , ,Andalucia,3
+10,Spain,ESAN,ES,AN, , ,Andalucia,4
+11,Spain,ESAN,ES,AN, , ,Andalucia,5
+151,Andorra,AD,AD, , , ,Andorra,208
+217,Turkey,TR06,TR,6, , ,Ankara,209
+1286, , , , ,TR51,TR,Ankara,1271
+218,Algeria,DZ23,DZ,23, , ,Annaba,210
+219,Turkey,TR07,TR,7, , ,Antalya,211
+220,Turkey,TR07,TR,7, , ,Antalya,212
+221,Turkey,TR07,TR,7, , ,Antalya,213
+1288, , , , ,TR61,TR,Antalya,1273
+1367, , , , ,CH053,CH,Appenzell Ausserrhoden,1368
+1368, , , , ,CH054,CH,Appenzell Innerrhoden,1369
+222,Kazakhstan,KZAKT,KZ,AKT, , ,Aqtobe oblysy,214
+12,France,FRB,FR,B, , ,Aquitaine,6
+1264,France,FRB,FR,B, , ,Aquitaine,1119
+223,Syria,SYRA,SY,RA, , ,Ar Raqqah,215
+1671, , , , ,RO421,RO,Arad,1694
+224,Armenia,AMAG,AM,AG, , ,Aragacotn,216
+225,Armenia,AMAR,AM,AR, , ,Ararat,217
+226,Iraq,IQAR,IQ,AR, , ,Arbil,218
+227,Iran,IR03,IR,3, , ,Ardabil,219
+228,Turkey,TR75,TR,75, , ,Ardahan,220
+1544, , , , ,FR712,FR,Ardeche,1553
+1480, , , , ,FR211,FR,Ardennes,1489
+1657, , , , ,RO311,RO,Arges,1680
+1532, , , , ,FR621,FR,Ariege,1541
+229,Russian Federation,RUARK,RU,ARK, , ,Arkhangelskaya oblast,221
+230,Russian Federation,RUARK,RU,ARK, , ,Arkhangelskaya oblast,222
+231,Russian Federation,RUARK,RU,ARK, , ,Arkhangelskaya oblast,223
+232,Armenia,AMAV,AM,AV, , ,Armavir,224
+878, , , , ,DEA5,DE,Arnsberg,1183
+233,Turkey,TR08,TR,8, , ,Artvin,225
+234,Iraq,IQSU,IQ,SU, , ,As Sulaymaniyah,226
+235,Syria,SYSU,SY,SU, , ,As Suwayda,227
+236,Egypt,EGSUZ,EG,SUZ, , ,As Suways,228
+237,Egypt,EGSUZ,EG,SUZ, , ,As Suways,229
+238,Egypt,EGSUZ,EG,SUZ, , ,As Suways,230
+239,Egypt,EGSHR,EG,SHR, , ,Ash Sharqiyah,231
+240,Russian Federation,RUAST,RU,AST, , ,Astrakhanskaya oblast,232
+241,Russian Federation,RUAST,RU,AST, , ,Astrakhanskaya oblast,233
+242,Russian Federation,RUAST,RU,AST, , ,Astrakhanskaya oblast,234
+13,Spain,ESO,ES,O, , ,Asturias,7
+14,Spain,ESO,ES,O, , ,Asturias,8
+1407, , , , ,ES120,ES,Asturias,1414
+243,Egypt,EGAST,EG,AST, , ,Asyut,235
+245,Jordan,JOAT,JO,AT, , ,At Tafilah,237
+244,Iraq,IQTS,IQ,TS, , ,At Tamim,236
+246,Greece,GRIX,GR,IX, , ,Attiki,238
+247,Greece,GRIX,GR,IX, , ,Attiki,239
+248,Greece,GRIX,GR,IX, , ,Attiki,240
+898, , , , ,EL30,EL,Attiki,1203
+249,Kazakhstan,KZATY,KZ,ATY, , ,Atyrau oblysy,241
+250,Kazakhstan,KZATY,KZ,ATY, , ,Atyrau oblysy,242
+251,Kazakhstan,KZATY,KZ,ATY, , ,Atyrau oblysy,243
+1481, , , , ,FR212,FR,Aube,1490
+1555, , , , ,FR811,FR,Aude,1564
+252,Norway,NO09,NO,9, , ,Aust-Agder,244
+253,Norway,NO09,NO,9, , ,Aust-Agder,245
+254,Norway,NO09,NO,9, , ,Aust-Agder,246
+1733, , , , ,NO041,NO,Aust-Agder,1617
+15,Iceland,IS7,IS,7, , ,Austurland,9
+16,Iceland,IS7,IS,7, , ,Austurland,10
+17,Iceland,IS7,IS,7, , ,Austurland,11
+1607, , , , ,PT113,PT,Ave,1630
+18,Portugal,PT01,PT,1, , ,Aveiro,12
+1533, , , , ,FR622,FR,Aveyron,1542
+1418, , , , ,ES411,ES,Avila,1425
+255,Turkey,TR09,TR,9, , ,Aydin,247
+256,Turkey,TR09,TR,9, , ,Aydin,248
+257,Turkey,TR09,TR,9, , ,Aydin,249
+1282, , , , ,TR32,TR,Aydin,1267
+258,Jordan,JOAZ,JO,AZ, , ,Az Zarqa,250
+259,Libya,LYZA,LY,ZA, , ,Az Zawiyah,251
+260,Iran,IR02,IR,2, , ,Azarbayjan-e-Gharbi,252
+261,Iran,IR01,IR,1, , ,Azarbayjan-e-Sharqi,253
+262,Azerbaijan,AZ,AZ, , , ,Azerbaijan,254
+263,Iraq,IQBB,IQ,BB, , ,Babil,255
+1645, , , , ,RO211,RO,Bacau,1668
+152,Hungary,HUBK,HU,BK, , ,Bacs-Kiskun,256
+1432, , , , ,ES431,ES,Badajoz,1439
+264,Iraq,IQBG,IQ,BG, , ,Baghdad,257
+1631, , , , ,PT184,PT,Baixo Alentejo,1654
+1615, , , , ,PT162,PT,Baixo Mondego,1638
+1614, , , , ,PT161,PT,Baixo Vouga,1637
+265,Azerbaijan,AZBAL,AZ,BAL, , ,Balakan,258
+266,Turkey,TR10,TR,10, , ,Balikesir,259
+267,Turkey,TR10,TR,10, , ,Balikesir,260
+268,Turkey,TR10,TR,10, , ,Balikesir,261
+960, , , , ,TR22,TR,Balikesir,1265
+153,Moldova,MDBA,MD,BA, , ,Balti,262
+154,Latvia,LVBL,LV,BL, , ,Balvu Aprinkis,263
+269,Libya,LYBA,LY,BA, , ,Banghazi,264
+270,Egypt,EGBNS,EG,BNS, , ,Bani Suwayf,265
+271,Libya,LYBW,LY,BW, , ,Bani Walid,266
+1713, , , , ,SK032,SK,Banskobystricky kraj,1736
+155,Hungary,HUBA,HU,BA, , ,Baranya,267
+1434, , , , ,ES511,ES,Barcelona,1441
+272,Turkey,TR74,TR,74, , ,Bartin,268
+273,Turkey,TR74,TR,74, , ,Bartin,269
+1362, , , , ,CH032,CH,Basel-Landschaft,1363
+1361, , , , ,CH031,CH,Basel-Stadt,1362
+274,Italy,IT77,IT,77, , ,Basilicata,270
+275,Italy,IT77,IT,77, , ,Basilicata,271
+917, , , , ,ITF5,IT,Basilicata,1222
+1508, , , , ,FR421,FR,Bas-Rhin,1517
+19,France,FRP,FR,P, , ,Basse-Normandie,13
+20,France,FRP,FR,P, , ,Basse-Normandie,14
+1265,France,FRP,FR,P, , ,Basse-Normandie,1120
+276,Algeria,DZ05,DZ,5, , ,Batna,272
+277,Kazakhstan,KZZAP,KZ,ZAP, , ,Batys Qazaqstan oblysy,273
+1266,Algeria,DZ08,DZ,8, , ,Bechar,1121
+1307, , , , ,UKH2,UK,Bedfordshire and Hertfordshire,1307
+1621, , , , ,PT168,PT,Beira Interior Norte,1644
+1622, , , , ,PT169,PT,Beira Interior Sul,1645
+21,Portugal,PT02,PT,2, , ,Beja,15
+278,Tunisia,TN31,TN,31, , ,Beja,274
+279,Algeria,DZ06,DZ,6, , ,Bejaia,275
+280,Algeria,DZ06,DZ,6, , ,Bejaia,276
+281,Russian Federation,RUBEK,RU,BEK, , ,Belgorodskaya oblast,277
+282,Tunisia,TN13,TN,13, , ,Ben Arous,278
+283,Serbia,RS00,RS,0, , ,Beograd,279
+284,Albania,AL1,AL,1, , ,Berat,280
+1311, , , , ,UKJ1,UK,"Berkshire, Buckinghamshire and Oxfordshire",1311
+862, , , , ,DE30,DE,Berlin,1167
+1357, , , , ,CH021,CH,Bern,1357
+285,Lebanon,LBBA,LB,BA, , ,Beyrouth,281
+1633, , , , ,RO111,RO,Bihor,1656
+286,Algeria,DZ07,DZ,7, , ,Biskra,282
+287,Slovenia,SI149,SI,149, , ,Bistrica ob Sotli,283
+1634, , , , ,RO112,RO,Bistrita-Nasaud,1657
+288,Turkey,TR13,TR,13, , ,Bitlis,284
+289,Tunisia,TN23,TN,23, , ,Bizerte,285
+290,Tunisia,TN23,TN,23, , ,Bizerte,286
+291,Tunisia,TN23,TN,23, , ,Bizerte,287
+156,Croatia,HR07,HR,7, , ,Bjelovarsko-bilogorska zupanija,288
+1346, , , , ,BG413,BG,Blagoevgrad,1346
+292,Sweden,SEK,SE,K, , ,Blekinge lan,289
+293,Sweden,SEK,SE,K, , ,Blekinge lan,290
+294,Sweden,SEK,SE,K, , ,Blekinge lan,291
+1685, , , , ,SE221,SE,Blekinge lan,1708
+295,Algeria,DZ09,DZ,9, , ,Blida,292
+296,The Former Yugoslav Republic of Macedonia,MK06,MK,6, , ,Bogovinje,293
+157,Serbia,RS14,RS,14, , ,Bor,294
+1568, , , , ,IE011,IE,Border,1577
+297,Algeria,DZ34,DZ,34, , ,Bordj Bou Arreridj,295
+899, , , , ,EL41,EL,Boreio Aigaio,1204
+1390, , , , ,DK014,DK,Bornholm,1397
+158,Romania,ROBT,RO,BT, , ,Botosani,296
+1646, , , , ,RO212,RO,Botosani,1669
+1563, , , , ,FR824,FR,Bouches-du-Rhone,1572
+298,Algeria,DZ10,DZ,10, , ,Bouira,297
+299,Algeria,DZ35,DZ,35, , ,Boumerdes,298
+300,Algeria,DZ35,DZ,35, , ,Boumerdes,299
+22,Portugal,PT03,PT,3, , ,Braga,16
+1651, , , , ,RO221,RO,Braila,1674
+863, , , , ,DE40,DE,Brandenburg,1168
+159,Serbia,RS11,RS,11, , ,Branicevo,300
+1640, , , , ,RO122,RO,Brasov,1663
+1708, , , , ,SK010,SK,Bratislavsky kraj,1731
+870, , , , ,DE91,DE,Braunschweig,1175
+301,Bosnia and Herzegovina, ,BA, , , ,Brcko District,301
+365,Germany,DEHB,DE,HB, , ,Bremen,302
+864, , , , ,DE50,DE,Bremen,1169
+302,Belarus,BYBR,BY,BR, , ,Brestskaya voblasts,303
+23,France,FRE,FR,E, , ,Bretagne,17
+24,France,FRE,FR,E, , ,Bretagne,18
+25,France,FRE,FR,E, , ,Bretagne,19
+366,Slovenia,SI009,SI,9, , ,Brezice,304
+367,Croatia,HR12,HR,12, , ,Brodsko-posavska zupanija,305
+368,Russian Federation,RUBRY,RU,BRY, , ,Bryanskaya oblast,306
+1664, , , , ,RO321,RO,Bucuresti,1687
+369,Montenegro,ME05,ME,5, , ,Budva,307
+370,Egypt,EGPTS,EG,PTS, , ,Bur Said,308
+371,Egypt,EGPTS,EG,PTS, , ,Bur Said,309
+372,Egypt,EGPTS,EG,PTS, , ,Bur Said,310
+373,Bulgaria,BG02,BG,2, , ,Burgas,311
+374,Bulgaria,BG02,BG,2, , ,Burgas,312
+1340, , , , ,BG341,BG,Burgas,1340
+831, , , , ,AT11,AT,Burgenland (AT),1135
+1419, , , , ,ES412,ES,Burgos,1426
+375,Turkey,TR16,TR,16, , ,Bursa,313
+376,Turkey,TR16,TR,16, , ,Bursa,314
+1284, , , , ,TR41,TR,Bursa,1269
+377,Norway,NO06,NO,6, , ,Buskerud,315
+378,Norway,NO06,NO,6, , ,Buskerud,316
+379,Norway,NO06,NO,6, , ,Buskerud,317
+1730, , , , ,NO032,NO,Buskerud,1614
+1652, , , , ,RO222,RO,Buzau,1675
+1387, , , , ,DK011,DK,Byen Kobenhavn,1394
+1433, , , , ,ES432,ES,Caceres,1440
+1445, , , , ,ES612,ES,Cadiz,1452
+303,Moldova,MDCA,MD,CA, , ,Cahul,318
+304,Italy,IT78,IT,78, , ,Calabria,319
+380,Italy,IT78,IT,78, , ,Calabria,320
+918, , , , ,ITF6,IT,Calabria,1223
+1658, , , , ,RO312,RO,Calarasi,1681
+1495, , , , ,FR251,FR,Calvados,1504
+381,Italy,IT72,IT,72, , ,Campania,321
+382,Italy,IT72,IT,72, , ,Campania,322
+383,Italy,IT72,IT,72, , ,Campania,323
+915, , , , ,ITF3,IT,Campania,1220
+384,Turkey,TR17,TR,17, , ,Canakkale,324
+385,Turkey,TR17,TR,17, , ,Canakkale,325
+386,Turkey,TR17,TR,17, , ,Canakkale,326
+387,Turkey,TR17,TR,17, , ,Canakkale,327
+388,Turkey,TR17,TR,17, , ,Canakkale,328
+389,Turkey,TR17,TR,17, , ,Canakkale,329
+26,Spain,ESS,ES,S, , ,Cantabria,20
+27,Spain,ESS,ES,S, , ,Cantabria,21
+1408, , , , ,ES130,ES,Cantabria,1415
+1552, , , , ,FR722,FR,Cantal,1561
+305,Romania,ROCS,RO,CS, , ,Caras-Severin,330
+1672, , , , ,RO422,RO,Caras-Severin,1695
+1439, , , , ,ES522,ES,Castellon / Castello,1446
+306,Spain,ESCT,ES,CT, , ,Cataluna,331
+390,Spain,ESCT,ES,CT, , ,Cataluna,332
+391,Spain,ESCT,ES,CT, , ,Cataluna,333
+1606, , , , ,PT112,PT,Cavado,1629
+28,Spain,ESCE,ES,CE, , ,Ceuta,22
+1723, , , , ,ES630,ES,Ceuta,1460
+29,Morocco,MA09,MA,9, , ,Chaouia-Ouardigha,23
+1523, , , , ,FR531,FR,Charente,1532
+1524, , , , ,FR532,FR,Charente-Maritime,1533
+392,Russian Federation,RUCE,RU,CE, , ,Chechenskaya Respublika,334
+393,Russian Federation,RUCHE,RU,CHE, , ,Chelyabinskaya oblast,335
+884, , , , ,DED4,DE,Chemnitz,1189
+1489, , , , ,FR241,FR,Cher,1498
+394,Ukraine,UA71,UA,71, , ,Cherkaska Oblast,336
+395,Ukraine,UA74,UA,74, , ,Chernihivska Oblast,337
+307,Ukraine,UA77,UA,77, , ,Chernivetska Oblast,338
+966, , , , ,UKD6,UK,Cheshire,1294
+396,Moldova,MDCH,MD,CH, , ,Chisinau,339
+397,Moldova,MDCU,MD,CU, , ,Chisinau,340
+398,Algeria,DZ02,DZ,2, , ,Chlef,341
+399,Russian Federation,RUCU,RU,CU, , ,Chuvashskaya Respublika,342
+400,Slovenia, ,SI, , , ,Cirkulane,343
+1428, , , , ,ES422,ES,Ciudad Real,1435
+1635, , , , ,RO113,RO,Cluj,1658
+30,Portugal,PT06,PT,6, , ,Coimbra,24
+31,Ireland,IEC,IE,C, , ,Connaught,25
+32,Ireland,IEC,IE,C, , ,Connaught,26
+33,Ireland,IEC,IE,C, , ,Connaught,27
+401,Romania,ROCT,RO,CT, , ,Constanta,344
+402,Romania,ROCT,RO,CT, , ,Constanta,345
+1653, , , , ,RO223,RO,Constanta,1676
+403,Algeria,DZ25,DZ,25, , ,Constantine,346
+1446, , , , ,ES613,ES,Cordoba,1453
+1317, , , , ,UKK3,UK,Cornwall and Isles of Scilly,1317
+1540, , , , ,FR631,FR,Correze,1549
+404,France,FRH,FR,H, , ,Corse,347
+405,France,FRH,FR,H, , ,Corse,348
+406,France,FRH,FR,H, , ,Corse,349
+1566, , , , ,FR831,FR,Corse-du-Sud,1575
+1498, , , , ,FR261,FR,Cote-dOr,1507
+1519, , , , ,FR521,FR,Cotes-dArmor,1528
+1623, , , , ,PT16A,PT,Cova da Beira,1646
+1641, , , , ,RO123,RO,Covasna,1664
+308,Slovenia,SI015,SI,15, , ,Crensovci,350
+1541, , , , ,FR632,FR,Creuse,1550
+309,Slovenia,SI017,SI,17, , ,Crnomelj,351
+407,Hungary,HUCS,HU,CS, , ,Csongrad,352
+408,The Former Yugoslav Republic of Macedonia,MK82,MK,82, , ,Cucer Sandevo,353
+1429, , , , ,ES423,ES,Cuenca,1436
+963, , , , ,UKD1,UK,Cumbria,1291
+409,Iraq,IQDA,IQ,DA, , ,Dahuk,354
+1690, , , , ,SE312,SE,Dalarnas lan,1713
+1659, , , , ,RO313,RO,Dambovita,1682
+1618, , , , ,PT165,PT,Dao-Lafoes,1641
+410,Syria,SYDR,SY,DR, , ,Dara,355
+866, , , , ,DE71,DE,Darmstadt,1171
+411,Libya,LYDR,LY,DR, , ,Darnah,356
+412,Libya,LYDR,LY,DR, , ,Darnah,357
+413,Libya,LYDR,LY,DR, , ,Darnah,358
+310,Latvia,LVDA,LV,DA, , ,Daugavpils Aprinkis,359
+414,Syria,SYDY,SY,DY, , ,Dayr az Zawr,360
+415,The Former Yugoslav Republic of Macedonia,MK21,MK,21, , ,Debar,361
+908, , , , ,HU33,HU,Del-Alfold,1213
+905, , , , ,HU23,HU,Del-Dunantul,1210
+972, , , , ,UKF1,UK,Derbyshire and Nottinghamshire,1300
+877, , , , ,DEA4,DE,Detmold,1182
+1525, , , , ,FR533,FR,Deux-Sevres,1534
+1318, , , , ,UKK4,UK,Devon,1318
+416,Albania,AL9,AL,9, , ,Diber,362
+311,Luxembourg,LUD,LU,D, , ,Diekirch,363
+417,Syria,SYDI,SY,DI, , ,Dimashq,364
+895, , , , ,EL23,EL,Ditiki Ellada,1200
+891, , , , ,EL13,EL,Ditiki Makedonia,1196
+418,Iraq,IQDI,IQ,DI, , ,Diyala,365
+419,Turkey,TR21,TR,21, , ,Diyarbakir,366
+420,Algeria,DZ17,DZ,17, , ,Djelfa,367
+421,Ukraine,UA12,UA,12, , ,Dnipropetrovska Oblast,368
+422,Bulgaria,BG08,BG,8, , ,Dobrich,369
+1337, , , , ,BG332,BG,Dobrich,1337
+1666, , , , ,RO411,RO,Dolj,1689
+953, , , , ,PL51,PL,Dolnoslaskie,1258
+423,Ukraine,UA14,UA,14, , ,Donetska Oblast,370
+424,Ukraine,UA14,UA,14, , ,Donetska Oblast,371
+1527, , , , ,FR611,FR,Dordogne,1536
+1316, , , , ,UKK2,UK,Dorset and Somerset,1316
+1510, , , , ,FR431,FR,Doubs,1519
+1611, , , , ,PT117,PT,Douro,1634
+932, , , , ,NL13,NL,Drenthe,1237
+883, , , , ,DED2,DE,Dresden,1188
+1545, , , , ,FR713,FR,Drome,1554
+1571, , , , ,IE021,IE,Dublin,1580
+425,Croatia,HR19,HR,19, , ,Dubrovacko-neretvanska zupanija,372
+426,Croatia,HR19,HR,19, , ,Dubrovacko-neretvanska zupanija,373
+427,Croatia,HR19,HR,19, , ,Dubrovacko-neretvanska zupanija,374
+428,Egypt,EGDT,EG,DT, , ,Dumyat,375
+429,Egypt,EGDT,EG,DT, , ,Dumyat,376
+430,Albania,AL2,AL,2, , ,Durres,377
+874, , , , ,DEA1,DE,Dusseldorf,1179
+431,Turkey,TR81,TR,81, , ,Duzce,378
+432,Greece,GRVII,GR,VII, , ,Dytiki Ellada,379
+433,Greece,GRVII,GR,VII, , ,Dytiki Ellada,380
+434,Greece,GRIII,GR,III, , ,Dytiki Makedonia,381
+1306, , , , ,UKH1,UK,East Anglia,1306
+1320, , , , ,UKL2,UK,East Wales,1320
+968, , , , ,UKE1,UK,East Yorkshire and Northern Lincolnshire,1296
+1321, , , , ,UKM2,UK,Eastern Scotland,1321
+312,Moldova,MDED,MD,ED, , ,Edinet,382
+435,Turkey,TR22,TR,22, , ,Edirne,383
+1441, , , , ,ES531,ES,Eivissa y Formentera,1448
+1267,Algeria,DZ32,DZ,32, , ,El Bayadh,1122
+436,Lebanon,LBBI,LB,BI, , ,El Beqaa,384
+437,Algeria,DZ39,DZ,39, , ,El Oued,385
+438,Algeria,DZ36,DZ,36, , ,El Tarf,386
+439,Turkey,TR23,TR,23, , ,Elazig,387
+440,Albania,AL3,AL,3, , ,Elbasan,388
+441,Italy,IT45,IT,45, , ,Emilia-Romagna,389
+442,Italy,IT45,IT,45, , ,Emilia-Romagna,390
+925, , , , ,ITH5,IT,Emilia-Romagna,1230
+1268,United Kingdom,GBENG,GB,ENG, , ,England,1123
+1269,United Kingdom,GBENG,GB,ENG, , ,England,1124
+1270,United Kingdom,GBENG,GB,ENG, , ,England,1125
+1610, , , , ,PT116,PT,Entre Douro e Vouga,1633
+443,Armenia,AMER,AM,ER, , ,Erevan,391
+444,Turkey,TR24,TR,24, , ,Erzincan,392
+1297, , , , ,TRA1,TR,Erzurum,1282
+1308, , , , ,UKH3,UK,Essex,1308
+1475, , , , ,FR104,FR,Essonne,1484
+907, , , , ,HU32,HU,Eszak-Alfold,1212
+906, , , , ,HU31,HU,Eszak-Magyarorszag,1211
+1463, , , , ,FI1C5,FI,Etela-Karjala,1472
+1454, , , , ,FI194,FI,Etela-Pohjanmaa,1463
+1464, , , , ,FI1D1,FI,Etela-Savo,1473
+313,Finland,FIES,FI,ES, , ,Etela-Suomen laani,393
+445,Finland,FIES,FI,ES, , ,Etela-Suomen laani,394
+446,Finland,FIES,FI,ES, , ,Etela-Suomen laani,395
+1487, , , , ,FR231,FR,Eure,1496
+1490, , , , ,FR242,FR,Eure-et-Loir,1499
+34,Portugal,PT08,PT,8, , ,Faro,28
+35,Portugal,PT08,PT,8, , ,Faro,29
+36,Portugal,PT08,PT,8, , ,Faro,30
+37,Faroe Islands,FO,FO, , , ,Faroe Islands,31
+38,Faroe Islands,FO,FO, , , ,Faroe Islands,32
+39,Faroe Islands,FO,FO, , , ,Faroe Islands,33
+314,Bosnia and Herzegovina,BABIH,BA,BIH, , ,Federacija Bosna i Hercegovina,396
+40,Morocco,MA05,MA,5, , ,Fes-Boulemane,34
+447,Albania,AL4,AL,4, , ,Fier,397
+1520, , , , ,FR522,FR,Finistere,1529
+448,Norway,NO20,NO,20, , ,Finnmark,398
+449,Norway,NO20,NO,20, , ,Finnmark,399
+450,Norway,NO20,NO,20, , ,Finnmark,400
+451,Norway,NO20,NO,20, , ,Finnmark,401
+1604, , , , ,NO073,NO,Finnmark,1627
+315,Netherlands,NLFL,NL,FL, , ,Flevoland,402
+452,Netherlands,NLFL,NL,FL, , ,Flevoland,403
+935, , , , ,NL23,NL,Flevoland,1240
+853, , , , ,DE13,DE,Freiburg,1158
+1716, , , , ,CH022,CH,Freiburg,1358
+316,Netherlands,NLFR,NL,FR, , ,Friesland,404
+453,Netherlands,NLFR,NL,FR, , ,Friesland,405
+931, , , , ,NL12,NL,Friesland (NL),1236
+317,Italy,IT36,IT,36, , ,Friuli-Venezia Giulia,406
+454,Italy,IT36,IT,36, , ,Friuli-Venezia Giulia,407
+455,Italy,IT36,IT,36, , ,Friuli-Venezia Giulia,408
+924, , , , ,ITH4,IT,Friuli-Venezia Giulia,1229
+1393, , , , ,DK031,DK,Fyn,1400
+456,Tunisia,TN81,TN,81, , ,Gabes,409
+1332, , , , ,BG322,BG,Gabrovo,1332
+457,Tunisia,TN71,TN,71, , ,Gafsa,410
+458,Moldova,MDGA,MD,GA, , ,Gagauzia,411
+318,Romania,ROGL,RO,GL, , ,Galati,412
+1654, , , , ,RO224,RO,Galati,1677
+41,Spain,ESGA,ES,GA, , ,Galicia,35
+42,Spain,ESGA,ES,GA, , ,Galicia,36
+43,Spain,ESGA,ES,GA, , ,Galicia,37
+1556, , , , ,FR812,FR,Gard,1565
+459,Sweden,SEX,SE,X, , ,Gavleborgs lan,413
+460,Sweden,SEX,SE,X, , ,Gavleborgs lan,414
+461,Sweden,SEX,SE,X, , ,Gavleborgs lan,415
+1691, , , , ,SE313,SE,Gavleborgs lan,1714
+462,Palestinian Territory,PS,PS, , , ,Gaza Strip,416
+463,Turkey,TR27,TR,27, , ,Gaziantep,417
+1301, , , , ,TRC1,TR,Gaziantep,1286
+464,Armenia,AMGR,AM,GR, , ,Gegarkunik,418
+934, , , , ,NL22,NL,Gelderland,1239
+1356, , , , ,CH013,CH,Geneve,1356
+1535, , , , ,FR624,FR,Gers,1544
+465,Libya,LYGD,LY,GD, , ,Ghadamis,419
+466,Malta,MT13,MT,13, , ,Ghajnsielem,420
+467,Malta,MT13,MT,13, , ,Ghajnsielem,421
+44,Morocco,MA02,MA,2, , ,Gharb-Chrarda-Beni Hssen,38
+45,Morocco,MA02,MA,2, , ,Gharb-Chrarda-Beni Hssen,39
+468,Algeria,DZ47,DZ,47, , ,Ghardaia,422
+469,Libya,LYGR,LY,GR, , ,Gharyan,423
+46,Gibraltar,GI,GI, , , ,Gibraltar,40
+47,Gibraltar,GI,GI, , , ,Gibraltar,41
+867, , , , ,DE72,DE,Giessen,1172
+470,Turkey,TR28,TR,28, , ,Giresun,424
+471,Turkey,TR28,TR,28, , ,Giresun,425
+472,Cyprus,CY06,CY,6, , ,Girne,426
+473,Cyprus,CY06,CY,6, , ,Girne,427
+1435, , , , ,ES512,ES,Girona,1442
+1528, , , , ,FR612,FR,Gironde,1537
+1660, , , , ,RO314,RO,Giurgiu,1683
+319,Albania,AL5,AL,5, , ,Gjirokaster,428
+474,The Former Yugoslav Republic of Macedonia,MK29,MK,29, , ,Gjorce Petrov,429
+1365, , , , ,CH051,CH,Glarus,1366
+1315, , , , ,UKK1,UK,"Gloucestershire, Wiltshire and Bristol/Bath area",1315
+1705, , , , ,SI022,SI,Gorenjska,1728
+1706, , , , ,SI023,SI,Goriska,1729
+1667, , , , ,RO412,RO,Gorj,1690
+475,The Former Yugoslav Republic of Macedonia,MK19,MK,19, , ,Gostivar,430
+476,Sweden,SEI,SE,I, , ,Gotlands lan,431
+477,Sweden,SEI,SE,I, , ,Gotlands lan,432
+478,Sweden,SEI,SE,I, , ,Gotlands lan,433
+1684, , , , ,SE214,SE,Gotlands lan,1707
+320,Croatia,HR21,HR,21, , ,Grad Zagreb,434
+1447, , , , ,ES614,ES,Granada,1454
+48,Morocco,MA08,MA,8, , ,Grand Casablanca,42
+1626, , , , ,PT171,PT,Grande Lisboa,1649
+1608, , , , ,PT114,PT,Grande Porto,1631
+479,Switzerland,CHGR,CH,GR, , ,Graubunden,435
+1370, , , , ,CH056,CH,Graubunden,1371
+964, , , , ,UKD3,UK,Greater Manchester,1292
+321,Luxembourg,LUG,LU,G, , ,Grevenmacher,436
+480,Netherlands,NLGR,NL,GR, , ,Groningen,437
+481,Netherlands,NLGR,NL,GR, , ,Groningen,438
+930, , , , ,NL11,NL,Groningen,1235
+1430, , , , ,ES424,ES,Guadalajara,1437
+482,Algeria,DZ24,DZ,24, , ,Guelma,439
+49,Morocco,MA14,MA,14, , ,Guelmim-Es Smara,43
+50,Guernsey,GG,GG, , , ,Guernsey,44
+51,Guernsey,GG,GG, , , ,Guernsey,45
+1410, , , , ,ES212,ES,Guipuzcoa,1417
+483,Georgia,GEGU,GE,GU, , ,Guria,440
+485,Israel,ILD,IL,D, , ,HaDarom,442
+484,Saudi Arabia,SA06,SA,6, , ,Hail,441
+486,Turkey,TR30,TR,30, , ,Hakkari,443
+487,Syria,SYHL,SY,HL, , ,Halab,444
+488,Sweden,SEN,SE,N, , ,Hallands lan,445
+489,Sweden,SEN,SE,N, , ,Hallands lan,446
+490,Sweden,SEN,SE,N, , ,Hallands lan,447
+1687, , , , ,SE231,SE,Hallands lan,1710
+491,Syria,SYHM,SY,HM, , ,Hamah,448
+492,Germany,DEHH,DE,HH, , ,Hamburg,449
+493,Germany,DEHH,DE,HH, , ,Hamburg,450
+865, , , , ,DE60,DE,Hamburg,1170
+494,Israel,ILM,IL,M, , ,HaMerkaz,451
+1313, , , , ,UKJ3,UK,Hampshire and Isle of Wight,1313
+871, , , , ,DE92,DE,Hannover,1176
+1642, , , , ,RO124,RO,Harghita,1665
+495,Estonia,EE37,EE,37, , ,Harjumaa,452
+496,Estonia,EE37,EE,37, , ,Harjumaa,453
+497,Estonia,EE37,EE,37, , ,Harjumaa,454
+1350, , , , ,BG422,BG,Haskovo,1350
+498,Turkey,TR31,TR,31, , ,Hatay,455
+499,Turkey,TR31,TR,31, , ,Hatay,456
+1290, , , , ,TR63,TR,Hatay,1275
+1567, , , , ,FR832,FR,Haute-Corse,1576
+1534, , , , ,FR623,FR,Haute-Garonne,1543
+1553, , , , ,FR723,FR,Haute-Loire,1562
+1483, , , , ,FR214,FR,Haute-Marne,1492
+500,France,FRQ,FR,Q, , ,Haute-Normandie,457
+501,France,FRQ,FR,Q, , ,Haute-Normandie,458
+1561, , , , ,FR822,FR,Hautes-Alpes,1570
+1512, , , , ,FR433,FR,Haute-Saone,1521
+1550, , , , ,FR718,FR,Haute-Savoie,1559
+1537, , , , ,FR626,FR,Hautes-Pyrenees,1546
+1542, , , , ,FR633,FR,Haute-Vienne,1551
+1509, , , , ,FR422,FR,Haut-Rhin,1518
+1476, , , , ,FR105,FR,Hauts-de-Seine,1485
+502,Israel,ILZ,IL,Z, , ,HaZafon,459
+1598, , , , ,NO021,NO,Hedmark,1611
+503,Israel,ILHA,IL,HA, , ,Hefa,460
+1458, , , , ,FI1B1,FI,Helsinki-Uusimaa,1467
+1557, , , , ,FR813,FR,Herault,1566
+504,Montenegro,ME08,ME,8, , ,Herceg-Novi,461
+975, , , , ,UKG1,UK,"Herefordshire, Worcestershire and Warwickshire",1303
+1324, , , , ,UKM6,UK,Highlands and Islands,1324
+505,Estonia,EE39,EE,39, , ,Hiiumaa,462
+506,Estonia,EE39,EE,39, , ,Hiiumaa,463
+507,Estonia,EE39,EE,39, , ,Hiiumaa,464
+508,Syria,SYHI,SY,HI, , ,Hims,465
+1373, , , , ,CZ010,CZ,Hlavni mesto Praha,1380
+52,Iceland,IS1,IS,1, , ,Hofudborgarsvaedi utan Reykjavikur,46
+53,Iceland,IS1,IS,1, , ,Hofudborgarsvaedi utan Reykjavikur,47
+54,Iceland,IS1,IS,1, , ,Hofudborgarsvaedi utan Reykjavikur,48
+509,Holy See,VA,VA, , , ,Holy See,466
+510,Belarus,BYHO,BY,HO, , ,Homyelskaya voblasts,467
+511,Norway,NO12,NO,12, , ,Hordaland,468
+512,Norway,NO12,NO,12, , ,Hordaland,469
+513,Norway,NO12,NO,12, , ,Hordaland,470
+514,Norway,NO12,NO,12, , ,Hordaland,471
+1736, , , , ,NO051,NO,Hordaland,1620
+515,Denmark,DK84,DK,84, , ,Hovedstaden,472
+516,Denmark,DK84,DK,84, , ,Hovedstaden,473
+517,Denmark,DK84,DK,84, , ,Hovedstaden,474
+518,Denmark,DK84,DK,84, , ,Hovedstaden,475
+322,Belarus,BYHR,BY,HR, , ,Hrodzenskaya voblasts,476
+519,Slovenia,SI035,SI,35, , ,Hrpelje-Kozina,477
+1448, , , , ,ES615,ES,Huelva,1455
+1414, , , , ,ES241,ES,Huesca,1421
+1673, , , , ,RO423,RO,Hunedoara,1696
+1661, , , , ,RO315,RO,Ialomita,1684
+323,Romania,ROIS,RO,IS, , ,Iasi,478
+1647, , , , ,RO213,RO,Iasi,1670
+520,Turkey,TR33,TR,33, , ,Içel,479
+521,Turkey,TR33,TR,33, , ,Içel,480
+522,Turkey,TR33,TR,33, , ,Içel,481
+523,Estonia,EE44,EE,44, , ,Ida-Virumaa,482
+524,Syria,SYID,SY,ID, , ,Idlib,483
+525,Turkey,TR76,TR,76, , ,Igdir,484
+1665, , , , ,RO322,RO,Ilfov,1688
+324,Slovenia,SI038,SI,38, , ,Ilirska Bistrica,485
+1521, , , , ,FR523,FR,Ille-et-Vilaine,1530
+526,Spain,ESIB,ES,IB, , ,Illes Balears,486
+527,Spain,ESIB,ES,IB, , ,Illes Balears,487
+528,Spain,ESIB,ES,IB, , ,Illes Balears,488
+529,Algeria,DZ33,DZ,33, , ,Illizi,489
+530,Georgia,GEIM,GE,IM, , ,Imereti,490
+1491, , , , ,FR243,FR,Indre,1500
+1492, , , , ,FR244,FR,Indre-et-Loire,1501
+531,Russian Federation,RUIN,RU,IN, , ,Ingushskaya Respublika,491
+1309, , , , ,UKI1,UK,Inner London,1309
+532,Greece,GRVI,GR,VI, , ,Ionia Nisia,492
+533,Greece,GRVI,GR,VI, , ,Ionia Nisia,493
+534,Greece,GRVI,GR,VI, , ,Ionia Nisia,494
+535,Greece,GRVI,GR,VI, , ,Ionia Nisia,495
+894, , , , ,EL22,EL,Ionia Nisia,1199
+536,Greece,GRIV,GR,IV, , ,Ipeiros,496
+537,Greece,GRIV,GR,IV, , ,Ipeiros,497
+538,Greece,GRIV,GR,IV, , ,Ipeiros,498
+893, , , , ,EL21,EL,Ipeiros,1198
+539,Jordan,JOIR,JO,IR, , ,Irbid,499
+1546, , , , ,FR714,FR,Isere,1555
+55,Isle of Man,IM,IM, , , ,Isle of Man,49
+56,Isle of Man,IM,IM, , , ,Isle of Man,50
+540,Turkey,TR32,TR,32, , ,Isparta,500
+325,Turkey,TR34,TR,34, , ,Istanbul,504
+541,Turkey,TR34,TR,34, , ,Istanbul,501
+542,Turkey,TR34,TR,34, , ,Istanbul,502
+543,Turkey,TR34,TR,34, , ,Istanbul,503
+958, , , , ,TR10,TR,Istanbul,1263
+326,Croatia,HR18,HR,18, , ,Istarska zupanija,505
+544,Croatia,HR18,HR,18, , ,Istarska zupanija,506
+545,Croatia,HR18,HR,18, , ,Istarska zupanija,507
+1593, , , , ,MK002,MK,Istochen,1602
+327,Finland,FIIS,FI,IS, , ,Ita-Suomen laani,508
+328,Ukraine,UA26,UA,26, , ,Ivano-Frankivska Oblast,509
+546,Russian Federation,RUIVA,RU,IVA, , ,Ivanovskaya oblast,510
+547,Turkey,TR35,TR,35, , ,Izmir,511
+548,Turkey,TR35,TR,35, , ,Izmir,512
+549,Turkey,TR35,TR,35, , ,Izmir,513
+1281, , , , ,TR31,TR,Izmir,1266
+550,Slovenia,SI040,SI,40, , ,Izola,514
+329,Serbia,RS23,RS,23, , ,Jablanica,515
+1449, , , , ,ES616,ES,Jaen,1456
+1693, , , , ,SE322,SE,Jamtlands lan,1716
+57,Norway,NO22,NO,22, , ,Jan Mayen,51
+551,Egypt,EGJS,EG,JS, , ,Janub Sina,516
+552,Egypt,EGJS,EG,JS, , ,Janub Sina,517
+553,Jordan,JOJA,JO,JA, , ,Jarash,518
+554,The Former Yugoslav Republic of Macedonia,MK35,MK,35, , ,Jegunovce,519
+555,Tunisia,TN32,TN,32, , ,Jendouba,520
+58,Jersey,JE,JE, , , ,Jersey,52
+59,Jersey,JE,JE, , , ,Jersey,53
+1375, , , , ,CZ031,CZ,Jihocesky kraj,1382
+1383, , , , ,CZ064,CZ,Jihomoravsky kraj,1390
+556,Algeria,DZ18,DZ,18, , ,Jijel,521
+557,Algeria,DZ18,DZ,18, , ,Jijel,522
+558,Estonia,EE49,EE,49, , ,Jogevamaa,523
+1681, , , , ,SE211,SE,Jonkopings lan,1704
+1595, , , , ,MK004,MK,Jugoistochen,1604
+1702, , , , ,SI017,SI,Jugovzhodna Slovenija,1725
+1594, , , , ,MK003,MK,Jugozapaden,1603
+1360, , , , ,CH025,CH,Jura,1361
+1511, , , , ,FR432,FR,Jura,1520
+559,Latvia,LVJUR,LV,JUR, , ,Jurmala,524
+561,Russian Federation,RUKB,RU,KB, , ,Kabardino-Balkarskaya Respublika,526
+562,Egypt,EGKFS,EG,KFS, , ,Kafr ash Shaykh,527
+563,Egypt,EGKFS,EG,KFS, , ,Kafr ash Shaykh,528
+1467, , , , ,FI1D4,FI,Kainuu,1476
+564,Tunisia,TN41,TN,41, , ,Kairouan,529
+565,Georgia,GEKA,GE,KA, , ,Kakheti,530
+330,Russian Federation,RUKGD,RU,KGD, , ,Kaliningradskaya oblast,531
+566,Russian Federation,RUKGD,RU,KGD, , ,Kaliningradskaya oblast,532
+567,Russian Federation,RUKGD,RU,KGD, , ,Kaliningradskaya oblast,533
+568,Sweden,SEH,SE,H, , ,Kalmar lan,534
+569,Sweden,SEH,SE,H, , ,Kalmar lan,535
+570,Sweden,SEH,SE,H, , ,Kalmar lan,536
+571,Sweden,SEH,SE,H, , ,Kalmar lan,537
+1683, , , , ,SE213,SE,Kalmar lan,1706
+572,Russian Federation,RUKLU,RU,KLU, , ,Kaluzhskaya oblast,538
+1460, , , , ,FI1C2,FI,Kanta-Hame,1469
+573,Russian Federation,RUKC,RU,KC, , ,Karachayevo-Cherkesskaya Respublika,539
+574,Iraq,IQKA,IQ,KA, , ,Karbala,540
+1353, , , , ,BG425,BG,Kardzhali,1353
+331,Croatia,HR04,HR,4, , ,Karlovacka zupanija,541
+1377, , , , ,CZ041,CZ,Karlovarsky kraj,1384
+852, , , , ,DE12,DE,Karlsruhe,1157
+834, , , , ,AT21,AT,Karnten,1138
+575,Turkey,TR36,TR,36, , ,Kars,542
+868, , , , ,DE73,DE,Kassel,1173
+576,Tunisia,TN42,TN,42, , ,Kasserine,543
+577,Turkey,TR37,TR,37, , ,Kastamonu,544
+1294, , , , ,TR82,TR,Kastamonu,1279
+1577, , , , ,LT002,LT,Kauno apskritis,1586
+1292, , , , ,TR72,TR,Kayseri,1277
+578,Tunisia,TN73,TN,73, , ,Kebili,545
+1314, , , , ,UKJ4,UK,Kent,1314
+579,Greece,GRII,GR,II, , ,Kentriki Makedonia,546
+580,Greece,GRII,GR,II, , ,Kentriki Makedonia,547
+581,Greece,GRII,GR,II, , ,Kentriki Makedonia,548
+890, , , , ,EL12,EL,Kentriki Makedonia,1195
+582,Iran,IR17,IR,17, , ,Kermanshah,549
+1400, , , , ,EE006,EE,Kesk-Eesti,1407
+1468, , , , ,FI1D5,FI,Keski-Pohjanmaa,1477
+1453, , , , ,FI193,FI,Keski-Suomi,1462
+583,Russian Federation,RUKHM,RU,KHM, , ,Khanty-Mansiyskiy avtonomnyy okrug,550
+584,Russian Federation,RUKHM,RU,KHM, , ,Khanty-Mansiyskiy avtonomnyy okrug,551
+585,Russian Federation,RUKHM,RU,KHM, , ,Khanty-Mansiyskiy avtonomnyy okrug,552
+586,Ukraine,UA63,UA,63, , ,Kharkivska Oblast,553
+587,Algeria,DZ40,DZ,40, , ,Khenchela,554
+588,Ukraine,UA65,UA,65, , ,Khersonska Oblast,555
+589,Ukraine,UA65,UA,65, , ,Khersonska Oblast,556
+590,Ukraine,UA65,UA,65, , ,Khersonska Oblast,557
+591,Ukraine,UA68,UA,68, , ,Khmelnytska Oblast,558
+592,Turkey,TR79,TR,79, , ,Kilis,559
+1280, , , , ,CY00,CY,Kipros / Kibris,1155
+1401, , , , ,EE007,EE,Kirde-Eesti,1408
+1291, , , , ,TR71,TR,Kirikkale,1276
+593,Turkey,TR39,TR,39, , ,Kirklareli,560
+594,Ukraine,UA35,UA,35, , ,Kirovohradska Oblast,561
+595,Russian Federation,RUKIR,RU,KIR, , ,Kirovskaya oblast,562
+332,Lithuania,LTKL,LT,KL, , ,Klaipedos Apskritis,563
+333,Lithuania,LTKL,LT,KL, , ,Klaipedos Apskritis,564
+596,Lithuania,LTKL,LT,KL, , ,Klaipedos Apskritis,565
+1578, , , , ,LT003,LT,Klaipedos apskritis,1587
+1388, , , , ,DK012,DK,Kobenhavns omegn,1395
+879, , , , ,DEB1,DE,Koblenz,1184
+597,Turkey,TR41,TR,41, , ,Kocaeli,566
+598,Turkey,TR41,TR,41, , ,Kocaeli,567
+1285, , , , ,TR42,TR,Kocaeli,1270
+599,Slovenia,SI048,SI,48, , ,Kocevje,568
+875, , , , ,DEA2,DE,Koln,1180
+600,Serbia,RS09,RS,9, , ,Kolubara,569
+601,Turkey,TR42,TR,42, , ,Konya,570
+1287, , , , ,TR52,TR,Konya,1272
+602,Slovenia,SI050,SI,50, , ,Koper,571
+334,Croatia,HR06,HR,6, , ,Koprivnicko-krizevacka zupanija,572
+335,Albania,AL6,AL,6, , ,Korçe,573
+603,Iran,IR16,IR,16, , ,Kordestan,574
+1698, , , , ,SI013,SI,Koroska,1721
+336,Slovakia,SKKI,SK,KI, , ,Kosicky kraj,575
+1715, , , , ,SK042,SK,Kosicky kraj,1738
+604,Serbia,RSKM,RS,KM, , ,Kosovo-Metohija,576
+605,Slovenia, ,SI, , , ,Kostanjevica na Krki,577
+606,Slovenia,SI165,SI,165, , ,Kostel,578
+607,Russian Federation,RUKOS,RU,KOS, , ,Kostromskaya oblast,579
+608,Armenia,AMKT,AM,KT, , ,Kotayk,580
+60,Morocco,MA10,MA,10, , ,Koukhala-Abda,54
+61,Morocco,MA10,MA,10, , ,Koukhala-Abda,55
+903, , , , ,HU21,HU,Kozep-Dunantul,1208
+902, , , , ,HU10,HU,Kozep-Magyarorszag,1207
+1380, , , , ,CZ052,CZ,Kralovehradecky kraj,1387
+337,Croatia,HR02,HR,2, , ,Krapinsko-zagorska zupanija,581
+609,Latvia,LVKR,LV,KR, , ,Kraslavas Aprinkis,582
+610,Russian Federation,RUKDA,RU,KDA, , ,Krasnodyarskiy kray,583
+611,Russian Federation,RUKDA,RU,KDA, , ,Krasnodyarskiy kray,584
+612,Russian Federation,RUKDA,RU,KDA, , ,Krasnodyarskiy kray,585
+613,Greece,GRXIII,GR,XIII, , ,Kriti,586
+614,Greece,GRXIII,GR,XIII, , ,Kriti,587
+615,Greece,GRXIII,GR,XIII, , ,Kriti,588
+901, , , , ,EL43,EL,Kriti,1206
+616,The Former Yugoslav Republic of Macedonia,MK44,MK,44, , ,Kriva Palanka,589
+1682, , , , ,SE212,SE,Kronobergs lan,1705
+617,Slovenia,SI054,SI,54, , ,Krsko,590
+955, , , , ,PL61,PL,Kujawsko-Pomorskie,1260
+618,Albania,AL7,AL,7, , ,Kukes,591
+619,The Former Yugoslav Republic of Macedonia,MK47,MK,47, , ,Kumanovo,592
+620,Russian Federation,RUKGN,RU,KGN, , ,Kurganskaya oblast,593
+621,Russian Federation,RUKRS,RU,KRS, , ,Kurskaya oblast,594
+1586, , , , ,LV003,LV,Kurzeme,1595
+560,Georgia,GEKK,GE,KK, , ,Kvemo Kartli,525
+622,Ukraine,UA30,UA,30, , ,Kyiv,595
+623,Ukraine,UA32,UA,32, , ,Kyivska Oblast,596
+1462, , , , ,FI1C4,FI,Kymenlaakso,1471
+624,Bulgaria,BG10,BG,10, , ,Kyustendil,597
+1348, , , , ,BG415,BG,Kyustendil,1348
+627,Tunisia,TN14,TN,14, , ,La Manouba,601
+1413, , , , ,ES230,ES,La Rioja,1420
+1399, , , , ,EE004,EE,Laane-Eesti,1406
+630,Estonia,EE57,EE,57, , ,Laanemaa,604
+631,Estonia,EE57,EE,57, , ,Laanemaa,605
+632,Estonia,EE57,EE,57, , ,Laanemaa,606
+628,Estonia,EE59,EE,59, , ,Laane-Virumaa,602
+629,Estonia,EE59,EE,59, , ,Laane-Virumaa,603
+633,Algeria,DZ03,DZ,3, , ,Laghouat,607
+965, , , , ,UKD4,UK,Lancashire,1293
+1529, , , , ,FR613,FR,Landes,1538
+339,France,FRK,FR,K, , ,Languedoc-Roussillon,608
+634,France,FRK,FR,K, , ,Languedoc-Roussillon,609
+340,Finland,FILS,FI,LS, , ,Lansi-Suomen laani,610
+635,Finland,FILS,FI,LS, , ,Lansi-Suomen laani,611
+636,Finland,FILS,FI,LS, , ,Lansi-Suomen laani,612
+637,Finland,FILS,FI,LS, , ,Lansi-Suomen laani,613
+638,Finland,FILL,FI,LL, , ,Lapin laani,614
+639,Finland,FILL,FI,LL, , ,Lapin laani,615
+640,Finland,FILL,FI,LL, , ,Lapin laani,616
+1470, , , , ,FI1D7,FI,Lappi,1479
+341,Moldova,MDLA,MD,LA, , ,Lapusna,617
+625,Tunisia,TN12,TN,12, , ,LAriana,598
+626,Tunisia,TN12,TN,12, , ,LAriana,599
+641,Cyprus,CY03,CY,3, , ,Larnaka,618
+1587, , , , ,LV005,LV,Latgale,1596
+642,Italy,IT62,IT,62, , ,Lazio,619
+643,Italy,IT62,IT,62, , ,Lazio,620
+644,Italy,IT62,IT,62, , ,Lazio,621
+929, , , , ,ITI4,IT,Lazio,1234
+645,Tunisia,TN33,TN,33, , ,Le Kef,622
+646,Cyprus,CY01,CY,1, , ,Lefkosia,623
+647,Cyprus,CY01,CY,1, , ,Lefkosia,624
+973, , , , ,UKF2,UK,"Leicestershire, Rutland and Northamptonshire",1301
+0,Ireland,IEL,IE,L, , ,Leinster,57
+63,Ireland,IEL,IE,L, , ,Leinster,58
+64,Ireland,IEL,IE,L, , ,Leinster,59
+885, , , , ,DED5,DE,Leipzig,1190
+65,Portugal,PT10,PT,10, , ,Leiria,60
+66,Portugal,PT10,PT,10, , ,Leiria,61
+67,Portugal,PT10,PT,10, , ,Leiria,62
+648,Cyprus,CY02,CY,2, , ,Lemesos,625
+342,Slovenia,SI059,SI,59, , ,Lendava,626
+343,Russian Federation,RULEN,RU,LEN, , ,Leningradskaya oblast,627
+649,Russian Federation,RULEN,RU,LEN, , ,Leningradskaya oblast,628
+650,Russian Federation,RULEN,RU,LEN, , ,Leningradskaya oblast,629
+1420, , , , ,ES413,ES,Leon,1427
+651,Albania,AL8,AL,8, , ,Lezhe,630
+652,Albania,AL8,AL,8, , ,Lezhe,631
+653,Albania,AL8,AL,8, , ,Lezhe,632
+1632, , , , ,PT185,PT,Leziria do Tejo,1655
+654,Lebanon,LBAS,LB,AS, , ,Liban-Nord,633
+655,Lebanon,LBAS,LB,AS, , ,Liban-Nord,634
+656,Lebanon,LBJA,LB,JA, , ,Liban-Sud,635
+657,Lebanon,LBJA,LB,JA, , ,Liban-Sud,636
+1379, , , , ,CZ051,CZ,Liberecky kraj,1386
+658,Croatia,HR09,HR,9, , ,Licko-senjska zupanija,637
+659,Croatia,HR09,HR,9, , ,Licko-senjska zupanija,638
+660,Croatia,HR09,HR,9, , ,Licko-senjska zupanija,639
+344,Liechtenstein,LI,LI, , , ,Liechenstein,640
+661,Latvia,LVLPX,LV,LPX, , ,Liepaja,641
+662,Latvia,LVLE,LV,LE, , ,Liepajas Aprinkis,642
+663,Italy,IT42,IT,42, , ,Liguria,643
+664,Italy,IT42,IT,42, , ,Liguria,644
+665,Italy,IT42,IT,42, , ,Liguria,645
+911, , , , ,ITC3,IT,Liguria,1216
+666,Latvia,LVLM,LV,LM, , ,Limbazu Aprinkis,646
+941, , , , ,NL42,NL,Limburg (NL),1246
+974, , , , ,UKF3,UK,Lincolnshire,1302
+667,Russian Federation,RULIP,RU,LIP, , ,Lipetskaya oblast,647
+668,The Former Yugoslav Republic of Macedonia,MK48,MK,48, , ,Lipkovo,648
+68,Portugal,PT11,PT,11, , ,Lisboa,63
+69,Portugal,PT11,PT,11, , ,Lisboa,64
+345,Slovenia,SI063,SI,63, , ,Ljutomer,649
+1436, , , , ,ES513,ES,Lleida,1443
+942, , , , ,PL11,PL,Lodzkie,1247
+1547, , , , ,FR715,FR,Loire,1556
+1514, , , , ,FR511,FR,Loire-Atlantique,1523
+1494, , , , ,FR246,FR,Loiret,1503
+1493, , , , ,FR245,FR,Loir-et-Cher,1502
+912, , , , ,ITC4,IT,Lombardia,1217
+62,Morocco,MA04,MA,4, , ,LOriental,56
+346,France,FRM,FR,M, , ,Lorraine,650
+669,Armenia,AMLO,AM,LO, , ,Lory,651
+670,Slovenia,SI065,SI,65, , ,Loska dolina,652
+671,Slovenia,SI066,SI,66, , ,Loski Potok,653
+1536, , , , ,FR625,FR,Lot,1545
+1530, , , , ,FR614,FR,Lot-et-Garonne,1539
+1402, , , , ,EE008,EE,Louna-Eesti,1409
+1330, , , , ,BG315,BG,Lovech,1330
+1558, , , , ,FR814,FR,Lozere,1567
+347,Poland,PLLU,PL,LU, , ,Lubelskie,654
+946, , , , ,PL31,PL,Lubelskie,1251
+952, , , , ,PL43,PL,Lubuskie,1257
+348,Latvia,LVLU,LV,LU, , ,Ludzas Aprinkis,655
+1404, , , , ,ES112,ES,Lugo,1411
+672,Ukraine,UA09,UA,9, , ,Luhanska Oblast,656
+872, , , , ,DE93,DE,Luneburg,1177
+349,Luxembourg,LUL,LU,L, , ,Luxembourg,657
+1717, , , , ,CH061,CH,Luzern,1373
+338,Ukraine,UA46,UA,46, , ,Lvivska Oblast,600
+673,Jordan,JOMN,JO,MN, , ,Maan,658
+674,Serbia,RS08,RS,8, , ,Macva,659
+675,Jordan,JOMD,JO,MD, , ,Madaba,660
+1417, , , , ,ES300,ES,Madrid,1424
+676,Cyprus,CY04,CY,4, , ,Magusa,661
+677,Cyprus,CY04,CY,4, , ,Magusa,662
+678,Tunisia,TN53,TN,53, , ,Mahdia,663
+679,Tunisia,TN53,TN,53, , ,Mahdia,664
+680,Belarus,BYMA,BY,MA, , ,Mahilyowskaya voblasts,665
+1515, , , , ,FR512,FR,Maine-et-Loire,1524
+1450, , , , ,ES617,ES,Malaga,1457
+681,Turkey,TR44,TR,44, , ,Malatya,666
+1299, , , , ,TRB1,TR,Malatya,1284
+1442, , , , ,ES532,ES,Mallorca,1449
+944, , , , ,PL21,PL,Malopolskie,1249
+682,Malta,MT,MT, , , ,Malta,667
+683,Malta,MT,MT, , , ,Malta,668
+1496, , , , ,FR252,FR,Manche,1505
+684,Kazakhstan,KZMAN,KZ,MAN, , ,Mangghystau oblysy,669
+685,Kazakhstan,KZMAN,KZ,MAN, , ,Mangghystau oblysy,670
+686,Kazakhstan,KZMAN,KZ,MAN, , ,Mangghystau oblysy,671
+1283, , , , ,TR33,TR,Manisa,1268
+687,Romania,ROMM,RO,MM, , ,Maramures,672
+1636, , , , ,RO114,RO,Maramures,1659
+688,Italy,IT57,IT,57, , ,Marche,673
+928, , , , ,ITI3,IT,Marche,1233
+689,Turkey,TR47,TR,47, , ,Mardin,674
+1303, , , , ,TRC3,TR,Mardin,1288
+690,Lithuania,LTMR,LT,MR, , ,Marijampoles Apskritis,675
+1579, , , , ,LT004,LT,Marijampoles apskritis,1588
+1482, , , , ,FR213,FR,Marne,1491
+70,Morocco,MA11,MA,11, , ,Marrakech-Tensift-Al Haouz,65
+1271,Algeria,DZ29,DZ,29, , ,Mascara,1126
+691,Egypt,EGMT,EG,MT, , ,Matruh,676
+692,Egypt,EGMT,EG,MT, , ,Matruh,677
+693,The Former Yugoslav Republic of Macedonia,MK50,MK,50, , ,Mavrovo-i-Rostusa,678
+1516, , , , ,FR513,FR,Mayenne,1525
+694,Poland,PLMZ,PL,MZ, , ,Mazowieckie,679
+943, , , , ,PL12,PL,Mazowieckie,1248
+350,Germany,DEMV,DE,MV, , ,Mecklenburg-Vorpommern,680
+351,Germany,DEMV,DE,MV, , ,Mecklenburg-Vorpommern,681
+695,Germany,DEMV,DE,MV, , ,Mecklenburg-Vorpommern,682
+696,Germany,DEMV,DE,MV, , ,Mecklenburg-Vorpommern,683
+869, , , , ,DE80,DE,Mecklenburg-Vorpommern,1174
+697,Algeria,DZ26,DZ,26, , ,Medea,684
+698,Tunisia,TN82,TN,82, , ,Medenine,685
+699,Tunisia,TN82,TN,82, , ,Medenine,686
+700,Tunisia,TN82,TN,82, , ,Medenine,687
+352,Croatia,HR20,HR,20, , ,Medimurska zupanija,688
+1625, , , , ,PT16C,PT,Medio Tejo,1648
+353,Romania,ROMH,RO,MH, , ,Mehedinti,689
+1668, , , , ,RO413,RO,Mehedinti,1691
+71,Morocco,MA06,MA,6, , ,Meknes-Tafilalet,66
+72,Spain,ESML,ES,ML, , ,Melilla,67
+73,Spain,ESML,ES,ML, , ,Melilla,68
+1724, , , , ,ES640,ES,Melilla,1461
+701,Malta,MT30,MT,30, , ,Mellieha,690
+1443, , , , ,ES533,ES,Menorca,1450
+967, , , , ,UKD7,UK,Merseyside,1295
+702,Slovenia,SI073,SI,73, , ,Metlika,691
+1504, , , , ,FR411,FR,Meurthe-et-Moselle,1513
+1505, , , , ,FR412,FR,Meuse,1514
+1572, , , , ,IE022,IE,Mid-East,1581
+1272,France,FRN,FR,N, , ,Midi-Pyrenees,1127
+1569, , , , ,IE012,IE,Midland,1578
+354,Denmark,DK82,DK,82, , ,Midtjylland,692
+703,Denmark,DK82,DK,82, , ,Midtjylland,693
+704,Denmark,DK82,DK,82, , ,Midtjylland,694
+1573, , , , ,IE023,IE,Mid-West,1582
+705,Algeria,DZ43,DZ,43, , ,Mila,695
+1605, , , , ,PT111,PT,Minho-Lima,1628
+706,Belarus,BYMI,BY,MI, , ,Minskaya voblasts,696
+707,Libya,LYMI,LY,MI, , ,Misratah,697
+859, , , , ,DE25,DE,Mittelfranken,1164
+708,Libya,LYMZ,LY,MZ, , ,Mizdah,698
+718,Norway,NO15,NO,15, , ,Moere og Romsdal,708
+719,Norway,NO15,NO,15, , ,Moere og Romsdal,709
+720,Norway,NO15,NO,15, , ,Moere og Romsdal,710
+709,Italy,IT67,IT,67, , ,Molise,699
+914, , , , ,ITF2,IT,Molise,1219
+710,Monaco,MC,MC, , , ,Monaco,700
+711,Tunisia,TN52,TN,52, , ,Monastir,701
+712,Tunisia,TN52,TN,52, , ,Monastir,702
+713,Tunisia,TN52,TN,52, , ,Monastir,703
+715,Bulgaria,BG12,BG,12, , ,Montana,705
+1327, , , , ,BG312,BG,Montana,1327
+716,Montenegro,ME,ME, , , ,Montenegro,706
+714,Lebanon,LBJL,LB,JL, , ,Mont-Liban,704
+717,Serbia,RS17,RS,17, , ,Moravica,707
+1386, , , , ,CZ080,CZ,Moravskoslezsky kraj,1393
+1522, , , , ,FR524,FR,Morbihan,1531
+1738, , , , ,NO053,NO,More og Romsdal,1622
+1506, , , , ,FR413,FR,Moselle,1515
+721,Russian Federation,RUMOS,RU,MOS, , ,Moskovskaya oblast,711
+722,Russian Federation,RUMOW,RU,MOW, , ,Moskva,712
+1273,Algeria,DZ27,DZ,27, , ,Mostaganem,1128
+723,Algeria,DZ28,DZ,28, , ,Msila,713
+724,Georgia,GEMM,GE,MM, , ,Mtskheta-Mtianeti,714
+725,Turkey,TR48,TR,48, , ,Mugla,715
+726,Turkey,TR48,TR,48, , ,Mugla,716
+727,Turkey,TR48,TR,48, , ,Mugla,717
+1,Ireland,IEM,IE,M, , ,Munster,69
+2,Ireland,IEM,IE,M, , ,Munster,70
+74,Ireland,IEM,IE,M, , ,Munster,71
+876, , , , ,DEA3,DE,Munster,1181
+75,Spain,ESMU,ES,MU, , ,Murcia,72
+76,Spain,ESMU,ES,MU, , ,Murcia,73
+77,Spain,ESMU,ES,MU, , ,Murcia,74
+1452, , , , ,ES620,ES,Murcia,1459
+1643, , , , ,RO125,RO,Mures,1666
+355,Russian Federation,RUMUR,RU,MUR, , ,Murmanskaya oblast,718
+728,Russian Federation,RUMUR,RU,MUR, , ,Murmanskaya oblast,719
+729,Russian Federation,RUMUR,RU,MUR, , ,Murmanskaya oblast,720
+730,Ukraine,UA48,UA,48, , ,Mykolaivska Oblast,721
+731,Ukraine,UA48,UA,48, , ,Mykolaivska Oblast,722
+732,Ukraine,UA48,UA,48, , ,Mykolaivska Oblast,723
+1274,Algeria,DZ45,DZ,45, , ,Naama,1129
+733,Lebanon,LBNA,LB,NA, , ,Nabatiye,724
+734,Tunisia,TN21,TN,21, , ,Nabeul,725
+735,Tunisia,TN21,TN,21, , ,Nabeul,726
+736,Tunisia,TN21,TN,21, , ,Nabeul,727
+737,Libya,LYNL,LY,NL, , ,Nalut,728
+1412, , , , ,ES220,ES,Navarra,1419
+738,Azerbaijan,AZNX,AZ,NX, , ,Naxçivan,729
+1648, , , , ,RO214,RO,Neamt,1671
+739,Russian Federation,RUNEN,RU,NEN, , ,Nenetskiy avtonomnyy okrug,730
+740,Russian Federation,RUNEN,RU,NEN, , ,Nenetskiy avtonomnyy okrug,731
+741,Russian Federation,RUNEN,RU,NEN, , ,Nenetskiy avtonomnyy okrug,732
+1359, , , , ,CH024,CH,Neuchatel,1360
+1721, , , , ,CH065,CH,Nidwalden,1377
+856, , , , ,DE22,DE,Niederbayern,1161
+832, , , , ,AT12,AT,Niederosterreich,1136
+742,Germany,DENI,DE,NI, , ,Niedersachsen,733
+743,Germany,DENI,DE,NI, , ,Niedersachsen,734
+744,Germany,DENI,DE,NI, , ,Niedersachsen,735
+1499, , , , ,FR262,FR,Nievre,1508
+745,Iraq,IQNI,IQ,NI, , ,Ninawa,736
+746,Serbia,RS20,RS,20, , ,Nisava,737
+1711, , , , ,SK023,SK,Nitriansky kraj,1734
+747,Russian Federation,RUNIZ,RU,NIZ, , ,Nizhegorodskaya oblast,738
+940, , , , ,NL41,NL,Noord-Brabant,1245
+356,Netherlands,NLNH,NL,NH, , ,Noord-Holland,739
+748,Netherlands,NLNH,NL,NH, , ,Noord-Holland,740
+749,Netherlands,NLNH,NL,NH, , ,Noord-Holland,741
+937, , , , ,NL32,NL,Noord-Holland,1242
+1502, , , , ,FR301,FR,Nord,1511
+753,Denmark,DK81,DK,81, , ,Nordjylland,746
+754,Denmark,DK81,DK,81, , ,Nordjylland,747
+755,Denmark,DK81,DK,81, , ,Nordjylland,748
+756,Denmark,DK81,DK,81, , ,Nordjylland,749
+1397, , , , ,DK050,DK,Nordjylland,1404
+757,Norway,NO18,NO,18, , ,Nordland,750
+758,Norway,NO18,NO,18, , ,Nordland,751
+759,Norway,NO18,NO,18, , ,Nordland,752
+760,Norway,NO18,NO,18, , ,Nordland,753
+1602, , , , ,NO071,NO,Nordland,1625
+357,France,FRO,FR,O, , ,Nord-Pas-de-Calais,742
+1389, , , , ,DK013,DK,Nordsjaelland,1396
+750,Norway,NO17,NO,17, , ,Nord-Troendelag,743
+751,Norway,NO17,NO,17, , ,Nord-Troendelag,744
+752,Norway,NO17,NO,17, , ,Nord-Troendelag,745
+1601, , , , ,NO062,NO,Nord-Trondelag,1624
+78,Iceland,IS6,IS,6, , ,Nordurland eystra,75
+79,Iceland,IS6,IS,6, , ,Nordurland eystra,76
+80,Iceland,IS6,IS,6, , ,Nordurland eystra,77
+81,Iceland,IS5,IS,5, , ,Nordurland vestra,78
+82,Iceland,IS5,IS,5, , ,Nordurland vestra,79
+83,Iceland,IS5,IS,5, , ,Nordurland vestra,80
+761,Sweden,SEBD,SE,BD, , ,Norrbottens lan,754
+762,Sweden,SEBD,SE,BD, , ,Norrbottens lan,755
+763,Sweden,SEBD,SE,BD, , ,Norrbottens lan,756
+1695, , , , ,SE332,SE,Norrbottens lan,1718
+1323, , , , ,UKM5,UK,North Eastern Scotland,1323
+969, , , , ,UKE2,UK,North Yorkshire,1297
+84,United Kingdom,GBNIR,GB,NIR, , ,Northern Ireland,81
+85,United Kingdom,GBNIR,GB,NIR, , ,Northern Ireland,82
+86,United Kingdom,GBNIR,GB,NIR, , ,Northern Ireland,83
+1325, , , , ,UKN0,UK,Northern Ireland,1325
+962, , , , ,UKC2,UK,Northumberland and Tyne and Wear,1290
+764,Greece,GRXII,GR,XII, , ,Notio Aigaio,757
+765,Greece,GRXII,GR,XII, , ,Notio Aigaio,758
+766,Greece,GRXII,GR,XII, , ,Notio Aigaio,759
+900, , , , ,EL42,EL,Notio Aigaio,1205
+1703, , , , ,SI018,SI,Notranjsko-kraska,1726
+767,Russian Federation,RUNGR,RU,NGR, , ,Novgorodskaya oblast,760
+768,Slovenia,SI085,SI,85, , ,Novo mesto,761
+904, , , , ,HU22,HU,Nyugat-Dunantul,1209
+1707, , , , ,SI024,SI,Obalno-kraska,1730
+855, , , , ,DE21,DE,Oberbayern,1160
+858, , , , ,DE24,DE,Oberfranken,1163
+836, , , , ,AT31,AT,Oberosterreich,1140
+857, , , , ,DE23,DE,Oberpfalz,1162
+1720, , , , ,CH064,CH,Obwalden,1376
+358,Ukraine,UA51,UA,51, , ,Odeska Oblast,762
+359,Ukraine,UA51,UA,51, , ,Odeska Oblast,763
+769,Ukraine,UA51,UA,51, , ,Odeska Oblast,764
+1624, , , , ,PT16B,PT,Oeste,1647
+770,The Former Yugoslav Republic of Macedonia,MK58,MK,58, , ,Ohrid,765
+1485, , , , ,FR222,FR,Oise,1494
+1384, , , , ,CZ071,CZ,Olomoucky kraj,1391
+1669, , , , ,RO414,RO,Olt,1692
+771,Russian Federation,RUOMS,RU,OMS, , ,Omskaya oblast,766
+954, , , , ,PL52,PL,Opolskie,1259
+1729, , , , ,NO022,NO,Oppland,1612
+87,Algeria,DZ31,DZ,31, , ,Oran,84
+88,Algeria,DZ31,DZ,31, , ,Oran,85
+772,Turkey,TR52,TR,52, , ,Ordu,767
+1679, , , , ,SE124,SE,Orebro lan,1702
+773,Russian Federation,RUORE,RU,ORE, , ,Orenburgskaya oblast,768
+774,Moldova,MDOR,MD,OR, , ,Orhei,769
+775,Russian Federation,RUORL,RU,ORL, , ,Orlovskaya oblast,770
+776,Slovenia,SI087,SI,87, , ,Ormoz,771
+1497, , , , ,FR253,FR,Orne,1506
+777,Slovenia,SI088,SI,88, , ,Osilnica,772
+360,Croatia,HR14,HR,14, , ,Osjecko-baranjska zupanija,773
+778,Norway,NO03,NO,3, , ,Oslo,774
+779,Norway,NO03,NO,3, , ,Oslo,775
+780,Norway,NO03,NO,3, , ,Oslo,776
+1727, , , , ,NO011,NO,Oslo,1609
+1704, , , , ,SI021,SI,Osrednjeslovenska,1727
+781,Sweden,SEE,SE,E, , ,Ostergotlands lan,777
+782,Sweden,SEE,SE,E, , ,Ostergotlands lan,778
+783,Sweden,SEE,SE,E, , ,Ostergotlands lan,779
+1678, , , , ,SE123,SE,Ostergotlands lan,1701
+784,Norway,NO01,NO,1, , ,Ostfold,780
+785,Norway,NO01,NO,1, , ,Ostfold,781
+786,Norway,NO01,NO,1, , ,Ostfold,782
+1599, , , , ,NO031,NO,Ostfold,1613
+1396, , , , ,DK042,DK,Ostjylland,1403
+1391, , , , ,DK021,DK,Ostsjaelland,1398
+787,Algeria,DZ30,DZ,30, , ,Ouargla,783
+788,Finland,FIOL,FI,OL, , ,Oulun laani,784
+789,Finland,FIOL,FI,OL, , ,Oulun laani,785
+790,Finland,FIOL,FI,OL, , ,Oulun laani,786
+791,Algeria,DZ04,DZ,4, , ,Oum el Bouaghi,787
+1405, , , , ,ES113,ES,Ourense,1412
+1310, , , , ,UKI2,UK,Outer London,1310
+933, , , , ,NL21,NL,Overijssel,1238
+792,Cyprus,CY05,CY,5, , ,Pafos,788
+793,Cyprus,CY05,CY,5, , ,Pafos,789
+1461, , , , ,FI1C3,FI,Paijat-Hame,1470
+89,Spain,ESPV,ES,PV, , ,Pais Vasco,86
+90,Spain,ESPV,ES,PV, , ,Pais Vasco,87
+1421, , , , ,ES414,ES,Palencia,1428
+1580, , , , ,LT005,LT,Panevezio apskritis,1589
+1381, , , , ,CZ053,CZ,Pardubicky kraj,1388
+1472, , , , ,FR101,FR,Paris,1481
+361,Estonia,EE67,EE,67, , ,Parnumaa,790
+794,Estonia,EE67,EE,67, , ,Parnumaa,791
+795,Estonia,EE67,EE,67, , ,Parnumaa,792
+1503, , , , ,FR302,FR,Pas-de-Calais,1512
+91,France,FRR,FR,R, , ,Pays de la Loire,88
+92,France,FRR,FR,R, , ,Pays de la Loire,89
+1275,France,FRR,FR,R, , ,Pays de la Loire,1130
+1351, , , , ,BG423,BG,Pazardzhik,1351
+362,Serbia,RS24,RS,24, , ,Pcinja,793
+1596, , , , ,MK005,MK,Pelagoniski,1605
+796,Greece,GRX,GR,X, , ,Peloponnisos,794
+797,Greece,GRX,GR,X, , ,Peloponnisos,795
+798,Greece,GRX,GR,X, , ,Peloponnisos,796
+897, , , , ,EL25,EL,Peloponnisos,1202
+1627, , , , ,PT172,PT,Peninsula de Setubal,1650
+799,Russian Federation,RUPNZ,RU,PNZ, , ,Penzenskaya oblast,797
+800,Russian Federation,RUPER,RU,PER, , ,Permskiy kray,798
+363,Bulgaria,BG14,BG,14, , ,Pernik,799
+1347, , , , ,BG414,BG,Pernik,1347
+801,France,FRS,FR,S, , ,Picardie,800
+909, , , , ,ITC1,IT,Piemonte,1214
+1589, , , , ,LV007,LV,Pieriga,1598
+1617, , , , ,PT164,PT,Pinhal Interior Norte,1640
+1619, , , , ,PT166,PT,Pinhal Interior Sul,1642
+1616, , , , ,PT163,PT,Pinhal Litoral,1639
+802,Slovenia,SI090,SI,90, , ,Piran,801
+1457, , , , ,FI197,FI,Pirkanmaa,1466
+364,Serbia,RS22,RS,22, , ,Pirot,802
+1329, , , , ,BG314,BG,Pleven,1329
+1349, , , , ,BG421,BG,Plovdiv,1349
+1376, , , , ,CZ032,CZ,Plzensky kraj,1383
+976,Slovenia,SI092,SI,92, , ,Podcetrtek,803
+947, , , , ,PL32,PL,Podkarpackie,1252
+977,Poland,PLPK,PL,PK, , ,Podkarpackie,804
+803,Poland,PLPD,PL,PD, , ,Podlaskie,805
+949, , , , ,PL34,PL,Podlaskie,1254
+804,Slovenia,SI172,SI,172, , ,Podlehnik,806
+1697, , , , ,SI012,SI,Podravska,1720
+978,Serbia,RS10,RS,10, , ,Podunavlje,807
+1398, , , , ,EE001,EE,Pohja-Eesti,1405
+1455, , , , ,FI195,FI,Pohjanmaa,1464
+1466, , , , ,FI1D3,FI,Pohjois-Karjala,1475
+1469, , , , ,FI1D6,FI,Pohjois-Pohjanmaa,1478
+1465, , , , ,FI1D2,FI,Pohjois-Savo,1474
+93,France,FRT,FR,T, , ,Poitou-Charentes,90
+94,France,FRT,FR,T, , ,Poitou-Charentes,91
+1276,France,FRT,FR,T, , ,Poitou-Charentes,1131
+1597, , , , ,MK006,MK,Poloshki,1606
+979,Ukraine,UA53,UA,53, , ,Poltavska Oblast,808
+980,Estonia,EE65,EE,65, , ,Polvamaa,809
+981,Serbia,RS13,RS,13, , ,Pomoravlje,810
+957, , , , ,PL63,PL,Pomorskie,1262
+982,Poland,PLPM,PL,PM, , ,Pomorskie,811
+983,Poland,PLPM,PL,PM, , ,Pomorskie,812
+984,Poland,PLPM,PL,PM, , ,Pomorskie,813
+1696, , , , ,SI011,SI,Pomurska,1719
+1406, , , , ,ES114,ES,Pontevedra,1413
+95,Portugal,PT13,PT,13, , ,Porto,92
+985,Croatia,HR11,HR,11, , ,Pozesko-slavenska zupanija,814
+1662, , , , ,RO316,RO,Prahova,1685
+986,Slovakia,SKPV,SK,PV, , ,Presovsky kraj,815
+1714, , , , ,SK041,SK,Presovsky kraj,1737
+805,Croatia,HR08,HR,8, , ,Primorsko-goranska zupanija,817
+987,Croatia,HR08,HR,8, , ,Primorsko-goranska zupanija,816
+988,Croatia,HR08,HR,8, , ,Primorsko-goranska zupanija,818
+989,Croatia,HR08,HR,8, , ,Primorsko-goranska zupanija,819
+841, , , , ,BE21,BE,Prov. Antwerpen,1145
+846, , , , ,BE31,BE,Prov. Brabant Wallon,1150
+847, , , , ,BE32,BE,Prov. Hainaut,1151
+848, , , , ,BE33,BE,Prov. Liege,1152
+842, , , , ,BE22,BE,Prov. Limburg (BE),1146
+849, , , , ,BE34,BE,Prov. Luxembourg (BE),1153
+850, , , , ,BE35,BE,Prov. Namur,1154
+843, , , , ,BE23,BE,Prov. Oost-Vlaanderen,1147
+844, , , , ,BE24,BE,Prov. Vlaams-Brabant,1148
+845, , , , ,BE25,BE,Prov. West-Vlaanderen,1149
+1261,France,FRU,FR,U, , ,Provence-Alpes-Cote dAzur,1116
+921, , , , ,ITH1,IT,Provincia Autonoma di Bolzano/Bozen,1226
+922, , , , ,ITH2,IT,Provincia Autonoma di Trento,1227
+806,Russian Federation,RUPSK,RU,PSK, , ,Pskovskaya oblast,820
+916, , , , ,ITF4,IT,Puglia,1221
+990,Italy,IT75,IT,75, , ,Puglia,821
+991,Italy,IT75,IT,75, , ,Puglia,822
+992,Italy,IT75,IT,75, , ,Puglia,823
+1554, , , , ,FR724,FR,Puy-de-Dome,1563
+1531, , , , ,FR615,FR,Pyrenees-Atlantiques,1540
+1559, , , , ,FR815,FR,Pyrenees-Orientales,1568
+993,Azerbaijan,AZQAZ,AZ,QAZ, , ,Qazax,824
+994,Kazakhstan,KZKUS,KZ,KUS, , ,Qostanay oblysy,825
+995,Malta,MT44,MT,44, , ,Qrendi,826
+96,Morocco,MA07,MA,7, , ,Rabat-Sale-Zemmour-Zaer,93
+97,Morocco,MA07,MA,7, , ,Rabat-Sale-Zemmour-Zaer,94
+996,Georgia,GERL,GE,RL, , ,Racha-Lechkhumi and Kvemo Svaneti,827
+997,Serbia,RS19,RS,19, , ,Rasina,828
+998,Serbia,RS18,RS,18, , ,Raska,829
+1334, , , , ,BG324,BG,Razgrad,1334
+999,Slovenia,SI176,SI,176, , ,Razkrizje,830
+840, , , , ,BE10,BE,Region de Bruxelles-Capitale / Brussels Hoofdstedelijk Gewest,1144
+1000,Algeria,DZ48,DZ,48, , ,Relizane,831
+1262,Bosnia and Herzegovina,BASRP,BA,SRP, , ,Republika Srpska,1117
+1001,The Former Yugoslav Republic of Macedonia,MK66,MK,66, , ,Resen,832
+1002,Russian Federation,RUAD,RU,AD, , ,Respublika Adygeya,833
+1003,Russian Federation,RUBA,RU,BA, , ,Respublika Bashkortostan,834
+1004,Russian Federation,RUDA,RU,DA, , ,Respublika Dagestan,835
+1005,Russian Federation,RUDA,RU,DA, , ,Respublika Dagestan,836
+1006,Russian Federation,RUDA,RU,DA, , ,Respublika Dagestan,837
+1007,Russian Federation,RUKL,RU,KL, , ,Respublika Kalmykiya,838
+1008,Russian Federation,RUKL,RU,KL, , ,Respublika Kalmykiya,839
+1009,Russian Federation,RUKL,RU,KL, , ,Respublika Kalmykiya,840
+807,Russian Federation,RUKR,RU,KR, , ,Respublika Kareliya,841
+1010,Russian Federation,RUKR,RU,KR, , ,Respublika Kareliya,842
+1011,Russian Federation,RUKR,RU,KR, , ,Respublika Kareliya,843
+1012,Russian Federation,RUKO,RU,KO, , ,Respublika Komi,844
+1013,Russian Federation,RUKO,RU,KO, , ,Respublika Komi,845
+1014,Russian Federation,RUKO,RU,KO, , ,Respublika Komi,846
+1015,Ukraine,UA43,UA,43, , ,Respublika Krym,847
+1016,Ukraine,UA43,UA,43, , ,Respublika Krym,848
+1017,Ukraine,UA43,UA,43, , ,Respublika Krym,849
+1018,Russian Federation,RUME,RU,ME, , ,Respublika Mariy El,850
+1019,Russian Federation,RUMO,RU,MO, , ,Respublika Mordoviya,851
+1020,Russian Federation,RUSE,RU,SE, , ,Respublika Severnaya Osetiya,852
+1021,Russian Federation,RUTA,RU,TA, , ,Respublika Tatarstan,853
+98,Iceland,IS0,IS,0, , ,Reykjavik,95
+881, , , , ,DEB3,DE,Rheinhessen-Pfalz,1186
+1022,Germany,DERP,DE,RP, , ,Rheinland-Pfalz,854
+1548, , , , ,FR716,FR,Rhone,1557
+1023,Syria,SYRD,SY,RD, , ,Rif Dimashq,855
+1024,Latvia,LVRIX,LV,RIX, , ,Riga,856
+1588, , , , ,LV006,LV,Riga,1597
+1025,Latvia,LVRI,LV,RI, , ,Rigas Aprinkis,857
+1026,Ukraine,UA56,UA,56, , ,Rivnenska Oblast,858
+1027,Turkey,TR53,TR,53, , ,Rize,859
+1028,Turkey,TR53,TR,53, , ,Rize,860
+1029,Norway,NO11,NO,11, , ,Rogaland,861
+1030,Norway,NO11,NO,11, , ,Rogaland,862
+1031,Norway,NO11,NO,11, , ,Rogaland,863
+1735, , , , ,NO043,NO,Rogaland,1619
+1032,Slovenia,SI106,SI,106, , ,Rogaska Slatina,864
+1033,Slovenia,SI107,SI,107, , ,Rogatec,865
+1034,Russian Federation,RUROS,RU,ROS, , ,Rostovskaya oblast,866
+1035,Russian Federation,RUROS,RU,ROS, , ,Rostovskaya oblast,867
+1036,Russian Federation,RUROS,RU,ROS, , ,Rostovskaya oblast,868
+1333, , , , ,BG323,BG,Ruse,1333
+1037,Russian Federation,RURYA,RU,RYA, , ,Ryazanskaya oblast,869
+1038,Estonia,EE74,EE,74, , ,Saaremaa,870
+1039,Estonia,EE74,EE,74, , ,Saaremaa,871
+1040,Estonia,EE74,EE,74, , ,Saaremaa,872
+882, , , , ,Dec-00,DE,Saarland,1187
+1041,Germany,DESL,DE,SL, , ,Saarland,873
+1042,Libya,LYSS,LY,SS, , ,Sabratah Surman,874
+886, , , , ,DEE0,DE,Sachsen-Anhalt,1191
+1277,Algeria,DZ20,DZ,20, , ,Saida,1132
+1043,Turkey,TR54,TR,54, , ,Sakarya,875
+1044,Iraq,IQSD,IQ,SD, , ,Salah ad Din,876
+1638, , , , ,RO116,RO,Salaj,1661
+1422, , , , ,ES415,ES,Salamanca,1429
+837, , , , ,AT32,AT,Salzburg,1141
+1045,Russian Federation,RUSAM,RU,SAM, , ,Samarskaya oblast,877
+1046,Georgia,GESZ,GE,SZ, , ,Samegrelo-Zemo Svaneti,878
+1047,Georgia,GESZ,GE,SZ, , ,Samegrelo-Zemo Svaneti,879
+1048,Georgia,GESZ,GE,SZ, , ,Samegrelo-Zemo Svaneti,880
+1049,Turkey,TR55,TR,55, , ,Samsun,881
+1295, , , , ,TR83,TR,Samsun,1280
+1050,Georgia,GESJ,GE,SJ, , ,Samtskhe-Javakheti,882
+808,San Marino,SM,SM, , , ,San Marino,883
+1054,Switzerland,CHSG,CH,SG, , ,Sankt Gallen,887
+1051,Russian Federation,RUSPE,RU,SPE, , ,Sankt-Peterburg,884
+1052,Russian Federation,RUSPE,RU,SPE, , ,Sankt-Peterburg,885
+1053,Russian Federation,RUSPE,RU,SPE, , ,Sankt-Peterburg,886
+1055,Turkey,TR63,TR,63, , ,Sanliurfa,888
+1302, , , , ,TRC2,TR,Sanliurfa,1287
+99,Portugal,PT14,PT,14, , ,Santarem,96
+100,Portugal,PT14,PT,14, , ,Santarem,97
+1500, , , , ,FR263,FR,Saone-et-Loire,1509
+1056,The Former Yugoslav Republic of Macedonia,MK68,MK,68, , ,Saraj,889
+1057,Russian Federation,RUSAR,RU,SAR, , ,Saratovskaya oblast,890
+809,Italy,IT88,IT,88, , ,Sardegna,891
+920, , , , ,ITG2,IT,Sardegna,1225
+1058,Italy,IT88,IT,88, , ,Sardegna,892
+1059,Italy,IT88,IT,88, , ,Sardegna,893
+1517, , , , ,FR514,FR,Sarthe,1526
+1456, , , , ,FI196,FI,Satakunta,1465
+1060,Romania,ROSM,RO,SM, , ,Satu Mare,894
+1637, , , , ,RO115,RO,Satu Mare,1660
+1699, , , , ,SI014,SI,Savinjska,1722
+1549, , , , ,FR717,FR,Savoie,1558
+1366, , , , ,CH052,CH,Schaffhausen,1367
+810,Germany,DESH,DE,SH, , ,Schleswig-Holstein,895
+887, , , , ,DEF0,DE,Schleswig-Holstein,1192
+1061,Germany,DESH,DE,SH, , ,Schleswig-Holstein,896
+1062,Germany,DESH,DE,SH, , ,Schleswig-Holstein,897
+861, , , , ,DE27,DE,Schwaben,1166
+1719, , , , ,CH063,CH,Schwyz,1375
+3,United Kingdom,GBSCT,GB,SCT, , ,Scotland,98
+4,United Kingdom,GBSCT,GB,SCT, , ,Scotland,99
+101,United Kingdom,GBSCT,GB,SCT, , ,Scotland,100
+102,United Kingdom,GBSCT,GB,SCT, , ,Scotland,101
+1423, , , , ,ES416,ES,Segovia,1430
+1473, , , , ,FR102,FR,Seine-et-Marne,1482
+1488, , , , ,FR232,FR,Seine-Maritime,1497
+1477, , , , ,FR106,FR,Seine-Saint-Denis,1486
+1063,Slovenia,SI119,SI,119, , ,Sentjerne,898
+1620, , , , ,PT167,PT,Serra da Estrela,1643
+1064,Algeria,DZ19,DZ,19, , ,Setif,899
+5,Portugal,PT15,PT,15, , ,Setubal,102
+103,Portugal,PT15,PT,15, , ,Setubal,103
+104,Portugal,PT15,PT,15, , ,Setubal,104
+1065,Ukraine,UA40,UA,40, , ,Sevastopol,900
+1725, , , , ,MK007,MK,Severoistochen,1607
+1451, , , , ,ES618,ES,Sevilla,1458
+1066,Tunisia,TN61,TN,61, , ,Sfax,901
+1067,Tunisia,TN61,TN,61, , ,Sfax,902
+1068,Tunisia,TN61,TN,61, , ,Sfax,903
+1069,Egypt,EGSIN,EG,SIN, , ,Shamal Sina,904
+1070,Egypt,EGSIN,EG,SIN, , ,Shamal Sina,905
+1071,Egypt,EGSIN,EG,SIN, , ,Shamal Sina,906
+1072,Georgia,GESK,GE,SK, , ,Shida Kartli,907
+1073,Albania,AL10,AL,10, , ,Shkoder,908
+1074,Albania,AL10,AL,10, , ,Shkoder,909
+1304, , , , ,UKG2,UK,Shropshire and Staffordshire,1304
+1338, , , , ,BG333,BG,Shumen,1338
+1581, , , , ,LT006,LT,Siauliu apskritis,1590
+1075,Croatia,HR15,HR,15, , ,Sibensko-kninska zupanija,910
+1076,Croatia,HR15,HR,15, , ,Sibensko-kninska zupanija,911
+1077,Croatia,HR15,HR,15, , ,Sibensko-kninska zupanija,912
+1644, , , , ,RO126,RO,Sibiu,1667
+919, , , , ,ITG1,IT,Sicilia,1224
+1078,Italy,IT82,IT,82, , ,Sicilia,913
+1079,Italy,IT82,IT,82, , ,Sicilia,914
+1080,Italy,IT82,IT,82, , ,Sicilia,915
+105,Algeria,DZ22,DZ,22, , ,Sidi Bel Abbes,105
+1081,Tunisia,TN43,TN,43, , ,Sidi Bouzid,916
+1082,Tunisia,TN34,TN,34, , ,Siliana,917
+1335, , , , ,BG325,BG,Silistra,1335
+1083,Turkey,TR57,TR,57, , ,Sinop,918
+1084,Armenia,AMSH,AM,SH, , ,Sirak,919
+1085,Turkey,TR73,TR,73, , ,Sirnak,920
+811,Croatia,HR03,HR,3, , ,Sisacko-moslavacka zupanija,921
+1086,Denmark,DK85,DK,85, , ,Sjaelland,922
+1087,Denmark,DK85,DK,85, , ,Sjaelland,923
+1088,Denmark,DK85,DK,85, , ,Sjaelland,924
+1089,Denmark,DK85,DK,85, , ,Sjaelland,925
+1090,Sweden,SEM,SE,M, , ,Skane lan,926
+1091,Sweden,SEM,SE,M, , ,Skane lan,927
+1092,Sweden,SEM,SE,M, , ,Skane lan,928
+1686, , , , ,SE224,SE,Skane lan,1709
+1093,Algeria,DZ21,DZ,21, , ,Skikda,929
+1094,Algeria,DZ21,DZ,21, , ,Skikda,930
+1726, , , , ,MK008,MK,Skopski,1608
+945, , , , ,PL22,PL,Slaskie,1250
+1341, , , , ,BG342,BG,Sliven,1341
+1095,Russian Federation,RUSMO,RU,SMO, , ,Smolenskaya oblast,931
+1352, , , , ,BG424,BG,Smolyan,1352
+1096,Sweden,SED,SE,D, , ,Sodermanlands lan,932
+1097,Sweden,SED,SE,D, , ,Sodermanlands lan,933
+1098,Sweden,SED,SE,D, , ,Sodermanlands lan,934
+1677, , , , ,SE122,SE,Sodermanlands lan,1700
+1103,Norway,NO16,NO,16, , ,Soer-Troendelag,940
+1104,Norway,NO16,NO,16, , ,Soer-Troendelag,941
+1105,Norway,NO16,NO,16, , ,Soer-Troendelag,942
+812,Bulgaria,BG23,BG,23, , ,Sofija,935
+1345, , , , ,BG412,BG,Sofiya,1345
+1344, , , , ,BG411,BG,Sofiya (stolitsa),1344
+1099,Norway,NO14,NO,14, , ,Sogn og Fjordane,936
+1100,Norway,NO14,NO,14, , ,Sogn og Fjordane,937
+1101,Norway,NO14,NO,14, , ,Sogn og Fjordane,938
+1737, , , , ,NO052,NO,Sogn og Fjordane,1621
+1358, , , , ,CH023,CH,Solothurn,1359
+1486, , , , ,FR223,FR,Somme,1495
+1102,Hungary,HUSO,HU,SO, , ,Somogy,939
+1424, , , , ,ES417,ES,Soria,1431
+1106,Moldova,MDSO,MD,SO, , ,Soroca,943
+1600, , , , ,NO061,NO,Sor-Trondelag,1623
+1107,Algeria,DZ41,DZ,41, , ,Souk Ahras,944
+106,Morocco,MA13,MA,13, , ,Sous-Massa-Draa,106
+1108,Tunisia,TN51,TN,51, , ,Sousse,945
+1109,Tunisia,TN51,TN,51, , ,Sousse,946
+1322, , , , ,UKM3,UK,South Western Scotland,1322
+970, , , , ,UKE3,UK,South Yorkshire,1298
+1574, , , , ,IE024,IE,South-East (IE),1583
+1575, , , , ,IE025,IE,South-West (IE),1584
+1110,Croatia,HR17,HR,17, , ,Splitsko-dalmatinska zupanija,947
+1111,Croatia,HR17,HR,17, , ,Splitsko-dalmatinska zupanija,948
+1112,Croatia,HR17,HR,17, , ,Splitsko-dalmatinska zupanija,949
+1701, , , , ,SI016,SI,Spodnjeposavska,1724
+1113,Slovenia, ,SI, , , ,Sredisce ob Dravi,950
+1369, , , , ,CH055,CH,St. Gallen,1370
+1343, , , , ,BG344,BG,Stara Zagora,1343
+1114,The Former Yugoslav Republic of Macedonia,MK71,MK,71, , ,Staro Nagoricane,951
+1115,Russian Federation,RUSTA,RU,STA, , ,Stavropolskiy kray,952
+835, , , , ,AT22,AT,Steiermark,1139
+896, , , , ,EL24,EL,Sterea Ellada,1201
+1116,Greece,GRVIII,GR,VIII, , ,Sterea Ellada,953
+1117,Greece,GRVIII,GR,VIII, , ,Sterea Ellada,954
+1118,Greece,GRVIII,GR,VIII, , ,Sterea Ellada,955
+1119,Greece,GRVIII,GR,VIII, , ,Sterea Ellada,956
+1120,Moldova,MDSN,MD,SN, , ,Stinga Nistrului,957
+1121,Sweden,SEAB,SE,AB, , ,Stockholms lan,958
+1122,Sweden,SEAB,SE,AB, , ,Stockholms lan,959
+1123,Sweden,SEAB,SE,AB, , ,Stockholms lan,960
+1675, , , , ,SE110,SE,Stockholms lan,1698
+1374, , , , ,CZ020,CZ,Stredocesky kraj,1381
+1124,The Former Yugoslav Republic of Macedonia,MK72,MK,72, , ,Struga,961
+851, , , , ,DE11,DE,Stuttgart,1156
+1125,Romania,ROSV,RO,SV, , ,Suceava,962
+1649, , , , ,RO215,RO,Suceava,1672
+107,Iceland,IS8,IS,8, , ,Sudurland,107
+108,Iceland,IS8,IS,8, , ,Sudurland,108
+109,Iceland,IS8,IS,8, , ,Sudurland,109
+110,Iceland,IS2,IS,2, , ,Sudurne,110
+1126,Serbia,RS12,RS,12, , ,Sumadija,963
+1127,Ukraine,UA59,UA,59, , ,Sumska Oblast,964
+1312, , , , ,UKJ2,UK,"Surrey, East and West Sussex",1312
+1128,Libya,LYSR,LY,SR, , ,Surt,965
+1129,Russian Federation,RUSVE,RU,SVE, , ,Sverdlovskaya oblast,966
+948, , , , ,PL33,PL,Swietokrzyskie,1253
+1130,Denmark,DK83,DK,83, , ,Syddanmark,967
+1131,Denmark,DK83,DK,83, , ,Syddanmark,968
+1132,Denmark,DK83,DK,83, , ,Syddanmark,969
+1133,Denmark,DK83,DK,83, , ,Syddanmark,970
+1394, , , , ,DK032,DK,Sydjylland,1401
+1134,Armenia,AMSU,AM,SU, , ,Syunik,971
+1135,Hungary,HUSZ,HU,SZ, , ,Szabolcs-Szatmar-Bereg,972
+1137,Saudi Arabia,SA07,SA,7, , ,Tabuk,974
+1138,Saudi Arabia,SA07,SA,7, , ,Tabuk,975
+1139,Saudi Arabia,SA07,SA,7, , ,Tabuk,976
+111,Morocco,MA12,MA,12, , ,Tadla-Azilal,111
+1140,Libya,LYTN,LY,TN, , ,Tajura wa an Nawahi al Arba,977
+1141,Latvia,LVTA,LV,TA, , ,Talsu Aprinkis,978
+1142,Russian Federation,RUTAM,RU,TAM, , ,Tambovskaya oblast,979
+1609, , , , ,PT115,PT,Tamega,1632
+112,Morocco,MA01,MA,1, , ,Tanger-Tetouan,112
+113,Morocco,MA01,MA,1, , ,Tanger-Tetouan,113
+1143,Libya,LYTB,LY,TB, , ,Tarabulus,980
+1339, , , , ,BG334,BG,Targovishte,1339
+1144,Libya,LYTM,LY,TM, , ,Tarhunah-Masallatah,981
+1538, , , , ,FR627,FR,Tarn,1547
+1539, , , , ,FR628,FR,Tarn-et-Garonne,1548
+1437, , , , ,ES514,ES,Tarragona,1444
+1145,Estonia,EE78,EE,78, , ,Tartumaa,982
+1146,Syria,SYTA,SY,TA, , ,Tartus,983
+1147,Syria,SYTA,SY,TA, , ,Tartus,984
+1148,Tunisia,TN83,TN,83, , ,Tataouine,985
+1149,Lithuania,LTTA,LT,TA, , ,Taurages Apskritis,986
+1582, , , , ,LT007,LT,Taurages apskritis,1591
+1150,Armenia,AMTV,AM,TV, , ,Tavus,987
+114,Morocco,MA03,MA,3, , ,Taza-Al Hoceima-Taounate,114
+115,Morocco,MA03,MA,3, , ,Taza-Al Hoceima-Taounate,115
+1136,Georgia,GETB,GE,TB, , ,Tbilisi,973
+1151,The Former Yugoslav Republic of Macedonia,MK75,MK,75, , ,Tearce,988
+1152,Algeria,DZ12,DZ,12, , ,Tebessa,989
+961, , , , ,UKC1,UK,Tees Valley and Durham,1289
+959, , , , ,TR21,TR,Tekirdag,1264
+1153,Turkey,TR59,TR,59, , ,Tekirdag,990
+1154,Israel,ILTA,IL,TA, , ,Tel-Aviv,991
+1155,Norway,NO08,NO,8, , ,Telemark,992
+1156,Norway,NO08,NO,8, , ,Telemark,993
+1157,Norway,NO08,NO,8, , ,Telemark,994
+1732, , , , ,NO034,NO,Telemark,1616
+1663, , , , ,RO317,RO,Teleorman,1686
+1583, , , , ,LT008,LT,Telsiu apskritis,1592
+1158,Ukraine,UA61,UA,61, , ,Ternopilska Oblast,995
+1513, , , , ,FR434,FR,Territoire de Belfort,1522
+1415, , , , ,ES242,ES,Teruel,1422
+1159,The Former Yugoslav Republic of Macedonia,MK76,MK,76, , ,Tetovo,996
+892, , , , ,EL14,EL,THessalia,1197
+1160,Greece,GRV,GR,V, , ,Thessalia,997
+1161,Greece,GRV,GR,V, , ,Thessalia,998
+1162,Greece,GRV,GR,V, , ,Thessalia,999
+1371, , , , ,CH057,CH,Thurgau,1372
+888, , , , ,DEG0,DE,Thuringen,1193
+1163,Algeria,DZ14,DZ,14, , ,Tiaret,1000
+1372, , , , ,CH070,CH,Ticino,1379
+1164,Moldova,MDTI,MD,TI, , ,Tighina,1001
+813,Romania,ROTM,RO,TM, , ,Timis,1002
+1674, , , , ,RO424,RO,Timis,1697
+116,Algeria,DZ37,DZ,37, , ,Tindouf,116
+1165,Algeria,DZ42,DZ,42, , ,Tipaza,1003
+1166,Albania,AL11,AL,11, , ,Tirane,1004
+838, , , , ,AT33,AT,Tirol,1142
+1167,Algeria,DZ38,DZ,38, , ,Tissemsilt,1005
+1168,Montenegro,ME19,ME,19, , ,Tivat,1006
+1169,Algeria,DZ15,DZ,15, , ,Tizi Ouzou,1007
+117,Algeria,DZ13,DZ,13, , ,Tlemcen,117
+1431, , , , ,ES425,ES,Toledo,1438
+1170,Serbia,RS21,RS,21, , ,Toplica,1008
+926, , , , ,ITI1,IT,Toscana,1231
+1171,Italy,IT52,IT,52, , ,Toscana,1009
+1172,Italy,IT52,IT,52, , ,Toscana,1010
+1173,Tunisia,TN72,TN,72, , ,Tozeur,1011
+1174,Turkey,TR61,TR,61, , ,Trabzon,1012
+1296, , , , ,TR90,TR,Trabzon,1281
+1710, , , , ,SK022,SK,Trenciansky kraj,1733
+880, , , , ,DEB2,DE,Trier,1185
+1709, , , , ,SK021,SK,Trnavsky kraj,1732
+1175,Norway,NO19,NO,19, , ,Troms,1013
+1176,Norway,NO19,NO,19, , ,Troms,1014
+1177,Norway,NO19,NO,19, , ,Troms,1015
+1178,Norway,NO19,NO,19, , ,Troms,1016
+1603, , , , ,NO072,NO,Troms,1626
+854, , , , ,DE14,DE,Tubingen,1159
+1179,Latvia,LVTU,LV,TU, , ,Tukuma Aprinkis,1017
+1181,Romania,ROTL,RO,TL, , ,Tulcea,1019
+1182,Romania,ROTL,RO,TL, , ,Tulcea,1020
+1183,Romania,ROTL,RO,TL, , ,Tulcea,1021
+1655, , , , ,RO225,RO,Tulcea,1678
+1180,Russian Federation,RUTUL,RU,TUL, , ,Tulskaya oblast,1018
+1184,Turkey,TR62,TR,62, , ,Tunceli,1022
+1185,Tunisia,TN11,TN,11, , ,Tunis,1023
+1186,Tunisia,TN11,TN,11, , ,Tunis,1024
+1187,Russian Federation,RUTVE,RU,TVE, , ,Tverskaya oblast,1025
+1188,Russian Federation,RUTYU,RU,TYU, , ,Tyumenskaya oblast,1026
+1189,Russian Federation,RUUD,RU,UD, , ,Udmurtskaya Respublika,1027
+1191,Montenegro,ME20,ME,20, , ,Ulcinj,1029
+118,Ireland,IEU,IE,U, , ,Ulster,118
+119,Ireland,IEU,IE,U, , ,Ulster,119
+120,Ireland,IEU,IE,U, , ,Ulster,120
+1190,Russian Federation,RUULY,RU,ULY, , ,Ulyanovskaya oblast,1028
+927, , , , ,ITI2,IT,Umbria,1232
+814,Moldova,MDUN,MD,UN, , ,Ungheni,1030
+860, , , , ,DE26,DE,Unterfranken,1165
+1192,Sweden,SEC,SE,C, , ,Uppsala lan,1031
+1193,Sweden,SEC,SE,C, , ,Uppsala lan,1032
+1194,Sweden,SEC,SE,C, , ,Uppsala lan,1033
+1676, , , , ,SE121,SE,Uppsala lan,1699
+1718, , , , ,CH062,CH,Uri,1374
+1378, , , , ,CZ042,CZ,Ustecky kraj,1385
+1195,Lithuania,LTUT,LT,UT, , ,Utenos Apskritis,1034
+1584, , , , ,LT009,LT,Utenos apskritis,1593
+936, , , , ,NL31,NL,Utrecht,1241
+1355, , , , ,CH012,CH,Valais,1355
+1670, , , , ,RO415,RO,Valcea,1693
+1478, , , , ,FR107,FR,Val-de-Marne,1487
+1479, , , , ,FR108,FR,Val-dOise,1488
+1278,Spain,ESVC,ES,VC, , ,Valencia,1133
+1279,Spain,ESVC,ES,VC, , ,Valencia,1134
+1440, , , , ,ES523,ES,Valencia / Valencia,1447
+1425, , , , ,ES418,ES,Valladolid,1432
+910, , , , ,ITC2,IT,Valle dAosta/Vallee dAoste,1215
+1196,Turkey,TR65,TR,65, , ,Van,1035
+1300, , , , ,TRB2,TR,Van,1285
+1564, , , , ,FR825,FR,Var,1573
+815,Croatia,HR05,HR,5, , ,Varazdinska zupanija,1036
+1592, , , , ,MK001,MK,Vardarski,1601
+1689, , , , ,SE311,SE,Varmlands lan,1712
+1197,Bulgaria,BG03,BG,3, , ,Varna,1037
+1336, , , , ,BG331,BG,Varna,1336
+1459, , , , ,FI1C1,FI,Varsinais-Suomi,1468
+816,Romania,ROVS,RO,VS, , ,Vaslui,1038
+1650, , , , ,RO216,RO,Vaslui,1673
+1198,Sweden,SEAC,SE,AC, , ,Vasterbottens lan,1039
+1199,Sweden,SEAC,SE,AC, , ,Vasterbottens lan,1040
+1200,Sweden,SEAC,SE,AC, , ,Vasterbottens lan,1041
+1694, , , , ,SE331,SE,Vasterbottens lan,1717
+1201,Sweden,SEY,SE,Y, , ,Vasternorrlands lan,1042
+1202,Sweden,SEY,SE,Y, , ,Vasternorrlands lan,1043
+1203,Sweden,SEY,SE,Y, , ,Vasternorrlands lan,1044
+1692, , , , ,SE321,SE,Vasternorrlands lan,1715
+1680, , , , ,SE125,SE,Vastmanlands lan,1703
+1204,Sweden,SEO,SE,O, , ,Vastra Gotalands Ian,1045
+1205,Sweden,SEO,SE,O, , ,Vastra Gotalands Ian,1046
+1206,Sweden,SEO,SE,O, , ,Vastra Gotalands Ian,1047
+1207,Sweden,SEO,SE,O, , ,Vastra Gotalands Ian,1048
+1688, , , , ,SE232,SE,Vastra Gotalands lan,1711
+1565, , , , ,FR826,FR,Vaucluse,1574
+1354, , , , ,CH011,CH,Vaud,1354
+1208,Armenia,AMVD,AM,VD, , ,Vayoc Jor,1049
+1331, , , , ,BG321,BG,Veliko Tarnovo,1331
+1518, , , , ,FR515,FR,Vendee,1527
+817,Italy,IT34,IT,34, , ,Veneto,1050
+818,Italy,IT34,IT,34, , ,Veneto,1051
+923, , , , ,ITH3,IT,Veneto,1228
+1209,Italy,IT34,IT,34, , ,Veneto,1052
+1210,Latvia,LVVEN,LV,VEN, , ,Ventspils,1053
+1211,Latvia,LVVE,LV,VE, , ,Ventspils Aprinkis,1054
+1392, , , , ,DK022,DK,Vest- og Sydsjaelland,1399
+1212,Norway,NO10,NO,10, , ,Vest-Agder,1055
+1213,Norway,NO10,NO,10, , ,Vest-Agder,1056
+1214,Norway,NO10,NO,10, , ,Vest-Agder,1057
+1734, , , , ,NO042,NO,Vest-Agder,1618
+121,Iceland,IS4,IS,4, , ,Vestfirdir,121
+122,Iceland,IS4,IS,4, , ,Vestfirdir,122
+123,Iceland,IS4,IS,4, , ,Vestfirdir,123
+1215,Norway,NO07,NO,7, , ,Vestfold,1058
+1216,Norway,NO07,NO,7, , ,Vestfold,1059
+1217,Norway,NO07,NO,7, , ,Vestfold,1060
+1731, , , , ,NO033,NO,Vestfold,1615
+1395, , , , ,DK041,DK,Vestjylland,1402
+124,Iceland,IS3,IS,3, , ,Vesturland,124
+125,Iceland,IS3,IS,3, , ,Vesturland,125
+126,Iceland,IS3,IS,3, , ,Vesturland,126
+127,Portugal,PT16,PT,16, , ,Viana do Castelo,127
+1218,Slovenia,SI135,SI,135, , ,Videm,1061
+819,Bulgaria,BG05,BG,5, , ,Vidin,1062
+1326, , , , ,BG311,BG,Vidin,1326
+1590, , , , ,LV008,LV,Vidzeme,1599
+1526, , , , ,FR534,FR,Vienne,1535
+820,Lithuania,LTVL,LT,VL, , ,Vilniaus Apskritis,1063
+1585, , , , ,LT00A,LT,Vilniaus apskritis,1594
+1219,Ukraine,UA05,UA,5, , ,Vinnytska Oblast,1064
+821,Croatia,HR10,HR,10, , ,Viroviticko-podravska zupanija,1065
+822,Belarus,BYVI,BY,VI, , ,Vitsyebskaya voblasts,1066
+1411, , , , ,ES213,ES,Vizcaya,1418
+1220,Belgium,BEVLG,BE,VLG, , ,Vlaamse Gewest,1067
+1221,Russian Federation,RUVLA,RU,VLA, , ,Vladimirskaya oblast,1068
+1222,Albania,AL12,AL,12, , ,Vlore,1069
+1223,Albania,AL12,AL,12, , ,Vlore,1070
+1224,Albania,AL12,AL,12, , ,Vlore,1071
+823,Serbia,RSVO,RS,VO, , ,Vojvodina,1072
+1225,Russian Federation,RUVGG,RU,VGG, , ,Volgogradskaya oblast,1073
+1226,Russian Federation,RUVLG,RU,VLG, , ,Vologodskaya oblast,1074
+824,Ukraine,UA07,UA,7, , ,Volynska Oblast,1075
+839, , , , ,AT34,AT,Vorarlberg,1143
+1227,Austria,AT8,AT,8, , ,Vorarlberg,1076
+825,Greece,GRXI,GR,XI, , ,Voreio Aigaio,1077
+826,Greece,GRXI,GR,XI, , ,Voreio Aigaio,1078
+1228,Greece,GRXI,GR,XI, , ,Voreio Aigaio,1079
+1229,Russian Federation,RUVOR,RU,VOR, , ,Voronezhskaya oblast,1080
+1230,Estonia,EE86,EE,86, , ,Vorumaa,1081
+1507, , , , ,FR414,FR,Vosges,1516
+1656, , , , ,RO226,RO,Vrancea,1679
+1231,The Former Yugoslav Republic of Macedonia,MK16,MK,16, , ,Vrapciste,1082
+1328, , , , ,BG313,BG,Vratsa,1328
+1232,Croatia,HR16,HR,16, , ,Vukovarsko-srijemska zupanija,1083
+1382, , , , ,CZ063,CZ,Vysocina,1389
+128,United Kingdom,GBWLS,GB,WLS, , ,Wales,128
+129,United Kingdom,GBWLS,GB,WLS, , ,Wales,129
+130,United Kingdom,GBWLS,GB,WLS, , ,Wales,130
+131,United Kingdom,GBWLS,GB,WLS, , ,Wales,131
+827,Belgium,BEWAL,BE,WAL, , ,Wallonne,1084
+956, , , , ,PL62,PL,Warminsko-Mazurskie,1261
+1233,Poland,PLWN,PL,WN, , ,Warminsko-mazurskie,1085
+1234,Iraq,IQWA,IQ,WA, , ,Wasit,1086
+873, , , , ,DE94,DE,Weser-Ems,1178
+1570, , , , ,IE013,IE,West,1579
+1235,Palestinian Territory,PS,PS, , , ,West Bank,1087
+1305, , , , ,UKG3,UK,West Midlands,1305
+1319, , , , ,UKL1,UK,West Wales and The Valleys,1319
+971, , , , ,UKE4,UK,West Yorkshire,1299
+950, , , , ,PL41,PL,Wielkopolskie,1255
+833, , , , ,AT13,AT,Wien,1137
+1236,Libya,LYYJ,LY,YJ, , ,Yafran-Jadu,1088
+1237,Turkey,TR77,TR,77, , ,Yalova,1089
+1342, , , , ,BG343,BG,Yambol,1342
+1238,Russian Federation,RUYAR,RU,YAR, , ,Yaroslavskaya oblast,1090
+1239,Israel,ILJM,IL,JM, , ,Yerushalayim,1091
+1501, , , , ,FR264,FR,Yonne,1510
+1474, , , , ,FR103,FR,Yvelines,1483
+951, , , , ,PL42,PL,Zachodniopomorskie,1256
+1240,Poland,PLZP,PL,ZP, , ,Zachodniopomorskie,1092
+1241,Poland,PLZP,PL,ZP, , ,Zachodniopomorskie,1093
+1242,Poland,PLZP,PL,ZP, , ,Zachodniopomorskie,1094
+1243,Croatia,HR13,HR,13, , ,Zadarska zupanija,1095
+1244,Croatia,HR13,HR,13, , ,Zadarska zupanija,1096
+1245,Croatia,HR13,HR,13, , ,Zadarska zupanija,1097
+1246,Tunisia,TN22,TN,22, , ,Zaghouan,1098
+828,Croatia,HR01,HR,1, , ,Zagrebacka zupanija,1099
+829,Serbia,RS15,RS,15, , ,Zajecar,1100
+830,Ukraine,UA21,UA,21, , ,Zakarpatska Oblast,1101
+1247,Hungary,HUZA,HU,ZA, , ,Zala,1102
+1426, , , , ,ES419,ES,Zamora,1433
+1248,Ukraine,UA23,UA,23, , ,Zaporizka Oblast,1103
+1249,Ukraine,UA23,UA,23, , ,Zaporizka Oblast,1104
+1250,Ukraine,UA23,UA,23, , ,Zaporizka Oblast,1105
+1251,Azerbaijan,AZZAQ,AZ,ZAQ, , ,Zaqatala,1106
+1416, , , , ,ES243,ES,Zaragoza,1423
+1700, , , , ,SI015,SI,Zasavska,1723
+1252,Slovenia,SI143,SI,143, , ,Zavrc,1107
+939, , , , ,NL34,NL,Zeeland,1244
+1253,Netherlands,NLZE,NL,ZE, , ,Zeeland,1108
+1254,Netherlands,NLZE,NL,ZE, , ,Zeeland,1109
+1255,Netherlands,NLZE,NL,ZE, , ,Zeeland,1110
+1591, , , , ,LV009,LV,Zemgale,1600
+1256,Slovenia,SI191,SI,191, , ,Zetale,1111
+1257,Ukraine,UA18,UA,18, , ,Zhytomyrska Oblast,1112
+1712, , , , ,SK031,SK,Zilinsky kraj,1735
+1258,Serbia,RS16,RS,16, , ,Zlatibor,1113
+1385, , , , ,CZ072,CZ,Zlinsky kraj,1392
+1259,Turkey,TR67,TR,67, , ,Zonguldak,1114
+1293, , , , ,TR81,TR,Zonguldak,1278
+1722, , , , ,CH066,CH,Zug,1378
+938, , , , ,NL33,NL,Zuid-Holland,1243
+1260,Netherlands,NLZH,NL,ZH, , ,Zuid-Holland,1115
+1364, , , , ,CH040,CH,Zurich,1365

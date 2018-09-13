@@ -1,7 +1,7 @@
 import sys
 import fiona
 
-from smfrcore.models.sqlmodels import Nuts2, create_app
+from smfrcore.models.sql import Nuts2, create_app
 from scripts.utils import ParserHelpOnError
 
 

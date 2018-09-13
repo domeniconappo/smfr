@@ -87,7 +87,7 @@ def main():
     lite_conn.commit()
     print('SCHEMAS CREATED!')
 
-    path = os.path.join(os.path.dirname(__file__), '../rest_server/src/migrations/versions/smfr_nuts2.json.tar.gz')
+    path = os.path.join(os.path.dirname(__file__), '../restserver/src/migrations/versions/smfr_nuts2.json.tar.gz')
     with tarfile.open(path, 'r:gz') as tar:
         archive = tar.getmembers()[0]
         init_f = tar.extractfile(archive)
@@ -100,7 +100,7 @@ def main():
     lite_conn.commit()
     print('POPULATED NUTS2')
 
-    path = os.path.join(os.path.dirname(__file__), '../rest_server/src/migrations/versions/smfr_nuts3.json.tar.gz')
+    path = os.path.join(os.path.dirname(__file__), '../restserver/src/migrations/versions/smfr_nuts3.json.tar.gz')
     with tarfile.open(path, 'r:gz') as tar:
         archive = tar.getmembers()[0]
         init_f = tar.extractfile(archive)

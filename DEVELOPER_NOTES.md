@@ -14,7 +14,7 @@ $ git push origin <my_branch>
 
 ```bash
 $ cd shared_libs/smfr_clients
-$ swagger-marshmallow-codegen --driver=./smfrcore/client/_marshmallow_custom.py:CustomDriver ../../rest_server/src/swagger/smfr.yaml > ./smfrcore/client/marshmallow.py
+$ swagger-marshmallow-codegen --driver=./smfrcore/client/_marshmallow_custom.py:CustomDriver ../../restserver/src/swagger/smfr.yaml > ./smfrcore/client/marshmallow.py
 ```
 
 ## Rebuild and push smfr_base Docker image

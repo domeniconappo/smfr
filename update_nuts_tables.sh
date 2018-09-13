@@ -1,11 +1,9 @@
 #!/usr/bin/env bash
-source functions.sh
+source export_env.sh
 
 ./singlenode_up.sh mysql
-
-export MYSQL_USER=$(getProperty "MYSQL_USER")
-export MYSQL_PASSWORD=$(getProperty "MYSQL_PASSWORD")
-export MYSQL_DBNAME=$(getProperty "MYSQL_DBNAME")
+echo "Waiting for mysql bootstrap: 10 seconds"
+sleep 10
 
 python scripts/update_smfr_nuts_tables.py
 

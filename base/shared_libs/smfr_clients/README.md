@@ -8,6 +8,6 @@ How to create new marshamallow models (whenever you add new definitions models i
 
 ```bash
 $ cd shared_libs/smfr_clients
-$ swagger-marshmallow-codegen --driver=./smfrcore/client/_marshmallow_custom.py:CustomDriver ../../rest_server/src/swagger/smfr.yaml > ./smfrcore/client/marshmallow.py
+$ swagger-marshmallow-codegen --driver=./smfrcore/client/_marshmallow_custom.py:CustomDriver ../../restserver/src/swagger/smfr.yaml > ./smfrcore/client/marshmallow.py
 ```
 

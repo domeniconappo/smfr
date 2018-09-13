@@ -25,8 +25,8 @@
                                            <td>{{ data.collection.status }}</td>
                                            <th>Trigger</th>
                                            <td>{{ data.collection.trigger }}</td>
-                                           <th>Forecast date</th>
-                                           <td>{{ data.collection.forecast_id|default("") }}</td>
+                                           <th>Forecast date id</th>
+                                           <td>{{ data.collection.forecast_id or '' }}</td>
                                        </tr>
 
                                        {% if data.collection.tracking_keywords %}
@@ -124,10 +124,10 @@
 	                           <div class="panel-body">
                                    <div class="btn-group btn-group-justified" role="group">
                                        <div class="btn-group">
-                                        <a {% if data.collection.status == 'Active'%} class="btn btn-sm btn-default disabled" {% else %} class="btn btn-sm btn-default" {% endif %} href="/start/{{ data.collection.id }}"><em class="fas fa-play"></em></a>
+                                        <a {% if data.collection.status == 'Running'%} class="btn btn-sm btn-default disabled" {% else %} class="btn btn-sm btn-default" {% endif %} href="/start/{{ data.collection.id }}"><em class="fas fa-play"></em></a>
                                        </div>
                                        <div class="btn-group">
-                                        <a {% if data.collection.status == 'Inactive'%} class="btn btn-sm btn-default disabled" {% else %} class="btn btn-sm btn-default" {% endif %} href="/stop/{{ data.collection.id }}"><em class="fas fa-stop"></em></a>
+                                        <a {% if data.collection.status == 'Stopped'%} class="btn btn-sm btn-default disabled" {% else %} class="btn btn-sm btn-default" {% endif %} href="/stop/{{ data.collection.id }}"><em class="fas fa-stop"></em></a>
                                        </div>
                                        <div class="btn-group">
                                         <a class="btn btn-sm btn-danger" href="/remove/{{ data.collection.id }}"><em class="fas fa-trash"></em></a>

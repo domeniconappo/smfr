@@ -15,4 +15,7 @@ PyYAML
 PyJWT
 tensorflow==1.10.0
 gunicorn
-gevent
+schedule
+cachetools
+python-Levenshtein
+fuzzywuzzy

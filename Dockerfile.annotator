@@ -16,12 +16,13 @@ RUN git init ${MODELS_PATH}/ && cd ${MODELS_PATH}/ && git remote add origin ${GI
     git config core.sparsecheckout true && echo "models/*" >> .git/info/sparse-checkout && \
     git pull --depth=1 origin master && cd -
 
-COPY base/shared_libs/scripts/wait_for_it.sh /scripts/
-COPY base/shared_libs/smfr_utils/. /smfr_libs/utils/
-COPY base/shared_libs/smfr_models/. /smfr_libs/models/
 COPY ./annotator/requirements.txt /requirements/
 
 RUN pip3.6 install -r /requirements/requirements.txt
+
+COPY base/shared_libs/scripts/wait_for_it.sh /scripts/
+COPY base/shared_libs/smfr_utils/. /smfr_libs/utils/
+COPY base/shared_libs/smfr_models/. /smfr_libs/models/
 RUN pip3.6 install /smfr_libs/utils/ \
  && pip3.6 install /smfr_libs/models/ \
  && chmod -R a+x /scripts/ && rm -R /root/.cache

@@ -33,7 +33,7 @@ class Collection(BaseSchema):
     locations = fields.Field()
     languages = fields.List(fields.String())
     runtime = DateTime()
-    nuts2 = fields.String()
+    efas_id = fields.Integer()
     status = fields.String(validate=[OneOf(choices=['active', 'inactive'], labels=[])])
     started_at = DateTime()
     stopped_at = DateTime()

@@ -5,12 +5,11 @@ import logging
 from multiprocessing import cpu_count
 from multiprocessing.pool import ThreadPool
 import os
-import time
 
 import cassandra
 from sqlalchemy import or_
 
-from smfrcore.utils import LOGGER_FORMAT, LOGGER_DATE_FORMAT
+from smfrcore.utils import LOGGER_FORMAT, LOGGER_DATE_FORMAT, logged_job, job_exceptions_catcher
 
 from smfrcore.models import TwitterCollection, Aggregation, create_app
 
@@ -18,7 +17,8 @@ from smfrcore.models import TwitterCollection, Aggregation, create_app
 logging.basicConfig(level=os.environ.get('LOGGING_LEVEL', 'DEBUG'), format=LOGGER_FORMAT, datefmt=LOGGER_DATE_FORMAT)
 
 logger = logging.getLogger('AGGREGATOR')
-logging.getLogger('cassandra').setLevel(logging.ERROR)
+logger.setLevel(os.environ.get('LOGGING_LEVEL', 'DEBUG'))
+logging.getLogger('cassandra').setLevel(logging.WARNING)
 
 flask_app = create_app()
 
@@ -56,18 +56,8 @@ class MostRelevantTweets:
             self.min_prob = self._tweets[-1]['annotations']['flood_probability']['yes']
 
 
-def with_logging(func):
-    @functools.wraps(func)
-    def wrapper(*args, **kwargs):
-        time_start = time.time()
-        result = func(*args, **kwargs)
-        elapsed = time.time() - time_start
-        logger.info('Job "%s" completed. Elapsed time: %s' % (func.__name__, str(timedelta(seconds=elapsed))))
-        return result
-    return wrapper
-
-
-@with_logging
+@logged_job
+@job_exceptions_catcher
 def aggregate(running_conf=None):
     """
 
@@ -244,7 +234,7 @@ def run_single_aggregation(collection_id,
         aggregation.save()
         running_aggregators.remove(collection_id)
 
-    logger.info(' <<<<<<<<<<< Aggregation terminated for collection %d: %s', collection_id, str(aggregation.values))
+    logger.info(' <<<<<<<<<<< Aggregation terminated for collection %d', collection_id)
     return 0
 
 

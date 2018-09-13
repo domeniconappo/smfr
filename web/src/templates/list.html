@@ -21,7 +21,7 @@
                     <th><em class="fa fa-cogs"></em></th>
                     <th>Id</th>
                     <th>Trigger</th>
-                    <th>Forecast Id</th>
+                    <th>EFAS info</th>
                     <th>Type</th>
                     <th>Status</th>
                     <th>Languages</th>
@@ -41,7 +41,7 @@
                                 <a title="go to details page" class="btn btn-sm btn-default" href="/details/{{ c.id }}"><em class="fas fa-eye"></em></a>
                             </div>
                             <div class="btn-group">
-                                {% if c.status == 'Active'%}
+                                {% if c.status == 'Running'%}
                                 <a class="btn btn-sm btn-danger" href="/stop/{{ c.id }}" title="stop collecting"><em class="fas fa-stop"></em></a>
                                 {%  else %}
                                 <a class="btn btn-sm btn-primary" href="/start/{{ c.id }}" title="start collecting"><em class="fas fa-play"></em></a>
@@ -50,13 +50,22 @@
                         </div>
                     </td>
 
-                    <td>{{c.id}}</td>
-                    <td>{{c.trigger}}</td>
-                    <td>{{ c.forecast_id or '' }}</td>
+                    <td>{{c.id }}</td>
+                    <td>{{ c.trigger }}</td>
+                    <td>
+                        {% if  c.forecast_id%}
+                        <strong>Forecast:</strong> {{ c.forecast_id}}<br />
+                        {% endif %}
+                        {% if  c.efas_id != None%}
+                        <strong>EFAS id:</strong> {{ c.efas_id}}
+                        <strong>EFAS name:</strong> {{ c.efas_name}}
+                        <strong>Country:</strong> {{ c.efas_country}}
+                        {% endif %}
+                    </td>
                     <td data-toggle="tooltip" data-placement="top" title="{{c.tracking_keywords|join(', ')}}">
                         <u><b>keywords...</b></u>
                     </td>
-                    <td>{{c.status}}</td>
+                    <td class="{% if c.status=='Running' %}color-green{% else %}color-red{% endif %}"><strong>{{ c.status }}</strong></td>
                     <td>{{c.languages|join(', ')}}</td>
 
                     <td>{% if c.locations %}

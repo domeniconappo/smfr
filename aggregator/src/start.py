@@ -26,11 +26,11 @@ if __name__ == '__main__':
     kwargs = {'running_conf': conf}
 
     # run first job
-    aggregate(running_conf=conf)
+    aggregate(**kwargs)
 
     # schedule every X minutes, based on AGGREGATOR_SCHEDULING_MINUTES env variable
     schedule.every(scheduling_interval).minutes.do(aggregate, **kwargs).tag('aggregator-main')
 
     while True:
         schedule.run_pending()
-        time.sleep(60)
+        time.sleep(45 * scheduling_interval)

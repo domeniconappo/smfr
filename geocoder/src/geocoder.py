@@ -224,7 +224,7 @@ class Geocoder:
         """
         Mordecai geoparsing
         :param tagger: mordecai.Geoparser instance
-        :param tweet: smfrcore.models.cassandramodels.Tweet object
+        :param tweet: smfrcore.models.cassandra.Tweet object
         :return: list of tuples of lat/lon/country_code/place_name
         """
         # try to geoparse
@@ -292,8 +292,8 @@ class Geocoder:
         """
 
         mentions = cls.geoparse_tweet(tweet, tagger)
-        tweet_coords = cls.get_coordinates_from_tweet(tweet)
-        user_location = tweet.original_tweet_as_dict['user'].get('location')
+        tweet_coords = tweet.coordinates
+        user_location = tweet.user_location
         coordinates, nuts2, nuts_source, country_code, place, geonameid = None, None, '', '', '', ''
 
         if tweet_coords:

@@ -469,8 +469,10 @@ services:
         https_proxy: ${https_proxy}
         ftp_host: ${FTP_HOST}
         download_folder: ${DOWNLOAD_FOLDER}
-    working_dir: /rest_server
+    working_dir: /restserver
     environment:
+      LOGGING_LEVEL: ${LOGGING_LEVEL}
+      DEVELOPMENT: ${DEVELOPMENT}
       PERSISTER_KAFKA_TOPIC: ${PERSISTER_KAFKA_TOPIC}
       MYSQL_HOST: mysql
       MYSQL_USER: ${MYSQL_USER}
@@ -489,7 +491,6 @@ services:
       FLASK_APP: smfr.py
       SERVER_PATH_UPLOADS: /smfr/uploads/
       CQLENG_ALLOW_SCHEMA_MANAGEMENT: 1
-      DEVELOPMENT: ${DEVELOPMENT}
       RESTSERVER_BASEPATH: '/1.0'
       FTP_USER: ${FTP_USER}
       FTP_PASS: ${FTP_PASS}
@@ -497,16 +498,18 @@ services:
       FTP_PATH: ${FTP_PATH}
       DOWNLOAD_FOLDER: ${DOWNLOAD_FOLDER}
       RRA_ONDEMAND_FILENAME: ${RRA_ONDEMAND_FILENAME}
+      RRA_FETCH_SCHEDULING: ${RRA_FETCH_SCHEDULING}
+      CHECK_ONDEMAND_RUNTIME_SCHEDULING: ${CHECK_ONDEMAND_RUNTIME_SCHEDULING}
       PYTHONUNBUFFERED: 'true'
       http_proxy: ${http_proxy}
       https_proxy: ${http_proxy}
-      LOGGING_LEVEL: ${LOGGING_LEVEL}
     ports:
       - '5555:5555'
     volumes:
-      - './rest_server/src:/rest_server'
-      - './uploads:/smfr/uploads/'
-      - './downloads:/smfr/downloaded/'
+      - './restserver/src:/restserver'
+      - './uploads:/smfr/uploads'
+      - './downloads:/smfr/downloaded'
+      - './restserver/logs:/logs'
     depends_on:
       - mysql
       - kafka
@@ -514,6 +517,7 @@ services:
       - annotator
       - geocoder
       - persister
+      - aggregator
     deploy:
       restart_policy:
         condition: on-failure

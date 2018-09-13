@@ -13,7 +13,8 @@ venv.bak/
 .idea
 
 # SMFR configs
-rest_server/src/config/*.yaml
+restserver/src/config/*.yaml
+restserver/logs
 scripts/seeds/data/*.json
 jmxremote.password
 jmxremote.access
@@ -26,8 +27,10 @@ Dockerfile.*.ready
 /downloads/*.csv
 docker-compose-*.yaml
 
+base/shared_libs/smfr_*/VERSION
+
 GlobalRegions_052018.geojson
-rest_server/src/tests/data/CostPopEst2018061300.json
+restserver/src/tests/data/CostPopEst2018061300.json
 *geonames_index*
 # Byte-compiled / optimized / DLL files
 __pycache__/
@@ -133,5 +136,5 @@ celerybeat-schedule
 /cassandrasmfr/Dockerfile
 /geonames/Dockerfile
 /mysql/Dockerfile
- docker-compose.override.yml
+docker-compose.override.yml
  
