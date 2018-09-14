@@ -54,6 +54,9 @@ class Nuts2Finder:
         :return: Nuts2 object
 
         """
+        if lat is None or lon is None:
+            return None
+
         lat, lon = float(lat), float(lon)
         point = Point(lon, lat)
         nuts2_candidates = Nuts2.get_nuts2(lat, lon)
@@ -253,20 +256,6 @@ class Geocoder:
                                   result['geo'].get('geonameid', '')))
         return mentions_list
 
-    @classmethod
-    def get_coordinates_from_tweet(cls, tweet):
-        """
-
-        :param tweet:
-        :return: tuple lat/lon
-        """
-        t = tweet.original_tweet_as_dict
-        latlong = None
-        if t.get('coordinates') or t.get('geo'):
-            coords = t.get('coordinates', {}).get('coordinates') or t.get('geo', {}).get('coordinates')
-            if coords:
-                latlong = coords[1], coords[0]
-        return latlong
 
     @classmethod
     def find_nuts_heuristic(cls, tweet, tagger):
@@ -292,11 +281,11 @@ class Geocoder:
         """
 
         mentions = cls.geoparse_tweet(tweet, tagger)
-        tweet_coords = tweet.coordinates
+        tweet_coords = tweet.coordinates if tweet.coordinates != (None, None) else tweet.centroid
         user_location = tweet.user_location
         coordinates, nuts2, nuts_source, country_code, place, geonameid = None, None, '', '', '', ''
 
-        if tweet_coords:
+        if tweet_coords != (None, None):
             coordinates, nuts2, nuts_source, country_code, place, geonameid = cls._nuts_from_tweet_coords(mentions, tweet_coords)
         elif len(mentions) == 1:
             coordinates, nuts2, nuts_source, country_code, place, geonameid = cls._nuts_from_one_mention(mentions)

@@ -20,13 +20,15 @@ class BaseCollector(ABC):
         )
         super().__init__()
 
+    def __str__(self):
+        return 'Collector {o.type} - collections {o.collections}'.format(o=self)
+
     @abstractmethod
     def start(self):
         pass
 
-    @abstractmethod
-    def stop(self):
-        pass
+    def stop(self, deactivate=True):
+        self.streamer.disconnect(deactivate)
 
     def restart(self):
         self.stop()
@@ -52,12 +54,6 @@ class BackgroundCollector(BaseCollector):
             return
         self.streamer.run_collections([collection])
 
-    def stop(self):
-        self.streamer.disconnect()
-        collection = TwitterCollection.get_active_background()
-        if not collection:
-            return
-
 
 class OnDemandCollector(BaseCollector):
     twitter_keys_iden = 'twitterod'
@@ -69,9 +65,6 @@ class OnDemandCollector(BaseCollector):
         if not collections:
             return
         self.streamer.run_collections(collections)
-
-    def stop(self):
-        self.streamer.disconnect()
 
 
 class ManualCollector(OnDemandCollector):

@@ -58,7 +58,7 @@ class AnnotatorClient(MicroserviceClient):
 
     @classmethod
     def available_languages(cls):
-        models = cls.models()[0]
+        models = cls.models()[0]['models']
         return tuple(models.keys())
 
     @classmethod

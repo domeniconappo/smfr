@@ -13,6 +13,7 @@ from server.api.clients import AnnotatorClient
 
 logger = logging.getLogger('RestServer Streamer')
 logger.setLevel(RestServerConfiguration.logger_level)
+
 hdlr = logging.FileHandler(RestServerConfiguration.not_reconciled_log_path)
 hdlr.setLevel(logging.ERROR)
 logger.addHandler(hdlr)
@@ -97,11 +98,12 @@ class BaseStreamer(TwythonStreamer):
         logger.info('Streaming for collections: \n%s', '\n'.join(str(c) for c in collections))
         self.statuses.filter(**filter_args)
 
-    def disconnect(self):
-        app = create_app()
-        with app.app_context():
-            for c in self.collections:
-                c.deactivate()
+    def disconnect(self, deactivate=True):
+        if deactivate:
+            app = create_app()
+            with app.app_context():
+                for c in self.collections:
+                    c.deactivate()
         super().disconnect()
 
 
@@ -151,7 +153,8 @@ class OnDemandStreamer(BaseStreamer):
             data['lang'] = lang
             collection = self.reconcile_tweet_with_collection(data)
             if not collection:
-                logger.error('Tweet was not reconciled with any collection! %s\n ', data)
+                logger.warning('Tweet was not reconciled with any collection!')
+                logger.error('%s', data)
                 return
 
             tweet = Tweet.build_from_tweet(collection.id, data, ttype='collected')

@@ -30,6 +30,7 @@ def create_app():
 
     connexion_app = connexion.App('SMFR Rest Server', specification_dir='swagger/')
     config = RestServerConfiguration(connexion_app)
+    connexion_app.add_api(pathlib.Path('smfr.yaml'), base_path=config.base_path)
 
     if SERVER_BOOTSTRAP:
 
@@ -52,24 +53,25 @@ def create_app():
         manual_collector = ManualCollector()
         manual_collector.start()
 
-        logger.debug('Registering collectors...\n%s', [background_collector, ondemand_collector, manual_collector])
+        logger.debug('---------- Registering collectors in main configuration:\n%s',
+                     [background_collector, ondemand_collector, manual_collector])
         config.set_collectors({background_collector.type: background_collector,
                                ondemand_collector.type: ondemand_collector,
                                manual_collector.type: manual_collector})
 
         def stop_active_collectors(signum, _):
-            logger.debug("Received %d", signum)
-            logger.debug("Stopping any running collector...")
-            background_collector.stop()
-            ondemand_collector.stop()
-            manual_collector.stop()
+            deactivate_collections = False
+            logger.info("Received %d", signum)
+            logger.info("Stopping any running collector...")
+            background_collector.stop(deactivate=deactivate_collections)
+            ondemand_collector.stop(deactivate=deactivate_collections)
+            manual_collector.stop(deactivate=deactivate_collections)
 
-        signal.signal(signal.SIGINT, stop_active_collectors)
-        signal.signal(signal.SIGTERM, stop_active_collectors)
-        signal.signal(signal.SIGQUIT, stop_active_collectors)
-        logger.debug('Registered %d %d and %d', signal.SIGINT, signal.SIGTERM, signal.SIGQUIT)
+        signals = (signal.SIGINT, signal.SIGTERM, signal.SIGQUIT)
+        for sig in signals:
+            signal.signal(sig, stop_active_collectors)
+        logger.debug('Registered signals for graceful shutdown: %s', signals)
 
-    connexion_app.add_api(pathlib.Path('smfr.yaml'), base_path=config.base_path)
     return config.flask_app
 
 

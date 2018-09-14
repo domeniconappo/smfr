@@ -160,7 +160,7 @@ class Annotator:
 
     @classmethod
     def available_models(cls):
-        return {'models': models}
+        return {'models': models} if not DEVELOPMENT else {'models': {'en': models['en']}}
 
     @classmethod
     def consumer_in_background(cls, lang='en'):

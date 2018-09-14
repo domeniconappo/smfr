@@ -397,6 +397,16 @@ class Tweet(cqldb.Model):
         return tweet.full_text
 
     @classmethod
+    def centroid_from_raw_tweet(cls, data):
+        lat, lon = (None, None)
+        min_tweet_lat, max_tweet_lat, min_tweet_lon, max_tweet_lon = cls.get_tweet_bbox(data)
+        if all((min_tweet_lat, max_tweet_lat, min_tweet_lon, max_tweet_lon)):
+            width, heigth = max_tweet_lon - min_tweet_lon, max_tweet_lat - min_tweet_lat
+            lat = min_tweet_lat + heigth / 2
+            lon = min_tweet_lon + width / 2
+        return lat, lon
+
+    @classmethod
     def coords_from_raw_tweet(cls, data):
         latlong = (None, None)
         coords = (None, None)
@@ -420,7 +430,7 @@ class Tweet(cqldb.Model):
 
     @classmethod
     def get_tweet_bbox(cls, data):
-        min_tweet_lat, max_tweet_lat, min_tweet_lon, max_tweet_lon = None, None, None, None
+        min_tweet_lat, max_tweet_lat, min_tweet_lon, max_tweet_lon = (None, None, None, None)
         for d in (data, data.get('quoted_status'), data.get('retweeted_status')):
             if not d or not d.get('place'):
                 continue
@@ -490,6 +500,11 @@ class Tweet(cqldb.Model):
     def coordinates(self):
         tweet = self.original_tweet_as_dict
         return self.coords_from_raw_tweet(tweet)
+
+    @property
+    def centroid(self):
+        tweet = self.original_tweet_as_dict
+        return self.centroid_from_raw_tweet(tweet)
 
     @property
     def user_location(self):
