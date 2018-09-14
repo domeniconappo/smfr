@@ -26,6 +26,7 @@ Dockerfile.*.ready
 /downloads/*.json
 /downloads/*.csv
 docker-compose-*.yaml
+ignoreme*.*
 
 base/shared_libs/smfr_*/VERSION
 

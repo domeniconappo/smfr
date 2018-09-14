@@ -124,8 +124,8 @@ class Tweet(cqldb.Model):
         super().__init__(*args, **kwargs)
 
     def __str__(self):
-        return '\n{o.nuts2}\n{o.collectionid}\n' \
-               '{o.created_at} - \n{o.lang}: {o.full_text:.120}' \
+        return '\nCollection {o.collectionid}\n' \
+               '{o.created_at} - {o.lang} \n{o.full_text:.120}' \
                '\nGeo: {o.geo}\nAnnotations: {o.annotations}'.format(o=self)
 
     @property

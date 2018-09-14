@@ -9,8 +9,12 @@ flask
 flask-sqlalchemy
 flask-cqlalchemy
 sqlalchemy_utils
+
 ujson
+
+scrypt
 PassLib
+
 PyYAML
 PyJWT
 tensorflow==1.10.0

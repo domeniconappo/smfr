@@ -1,5 +1,6 @@
 import os
 import datetime
+import copy
 
 import arrow
 from arrow.parser import ParserError
@@ -131,12 +132,16 @@ class TwitterCollection(SMFRModel):
 
     @classmethod
     def create(cls, **data):
-        obj = cls()
         user = data.get('user') or User.query.filter_by(role='admin').first()
-        trigger = data['trigger']
-        runtime = cls.convert_runtime(data.get('runtime'))
         if not user:
             raise SystemError('You have to configure at least one admin user for SMFR system')
+
+        obj = cls()
+        obj.status = data.get('status', cls.INACTIVE_STATUS)
+        trigger = data['trigger']
+        runtime = cls.convert_runtime(data.get('runtime'))
+        obj.runtime = runtime
+        obj.forecast_id = data.get('forecast_id')
 
         if trigger == cls.TRIGGER_BACKGROUND:
             existing = cls.get_active_background()
@@ -147,28 +152,43 @@ class TwitterCollection(SMFRModel):
             existing = cls.query.filter_by(efas_id=data['efas_id']).first()
             if existing:
                 obj = existing
-                if obj.stopped_at > obj.started_at:
-                    # an existing efas on demand collection was not active
-                    # set started_at now
-                    obj.startet_at = datetime.datetime.utcnow()
+                obj.runtime = existing.runtime if existing.forecast_id == obj.forecast_id else obj.runtime
+            if not existing or not obj.started_at or (obj.stopped_at and obj.started_at and obj.stopped_at > obj.started_at):
+                obj.started_at = datetime.datetime.utcnow()
             obj.status = cls.ACTIVE_STATUS  # force active status when creating/updating on demand collections
 
         obj.efas_id = data.get('efas_id')
         obj.trigger = trigger
-        obj.runtime = runtime
-        obj.status = data.get('status', cls.INACTIVE_STATUS)
         obj.user_id = user.id if user else 1
-        obj.forecast_id = data.get('forecast_id')
+        obj.use_pipeline = data.get('use_pipeline', False)
         obj._set_keywords_and_languages(data.get('keywords') or [], data.get('languages') or [])
         obj._set_locations(data.get('bounding_box') or data.get('locations'))
         obj.save()
 
-        # updating cache
+        # updating caches
+        cls._update_caches(obj)
+        return obj
+
+    @classmethod
+    def _update_caches(cls, obj):
         if obj.trigger == cls.TRIGGER_BACKGROUND:
             cls.cache[cls.cache_keys['background']] = obj
-        else:
-            cls.cache[cls.cache_keys['collection'.format(obj.id)]] = obj
-        return obj
+        elif obj.trigger == cls.TRIGGER_ONDEMAND:
+            current_ondemand_collections = copy.deepcopy(cls.cache[cls.cache_keys['on-demand']])
+            for collection in current_ondemand_collections:
+                if obj.efas_id == collection.efas_id:
+                    current_ondemand_collections.remove(collection)
+            if obj not in current_ondemand_collections:
+                # This test would fail if keywords/locations are different.
+                # That's why we first remove the collection with same efas_id of the one we are adding
+                current_ondemand_collections.append(obj)
+            cls.cache[cls.cache_keys['on-demand']] = current_ondemand_collections
+        elif obj.trigger == cls.TRIGGER_MANUAL:
+            current_manual_collections = copy.deepcopy(cls.cache[cls.cache_keys['manual']])
+            current_manual_collections.append(obj)
+            cls.cache[cls.cache_keys['manual']] = current_manual_collections
+
+        cls.cache[cls.cache_keys['collection'].format(obj.id)] = obj
 
     @classmethod
     def add_rra_events(cls, events):
@@ -220,7 +240,7 @@ class TwitterCollection(SMFRModel):
         if not res:
             res = cls.query.filter_by(trigger=cls.TRIGGER_MANUAL, status=cls.ACTIVE_STATUS).all()
             cls.cache[key] = res
-        return res
+        return copy.deepcopy(res)
 
     @classmethod
     def get_collection(cls, collection_id):

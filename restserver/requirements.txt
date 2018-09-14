@@ -5,9 +5,11 @@ kafka-python
 arrow
 PyJWT
 schedule
+scrypt
 
 Flask
 gunicorn
+gevent
 connexion
 
 flask-sqlalchemy

@@ -23,10 +23,9 @@ def add_rra_events(since='latest'):
         events, date = fetch_rra_helper(since)
         logger.debug('FETCHED RRA %s', events)
         results = events_to_collections_payload(events, date)
-        logger.debug('Adding RRA collections %s', results)
         collections = TwitterCollection.add_rra_events(results)
         if any(c not in running_collections for c in collections):
-            #  there is at least one new collection (even the same one with updated keywords)
+            # There is at least one new collection (even the same one with updated keywords)
             # Collector must be restarted
             on_demand_collector = RestServerConfiguration().collectors[TwitterCollection.TRIGGER_ONDEMAND]
             on_demand_collector.restart()
@@ -46,7 +45,7 @@ def update_ondemand_collections_status():
 
 
 def schedule_rra_jobs():
-
+    check_jobs_interval = int(os.environ.get('CHECK_JOBS_INTERVAL_SECONDS', 60 * 3))
     if not DEVELOPMENT:
         rra_fetch_scheduling = os.environ.get('RRA_FETCH_SCHEDULING', '00:00,12:00').split(',')
         check_ondemand_runtime_scheduling = os.environ.get('CHECK_ONDEMAND_RUNTIME_SCHEDULING', '00:00,12:00').split(',')
@@ -67,4 +66,4 @@ def schedule_rra_jobs():
     for hour in check_ondemand_runtime_scheduling:
         schedule.every().day.at(hour).do(update_ondemand_collections_status).tag('update-collection-status')
 
-    run_continuously(interval=60 * 3)
+    run_continuously(interval=check_jobs_interval)

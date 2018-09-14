@@ -42,7 +42,7 @@ class BaseStreamer(TwythonStreamer):
                     'https': os.environ.get('https_proxy') or os.environ['http_proxy']
                 }
             }
-        logger.info('Instantiate a streamer with args %s', str(self.client_args))
+        logger.debug('Instantiate a streamer with args %s', str(self.client_args))
         super().__init__(consumer_key, consumer_secret,
                          access_token, access_token_secret,
                          client_args=self.client_args)
@@ -124,12 +124,12 @@ class BackgroundStreamer(BaseStreamer):
                 tweet = Tweet.build_from_tweet(self.collection.id, data, ttype='collected')
                 # the tweet is sent immediately to kafka queue
                 message = tweet.serialize()
-                logger.debug('\n\nSending to PERSISTER: %s\n', str(tweet))
+                logger.debug('\n\nSending to PERSISTER: %s\n', tweet)
                 self.producer.send(self.persister_kafka_topic, message)
 
-                # On Demand collections always use pipelines
                 if self.use_pipeline(self.collection) and lang in AnnotatorClient.available_languages():
                     topic = '{}_{}'.format(self.annotator_kafka_topic, lang)
+                    logger.debug('\n\nSending to annotator queue: %s %s\n', topic, tweet)
                     self.producer.send(topic, message)
 
 
@@ -156,12 +156,13 @@ class OnDemandStreamer(BaseStreamer):
 
             tweet = Tweet.build_from_tweet(collection.id, data, ttype='collected')
             message = tweet.serialize()
-            logger.debug('\n\nSending to persister queue: %s\n', str(tweet))
+            logger.debug('\n\nSending to persister queue: %s\n', tweet)
             self.producer.send(self.persister_kafka_topic, message)
             # send to next topic in the pipeline in case collection.is_using_pipeline == True
             # On Demand collections always use pipelines
             if self.use_pipeline(collection) and lang in AnnotatorClient.available_languages():
                 topic = '{}_{}'.format(self.annotator_kafka_topic, lang)
+                logger.debug('\n\nSending to annotator queue: %s %s\n', topic, tweet)
                 self.producer.send(topic, message)
 
     def use_pipeline(self, collection):
