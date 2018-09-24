@@ -13,7 +13,6 @@ from smfrcore.utils import LOGGER_FORMAT, LOGGER_DATE_FORMAT, logged_job, job_ex
 
 from smfrcore.models import TwitterCollection, Aggregation, create_app
 
-
 logging.basicConfig(level=os.environ.get('LOGGING_LEVEL', 'DEBUG'), format=LOGGER_FORMAT, datefmt=LOGGER_DATE_FORMAT)
 
 logger = logging.getLogger('AGGREGATOR')
@@ -118,18 +117,20 @@ def find_collections_to_aggregate(running_conf):
     return collections_to_aggregate
 
 
-def inc_annotated_counter(counter, flood_probability, place_id=None):
+flood_probability = lambda t: t.annotations['flood_probability'][1] * 100
+
+
+def inc_annotated_counter(counter, probability, place_id=None):
     """
 
-    :param counter:
-    :param flood_probability:
+    :param counter: Counter object
+    :param probability: flood  probability * 100
     :param place_id: string composed like <efas_id>_<nuts_id>
     :return:
     """
-    flood_probability *= 100
     key = functools.partial('num_tweets_{}-{}'.format) if place_id is None else functools.partial('{}_num_tweets_{}-{}'.format)
     for range_a, range_b in flood_propability_ranges:
-        if range_a < flood_probability <= range_b:
+        if range_a < probability <= range_b:
             counter_key = key(range_a, range_b) if place_id is None else key(place_id, range_a, range_b)
             counter[counter_key] += 1
             break
@@ -208,9 +209,10 @@ def run_single_aggregation(collection_id,
             nuts_id = t.geo['nuts_id']
             geo_identifier = '%s_%s' % (geoloc_id, nuts_id) if nuts_id else geoloc_id
             inc_annotated_counter(counter, t.annotations['flood_probability'][1], place_id=geo_identifier)
-            if t.geo['nuts_efas_id'] or t.geo['is_european']:
+            if (t.geo['nuts_efas_id'] or t.geo['is_european']) and flood_probability(t) >= 90:
                 # we only show european relevant tweets...
                 relevant_tweets.push_if_relevant(Tweet.to_json(t))
+
     except cassandra.ReadFailure as e:
         logger.error('Cassandra Read failure: %s', e)
         running_aggregators.remove(collection_id)
