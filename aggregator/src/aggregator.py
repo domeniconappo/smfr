@@ -117,7 +117,8 @@ def find_collections_to_aggregate(running_conf):
     return collections_to_aggregate
 
 
-flood_probability = lambda t: t.annotations['flood_probability'][1] * 100
+def flood_probability(t):
+    return t.annotations['flood_probability'][1] * 100
 
 
 def inc_annotated_counter(counter, probability, place_id=None):
@@ -198,18 +199,19 @@ def run_single_aggregation(collection_id,
             max_annotated_tweetid = max(max_annotated_tweetid, t.tweet_id)
             counter['annotated'] += 1
             counter['{}_annotated'.format(t.lang)] += 1
-            inc_annotated_counter(counter, t.annotations['flood_probability'][1])
+            inc_annotated_counter(counter, flood_probability(t))
 
         geotagged_tweets = Tweet.get_iterator(collection_id, 'geotagged', last_tweetid=last_tweetid_geotagged)
         for t in geotagged_tweets:
+            prob = flood_probability(t)
             max_geotagged_tweetid = max(max_geotagged_tweetid, t.tweet_id)
             counter['geotagged'] += 1
             counter['{}_geotagged'.format(t.lang)] += 1
             geoloc_id = t.geo['nuts_efas_id'] or 'G%s' % (t.geo['geonameid'] or 'N/A')
             nuts_id = t.geo['nuts_id']
             geo_identifier = '%s_%s' % (geoloc_id, nuts_id) if nuts_id else geoloc_id
-            inc_annotated_counter(counter, t.annotations['flood_probability'][1], place_id=geo_identifier)
-            if (t.geo['nuts_efas_id'] or t.geo['is_european']) and flood_probability(t) >= 90:
+            inc_annotated_counter(counter, flood_probability(t), place_id=geo_identifier)
+            if (t.geo['nuts_efas_id'] or t.geo['is_european']) and prob >= 90:
                 # we only show european relevant tweets...
                 relevant_tweets.push_if_relevant(Tweet.to_json(t))
 
