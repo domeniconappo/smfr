@@ -60,8 +60,8 @@ class Products:
                     if not cls.is_efas_id_counter(key):
                         continue
                     res[key] += value
-        counters_by_efas_id = defaultdict(defaultdict(int))
 
+        counters_by_efas_id = defaultdict(defaultdict(int))
         for key, value in res:
             # key format: <efasid>_<nutsid>_num_tweets_<minprob>-<maxprob>
             # key is like "1301_UKF2_num_tweets_0-10"

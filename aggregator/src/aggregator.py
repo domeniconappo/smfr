@@ -1,4 +1,4 @@
-from collections import Counter
+from collections import Counter, defaultdict
 import functools
 from datetime import timedelta, datetime
 import logging
@@ -36,9 +36,14 @@ class MostRelevantTweets:
 
     def __init__(self, maxsize, initial=None):
         self.maxsize = maxsize
-        self._tweets = sorted(initial, key=self._sortkey, reverse=True) if initial else []
-        self._tweets = self._tweets[:self.maxsize]
-        self.min_prob = self._tweets[-1]['annotations']['flood_probability']['yes'] if initial else 0
+        if not initial:
+            initial = {}
+        self._tweets = defaultdict(list)
+        self.min_prob = defaultdict(int)
+        for key in initial.keys():
+            self._tweets[key] = sorted(initial[key], key=self._sortkey, reverse=True) if initial[key] else []
+            self._tweets[key] = self._tweets[key][:self.maxsize]
+            self.min_prob[key] = self._tweets[key][-1]['annotations']['flood_probability']['yes'] if initial[key] else 0
 
     @property
     def values(self):
@@ -46,9 +51,10 @@ class MostRelevantTweets:
 
     def is_relevant(self, item):
         flood_prob = item['annotations']['flood_probability']['yes']
+        key = item['geo']['nuts_efas_id'] or 'G%s' % item['geo']['geonameid']
         return (item['geo']['nuts_efas_id'] or item['geo']['is_european']) \
             and flood_prob >= self.min_relevant_probability \
-            and (flood_prob >= self.min_prob or len(self._tweets) < self.maxsize)
+            and (flood_prob >= self.min_prob[key] or len(self._tweets[key]) < self.maxsize)
 
     def push_if_relevant(self, item):
         """
@@ -57,10 +63,12 @@ class MostRelevantTweets:
         :return:
         """
         if self.is_relevant(item):
-            self._tweets.append(item)
-            self._tweets = sorted(self._tweets, key=self._sortkey, reverse=True)
-            self._tweets = self._tweets[:self.maxsize]
-            self.min_prob = self._tweets[-1]['annotations']['flood_probability']['yes']
+            key = item['geo']['nuts_efas_id'] or 'G%s' % item['geo']['geonameid']
+
+            self._tweets[key].append(item)
+            self._tweets[key] = sorted(self._tweets[key], key=self._sortkey, reverse=True)
+            self._tweets[key] = self._tweets[key][:self.maxsize]
+            self.min_prob[key] = self._tweets[key][-1]['annotations']['flood_probability']['yes']
 
 
 @logged_job
@@ -214,7 +222,7 @@ def run_single_aggregation(collection_id,
             max_geotagged_tweetid = max(max_geotagged_tweetid, t.tweet_id)
             counter['geotagged'] += 1
             counter['{}_geotagged'.format(t.lang)] += 1
-            geoloc_id = t.geo['nuts_efas_id'] or 'G%s' % (t.geo['geonameid'] or 'N/A')
+            geoloc_id = t.geo['nuts_efas_id'] or 'G%s' % (t.geo['geonameid'] or '-')
             nuts_id = t.geo['nuts_id']
             geo_identifier = '%s_%s' % (geoloc_id, nuts_id) if nuts_id else geoloc_id
             inc_annotated_counter(counter, flood_probability(t), place_id=geo_identifier)
