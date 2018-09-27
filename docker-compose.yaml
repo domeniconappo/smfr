@@ -412,47 +412,44 @@ services:
         max_attempts: 3
         window: 120s
 
-#  products:
-#    restart: on-failure
-#    container_name: products
-#    image: ${DOCKER_REGISTRY}/${PRODUCTS_IMAGE}:${image_tag}
-#    build:
-#      context: ./
-#      dockerfile: Dockerfile.products.ready
-#      args:
-#        http_proxy: ${http_proxy}
-#        https_proxy: ${https_proxy}
-#    working_dir: /products
-#    volumes:
-#    - './products/src:/products'
-#    environment:
-#      LOGGING_LEVEL: ${LOGGING_LEVEL}
-#      PYTHONUNBUFFERED: "true"
-#      CASSANDRA_KEYSPACE: ${CASSANDRA_KEYSPACE}
-#      CASSANDRA_HOST: ${CASSANDRA_HOST}
-#      CASSANDRA_PORT: ${CASSANDRA_PORT}
-#      CASSANDRA_USER: ${CASSANDRA_USER}
-#      CASSANDRA_PASSWORD: ${CASSANDRA_PASSWORD}
-#      PERSISTER_KAFKA_TOPIC: ${PERSISTER_KAFKA_TOPIC}
-#      PRODUCTS_SCHEDULING_MINUTES: ${PRODUCTS_SCHEDULING_MINUTES}
-#      MYSQL_HOST: mysql
-#      MYSQL_DBNAME: ${MYSQL_DBNAME}
-#      MYSQL_USER: ${MYSQL_USER}
-#      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
-#      http_proxy: ${http_proxy}
-#      https_proxy: ${https_proxy}
-#    networks:
-#      - back-tier
-#    depends_on:
-#    - mysql
-#    - cassandrasmfr
-#    deploy:
-#      placement:
-#        constraints: [ node.labels.medium == true ]
-#      restart_policy:
-#        condition: on-failure
-#        max_attempts: 3
-#        window: 120s
+  products:
+    restart: on-failure
+    container_name: products
+    image: ${DOCKER_REGISTRY}/${PRODUCTS_IMAGE}:${image_tag}
+    build:
+      context: ./
+      dockerfile: Dockerfile.products.ready
+      args:
+        http_proxy: ${http_proxy}
+        https_proxy: ${https_proxy}
+    working_dir: /products
+    volumes:
+    - './products/src:/products'
+    environment:
+      LOGGING_LEVEL: ${LOGGING_LEVEL}
+      PYTHONUNBUFFERED: "true"
+      PERSISTER_KAFKA_TOPIC: ${PERSISTER_KAFKA_TOPIC}
+      PRODUCTS_SCHEDULING_MINUTES: ${PRODUCTS_SCHEDULING_MINUTES}
+      HIGH_PROB_RANGE: ${HIGH_PROB_RANGE}
+      LOW_PROB_RANGE: ${LOW_PROB_RANGE}
+      THRESHOLDS: ${THRESHOLDS}
+      MYSQL_HOST: mysql
+      MYSQL_DBNAME: ${MYSQL_DBNAME}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      http_proxy: ${http_proxy}
+      https_proxy: ${https_proxy}
+    networks:
+      - back-tier
+    depends_on:
+    - mysql
+    deploy:
+      placement:
+        constraints: [ node.labels.medium == true ]
+      restart_policy:
+        condition: on-failure
+        max_attempts: 3
+        window: 120s
 
   restserver:
     restart: always

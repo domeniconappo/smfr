@@ -29,46 +29,37 @@ flood_propability_ranges = [[int(g) for g in t.split('-')] for t in flood_propab
 
 class MostRelevantTweets:
     min_relevant_probability = int(os.environ.get('MIN_RELEVANT_FLOOD_PROBABILITY', 90)) / 100
+    maxsize = 100
 
     @classmethod
     def _sortkey(cls, t):
         return t['annotations']['flood_probability']['yes']
 
-    def __init__(self, maxsize, initial=None):
-        self.maxsize = maxsize
+    def __init__(self, initial=None):
         if not initial:
             initial = {}
-        self._tweets = defaultdict(list)
-        self.min_prob = defaultdict(int)
-        for key in initial.keys():
-            self._tweets[key] = sorted(initial[key], key=self._sortkey, reverse=True) if initial[key] else []
-            self._tweets[key] = self._tweets[key][:self.maxsize]
-            self.min_prob[key] = self._tweets[key][-1]['annotations']['flood_probability']['yes'] if initial[key] else 0
+        self._tweets = initial
 
     @property
     def values(self):
+        for key in self._tweets.keys():
+            self._tweets[key] = sorted(self._tweets[key], key=self._sortkey, reverse=True)
+            self._tweets[key] = self._tweets[key][:self.maxsize]
         return self._tweets
 
     def is_relevant(self, item):
         flood_prob = item['annotations']['flood_probability']['yes']
-        key = item['geo']['nuts_efas_id'] or 'G%s' % item['geo']['geonameid']
-        return (item['geo']['nuts_efas_id'] or item['geo']['is_european']) \
-            and flood_prob >= self.min_relevant_probability \
-            and (flood_prob >= self.min_prob[key] or len(self._tweets[key]) < self.maxsize)
+        return (item['geo']['nuts_efas_id'] or item['geo']['is_european']) and flood_prob >= self.min_relevant_probability
 
     def push_if_relevant(self, item):
         """
 
-        :param item: Tweet dictionary
+        :param item: a dict representing a smfrcore.models.cassandra.Tweet object
         :return:
         """
         if self.is_relevant(item):
-            key = item['geo']['nuts_efas_id'] or 'G%s' % item['geo']['geonameid']
-
+            key = item['geo']['nuts_efas_id'] or 'G%s' % (item['geo']['geonameid'] or '-')
             self._tweets[key].append(item)
-            self._tweets[key] = sorted(self._tweets[key], key=self._sortkey, reverse=True)
-            self._tweets[key] = self._tweets[key][:self.maxsize]
-            self.min_prob[key] = self._tweets[key][-1]['annotations']['flood_probability']['yes']
 
 
 @logged_job
@@ -95,7 +86,7 @@ def aggregate(running_conf=None):
             aggregation = Aggregation.query.filter_by(collection_id=coll.id).first()
 
             if not aggregation:
-                aggregation = Aggregation(collection_id=coll.id, values={}, relevant_tweets=[])
+                aggregation = Aggregation(collection_id=coll.id, values={}, relevant_tweets={})
                 aggregation.save()
 
             aggregations_args.append(
@@ -183,13 +174,16 @@ def run_single_aggregation(collection_id,
     if collection_id in running_aggregators:
         logger.warning('!!!!!! Previous aggregation for collection id %d is not finished yet !!!!!!' % collection_id)
         return 0
-    relevant_tweets_number = int(os.environ.get('NUM_RELEVANT_TWEETS', 5))
-    relevant_tweets = MostRelevantTweets(relevant_tweets_number, initial=initial_relevant_tweets)
+
+    relevant_tweets = MostRelevantTweets(initial=initial_relevant_tweets)
+
     max_collected_tweetid = 0
     max_annotated_tweetid = 0
     max_geotagged_tweetid = 0
+
     last_timestamp_start = timestamp_start or datetime(2100, 12, 30)
     last_timestamp_end = timestamp_end or datetime(1970, 1, 1)
+
     last_tweetid_collected = int(last_tweetid_collected) if last_tweetid_collected else 0
     last_tweetid_annotated = int(last_tweetid_annotated) if last_tweetid_annotated else 0
     last_tweetid_geotagged = int(last_tweetid_geotagged) if last_tweetid_geotagged else 0

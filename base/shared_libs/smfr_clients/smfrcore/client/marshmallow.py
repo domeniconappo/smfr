@@ -25,6 +25,16 @@ class Aggregation(BaseSchema):
     timestamp_end = DateTime()
 
 
+class Nuts2(BaseSchema):
+    id = fields.Integer()
+    efas_id = fields.Integer()
+    efas_name = fields.String()
+    efas_country = fields.String()
+    nuts_id = fields.String()
+    country_code = fields.String()
+    country_code3 = fields.String()
+
+
 class Collection(BaseSchema):
     id = fields.Integer()
     trigger = fields.String(validate=[OneOf(choices=['background', 'on-demand', 'manual'], labels=[])])
@@ -34,6 +44,9 @@ class Collection(BaseSchema):
     languages = fields.List(fields.String())
     runtime = DateTime()
     efas_id = fields.Integer()
+    efas_name = fields.String()
+    efas_country = fields.String()
+    nuts2 = fields.Nested('Nuts2')
     status = fields.String(validate=[OneOf(choices=['active', 'inactive'], labels=[])])
     started_at = DateTime()
     stopped_at = DateTime()

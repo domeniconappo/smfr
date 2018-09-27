@@ -40,10 +40,6 @@ def create_app():
         config.init_mysql()
         config.init_cassandra()
 
-        update_ondemand_collections_status()
-        add_rra_events()
-        schedule_rra_jobs()
-
         background_collector = BackgroundCollector()
         background_collector.start()
 
@@ -71,6 +67,11 @@ def create_app():
         for sig in signals:
             signal.signal(sig, stop_active_collectors)
         logger.debug('Registered signals for graceful shutdown: %s', signals)
+
+        # RRA Scheduled jobs. First execution is performed ad bootstrap
+        update_ondemand_collections_status()
+        add_rra_events()
+        schedule_rra_jobs()
 
     return config.flask_app
 

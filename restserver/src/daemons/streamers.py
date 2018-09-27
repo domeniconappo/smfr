@@ -1,22 +1,27 @@
 import logging
 import os
+import socket
 import threading
+import time
 
+import requests
+import urllib3
 from twython import TwythonStreamer
 
 from smfrcore.models import Tweet, create_app
 
 from daemons.utils import safe_langdetect, tweet_normalization_aggressive
-from server.config import RestServerConfiguration
+from server.config import RestServerConfiguration, MYSQL_MIGRATION, RUNNING_IN_DOCKER
 from server.api.clients import AnnotatorClient
 
 
 logger = logging.getLogger('RestServer Streamer')
 logger.setLevel(RestServerConfiguration.logger_level)
 
-hdlr = logging.FileHandler(RestServerConfiguration.not_reconciled_log_path)
-hdlr.setLevel(logging.ERROR)
-logger.addHandler(hdlr)
+if RUNNING_IN_DOCKER and not MYSQL_MIGRATION:
+    hdlr = logging.FileHandler(RestServerConfiguration.not_reconciled_log_path)
+    hdlr.setLevel(logging.ERROR)
+    logger.addHandler(hdlr)
 
 
 class BaseStreamer(TwythonStreamer):
@@ -96,7 +101,18 @@ class BaseStreamer(TwythonStreamer):
         filter_args = {k: ','.join(v) for k, v in self.query.items() if k != 'languages' and v}
         logger.info('Starting twython filtering with %s', str(filter_args))
         logger.info('Streaming for collections: \n%s', '\n'.join(str(c) for c in collections))
-        self.statuses.filter(**filter_args)
+        stay_active = True
+        while stay_active:
+            try:
+                self.statuses.filter(**filter_args)
+            except (urllib3.exceptions.ReadTimeoutError, socket.timeout, requests.exceptions.ConnectionError) as e:
+                logger.warning('A timeout occurred. Streamer is sleeping for 30 seconds: %s', e)
+                time.sleep(30)
+            except Exception as e:
+                logger.error('An error occurred during filtering in Streamer %s: %s', self.__class__.__name__, e)
+                stay_active = False
+                logger.warning('Disconnecting collector due an unexpected error')
+        self.disconnect()
 
     def disconnect(self, deactivate=True):
         if deactivate:

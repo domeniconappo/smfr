@@ -13,6 +13,7 @@ import ujson as json
 import sqlalchemy_utils
 from alembic import op
 import sqlalchemy as sa
+from sqlalchemy.dialects.mysql import LONGTEXT
 
 from smfrcore.models import Nuts2, Nuts3, TwitterCollection, User
 
@@ -24,7 +25,7 @@ depends_on = None
 
 
 class LongJSONType(sqlalchemy_utils.types.json.JSONType):
-    impl = sa.dialects.mysql.types.LONGTEXT
+    impl = LONGTEXT
 
 
 def upgrade():
@@ -120,7 +121,7 @@ def upgrade():
     op.create_table('aggregation',
                     sa.Column('id', sa.Integer(), nullable=False),
                     sa.Column('collection_id', sa.Integer(), nullable=True),
-                    sa.Column('values', sqlalchemy_utils.types.json.JSONType(), nullable=False),
+                    sa.Column('values', LongJSONType(), nullable=False),
                     sa.Column('last_tweetid_collected', sa.BigInteger(), nullable=True),
                     sa.Column('last_tweetid_annotated', sa.BigInteger(), nullable=True),
                     sa.Column('last_tweetid_geotagged', sa.BigInteger(), nullable=True),

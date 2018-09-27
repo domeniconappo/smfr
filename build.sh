@@ -33,6 +33,9 @@ python3 scripts/compose4build.py ${image_tag}
 docker build --build-arg http_proxy=${http_proxy} --build-arg https_proxy=${http_proxy} -t smfr_base:${image_tag} base/.
 docker tag smfr_base:${image_tag} ${SMFR_IMAGE}:${image_tag}
 
+echo
+echo
+
 # push base image
 if [ -n "${DOCKER_ID_USER}" ] && [ ${command} == "push" ]; then
     if  [ ${logged} == 0 ]; then
@@ -42,6 +45,8 @@ if [ -n "${DOCKER_ID_USER}" ] && [ ${command} == "push" ]; then
     docker push ${DOCKER_REGISTRY}/${SMFR_IMAGE}:${image_tag}
 fi
 
+echo
+echo
 
 if [ -n "`echo ${SERVICES} | xargs -n1 echo | grep ${command}`" ]; then
     echo  ++++++++++++++++++++ Building ${command} service +++++++++++++++++++++++++++++++
@@ -53,7 +58,7 @@ fi
 
 # push images
 echo
-
+echo
 if [ -n "${DOCKER_ID_USER}" ] && [ ${command} == "push" ]; then
     PERSISTER_IMAGE=$(getProperty "PERSISTER_IMAGE")
     AGGREGATOR_IMAGE=$(getProperty "AGGREGATOR_IMAGE")

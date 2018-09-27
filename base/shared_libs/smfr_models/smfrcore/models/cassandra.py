@@ -6,6 +6,7 @@ import os
 import time
 import datetime
 from decimal import Decimal
+from collections import namedtuple
 
 import numpy as np
 import ujson as json
@@ -127,6 +128,10 @@ class Tweet(cqldb.Model):
         return '\nCollection {o.collectionid}\n' \
                '{o.created_at} - {o.lang} \n{o.full_text:.120}' \
                '\nGeo: {o.geo}\nAnnotations: {o.annotations}'.format(o=self)
+
+    @classmethod
+    def fields(cls):
+        return list(cls._defined_columns.keys())
 
     @property
     def use_pipeline(self):
@@ -509,3 +514,6 @@ class Tweet(cqldb.Model):
     @property
     def user_location(self):
         return self.user_location_from_raw_tweet(self.original_tweet_as_dict)
+
+
+TweetTuple = namedtuple('TweetTuple', Tweet.fields())

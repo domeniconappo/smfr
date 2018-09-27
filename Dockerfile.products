@@ -6,7 +6,7 @@ ARG https_proxy
 
 ENV LANG=C.UTF-8
 
-RUN mkdir -p /products && mkdir -p /products/smfrcore && mkdir -p /config && mkdir -p /scripts && mkdir -p /requirements
+RUN mkdir -p /products && mkdir -p /products/smfrcore && mkdir -p /config && mkdir -p /output && mkdir -p /scripts && mkdir -p /requirements
 
 COPY ./products/requirements.txt /requirements/
 

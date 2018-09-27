@@ -1,7 +1,7 @@
 from sqlalchemy import Index, Column, Integer, String, Float
 from sqlalchemy_utils import JSONType
 
-from .base import SMFRModel
+from .base import SMFRModel, LongJSONType
 
 
 class Nuts2(SMFRModel):
@@ -20,7 +20,7 @@ class Nuts2(SMFRModel):
     efas_name = Column(String(1000))
     nuts_id = Column(String(10))
     country = Column(String(500))
-    geometry = Column(JSONType, nullable=False)
+    geometry = Column(LongJSONType, nullable=False)
     country_code = Column(String(5))
     country_code3 = Column(String(5))
     min_lon = Column(Float)
