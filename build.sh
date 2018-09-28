@@ -78,7 +78,7 @@ if [ -n "${DOCKER_ID_USER}" ] && [ ${command} == "push" ]; then
     docker push ${DOCKER_REGISTRY}/${AGGREGATOR_IMAGE}:${image_tag}
     docker push ${DOCKER_REGISTRY}/${ANNOTATOR_IMAGE}:${image_tag}
     docker push ${DOCKER_REGISTRY}/${GEOCODER_IMAGE}:${image_tag}
-#    docker push ${DOCKER_REGISTRY}/${PRODUCTS_IMAGE}:${image_tag}
+    docker push ${DOCKER_REGISTRY}/${PRODUCTS_IMAGE}:${image_tag}
     docker push ${DOCKER_REGISTRY}/${RESTSERVER_IMAGE}:${image_tag}
     docker push ${DOCKER_REGISTRY}/${WEB_IMAGE}:${image_tag}
     docker push ${DOCKER_REGISTRY}/${MYSQL_IMAGE}:${image_tag}

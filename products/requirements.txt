@@ -1,2 +1,4 @@
-kafka-python
 schedule
+fiona
+sqlalchemy
+geojson

@@ -23,6 +23,7 @@ Dockerfile.*.ready
 !*.tpl
 /uploads/*.yaml
 /uploads/*.yml
+products/output
 /downloads/*.json
 /downloads/*.csv
 docker-compose-*.yaml

@@ -393,6 +393,9 @@ services:
       CASSANDRA_USE_CLUSTER: ${CASSANDRA_USE_CLUSTER}
       CASSANDRA_NODES: ${CASSANDRA_NODES}
       AGGREGATOR_SCHEDULING_MINUTES: ${AGGREGATOR_SCHEDULING_MINUTES}
+      MIN_RELEVANT_FLOOD_PROBABILITY: ${MIN_RELEVANT_FLOOD_PROBABILITY}
+      FLOOD_PROBABILITY_RANGES: ${FLOOD_PROBABILITY_RANGES}
+      NUM_RELEVANT_TWEETS_AGGREGATED: ${NUM_RELEVANT_TWEETS_AGGREGATED}
       MYSQL_HOST: mysql
       MYSQL_DBNAME: ${MYSQL_DBNAME}
       MYSQL_USER: ${MYSQL_USER}
@@ -424,7 +427,8 @@ services:
         https_proxy: ${https_proxy}
     working_dir: /products
     volumes:
-    - './products/src:/products'
+      - './products/src:/products'
+      - './products/output:/output'
     environment:
       LOGGING_LEVEL: ${LOGGING_LEVEL}
       PYTHONUNBUFFERED: "true"
@@ -433,16 +437,25 @@ services:
       HIGH_PROB_RANGE: ${HIGH_PROB_RANGE}
       LOW_PROB_RANGE: ${LOW_PROB_RANGE}
       THRESHOLDS: ${THRESHOLDS}
+      NUM_RELEVANT_TWEETS_PRODUCTS: ${NUM_RELEVANT_TWEETS_PRODUCTS}
       MYSQL_HOST: mysql
       MYSQL_DBNAME: ${MYSQL_DBNAME}
       MYSQL_USER: ${MYSQL_USER}
       MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      CASSANDRA_KEYSPACE: ${CASSANDRA_KEYSPACE}
+      CASSANDRA_HOST: ${CASSANDRA_HOST}
+      CASSANDRA_PORT: ${CASSANDRA_PORT}
+      CASSANDRA_USER: ${CASSANDRA_USER}
+      CASSANDRA_PASSWORD: ${CASSANDRA_PASSWORD}
+      CASSANDRA_USE_CLUSTER: ${CASSANDRA_USE_CLUSTER}
+      CASSANDRA_NODES: ${CASSANDRA_NODES}
       http_proxy: ${http_proxy}
       https_proxy: ${https_proxy}
     networks:
       - back-tier
     depends_on:
     - mysql
+    - cassandrasmfr
     deploy:
       placement:
         constraints: [ node.labels.medium == true ]

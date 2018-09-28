@@ -1,4 +1,4 @@
-from collections import Counter, defaultdict
+from collections import Counter
 import functools
 from datetime import timedelta, datetime
 import logging
@@ -29,7 +29,7 @@ flood_propability_ranges = [[int(g) for g in t.split('-')] for t in flood_propab
 
 class MostRelevantTweets:
     min_relevant_probability = int(os.environ.get('MIN_RELEVANT_FLOOD_PROBABILITY', 90)) / 100
-    maxsize = 100
+    max_size = int(os.environ.get('NUM_RELEVANT_TWEETS_AGGREGATED', 100))
 
     @classmethod
     def _sortkey(cls, t):
@@ -44,7 +44,7 @@ class MostRelevantTweets:
     def values(self):
         for key in self._tweets.keys():
             self._tweets[key] = sorted(self._tweets[key], key=self._sortkey, reverse=True)
-            self._tweets[key] = self._tweets[key][:self.maxsize]
+            self._tweets[key] = self._tweets[key][:self.max_size]
         return self._tweets
 
     def is_relevant(self, item):
