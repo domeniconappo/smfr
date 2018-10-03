@@ -40,7 +40,7 @@ class MostRelevantTweets:
         if not initial:
             initial = {}
         for geocoded_id, relevant_tweets in initial.items():
-        self._tweets[geocoded_id] = relevant_tweets
+            self._tweets[geocoded_id] = relevant_tweets
 
     @property
     def values(self):
