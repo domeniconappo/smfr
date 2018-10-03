@@ -91,8 +91,7 @@ class BaseStreamer(TwythonStreamer):
 
     def run_collections(self, collections):
         t = threading.Thread(target=self.run, name='Streamer {}'.format(collections[0].trigger),
-                             args=(collections,),
-                             daemon=True)
+                             args=(collections,), daemon=True)
         t.start()
 
     def run(self, collections):
@@ -112,7 +111,7 @@ class BaseStreamer(TwythonStreamer):
                 logger.error('An error occurred during filtering in Streamer %s: %s', self.__class__.__name__, e)
                 stay_active = False
                 logger.warning('Disconnecting collector due an unexpected error')
-        self.disconnect()
+        self.disconnect(deactivate=False)
 
     def disconnect(self, deactivate=True):
         if deactivate:

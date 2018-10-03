@@ -15,7 +15,7 @@ from smfrcore.errors import SMFRRestException
 
 from server.api.clients import AnnotatorClient, GeocoderClient
 from server.api.decorators import check_identity, check_role
-from server.config import NUM_SAMPLES, RestServerConfiguration
+from server.config import RestServerConfiguration
 from server.helpers import (add_collection_helper, add_collection_from_rra_event,
                             fetch_rra_helper, events_to_collections_payload)
 
