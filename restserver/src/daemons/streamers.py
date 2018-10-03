@@ -114,7 +114,9 @@ class BaseStreamer(TwythonStreamer):
         self.disconnect(deactivate=False)
 
     def disconnect(self, deactivate=True):
+        logger.info('Disconnecting twitter streamer (thread %s)', threading.current_thread().name)
         if deactivate:
+            logger.info('Deactivating all collections')
             app = create_app()
             with app.app_context():
                 for c in self.collections:
