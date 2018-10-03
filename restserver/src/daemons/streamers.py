@@ -1,11 +1,12 @@
 import logging
+from logging.handlers import RotatingFileHandler
 import os
 import socket
 import threading
 import time
+import urllib3
 
 import requests
-import urllib3
 from twython import TwythonStreamer
 
 from smfrcore.models import Tweet, create_app
@@ -18,10 +19,16 @@ from server.api.clients import AnnotatorClient
 logger = logging.getLogger('RestServer Streamer')
 logger.setLevel(RestServerConfiguration.logger_level)
 
+file_logger = logging.getLogger('RestServer Streamer Errors')
+file_logger.setLevel(RestServerConfiguration.logger_level)
+lh_stdout = logger.handlers[0]
+file_logger.removeHandler(lh_stdout)
+
+
 if RUNNING_IN_DOCKER and not MYSQL_MIGRATION:
-    hdlr = logging.FileHandler(RestServerConfiguration.not_reconciled_log_path)
+    hdlr = RotatingFileHandler(RestServerConfiguration.not_reconciled_log_path, maxBytes=10485760, backupCount=2)
     hdlr.setLevel(logging.ERROR)
-    logger.addHandler(hdlr)
+    file_logger.addHandler(hdlr)
 
 
 class BaseStreamer(TwythonStreamer):
@@ -170,8 +177,9 @@ class OnDemandStreamer(BaseStreamer):
             data['lang'] = lang
             collection = self.reconcile_tweet_with_collection(data)
             if not collection:
-                logger.warning('Tweet was not reconciled with any collection!')
-                logger.error('%s', data)
+                logger.warning('A tweet was not reconciled with any collection')
+                # we log it to use to improve reconciliation
+                file_logger.error('%s', data)
                 return
 
             tweet = Tweet.build_from_tweet(collection.id, data, ttype='collected')
