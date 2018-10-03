@@ -10,6 +10,7 @@ import requests
 from twython import TwythonStreamer
 
 from smfrcore.models import Tweet, create_app
+from smfrcore.utils import DEFAULT_HANDLER
 
 from daemons.utils import safe_langdetect, tweet_normalization_aggressive
 from server.config import RestServerConfiguration, MYSQL_MIGRATION, RUNNING_IN_DOCKER
@@ -18,11 +19,10 @@ from server.api.clients import AnnotatorClient
 
 logger = logging.getLogger('RestServer Streamer')
 logger.setLevel(RestServerConfiguration.logger_level)
+logger.addHandler(DEFAULT_HANDLER)
 
 file_logger = logging.getLogger('RestServer Streamer Errors')
 file_logger.setLevel(RestServerConfiguration.logger_level)
-lh_stdout = logger.handlers[0]
-file_logger.removeHandler(lh_stdout)
 
 
 if RUNNING_IN_DOCKER and not MYSQL_MIGRATION:

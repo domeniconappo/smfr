@@ -2,6 +2,7 @@
 Core Utils module
 """
 import logging
+from logging import StreamHandler
 import functools
 import time
 import threading
@@ -17,6 +18,8 @@ logger.setLevel(os.environ.get('LOGGING_LEVEL', 'DEBUG'))
 LOGGER_FORMAT = '%(asctime)s: SMFR - <%(name)s[%(filename)s:%(lineno)d]>[%(levelname)s] (%(threadName)s) %(message)s'
 LOGGER_DATE_FORMAT = '%Y%m%d %H:%M:%S'
 SMFR_DATE_FORMAT = '%Y-%m-%d %H:%M'
+
+DEFAULT_HANDLER = StreamHandler()
 
 
 def _running_in_docker():

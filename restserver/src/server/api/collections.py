@@ -180,7 +180,7 @@ def get_collection_details(collection_id):
         aggregation_schema = AggregationSchema()
         aggregation_dump = aggregation_schema.dump(aggregation).data
 
-        relevant_tweets = [t for tweets in aggregation.relevant_tweets.values() for t in tweets]
+        relevant_tweets = [t for tweets in aggregation.relevant_tweets.values() for t in tweets] if aggregation else []
         samples_tweets = {'relevant': []}
         for i, t in enumerate(relevant_tweets, start=1):
 
