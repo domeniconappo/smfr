@@ -1,10 +1,10 @@
-from collections import Counter
-import functools
-from datetime import timedelta, datetime
+import os
 import logging
+import functools
+from collections import Counter, defaultdict
+from datetime import timedelta, datetime
 from multiprocessing import cpu_count
 from multiprocessing.pool import ThreadPool
-import os
 
 import cassandra
 from sqlalchemy import or_
@@ -36,9 +36,11 @@ class MostRelevantTweets:
         return t['annotations']['flood_probability']['yes']
 
     def __init__(self, initial=None):
+        self._tweets = defaultdict(list)
         if not initial:
             initial = {}
-        self._tweets = initial
+        for geocoded_id, relevant_tweets in initial.items():
+        self._tweets[geocoded_id] = relevant_tweets
 
     @property
     def values(self):
