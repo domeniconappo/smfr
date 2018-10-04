@@ -90,10 +90,10 @@ class Products:
         counters_by_efas_id = defaultdict(defaultdict)
         for key, value in counters.items():
             # key format: <efasid>_<nutsid>_num_tweets_<minprob>-<maxprob>
-            # key is like "1301_UKF2_num_tweets_0-10"
+            # key is like "1301_UKF2_num_tweets_0-10" or "1301_num_tweets_0-10" (in case nuts_id is not present)
             tokens = key.split('_')
             efas_id = tokens[0]
-            probs_interval = tokens[4]
+            probs_interval = tokens[-1]
             counters_by_efas_id[efas_id][probs_interval] = value
 
         for efas_id, tweets in relevant_tweets_aggregated.items():
