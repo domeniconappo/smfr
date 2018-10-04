@@ -22,10 +22,7 @@ flask-jwt-extended
 swagger-marshmallow-codegen
 
 twython
-
 langdetect
-
-numpy
 
 nose2
 Flask-Testing

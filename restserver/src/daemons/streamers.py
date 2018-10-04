@@ -147,12 +147,14 @@ class BackgroundStreamer(BaseStreamer):
                 tweet = Tweet.build_from_tweet(self.collection.id, data, ttype='collected')
                 # the tweet is sent immediately to kafka queue
                 message = tweet.serialize()
-                logger.debug('\n\nSending to PERSISTER: %s\n', tweet)
+                if logger.isEnabledFor(logging.DEBUG):
+                    logger.debug('\n\nSending to PERSISTER: %s\n', tweet)
                 self.producer.send(self.persister_kafka_topic, message)
 
                 if self.use_pipeline(self.collection) and lang in AnnotatorClient.available_languages():
                     topic = '{}_{}'.format(self.annotator_kafka_topic, lang)
-                    logger.debug('\n\nSending to annotator queue: %s %s\n', topic, tweet)
+                    if logger.isEnabledFor(logging.DEBUG):
+                        logger.debug('\n\nSending to annotator queue: %s %s\n', topic, tweet)
                     self.producer.send(topic, message)
 
 
@@ -187,7 +189,8 @@ class OnDemandStreamer(BaseStreamer):
             # On Demand collections always use pipelines
             if self.use_pipeline(collection) and lang in AnnotatorClient.available_languages():
                 topic = '{}_{}'.format(self.annotator_kafka_topic, lang)
-                logger.debug('\n\nSending to annotator queue: %s %s\n', topic, tweet)
+                if logger.isEnabledFor(logging.DEBUG):
+                    logger.debug('\n\nSending to annotator queue: %s %s\n', topic, tweet)
                 self.producer.send(topic, message)
 
     def use_pipeline(self, collection):
