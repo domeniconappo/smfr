@@ -94,11 +94,15 @@ class BaseStreamer(TwythonStreamer):
         return collection.is_using_pipeline
 
     def run_collections(self, collections):
-        t = threading.Thread(target=self.run, name='Streamer {}'.format(collections[0].trigger),
+        t = threading.Thread(target=self.connect, name='Streamer {}'.format(collections[0].trigger),
                              args=(collections,), daemon=True)
         t.start()
 
-    def run(self, collections):
+    def connect(self, collections):
+
+        if self.connected:
+            self.disconnect(deactivate_collections=False)
+
         self.collections = collections
         self.query = self._build_query_for()
         filter_args = {k: ','.join(v) for k, v in self.query.items() if k != 'languages' and v}
@@ -133,9 +137,9 @@ class BackgroundStreamer(BaseStreamer):
 
     """
 
-    def run(self, collections):
+    def connect(self, collections):
         self.collection = collections[0]
-        super().run(collections)
+        super().connect(collections)
 
     def on_success(self, data):
 

@@ -261,14 +261,14 @@ class Tweet(cqldb.Model):
             'original_tweet': obj.original_tweet_as_string,
             'Type': obj.ttype,
             'Lang': obj.lang or '-',
-            'Annotations': Tweet.pretty_annotations(obj.annotations),
+            'Annotations': cls.pretty_annotations(tweet_tuple.annotations),
 
             'LatLon': '<a href="https://www.openstreetmap.org/#map=13/{}/{}" target="_blank">lat: {}, lon: {}</a>'.format(
                 obj.latlong[0], obj.latlong[1], obj.latlong[0], obj.latlong[1]
             ) if obj.latlong else '',
             'Collected at': obj.created_at or '',
             'Tweeted at': original_tweet['created_at'] or '',
-            'Geo': Tweet.pretty_geo(obj.geo),
+            'Geo': cls.pretty_geo(obj.geo),
         }
         return obj
 
