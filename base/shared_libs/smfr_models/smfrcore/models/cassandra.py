@@ -307,7 +307,7 @@ class Tweet(cqldb.Model):
     def pretty_annotations(cls, annotations):
         if not annotations:
             return '-'
-        out = ['{}: {} - {}'.format(k, v[0], v[1]) for k, v in annotations.items()]
+        out = ['{}: {}'.format(k, v[1]) if isinstance(v, tuple) else '{}: {}'.format(k, v['yes']) for k, v in annotations.items()]
         return '<pre>{}</pre>'.format('\n'.join(out))
 
     @classmethod
