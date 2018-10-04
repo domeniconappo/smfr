@@ -2,6 +2,8 @@
 Module to handle /collections API
 """
 import logging
+import time
+import datetime
 
 import ujson as json
 from flask import abort
@@ -183,7 +185,7 @@ def get_collection_details(collection_id):
         relevant_tweets = [t for tweets in aggregation.relevant_tweets.values() for t in tweets] if aggregation else []
         samples_tweets = {'relevant': []}
         for i, t in enumerate(relevant_tweets, start=1):
-
+            t['created_at'] = time.mktime(datetime.datetime.strptime(t['created_at'], "%Y-%m-%dT%H:%M:%S").timetuple())
             samples_tweets['relevant'].append(Tweet.make_table_object(i, TweetTuple(**t)))
 
         res = {'collection': collection_dump, 'aggregation': aggregation_dump,

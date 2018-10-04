@@ -249,25 +249,26 @@ class Tweet(cqldb.Model):
         :param tweet_tuple: namedtuple representing Tweet row in smfr_persistent.tweet column family
         :return:
         """
-        original_tweet = json.loads(tweet_tuple.tweet)
-        full_text = cls.get_full_text(tweet_tuple)
-        twid = tweet_tuple.tweetid
+        obj = cls.to_obj(tweet_tuple)
+        original_tweet = obj.original_tweet_as_dict
+        full_text = obj.full_text
+        twid = obj.tweetid
 
         obj = {
             'rownum': numrow,
             'Full Text': full_text,
             'Tweet id': '<a href="https://twitter.com/statuses/{}">{}</a>'.format(twid, twid),
-            'original_tweet': json.dumps(original_tweet, indent=2, sort_keys=True),
-            'Type': tweet_tuple.ttype,
-            'Lang': tweet_tuple.lang or '-',
-            'Annotations': Tweet.pretty_annotations(tweet_tuple.annotations),
+            'original_tweet': obj.original_tweet_as_string,
+            'Type': obj.ttype,
+            'Lang': obj.lang or '-',
+            'Annotations': Tweet.pretty_annotations(obj.annotations),
 
             'LatLon': '<a href="https://www.openstreetmap.org/#map=13/{}/{}" target="_blank">lat: {}, lon: {}</a>'.format(
-                tweet_tuple.latlong[0], tweet_tuple.latlong[1], tweet_tuple.latlong[0], tweet_tuple.latlong[1]
-            ) if tweet_tuple.latlong else '',
-            'Collected at': tweet_tuple.created_at or '',
+                obj.latlong[0], obj.latlong[1], obj.latlong[0], obj.latlong[1]
+            ) if obj.latlong else '',
+            'Collected at': obj.created_at or '',
             'Tweeted at': original_tweet['created_at'] or '',
-            'Geo': Tweet.pretty_geo(tweet_tuple.geo),
+            'Geo': Tweet.pretty_geo(obj.geo),
         }
         return obj
 
