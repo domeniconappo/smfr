@@ -2,9 +2,10 @@
 source export_env.sh
 
 ./singlenode_up.sh mysql
-echo "Waiting for mysql bootstrap: 10 seconds"
-sleep 10
+./singlenode_up.sh cassandrasmfr
+echo "Waiting for DBs to bootstrap: 45 seconds"
+sleep 45
 
 python scripts/update_smfr_nuts_tables.py
 
-./singlenode_down.sh
+echo "DBs were started locally. Execute ./singlenode_down.sh to shut down"
