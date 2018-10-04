@@ -19,7 +19,9 @@ def get_most_updated():
 
 def objects_from_json(table):
     newer_date = get_most_updated()
-    path = os.path.join(os.path.dirname(__file__), 'seeds/data/{}_smfr_{}.json.tar.gz'.format(newer_date, table))
+    input_file = 'seeds/data/{}_smfr_{}.json.tar.gz'.format(newer_date, table)
+    print('>>>>>>> Using', input_file)
+    path = os.path.join(os.path.dirname(__file__), input_file)
     with tarfile.open(path, 'r:gz') as tar:
         archive = tar.getmembers()[0]
         init_f = tar.extractfile(archive)
@@ -57,6 +59,10 @@ def update_nutstables():
     conn.execute('SET FOREIGN_KEY_CHECKS = 1;')
     session.commit()
     print('[OK] Updated nuts2 and nuts3 tables.')
+    print('Check efas_id != 0....')
+    nuts = Nuts2.query.all()
+    nut0 = nuts[0]
+    print('efas id', nut0.efas_id, 'efas name', nut0.efas_name)
 
 
 if __name__ == '__main__':
