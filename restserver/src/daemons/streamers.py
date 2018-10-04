@@ -20,15 +20,12 @@ from server.api.clients import AnnotatorClient
 logger = logging.getLogger('RestServer Streamer')
 logger.setLevel(RestServerConfiguration.logger_level)
 logger.addHandler(DEFAULT_HANDLER)
-
-file_logger = logging.getLogger('RestServer Streamer Errors')
-file_logger.setLevel(RestServerConfiguration.logger_level)
-
+logger.propagate = False
 
 if RUNNING_IN_DOCKER and not MYSQL_MIGRATION:
     hdlr = RotatingFileHandler(RestServerConfiguration.not_reconciled_log_path, maxBytes=10485760, backupCount=2)
     hdlr.setLevel(logging.ERROR)
-    file_logger.addHandler(hdlr)
+    logger.addHandler(hdlr)
 
 
 class BaseStreamer(TwythonStreamer):
@@ -86,12 +83,12 @@ class BaseStreamer(TwythonStreamer):
     def on_error(self, status_code, data):
         logger.error(status_code)
         logger.error(str(data) or 'No data')
-        self.disconnect()
+        self.disconnect(deactivate_collections=False)
         self.collections = []
         self.collection = None
 
     def on_timeout(self):
-        logger.error('Timeout')
+        logger.error('Timeout...')
 
     def use_pipeline(self, collection):
         return collection.is_using_pipeline
@@ -115,15 +112,15 @@ class BaseStreamer(TwythonStreamer):
                 logger.warning('A timeout occurred. Streamer is sleeping for 30 seconds: %s', e)
                 time.sleep(30)
             except Exception as e:
-                logger.error('An error occurred during filtering in Streamer %s: %s', self.__class__.__name__, e)
+                logger.warning('An error occurred during filtering in Streamer %s: %s', self.__class__.__name__, e)
                 stay_active = False
                 logger.warning('Disconnecting collector due an unexpected error')
-        self.disconnect(deactivate=False)
+        self.disconnect(deactivate_collections=False)
 
-    def disconnect(self, deactivate=True):
+    def disconnect(self, deactivate_collections=True):
         logger.info('Disconnecting twitter streamer (thread %s)', threading.current_thread().name)
-        if deactivate:
-            logger.info('Deactivating all collections')
+        if deactivate_collections:
+            logger.warning('Deactivating all collections!')
             app = create_app()
             with app.app_context():
                 for c in self.collections:
@@ -179,7 +176,7 @@ class OnDemandStreamer(BaseStreamer):
             if not collection:
                 logger.warning('A tweet was not reconciled with any collection')
                 # we log it to use to improve reconciliation
-                file_logger.error('%s', data)
+                logger.error('%s', data)
                 return
 
             tweet = Tweet.build_from_tweet(collection.id, data, ttype='collected')
