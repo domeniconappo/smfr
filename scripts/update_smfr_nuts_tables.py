@@ -34,10 +34,11 @@ def update_nutstables():
     session = Session(bind=sqldb.engine)
     conn = sqldb.engine.connect()
     conn.execute('SET FOREIGN_KEY_CHECKS = 0;')
-
+    conn.commit()
     print(' ---------- UPGRADING nuts2')
     print('Truncating in nuts2 table')
     conn.execute('TRUNCATE TABLE nuts2')
+    conn.commit()
     print('Deleted all rows in nuts2 table')
 
     print('loading nuts2 data...')
@@ -51,6 +52,7 @@ def update_nutstables():
     print(' ---------- UPGRADING nuts3')
     print('Truncating in nuts3 table')
     conn.execute('TRUNCATE TABLE nuts3')
+    conn.commit()
     print('Deleted all rows in nuts3 table')
     print('loading nuts3 data...')
     data_nuts3 = objects_from_json('nuts3')
@@ -60,7 +62,7 @@ def update_nutstables():
     session.flush()
     session.commit()
     conn.execute('SET FOREIGN_KEY_CHECKS = 1;')
-
+    conn.commit()
     print('[OK] Updated nuts2 and nuts3 tables.')
 
 

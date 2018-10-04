@@ -427,8 +427,8 @@ services:
         https_proxy: ${https_proxy}
     working_dir: /products
     volumes:
-      - './products/src:/products'
-      - './products/output:/output'
+      - ./products/src:/products
+      - ${PRODUCTS_OUTPUT}:/output
     environment:
       LOGGING_LEVEL: ${LOGGING_LEVEL}
       PYTHONUNBUFFERED: "true"
@@ -518,7 +518,6 @@ services:
       - '5555:5555'
     volumes:
       - './restserver/src:/restserver'
-      - './uploads:/smfr/uploads'
       - './downloads:/smfr/downloaded'
       - './restserver/logs:/logs'
     depends_on:
