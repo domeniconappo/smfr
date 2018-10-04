@@ -39,7 +39,6 @@ def update_nutstables():
     conn.execute('TRUNCATE TABLE nuts2')
     print('Deleted all rows in nuts2 table')
 
-    print('loading nuts2 data...')
     data_nuts2 = objects_from_json('nuts2')
 
     print('Bulk insert into Nuts2 table: %d rows' % len(data_nuts2))
@@ -50,11 +49,8 @@ def update_nutstables():
     print(' ---------- UPGRADING nuts3')
     print('Truncating in nuts3 table')
     conn.execute('TRUNCATE TABLE nuts3')
-    conn.commit()
     print('Deleted all rows in nuts3 table')
-    print('loading nuts3 data...')
     data_nuts3 = objects_from_json('nuts3')
-
     print('Bulk insert into Nuts3 table: %d rows' % len(data_nuts3))
     session.add_all(data_nuts3)
     session.flush()
