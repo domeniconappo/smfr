@@ -8,5 +8,5 @@ setup(
     description='SMFR Core modules (utilities)',
     author='Domenico Nappo',
     author_email='domenico.nappo@ext.ec.europa.eu',
-    install_requires=['Flask', 'schedule',],
+    install_requires=['Flask', 'schedule', 'geotext~=0.3.0'],
 )

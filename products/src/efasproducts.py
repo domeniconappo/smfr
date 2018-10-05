@@ -1,16 +1,18 @@
 import os
 import logging
-from collections import defaultdict, OrderedDict
+from collections import defaultdict
 
 from datetime import datetime, timedelta
 
 import geojson
-from geojson import Feature, FeatureCollection, GeometryCollection
+from geojson import Feature, FeatureCollection
 import fiona
 from geojson.geometry import Geometry
+from Levenshtein import ratio
 
 from smfrcore.models.sql import TwitterCollection, Aggregation, create_app
 from smfrcore.utils import LOGGER_FORMAT, LOGGER_DATE_FORMAT, RUNNING_IN_DOCKER
+from smfrcore.text_utils import tweet_normalization_aggressive
 from sqlalchemy import or_
 
 logging.basicConfig(level=os.environ.get('LOGGING_LEVEL', 'DEBUG'), format=LOGGER_FORMAT, datefmt=LOGGER_DATE_FORMAT)
@@ -101,6 +103,7 @@ class Products:
             # need to apply heuristic from
             # https://bitbucket.org/lorinivalerio/smfr/src/master/lab/classify/select_representative_tweets.py
             # mostly to deduplicate
+            relevant_tweets_aggregated[efas_id] = TweetsDeduplicator.deduplicate(relevant_tweets_aggregated[efas_id])
             relevant_tweets_aggregated[efas_id] = tweets[:cls.max_relevant_tweets]
 
         geojson_output_filename = cls.output_filename_tpl.format(datetime.now().strftime('%Y%m%d%H%M'))
@@ -111,7 +114,7 @@ class Products:
                 for feat in source:
                     efas_id = feat['id']
                     risk_color = cls.determine_color(counters_by_efas_id[efas_id])
-                    if risk_color == cls.RGB['gray']:
+                    if risk_color == cls.RGB['gray'] and not relevant_tweets_aggregated[efas_id]:
                         continue
                     geom = Geometry(coordinates=feat['geometry']['coordinates'], type=feat['geometry']['type'], crs=source.crs)
                     out_data.append(Feature(geometry=geom, properties={
@@ -155,5 +158,72 @@ class Products:
 
 
 class TweetsDeduplicator:
+    # A threshold of predicted probabily under which
+    # edit distance is checked (to discard duplicates)
+    SIMILAR_PREDICTION_TRIGGER_EDIT_DISTANCE_CHECK = 0.0001
 
-    pass
+    # A threshold for edit distance; this is applied twice:
+    # 1. For pairs of tweets with predictions within SIMILAR_PREDICTION_TRIGGER_EDIT_DISTANCE_CHECK
+    # 2. For all pairs of the top MAX_TWEETS_CENTRALITY tweets
+    SIMILAR_PREDICTION_EDIT_DISTANCE_MAX = 0.8
+
+    # Tweets for centrality computation (cost is quadratic on this number, so stay small)
+    MAX_TWEETS_CENTRALITY = 100
+
+    @classmethod
+    def deduplicate(cls, tweets):
+        ids = []
+        deduplicated = []
+        for t in tweets:
+            if t['tweetid'] not in ids:
+                t['label_predicted'] = t["annotations"]["flood_probability"]["yes"]
+                t['_normalized_text'] = tweet_normalization_aggressive(t['tweet']['text'])
+                deduplicated.append(t)
+                ids.append(t['tweetid'])
+
+        is_duplicate = []
+        multiplicity = defaultdict(int)
+        for tu in deduplicated:
+            for tv in deduplicated:
+                if abs(tu['label_predicted'] - tv['label_predicted']) < cls.SIMILAR_PREDICTION_TRIGGER_EDIT_DISTANCE_CHECK:
+                    normalized_edit_similarity = ratio(tu['_normalized_text'], tv['_normalized_text'])
+                    if normalized_edit_similarity > cls.SIMILAR_PREDICTION_EDIT_DISTANCE_MAX:
+
+                        # The newer tweet (larger id) is marked as a duplicate of the older (smaller id) tweet
+                        # Count the == in case there are duplicate ids in the
+                        # REMEMBER: tweet_id is an integer (same as t['tweet']['id']) while tweetid is a string (same as t['tweet']['id_str'])
+                        if tu['tweet_id'] < tv['tweet_id']:
+                            is_duplicate[tv['tweetid']] = tu['tweetid']
+                            multiplicity[tu['tweetid']] = multiplicity[tu['tweetid']] + 1
+        # Remove duplicates
+        tweets_unique = [tweet for tweet in deduplicated if tweet['tweetid'] not in is_duplicate]
+        # Add multiplicity
+        for tweet in tweets_unique:
+            tweet['_multiplicity'] = multiplicity[tweet['tweetid']] or 1
+
+        # Create set for second pass (centrality)
+        centrality = defaultdict(float)
+        for tu in tweets_unique:
+            for tv in tweets_unique:
+                normalized_edit_similarity = ratio(tu['_normalized_text'], tv['_normalized_text'])
+
+                # Compute centrality as sum of similarities
+                centrality[tu['tweetid']] = centrality[tu['tweetid']] + normalized_edit_similarity
+                centrality[tv['tweetid']] = centrality[tv['tweetid']] + normalized_edit_similarity
+
+                # Discard duplicates
+                if normalized_edit_similarity > cls.SIMILAR_PREDICTION_EDIT_DISTANCE_MAX:
+                    if tu['tweet_id'] < tv['tweet_id']:
+                        is_duplicate[tv['tweetid']] = tu['tweetid']
+
+        # Add centrality and mark centrality=0.0 for duplicates
+        for tweet in tweets_unique:
+            if not tweet['tweetid'] in is_duplicate:
+                tweet['_centrality'] = centrality[tweet['tweetid']]
+            else:
+                tweet['_centrality'] = 0.0
+
+        # Sort by multiplicity and probability of being relevant
+        tweets_sorted = sorted(tweets_unique, key=lambda x: int(x['label_predicted']) * int(x['_multiplicity']) * int(x['_centrality']), reverse=True)
+
+        return tweets_sorted

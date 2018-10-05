@@ -22,6 +22,7 @@ SMFR_DATE_FORMAT = '%Y-%m-%d %H:%M'
 DEFAULT_HANDLER = StreamHandler()
 formatter = logging.Formatter(fmt=LOGGER_FORMAT, datefmt=LOGGER_DATE_FORMAT)
 DEFAULT_HANDLER.setFormatter(formatter)
+NULL_HANDLER = logging.NullHandler()
 
 
 def _running_in_docker():

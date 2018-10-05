@@ -48,6 +48,10 @@ fi
 echo
 echo
 
+cp base/shared_libs/VERSION base/shared_libs/smfr_models/
+cp base/shared_libs/VERSION base/shared_libs/smfr_clients/
+cp base/shared_libs/VERSION base/shared_libs/smfr_utils/
+
 if [ -n "`echo ${SERVICES} | xargs -n1 echo | grep ${command}`" ]; then
     echo  ++++++++++++++++++++ Building ${command} service +++++++++++++++++++++++++++++++
     docker-compose build ${command}

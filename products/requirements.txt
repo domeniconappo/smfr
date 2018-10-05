@@ -2,3 +2,4 @@ schedule
 fiona
 sqlalchemy
 geojson
+python-Levenshtein

@@ -10,7 +10,7 @@ import requests
 from twython import TwythonStreamer
 
 from smfrcore.models import Tweet, create_app
-from smfrcore.utils import DEFAULT_HANDLER
+from smfrcore.utils import DEFAULT_HANDLER, NULL_HANDLER
 
 from daemons.utils import safe_langdetect, tweet_normalization_aggressive
 from server.config import RestServerConfiguration, MYSQL_MIGRATION, RUNNING_IN_DOCKER
@@ -22,10 +22,15 @@ logger.setLevel(RestServerConfiguration.logger_level)
 logger.addHandler(DEFAULT_HANDLER)
 logger.propagate = False
 
+file_logger = logging.getLogger('Not Reconciled Tweets')
+file_logger.setLevel(logging.ERROR)
+file_logger.propagate = False
+file_logger.addHandler(NULL_HANDLER)
+
 if RUNNING_IN_DOCKER and not MYSQL_MIGRATION:
     hdlr = RotatingFileHandler(RestServerConfiguration.not_reconciled_log_path, maxBytes=10485760, backupCount=2)
     hdlr.setLevel(logging.ERROR)
-    logger.addHandler(hdlr)
+    file_logger.addHandler(hdlr)
 
 
 class BaseStreamer(TwythonStreamer):
@@ -180,9 +185,9 @@ class OnDemandStreamer(BaseStreamer):
             data['lang'] = lang
             collection = self.reconcile_tweet_with_collection(data)
             if not collection:
-                logger.warning('A tweet was not reconciled with any collection')
+                logger.warning('Tweet %s was not reconciled with any collection', data.get('id_str'))
                 # we log it to use to improve reconciliation
-                logger.error('%s', data)
+                file_logger.error('%s', data)
                 return
 
             tweet = Tweet.build_from_tweet(collection.id, data, ttype='collected')
