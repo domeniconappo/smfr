@@ -17,9 +17,9 @@ from cassandra.auth import PlainTextAuthProvider
 from cassandra.util import OrderedMapSerializedKey
 from flask_cqlalchemy import CQLAlchemy
 
-from smfrcore.utils import RUNNING_IN_DOCKER, DEFAULT_HANDLER
+from smfrcore.utils import RUNNING_IN_DOCKER, DEFAULT_HANDLER, FALSE_VALUES
 from smfrcore.models.sql import TwitterCollection, create_app
-from smfrcore.models.utils import get_cassandra_hosts, FALSE_VALUES
+from smfrcore.models.utils import get_cassandra_hosts
 
 
 logger = logging.getLogger('models')
