@@ -41,3 +41,5 @@ a.btn.disabled {
 .color-green {
   color: #26d63b;
 }
+
+#relevant_tweets_map {height: 400px;}

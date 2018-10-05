@@ -369,6 +369,11 @@ definitions:
         type: array
         items:
           type: string
+      centroid:
+        type: array
+        items:
+          type: number
+          format: float
       locations:
         type: object
       languages:

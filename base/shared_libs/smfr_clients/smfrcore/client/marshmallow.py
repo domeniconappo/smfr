@@ -40,6 +40,7 @@ class Collection(BaseSchema):
     trigger = fields.String(validate=[OneOf(choices=['background', 'on-demand', 'manual'], labels=[])])
     forecast_id = fields.String()
     tracking_keywords = fields.List(fields.String())
+    centroid = fields.List(fields.Float())
     locations = fields.Field()
     languages = fields.List(fields.String())
     runtime = DateTime()
