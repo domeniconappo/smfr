@@ -19,7 +19,7 @@ from flask_cqlalchemy import CQLAlchemy
 
 from smfrcore.utils import RUNNING_IN_DOCKER, DEFAULT_HANDLER
 from smfrcore.models.sql import TwitterCollection, create_app
-from smfrcore.models.utils import get_cassandra_hosts
+from smfrcore.models.utils import get_cassandra_hosts, FALSE_VALUES
 
 
 logger = logging.getLogger('models')
@@ -302,7 +302,7 @@ class Tweet(cqldb.Model):
 
     @property
     def is_european(self):
-        return self.geo.get('is_european', 'False') in ('True', 'Yes', 'true', 'yes', 1)
+        return self.geo.get('is_european', False) not in FALSE_VALUES
 
     @classmethod
     def pretty_annotations(cls, annotations):

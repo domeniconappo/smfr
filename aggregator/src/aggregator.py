@@ -9,7 +9,7 @@ from multiprocessing.pool import ThreadPool
 import cassandra
 from sqlalchemy import or_
 
-from smfrcore.utils import LOGGER_FORMAT, LOGGER_DATE_FORMAT, logged_job, job_exceptions_catcher
+from smfrcore.utils import LOGGER_FORMAT, LOGGER_DATE_FORMAT, logged_job, job_exceptions_catcher, FALSE_VALUES
 
 from smfrcore.models import TwitterCollection, Aggregation, create_app
 
@@ -51,7 +51,7 @@ class MostRelevantTweets:
 
     def is_relevant(self, item):
         flood_prob = item['annotations']['flood_probability']['yes']
-        return (item['geo']['nuts_efas_id'] or item['geo']['is_european']) and flood_prob >= self.min_relevant_probability
+        return flood_prob >= self.min_relevant_probability and (item['geo']['nuts_efas_id'] or item['geo']['is_european'] not in FALSE_VALUES)
 
     def push_if_relevant(self, item):
         """
