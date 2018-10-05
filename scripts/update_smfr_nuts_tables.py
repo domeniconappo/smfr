@@ -19,7 +19,9 @@ def get_most_updated():
 
 def objects_from_json(table):
     newer_date = get_most_updated()
-    path = os.path.join(os.path.dirname(__file__), 'seeds/data/{}_smfr_{}.json.tar.gz'.format(newer_date, table))
+    input_file = 'seeds/data/{}_smfr_{}.json.tar.gz'.format(newer_date, table)
+    print('>>>>>>> Using', input_file)
+    path = os.path.join(os.path.dirname(__file__), input_file)
     with tarfile.open(path, 'r:gz') as tar:
         archive = tar.getmembers()[0]
         init_f = tar.extractfile(archive)
@@ -34,13 +36,11 @@ def update_nutstables():
     session = Session(bind=sqldb.engine)
     conn = sqldb.engine.connect()
     conn.execute('SET FOREIGN_KEY_CHECKS = 0;')
-
     print(' ---------- UPGRADING nuts2')
     print('Truncating in nuts2 table')
     conn.execute('TRUNCATE TABLE nuts2')
     print('Deleted all rows in nuts2 table')
 
-    print('loading nuts2 data...')
     data_nuts2 = objects_from_json('nuts2')
 
     print('Bulk insert into Nuts2 table: %d rows' % len(data_nuts2))
@@ -52,16 +52,17 @@ def update_nutstables():
     print('Truncating in nuts3 table')
     conn.execute('TRUNCATE TABLE nuts3')
     print('Deleted all rows in nuts3 table')
-    print('loading nuts3 data...')
     data_nuts3 = objects_from_json('nuts3')
-
     print('Bulk insert into Nuts3 table: %d rows' % len(data_nuts3))
     session.add_all(data_nuts3)
     session.flush()
-    session.commit()
     conn.execute('SET FOREIGN_KEY_CHECKS = 1;')
-
+    session.commit()
     print('[OK] Updated nuts2 and nuts3 tables.')
+    print('Check efas_id != 0....')
+    nuts = Nuts2.query.all()
+    nut0 = nuts[0]
+    print('efas id', nut0.efas_id, 'efas name', nut0.efas_name)
 
 
 if __name__ == '__main__':

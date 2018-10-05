@@ -1,8 +1,10 @@
 import os
 from math import ceil
 
+import sqlalchemy_utils
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import orm, MetaData, inspect
+from sqlalchemy.dialects.mysql import LONGTEXT
 from flask import Flask
 
 from flask_sqlalchemy import SQLAlchemy as SQLAlchemyBase
@@ -196,3 +198,7 @@ def create_app(app_name='SMFR'):
     app.config['SQLALCHEMY_POOL_SIZE'] = 10
     sqldb.init_app(app)
     return app
+
+
+class LongJSONType(sqlalchemy_utils.types.json.JSONType):
+    impl = LONGTEXT

@@ -31,7 +31,7 @@ class BaseCollector(ABC):
         self.streamer.disconnect(deactivate)
 
     def restart(self):
-        self.stop()
+        self.stop(deactivate=False)
         self.start()
 
     @classmethod

@@ -337,6 +337,23 @@ definitions:
         type: string
         format: date-time
 
+  Nuts2:
+    type: object
+    properties:
+      id:
+        type: integer
+      efas_id:
+        type: integer
+      efas_name:
+        type: string
+      efas_country:
+        type: string
+      nuts_id:
+        type: string
+      country_code:
+        type: string
+      country_code3:
+        type: string
 
   Collection:
     type: object
@@ -363,6 +380,12 @@ definitions:
         format: date-time
       efas_id:
         type: integer
+      efas_name:
+        type: string
+      efas_country:
+        type: string
+      nuts2:
+        $ref: '#/definitions/Nuts2'
       status:
         type: string
         enum: [active, inactive]

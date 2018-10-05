@@ -2,6 +2,7 @@
 Core Utils module
 """
 import logging
+from logging import StreamHandler
 import functools
 import time
 import threading
@@ -14,9 +15,16 @@ from flask.json import JSONEncoder
 logger = logging.getLogger('SMFR utils')
 logger.setLevel(os.environ.get('LOGGING_LEVEL', 'DEBUG'))
 
+FALSE_VALUES = (False, 0, None, 'False', 'false', 'NO', 'no', 'No', '0', 'FALSE', 'null', 'None', 'NULL', 'NONE')
+
 LOGGER_FORMAT = '%(asctime)s: SMFR - <%(name)s[%(filename)s:%(lineno)d]>[%(levelname)s] (%(threadName)s) %(message)s'
 LOGGER_DATE_FORMAT = '%Y%m%d %H:%M:%S'
 SMFR_DATE_FORMAT = '%Y-%m-%d %H:%M'
+
+DEFAULT_HANDLER = StreamHandler()
+formatter = logging.Formatter(fmt=LOGGER_FORMAT, datefmt=LOGGER_DATE_FORMAT)
+DEFAULT_HANDLER.setFormatter(formatter)
+NULL_HANDLER = logging.NullHandler()
 
 
 def _running_in_docker():

@@ -1,58 +1,67 @@
-from collections import Counter
-import functools
-from datetime import timedelta, datetime
+import os
 import logging
+import functools
+from collections import Counter, defaultdict
+from datetime import timedelta, datetime
 from multiprocessing import cpu_count
 from multiprocessing.pool import ThreadPool
-import os
 
 import cassandra
 from sqlalchemy import or_
 
-from smfrcore.utils import LOGGER_FORMAT, LOGGER_DATE_FORMAT, logged_job, job_exceptions_catcher
+from smfrcore.utils import LOGGER_FORMAT, LOGGER_DATE_FORMAT, logged_job, job_exceptions_catcher, FALSE_VALUES
 
 from smfrcore.models import TwitterCollection, Aggregation, create_app
 
-logging.basicConfig(level=os.environ.get('LOGGING_LEVEL', 'DEBUG'), format=LOGGER_FORMAT, datefmt=LOGGER_DATE_FORMAT)
+log_level = os.environ.get('LOGGING_LEVEL', 'DEBUG')
+logging.basicConfig(level=log_level, format=LOGGER_FORMAT, datefmt=LOGGER_DATE_FORMAT)
 
 logger = logging.getLogger('AGGREGATOR')
-logger.setLevel(os.environ.get('LOGGING_LEVEL', 'DEBUG'))
+logger.setLevel(log_level)
 logging.getLogger('cassandra').setLevel(logging.WARNING)
 
 flask_app = create_app()
 
 running_aggregators = set()
-flood_propability_ranges = ((0, 10), (10, 90), (90, 100))
+flood_propability_ranges_env = os.environ.get('FLOOD_PROBABILITY_RANGES', '0-10,10-90,90-100')
+flood_propability_ranges = [[int(g) for g in t.split('-')] for t in flood_propability_ranges_env.split(',')]
 
 
 class MostRelevantTweets:
+    min_relevant_probability = int(os.environ.get('MIN_RELEVANT_FLOOD_PROBABILITY', 90)) / 100
+    max_size = int(os.environ.get('NUM_RELEVANT_TWEETS_AGGREGATED', 100))
 
     @classmethod
     def _sortkey(cls, t):
         return t['annotations']['flood_probability']['yes']
 
-    def __init__(self, maxsize, initial=None):
-        self.maxsize = maxsize
-        self._tweets = sorted(initial, key=self._sortkey, reverse=True) if initial else []
-        self._tweets = self._tweets[:self.maxsize]
-        self.min_prob = self._tweets[-1]['annotations']['flood_probability']['yes'] if initial else 0
+    def __init__(self, initial=None):
+        self._tweets = defaultdict(list)
+        if not initial:
+            initial = {}
+        for geocoded_id, relevant_tweets in initial.items():
+            self._tweets[geocoded_id] = relevant_tweets
 
     @property
     def values(self):
+        for key in self._tweets.keys():
+            self._tweets[key] = sorted(self._tweets[key], key=self._sortkey, reverse=True)
+            self._tweets[key] = self._tweets[key][:self.max_size]
         return self._tweets
+
+    def is_relevant(self, item):
+        flood_prob = item['annotations']['flood_probability']['yes']
+        return flood_prob >= self.min_relevant_probability and (item['geo']['nuts_efas_id'] or item['geo']['is_european'] not in FALSE_VALUES)
 
     def push_if_relevant(self, item):
         """
 
-        :param item: Tweet dictionary
+        :param item: a dict representing a smfrcore.models.cassandra.Tweet object
         :return:
         """
-        flood_probability = item['annotations']['flood_probability']['yes']
-        if flood_probability >= self.min_prob or len(self._tweets) < self.maxsize:
-            self._tweets.append(item)
-            self._tweets = sorted(self._tweets, key=self._sortkey, reverse=True)
-            self._tweets = self._tweets[:self.maxsize]
-            self.min_prob = self._tweets[-1]['annotations']['flood_probability']['yes']
+        if self.is_relevant(item):
+            key = item['geo']['nuts_efas_id'] or 'G%s' % (item['geo']['geonameid'] or '-')
+            self._tweets[key].append(item)
 
 
 @logged_job
@@ -79,7 +88,7 @@ def aggregate(running_conf=None):
             aggregation = Aggregation.query.filter_by(collection_id=coll.id).first()
 
             if not aggregation:
-                aggregation = Aggregation(collection_id=coll.id, values={}, relevant_tweets=[])
+                aggregation = Aggregation(collection_id=coll.id, values={}, relevant_tweets={})
                 aggregation.save()
 
             aggregations_args.append(
@@ -167,13 +176,16 @@ def run_single_aggregation(collection_id,
     if collection_id in running_aggregators:
         logger.warning('!!!!!! Previous aggregation for collection id %d is not finished yet !!!!!!' % collection_id)
         return 0
-    relevant_tweets_number = int(os.environ.get('NUM_RELEVANT_TWEETS', 5))
-    relevant_tweets = MostRelevantTweets(relevant_tweets_number, initial=initial_relevant_tweets)
+
+    relevant_tweets = MostRelevantTweets(initial=initial_relevant_tweets)
+
     max_collected_tweetid = 0
     max_annotated_tweetid = 0
     max_geotagged_tweetid = 0
+
     last_timestamp_start = timestamp_start or datetime(2100, 12, 30)
     last_timestamp_end = timestamp_end or datetime(1970, 1, 1)
+
     last_tweetid_collected = int(last_tweetid_collected) if last_tweetid_collected else 0
     last_tweetid_annotated = int(last_tweetid_annotated) if last_tweetid_annotated else 0
     last_tweetid_geotagged = int(last_tweetid_geotagged) if last_tweetid_geotagged else 0
@@ -203,17 +215,14 @@ def run_single_aggregation(collection_id,
 
         geotagged_tweets = Tweet.get_iterator(collection_id, 'geotagged', last_tweetid=last_tweetid_geotagged)
         for t in geotagged_tweets:
-            prob = flood_probability(t)
             max_geotagged_tweetid = max(max_geotagged_tweetid, t.tweet_id)
             counter['geotagged'] += 1
             counter['{}_geotagged'.format(t.lang)] += 1
-            geoloc_id = t.geo['nuts_efas_id'] or 'G%s' % (t.geo['geonameid'] or 'N/A')
+            geoloc_id = t.geo['nuts_efas_id'] or 'G%s' % (t.geo['geonameid'] or '-')
             nuts_id = t.geo['nuts_id']
             geo_identifier = '%s_%s' % (geoloc_id, nuts_id) if nuts_id else geoloc_id
             inc_annotated_counter(counter, flood_probability(t), place_id=geo_identifier)
-            if (t.geo['nuts_efas_id'] or t.geo['is_european']) and prob >= 90:
-                # we only show european relevant tweets...
-                relevant_tweets.push_if_relevant(Tweet.to_json(t))
+            relevant_tweets.push_if_relevant(Tweet.to_json(t))
 
     except cassandra.ReadFailure as e:
         logger.error('Cassandra Read failure: %s', e)

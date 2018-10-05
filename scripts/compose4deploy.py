@@ -23,7 +23,15 @@ def clean_compose(d_in):
     for service in d_out['services']:
         if service in ('annotator', 'geocoder', 'web', 'restserver', 'persister', 'aggregator', 'products',) \
                 and 'volumes' in d_out['services'][service]:
-            del d_out['services'][service]['volumes']
+            if service != 'products':
+                del d_out['services'][service]['volumes']
+            else:
+                cleaned_volumes = []
+                for v in d_out['services'][service]['volumes']:
+                    if 'src' in v:
+                        continue
+                    cleaned_volumes.append(v)
+                d_out['services'][service]['volumes'] = cleaned_volumes
     return d_out
 
 

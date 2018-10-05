@@ -2,24 +2,29 @@
 Module to handle /collections API
 """
 import logging
+import time
+import datetime
 
 import ujson as json
 from flask import abort
 from flask_jwt_extended import jwt_required, get_jwt_identity
 
-from smfrcore.models import TwitterCollection, User, Aggregation, Tweet
+from smfrcore.models import TwitterCollection, User, Aggregation, Tweet, TweetTuple
 from smfrcore.client.marshmallow import Collection as CollectionSchema, Aggregation as AggregationSchema
+from smfrcore.utils import DEFAULT_HANDLER
 from sqlalchemy.exc import OperationalError
 
 from smfrcore.errors import SMFRRestException
 
 from server.api.clients import AnnotatorClient, GeocoderClient
 from server.api.decorators import check_identity, check_role
-from server.config import NUM_SAMPLES, RestServerConfiguration
+from server.config import RestServerConfiguration
 from server.helpers import (add_collection_helper, add_collection_from_rra_event,
                             fetch_rra_helper, events_to_collections_payload)
 
 logger = logging.getLogger('RestServer API')
+logger.setLevel(RestServerConfiguration.logger_level)
+logger.addHandler(DEFAULT_HANDLER)
 
 
 # @jwt_required
@@ -180,18 +185,17 @@ def get_collection_details(collection_id):
         aggregation_schema = AggregationSchema()
         aggregation_dump = aggregation_schema.dump(aggregation).data
 
-        samples_tweets = {}
-        for ttype in ('collected', 'annotated', 'geotagged'):
-            samples_tweets[ttype] = []
-            tweets = Tweet.get_samples(collection_id=collection_id, ttype=ttype, size=NUM_SAMPLES)
-            for i, t in enumerate(tweets, start=1):
-                samples_tweets[ttype].append(Tweet.make_table_object(i, t))
+        relevant_tweets = [t for tweets in aggregation.relevant_tweets.values() for t in tweets] if aggregation else []
+        samples_tweets = {'relevant': []}
+        for i, t in enumerate(relevant_tweets, start=1):
+            t['created_at'] = time.mktime(datetime.datetime.strptime(t['created_at'], "%Y-%m-%dT%H:%M:%S").timetuple())
+            samples_tweets['relevant'].append(Tweet.make_table_object(i, TweetTuple(**t)))
 
         res = {'collection': collection_dump, 'aggregation': aggregation_dump,
                'annotation_models': AnnotatorClient.models()[0]['models'],
                'running_annotators': AnnotatorClient.running()[0], 'running_geotaggers': GeocoderClient.running()[0],
-               'datatable': samples_tweets['collected'], 'datatableannotated': samples_tweets['annotated'],
-               'datatablegeotagged': samples_tweets['geotagged']}
+               'datatable': samples_tweets['relevant'],
+               }
     except OperationalError:
         return {'error': {'description': 'DB link was lost. Try again'}}, 500
     else:

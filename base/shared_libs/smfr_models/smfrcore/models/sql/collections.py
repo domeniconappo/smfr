@@ -6,10 +6,10 @@ import arrow
 from arrow.parser import ParserError
 from cachetools import TTLCache
 from fuzzywuzzy import process, fuzz
-from sqlalchemy import Column, Integer, ForeignKey, TIMESTAMP, Boolean, BigInteger
+from sqlalchemy import Column, Integer, ForeignKey, TIMESTAMP, Boolean, BigInteger, orm
 from sqlalchemy_utils import ChoiceType, ScalarListType, JSONType
 
-from .base import sqldb, SMFRModel
+from .base import sqldb, SMFRModel, LongJSONType
 from .users import User
 from .nuts import Nuts2
 
@@ -78,7 +78,7 @@ class TwitterCollection(SMFRModel):
     def __init__(self, *args, **kwargs):
         self.nuts2 = None
         if kwargs.get('efas_id') is not None:
-            self.nuts2 = Nuts2.query.get(efas_id=kwargs['efas_id'])
+            self.nuts2 = Nuts2.get_by_efas_id(kwargs['efas_id'])
         super().__init__(*args, **kwargs)
 
     def _set_keywords_and_languages(self, keywords, languages):
@@ -112,6 +112,15 @@ class TwitterCollection(SMFRModel):
             # default keywords with languages
             self.languages = languages
 
+        # refine keywords: some NUTS3 names contains more than one city
+        refined_keywords = []
+        for kw in self.tracking_keywords:
+            l_split = kw.split(' and ')
+            for subkw in l_split:
+                sub_list = subkw.split(' & ')
+                refined_keywords += sub_list
+        self.tracking_keywords = list(set(refined_keywords))
+
     def _set_locations(self, locations):
         locations = locations or {}
         if isinstance(locations, dict) and not all(
@@ -129,6 +138,12 @@ class TwitterCollection(SMFRModel):
                         continue
                     locations[k] = round(float(v), 3)
         self.locations = locations
+
+    @orm.reconstructor
+    def init_on_load(self):
+        self.nuts2 = None
+        if self.efas_id is not None:
+            self.nuts2 = Nuts2.get_by_efas_id(efas_id=self.efas_id)
 
     @classmethod
     def create(cls, **data):
@@ -309,15 +324,11 @@ class TwitterCollection(SMFRModel):
 
     @property
     def efas_name(self):
-        if not self.efas_id:
-            return None
-        return self.nuts2.efas_name
+        return None if self.efas_id is None else self.nuts2.efas_name
 
     @property
     def efas_country(self):
-        if not self.efas_id:
-            return None
-        return self.nuts2.country
+        return None if self.efas_id is None else self.nuts2.country
 
     @property
     def bboxfinder(self):
@@ -395,13 +406,13 @@ class Aggregation(SMFRModel):
     id = Column(Integer, primary_key=True, autoincrement=True, nullable=False)
     collection_id = Column(Integer, ForeignKey('virtual_twitter_collection.id'))
     collection = sqldb.relationship('TwitterCollection', backref=sqldb.backref('aggregation', uselist=False))
-    values = Column(JSONType, nullable=False)
+    values = Column(LongJSONType, nullable=False)
     last_tweetid_collected = Column(BigInteger, nullable=True)
     last_tweetid_annotated = Column(BigInteger, nullable=True)
     last_tweetid_geotagged = Column(BigInteger, nullable=True)
     timestamp_start = Column(TIMESTAMP, nullable=True)
     timestamp_end = Column(TIMESTAMP, nullable=True)
-    relevant_tweets = Column(JSONType, nullable=True)
+    relevant_tweets = Column(LongJSONType, nullable=True)
 
     @property
     def data(self):

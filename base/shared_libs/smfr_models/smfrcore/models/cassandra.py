@@ -6,6 +6,7 @@ import os
 import time
 import datetime
 from decimal import Decimal
+from collections import namedtuple
 
 import numpy as np
 import ujson as json
@@ -16,14 +17,15 @@ from cassandra.auth import PlainTextAuthProvider
 from cassandra.util import OrderedMapSerializedKey
 from flask_cqlalchemy import CQLAlchemy
 
-from smfrcore.utils import RUNNING_IN_DOCKER, LOGGER_FORMAT, LOGGER_DATE_FORMAT
+from smfrcore.utils import RUNNING_IN_DOCKER, DEFAULT_HANDLER, FALSE_VALUES
 from smfrcore.models.sql import TwitterCollection, create_app
 from smfrcore.models.utils import get_cassandra_hosts
 
 
-logging.basicConfig(format=LOGGER_FORMAT, datefmt=LOGGER_DATE_FORMAT)
 logger = logging.getLogger('models')
 logger.setLevel(os.environ.get('LOGGING_LEVEL', 'DEBUG'))
+logger.addHandler(DEFAULT_HANDLER)
+
 logging.getLogger('cassandra').setLevel(logging.WARNING)
 
 cqldb = CQLAlchemy()
@@ -127,6 +129,10 @@ class Tweet(cqldb.Model):
         return '\nCollection {o.collectionid}\n' \
                '{o.created_at} - {o.lang} \n{o.full_text:.120}' \
                '\nGeo: {o.geo}\nAnnotations: {o.annotations}'.format(o=self)
+
+    @classmethod
+    def fields(cls):
+        return list(cls._defined_columns.keys())
 
     @property
     def use_pipeline(self):
@@ -244,25 +250,26 @@ class Tweet(cqldb.Model):
         :param tweet_tuple: namedtuple representing Tweet row in smfr_persistent.tweet column family
         :return:
         """
-        original_tweet = json.loads(tweet_tuple.tweet)
-        full_text = cls.get_full_text(tweet_tuple)
-        twid = tweet_tuple.tweetid
+        obj = cls.to_obj(tweet_tuple)
+        original_tweet = obj.original_tweet_as_dict
+        full_text = obj.full_text
+        twid = obj.tweetid
 
         obj = {
             'rownum': numrow,
             'Full Text': full_text,
             'Tweet id': '<a href="https://twitter.com/statuses/{}">{}</a>'.format(twid, twid),
-            'original_tweet': json.dumps(original_tweet, indent=2, sort_keys=True),
-            'Type': tweet_tuple.ttype,
-            'Lang': tweet_tuple.lang or '-',
-            'Annotations': Tweet.pretty_annotations(tweet_tuple.annotations),
+            'original_tweet': obj.original_tweet_as_string,
+            'Type': obj.ttype,
+            'Lang': obj.lang or '-',
+            'Annotations': cls.pretty_annotations(tweet_tuple.annotations),
 
             'LatLon': '<a href="https://www.openstreetmap.org/#map=13/{}/{}" target="_blank">lat: {}, lon: {}</a>'.format(
-                tweet_tuple.latlong[0], tweet_tuple.latlong[1], tweet_tuple.latlong[0], tweet_tuple.latlong[1]
-            ) if tweet_tuple.latlong else '',
-            'Collected at': tweet_tuple.created_at or '',
+                obj.latlong[0], obj.latlong[1], obj.latlong[0], obj.latlong[1]
+            ) if obj.latlong else '',
+            'Collected at': obj.created_at or '',
             'Tweeted at': original_tweet['created_at'] or '',
-            'Geo': Tweet.pretty_geo(tweet_tuple.geo),
+            'Geo': cls.pretty_geo(obj.geo),
         }
         return obj
 
@@ -295,13 +302,13 @@ class Tweet(cqldb.Model):
 
     @property
     def is_european(self):
-        return self.geo.get('is_european', 'False') in ('True', 'Yes', 'true', 'yes', 1)
+        return self.geo.get('is_european', False) not in FALSE_VALUES
 
     @classmethod
     def pretty_annotations(cls, annotations):
         if not annotations:
             return '-'
-        out = ['{}: {} - {}'.format(k, v[0], v[1]) for k, v in annotations.items()]
+        out = ['{}: {}'.format(k, v[1]) if isinstance(v, tuple) else '{}: {}'.format(k, v['yes']) for k, v in annotations.items()]
         return '<pre>{}</pre>'.format('\n'.join(out))
 
     @classmethod
@@ -509,3 +516,6 @@ class Tweet(cqldb.Model):
     @property
     def user_location(self):
         return self.user_location_from_raw_tweet(self.original_tweet_as_dict)
+
+
+TweetTuple = namedtuple('TweetTuple', Tweet.fields())

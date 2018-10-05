@@ -27,7 +27,7 @@ from flask_jwt_extended import (
 )
 
 from smfrcore.auth import authenticate, identity
-from smfrcore.utils import RUNNING_IN_DOCKER
+from smfrcore.utils import RUNNING_IN_DOCKER, DEFAULT_HANDLER
 
 DEVELOPMENT = os.environ.get('DEVELOPMENT', '0') in ('1', 'yes', 'Yes', 'True', 'true')
 UNDER_TESTS = any('nose2' in x for x in sys.argv)
@@ -116,6 +116,7 @@ class RestServerConfiguration(metaclass=Singleton):
     logger_level = logging.ERROR if UNDER_TESTS else logging.getLevelName(os.environ.get('LOGGING_LEVEL', 'DEBUG').upper())
     logger = logging.getLogger('RestServer config')
     logger.setLevel(logger_level)
+    logger.addHandler(DEFAULT_HANDLER)
 
     if SERVER_BOOTSTRAP:
         # Flask apps are setup when issuing CLI commands as well.

@@ -2,8 +2,6 @@
 Module containing clients for Annotator and Geocoder microservices
 """
 
-import logging
-
 import requests
 
 from smfrcore.errors import SMFRRestException
@@ -16,7 +14,6 @@ class MicroserviceClient:
     base_uri = None
     host = None
     port = None
-    logger = logging.getLogger(__name__)
 
     @classmethod
     def _check_response(cls, res, code):

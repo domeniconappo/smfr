@@ -6,7 +6,7 @@ ARG https_proxy
 
 ENV LANG=C.UTF-8
 
-RUN mkdir -p /products && mkdir -p /products/smfrcore && mkdir -p /config && mkdir -p /scripts && mkdir -p /requirements
+RUN mkdir -p /products && mkdir -p /products/smfrcore && mkdir -p /config && mkdir -p /output && mkdir -p /scripts && mkdir -p /requirements
 
 COPY ./products/requirements.txt /requirements/
 
@@ -18,8 +18,9 @@ COPY ./products/requirements.txt /requirements/
 RUN pip3.6 install -r /requirements/requirements.txt
 RUN pip3.6 install /smfr_libs/utils/ \
  && pip3.6 install /smfr_libs/models/ \
- && chmod -R a+x /scripts/ && rm -R /root/.cache
+ && chmod -R a+x /scripts/ && rm -R /root/.cache && chmod -R a+w /products/
 
+COPY ./products/config/. /config/
 COPY ./products/src/. /products/
 
 WORKDIR /products

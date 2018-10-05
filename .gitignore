@@ -14,6 +14,7 @@ venv.bak/
 
 # SMFR configs
 restserver/src/config/*.yaml
+web/src/config/*.yaml
 restserver/logs
 scripts/seeds/data/*.json
 jmxremote.password
@@ -23,6 +24,7 @@ Dockerfile.*.ready
 !*.tpl
 /uploads/*.yaml
 /uploads/*.yml
+products/output
 /downloads/*.json
 /downloads/*.csv
 docker-compose-*.yaml

@@ -2,17 +2,102 @@ version: '3.4'
 
 services:
 
+  aggregator:
+    networks:
+    - back-tier
+    restart: on-failure
+    container_name: aggregator
+    image: ${DOCKER_REGISTRY}/${AGGREGATOR_IMAGE}:${image_tag}
+    build:
+      context: ./
+      dockerfile: Dockerfile.aggregator.ready
+      args:
+        http_proxy: ${http_proxy}
+        https_proxy: ${https_proxy}
+    working_dir: /aggregator
+    volumes:
+    - './aggregator/src:/aggregator'
+    environment:
+      LOGGING_LEVEL: ${LOGGING_LEVEL}
+      PYTHONUNBUFFERED: "true"
+      CASSANDRA_KEYSPACE: ${CASSANDRA_KEYSPACE}
+      CASSANDRA_HOST: ${CASSANDRA_HOST}
+      CASSANDRA_PORT: ${CASSANDRA_PORT}
+      CASSANDRA_USER: ${CASSANDRA_USER}
+      CASSANDRA_PASSWORD: ${CASSANDRA_PASSWORD}
+      CASSANDRA_USE_CLUSTER: ${CASSANDRA_USE_CLUSTER}
+      CASSANDRA_NODES: ${CASSANDRA_NODES}
+      AGGREGATOR_SCHEDULING_MINUTES: ${AGGREGATOR_SCHEDULING_MINUTES}
+      MIN_RELEVANT_FLOOD_PROBABILITY: ${MIN_RELEVANT_FLOOD_PROBABILITY}
+      FLOOD_PROBABILITY_RANGES: ${FLOOD_PROBABILITY_RANGES}
+      NUM_RELEVANT_TWEETS_AGGREGATED: ${NUM_RELEVANT_TWEETS_AGGREGATED}
+      MYSQL_HOST: mysql
+      MYSQL_DBNAME: ${MYSQL_DBNAME}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      http_proxy: ${http_proxy}
+      https_proxy: ${https_proxy}
+    command: -- python3.6 start.py ${AGGREGATOR_RUN_CONF}
 
-  zookeeper:
+    depends_on:
+    - mysql
+    - cassandrasmfr
+    deploy:
+      placement:
+        constraints: [ node.labels.large == true ]
+      restart_policy:
+        condition: on-failure
+        max_attempts: 3
+        window: 120s
+
+  annotator:
     restart: always
-    image: ${DOCKER_REGISTRY}/${ZOOKEEPER_IMAGE}
-    container_name: zookeeper
-    hostname: zookeeper
+    container_name: annotator
+    image: ${DOCKER_REGISTRY}/${ANNOTATOR_IMAGE}:${image_tag}
+    build:
+      context: ./
+      dockerfile: Dockerfile.annotator.ready
+      args:
+        http_proxy: ${http_proxy}
+        https_proxy: ${https_proxy}
+        models_repo: ${GIT_REPO_MODELS}
+    working_dir: /annotator
     ports:
-    - '2181:2181'
+    - '5556:5556'
+    - '6006:6006'
     networks:
     - back-tier
 
+    environment:
+      LOGGING_LEVEL: ${LOGGING_LEVEL}
+      TF_CPP_MIN_LOG_LEVEL: '2'
+      PYTHONUNBUFFERED: 'true'
+      KERAS_BACKEND: tensorflow
+      PERSISTER_KAFKA_TOPIC: ${PERSISTER_KAFKA_TOPIC}
+      ANNOTATOR_KAFKA_TOPIC: ${ANNOTATOR_KAFKA_TOPIC}
+      DEVELOPMENT: ${DEVELOPMENT}
+      KAFKA_BOOTSTRAP_SERVER: ${KAFKA_BOOTSTRAP_SERVER}
+      CASSANDRA_HOST: ${CASSANDRA_HOST}
+      CASSANDRA_PORT: ${CASSANDRA_PORT}
+      CASSANDRA_USER: ${CASSANDRA_USER}
+      CASSANDRA_PASSWORD: ${CASSANDRA_PASSWORD}
+      CASSANDRA_KEYSPACE: ${CASSANDRA_KEYSPACE}
+      CASSANDRA_USE_CLUSTER: ${CASSANDRA_USE_CLUSTER}
+      CASSANDRA_NODES: ${CASSANDRA_NODES}
+      MYSQL_HOST: mysql
+      MYSQL_DBNAME: ${MYSQL_DBNAME}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MODELS_PATH: /models
+      GIT_REPO_MODELS: ${GIT_REPO_MODELS}
+      http_proxy: ${http_proxy}
+      https_proxy: ${https_proxy}
+    volumes:
+    - './annotator/src:/annotator'
+    depends_on:
+    - kafka
+    - cassandrasmfr
+    - persister
     deploy:
       restart_policy:
         condition: on-failure
@@ -20,6 +105,190 @@ services:
         window: 120s
       placement:
         constraints: [ node.labels.huge == true ]
+
+  cassandrasmfr:
+    build:
+      context: ./
+      dockerfile: cassandrasmfr/Dockerfile
+    image: ${DOCKER_REGISTRY}/${CASSANDRA_IMAGE}:${image_tag}
+    restart: always
+    # From host, connect to DB with `docker exec -it cassandrasmfr cqlsh`
+    volumes:
+    - '${SMFR_DATADIR}/cassandra:/var/lib/cassandra:rw'
+    container_name: cassandrasmfr
+    networks:
+    - back-tier
+    ports:
+    - '9042:9042'
+    - '9160:9160'
+    - '7000:7000'
+    - '7001:7001'
+    - '7199:7199'
+    cap_add:
+    - ALL
+    privileged: true
+    environment:
+      # CASSANDRA_CLUSTER_NAME: SMFR (need to rename cluster_name in system.local table first) !!!
+      MAX_HEAP_SIZE: 16G
+      HEAP_NEWSIZE: 800M
+      JVM_OPTS: -Xms16g -Xmx16g -Dcom.sun.management.jmxremote.authenticate=true -Dcom.sun.management.jmxremote.password.file=/etc/cassandra/jmxremote.password -Dcom.sun.management.jmxremote.access.file=/etc/cassandra/jmxremote.access
+      CASSANDRA_START_RPC: "true"
+      CASSANDRA_LISTEN_ADDRESS: auto
+      CASSANDRA_RPC_ADDRESS: 0.0.0.0
+      CASSANDRA_BROADCAST_ADDRESS: cassandrasmfr
+      CASSANDRA_NUM_TOKENS: 256
+      #      CASSANDRA_NUM_TOKENS: 8
+      LOCAL_JMX: "no"
+    deploy:
+      restart_policy:
+        condition: on-failure
+        max_attempts: 3
+        window: 60s
+      placement:
+        constraints: [ node.labels.large == true ]
+
+  #  cassandra-node-1:
+  #    image: ${DOCKER_REGISTRY}/${CASSANDRA_IMAGE}:${image_tag}
+  #    command: /bin/bash -c "echo 'Waiting for seed node' && sleep 60 && /docker-entrypoint.sh cassandra -f"
+  #    environment:
+  #      CASSANDRA_SEEDS: cassandrasmfr
+  #      CASSANDRA_BROADCAST_ADDRESS: cassandra-node-1
+  #      MAX_HEAP_SIZE: 16G
+  #      HEAP_NEWSIZE: 2048M
+  #      JVM_OPTS: -Xms8g -Xmx16g -Dcom.sun.management.jmxremote.authenticate=true -Dcom.sun.management.jmxremote.password.file=/etc/cassandra/jmxremote.password -Dcom.sun.management.jmxremote.access.file=/etc/cassandra/jmxremote.access
+  #      CASSANDRA_START_RPC: "true"
+  #      CASSANDRA_LISTEN_ADDRESS: auto
+  #      CASSANDRA_RPC_ADDRESS: 0.0.0.0
+  #      CASSANDRA_NUM_TOKENS: 16
+  #      LOCAL_JMX: "no"
+  #    ports:
+  #      - '7000:7000'
+  #    networks:
+  #      - back-tier
+  #    volumes:
+  #      - volume-cassandra-1:/var/lib/cassandra
+  #    depends_on:
+  #      - cassandrasmfr
+  #    deploy:
+  #      restart_policy:
+  #        condition: on-failure
+  #        max_attempts: 3
+  #        window: 60s
+  #      placement:
+  #        constraints: [ node.labels.huge == true ]
+  #
+  #    # you cannot have multiple nodes join the cluster at the same time when
+  #    # cassandra.consistent.rangemovement is true so we further delay it to give it time to stabilize
+  #    cassandra-node-2:
+  #      image: ${DOCKER_REGISTRY}/${CASSANDRA_IMAGE}:${image_tag}
+  #      command: /bin/bash -c "echo 'Waiting for seed node' && sleep 90 && /docker-entrypoint.sh cassandra -f"
+  #      environment:
+  #        CASSANDRA_SEEDS: cassandrasmfr
+  #        CASSANDRA_BROADCAST_ADDRESS: cassandra-node-2
+  #        CASSANDRA_NUM_TOKENS: 2
+  #        MAX_HEAP_SIZE: 4G
+  #        HEAP_NEWSIZE: 1024M
+  #        JVM_OPTS: -Xms2g -Xmx4g -Dcom.sun.management.jmxremote.authenticate=true -Dcom.sun.management.jmxremote.password.file=/etc/cassandra/jmxremote.password -Dcom.sun.management.jmxremote.access.file=/etc/cassandra/jmxremote.access
+  #        CASSANDRA_START_RPC: "true"
+  #        CASSANDRA_LISTEN_ADDRESS: auto
+  #        CASSANDRA_RPC_ADDRESS: 0.0.0.0
+  #        LOCAL_JMX: "no"
+  #      ports:
+  #        - '7000:7000'
+  #      networks:
+  #        - back-tier
+  #      volumes:
+  #        - volume-cassandra-2:/var/lib/cassandra
+  #      depends_on:
+  #        - cassandrasmfr
+  #        - cassandra-node-1
+  #      deploy:
+  #        restart_policy:
+  #          condition: on-failure
+  #          max_attempts: 3
+  #          window: 90s
+  #        placement:
+  #          constraints: [ node.labels.medium == true ]
+
+  geocoder:
+    restart: always
+    container_name: geocoder
+    image: ${DOCKER_REGISTRY}/${GEOCODER_IMAGE}:${image_tag}
+    build:
+      context: ./
+      dockerfile: Dockerfile.geocoder.ready
+      args:
+        http_proxy: ${http_proxy}
+        https_proxy: ${https_proxy}
+    working_dir: /geocoder
+    volumes:
+    - './geocoder/src:/geocoder'
+    ports:
+    - '5557:5557'
+    - '6007:6006'
+    environment:
+      LOGGING_LEVEL: ${LOGGING_LEVEL}
+      TF_CPP_MIN_LOG_LEVEL: '2'
+      PYTHONUNBUFFERED: 'true'
+      PERSISTER_KAFKA_TOPIC: ${PERSISTER_KAFKA_TOPIC}
+      GEOCODER_KAFKA_TOPIC: ${GEOCODER_KAFKA_TOPIC}
+      CASSANDRA_HOST: ${CASSANDRA_HOST}
+      CASSANDRA_PORT: ${CASSANDRA_PORT}
+      CASSANDRA_USER: ${CASSANDRA_USER}
+      CASSANDRA_PASSWORD: ${CASSANDRA_PASSWORD}
+      CASSANDRA_KEYSPACE: ${CASSANDRA_KEYSPACE}
+      CASSANDRA_USE_CLUSTER: ${CASSANDRA_USE_CLUSTER}
+      CASSANDRA_NODES: ${CASSANDRA_NODES}
+      MYSQL_HOST: mysql
+      MYSQL_DBNAME: ${MYSQL_DBNAME}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      http_proxy: ${http_proxy}
+      https_proxy: ${https_proxy}
+    networks:
+    - back-tier
+
+    depends_on:
+    - kafka
+    - cassandrasmfr
+    - geonames
+    - persister
+    deploy:
+      restart_policy:
+        condition: on-failure
+        max_attempts: 3
+        window: 120s
+      placement:
+        constraints: [ node.labels.medium == true ]
+
+  geonames:
+    build:
+      context: ./
+      args:
+        http_proxy: ${http_proxy}
+        https_proxy: ${https_proxy}
+      dockerfile: geonames/Dockerfile
+    image: ${DOCKER_REGISTRY}/${GEONAMES_IMAGE}:${image_tag}
+    restart: always
+    working_dir: /geonames
+    container_name: geonames
+    ports:
+    - '9200:9200'
+    - '9300:9300'
+    networks:
+    - back-tier
+    environment:
+      bootstrap.memory_lock: 'true'
+      discovery.type: 'single-node'
+    volumes:
+    - geonames_index:/usr/share/elasticsearch/data:rw
+    deploy:
+      restart_policy:
+        condition: on-failure
+        max_attempts: 3
+        window: 120s
+      placement:
+        constraints: [ node.labels.medium == true ]
 
   kafka:
     restart: always
@@ -60,110 +329,6 @@ services:
       placement:
         constraints: [ node.labels.huge == true ]
 
-  cassandrasmfr:
-    build:
-      context: ./
-      dockerfile: cassandrasmfr/Dockerfile
-    image: ${DOCKER_REGISTRY}/${CASSANDRA_IMAGE}:${image_tag}
-    restart: always
-    # From host, connect to DB with `docker exec -it cassandrasmfr cqlsh`
-    volumes:
-      - '${SMFR_DATADIR}/cassandra:/var/lib/cassandra:rw'
-    container_name: cassandrasmfr
-    networks:
-      - back-tier
-    ports:
-      - '9042:9042'
-      - '9160:9160'
-      - '7000:7000'
-      - '7001:7001'
-      - '7199:7199'
-    cap_add:
-      - ALL
-    privileged: true
-    environment:
-      # CASSANDRA_CLUSTER_NAME: SMFR (need to rename cluster_name in system.local table first) !!!
-      MAX_HEAP_SIZE: 16G
-      HEAP_NEWSIZE: 800M
-      JVM_OPTS: -Xms16g -Xmx16g -Dcom.sun.management.jmxremote.authenticate=true -Dcom.sun.management.jmxremote.password.file=/etc/cassandra/jmxremote.password -Dcom.sun.management.jmxremote.access.file=/etc/cassandra/jmxremote.access
-      CASSANDRA_START_RPC: "true"
-      CASSANDRA_LISTEN_ADDRESS: auto
-      CASSANDRA_RPC_ADDRESS: 0.0.0.0
-      CASSANDRA_BROADCAST_ADDRESS: cassandrasmfr
-      CASSANDRA_NUM_TOKENS: 256
-#      CASSANDRA_NUM_TOKENS: 8
-      LOCAL_JMX: "no"
-    deploy:
-      restart_policy:
-        condition: on-failure
-        max_attempts: 3
-        window: 60s
-      placement:
-        constraints: [ node.labels.large == true ]
-
-#  cassandra-node-1:
-#    image: ${DOCKER_REGISTRY}/${CASSANDRA_IMAGE}:${image_tag}
-#    command: /bin/bash -c "echo 'Waiting for seed node' && sleep 60 && /docker-entrypoint.sh cassandra -f"
-#    environment:
-#      CASSANDRA_SEEDS: cassandrasmfr
-#      CASSANDRA_BROADCAST_ADDRESS: cassandra-node-1
-#      MAX_HEAP_SIZE: 16G
-#      HEAP_NEWSIZE: 2048M
-#      JVM_OPTS: -Xms8g -Xmx16g -Dcom.sun.management.jmxremote.authenticate=true -Dcom.sun.management.jmxremote.password.file=/etc/cassandra/jmxremote.password -Dcom.sun.management.jmxremote.access.file=/etc/cassandra/jmxremote.access
-#      CASSANDRA_START_RPC: "true"
-#      CASSANDRA_LISTEN_ADDRESS: auto
-#      CASSANDRA_RPC_ADDRESS: 0.0.0.0
-#      CASSANDRA_NUM_TOKENS: 16
-#      LOCAL_JMX: "no"
-#    ports:
-#      - '7000:7000'
-#    networks:
-#      - back-tier
-#    volumes:
-#      - volume-cassandra-1:/var/lib/cassandra
-#    depends_on:
-#      - cassandrasmfr
-#    deploy:
-#      restart_policy:
-#        condition: on-failure
-#        max_attempts: 3
-#        window: 60s
-#      placement:
-#        constraints: [ node.labels.huge == true ]
-#
-#    # you cannot have multiple nodes join the cluster at the same time when
-#    # cassandra.consistent.rangemovement is true so we further delay it to give it time to stabilize
-#    cassandra-node-2:
-#      image: ${DOCKER_REGISTRY}/${CASSANDRA_IMAGE}:${image_tag}
-#      command: /bin/bash -c "echo 'Waiting for seed node' && sleep 90 && /docker-entrypoint.sh cassandra -f"
-#      environment:
-#        CASSANDRA_SEEDS: cassandrasmfr
-#        CASSANDRA_BROADCAST_ADDRESS: cassandra-node-2
-#        CASSANDRA_NUM_TOKENS: 2
-#        MAX_HEAP_SIZE: 4G
-#        HEAP_NEWSIZE: 1024M
-#        JVM_OPTS: -Xms2g -Xmx4g -Dcom.sun.management.jmxremote.authenticate=true -Dcom.sun.management.jmxremote.password.file=/etc/cassandra/jmxremote.password -Dcom.sun.management.jmxremote.access.file=/etc/cassandra/jmxremote.access
-#        CASSANDRA_START_RPC: "true"
-#        CASSANDRA_LISTEN_ADDRESS: auto
-#        CASSANDRA_RPC_ADDRESS: 0.0.0.0
-#        LOCAL_JMX: "no"
-#      ports:
-#        - '7000:7000'
-#      networks:
-#        - back-tier
-#      volumes:
-#        - volume-cassandra-2:/var/lib/cassandra
-#      depends_on:
-#        - cassandrasmfr
-#        - cassandra-node-1
-#      deploy:
-#        restart_policy:
-#          condition: on-failure
-#          max_attempts: 3
-#          window: 90s
-#        placement:
-#          constraints: [ node.labels.medium == true ]
-
   mysql:
     build:
       context: ./
@@ -190,35 +355,6 @@ services:
         window: 120s
       placement:
         constraints: [ node.labels.large == true ]
-
-  geonames:
-    build:
-      context: ./
-      args:
-        http_proxy: ${http_proxy}
-        https_proxy: ${https_proxy}
-      dockerfile: geonames/Dockerfile
-    image: ${DOCKER_REGISTRY}/${GEONAMES_IMAGE}:${image_tag}
-    restart: always
-    working_dir: /geonames
-    container_name: geonames
-    ports:
-      - '9200:9200'
-      - '9300:9300'
-    networks:
-      - back-tier
-    environment:
-      bootstrap.memory_lock: 'true'
-      discovery.type: 'single-node'
-    volumes:
-      - geonames_index:/usr/share/elasticsearch/data:rw
-    deploy:
-      restart_policy:
-        condition: on-failure
-        max_attempts: 3
-        window: 120s
-      placement:
-        constraints: [ node.labels.medium == true ]
 
   persister:
     restart: always
@@ -260,131 +396,33 @@ services:
       placement:
         constraints: [ node.labels.large == true ]
 
-  annotator:
-    restart: always
-    container_name: annotator
-    image: ${DOCKER_REGISTRY}/${ANNOTATOR_IMAGE}:${image_tag}
-    build:
-      context: ./
-      dockerfile: Dockerfile.annotator.ready
-      args:
-        http_proxy: ${http_proxy}
-        https_proxy: ${https_proxy}
-        models_repo: ${GIT_REPO_MODELS}
-    working_dir: /annotator
-    ports:
-      - '5556:5556'
-      - '6006:6006'
-    networks:
-      - back-tier
-
-    environment:
-      LOGGING_LEVEL: ${LOGGING_LEVEL}
-      TF_CPP_MIN_LOG_LEVEL: '2'
-      PYTHONUNBUFFERED: 'true'
-      KERAS_BACKEND: tensorflow
-      PERSISTER_KAFKA_TOPIC: ${PERSISTER_KAFKA_TOPIC}
-      ANNOTATOR_KAFKA_TOPIC: ${ANNOTATOR_KAFKA_TOPIC}
-      DEVELOPMENT: ${DEVELOPMENT}
-      KAFKA_BOOTSTRAP_SERVER: ${KAFKA_BOOTSTRAP_SERVER}
-      CASSANDRA_HOST: ${CASSANDRA_HOST}
-      CASSANDRA_PORT: ${CASSANDRA_PORT}
-      CASSANDRA_USER: ${CASSANDRA_USER}
-      CASSANDRA_PASSWORD: ${CASSANDRA_PASSWORD}
-      CASSANDRA_KEYSPACE: ${CASSANDRA_KEYSPACE}
-      CASSANDRA_USE_CLUSTER: ${CASSANDRA_USE_CLUSTER}
-      CASSANDRA_NODES: ${CASSANDRA_NODES}
-      MYSQL_HOST: mysql
-      MYSQL_DBNAME: ${MYSQL_DBNAME}
-      MYSQL_USER: ${MYSQL_USER}
-      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
-      MODELS_PATH: /models
-      GIT_REPO_MODELS: ${GIT_REPO_MODELS}
-      http_proxy: ${http_proxy}
-      https_proxy: ${https_proxy}
-    volumes:
-      - './annotator/src:/annotator'
-    depends_on:
-      - kafka
-      - cassandrasmfr
-      - persister
-    deploy:
-      restart_policy:
-        condition: on-failure
-        max_attempts: 3
-        window: 120s
-      placement:
-        constraints: [ node.labels.huge == true ]
-
-  geocoder:
-    restart: always
-    container_name: geocoder
-    image: ${DOCKER_REGISTRY}/${GEOCODER_IMAGE}:${image_tag}
-    build:
-      context: ./
-      dockerfile: Dockerfile.geocoder.ready
-      args:
-        http_proxy: ${http_proxy}
-        https_proxy: ${https_proxy}
-    working_dir: /geocoder
-    volumes:
-      - './geocoder/src:/geocoder'
-    ports:
-      - '5557:5557'
-      - '6007:6006'
-    environment:
-      LOGGING_LEVEL: ${LOGGING_LEVEL}
-      TF_CPP_MIN_LOG_LEVEL: '2'
-      PYTHONUNBUFFERED: 'true'
-      PERSISTER_KAFKA_TOPIC: ${PERSISTER_KAFKA_TOPIC}
-      GEOCODER_KAFKA_TOPIC: ${GEOCODER_KAFKA_TOPIC}
-      CASSANDRA_HOST: ${CASSANDRA_HOST}
-      CASSANDRA_PORT: ${CASSANDRA_PORT}
-      CASSANDRA_USER: ${CASSANDRA_USER}
-      CASSANDRA_PASSWORD: ${CASSANDRA_PASSWORD}
-      CASSANDRA_KEYSPACE: ${CASSANDRA_KEYSPACE}
-      CASSANDRA_USE_CLUSTER: ${CASSANDRA_USE_CLUSTER}
-      CASSANDRA_NODES: ${CASSANDRA_NODES}
-      MYSQL_HOST: mysql
-      MYSQL_DBNAME: ${MYSQL_DBNAME}
-      MYSQL_USER: ${MYSQL_USER}
-      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
-      http_proxy: ${http_proxy}
-      https_proxy: ${https_proxy}
-    networks:
-      - back-tier
-
-    depends_on:
-      - kafka
-      - cassandrasmfr
-      - geonames
-      - persister
-    deploy:
-      restart_policy:
-        condition: on-failure
-        max_attempts: 3
-        window: 120s
-      placement:
-        constraints: [ node.labels.medium == true ]
-
-  aggregator:
-    networks:
-      - back-tier
+  products:
     restart: on-failure
-    container_name: aggregator
-    image: ${DOCKER_REGISTRY}/${AGGREGATOR_IMAGE}:${image_tag}
+    container_name: products
+    image: ${DOCKER_REGISTRY}/${PRODUCTS_IMAGE}:${image_tag}
     build:
       context: ./
-      dockerfile: Dockerfile.aggregator.ready
+      dockerfile: Dockerfile.products.ready
       args:
         http_proxy: ${http_proxy}
         https_proxy: ${https_proxy}
-    working_dir: /aggregator
+    working_dir: /products
     volumes:
-      - './aggregator/src:/aggregator'
+      - ./products/src:/products
+      - ${PRODUCTS_OUTPUT}:/output:rw
     environment:
       LOGGING_LEVEL: ${LOGGING_LEVEL}
       PYTHONUNBUFFERED: "true"
+      PERSISTER_KAFKA_TOPIC: ${PERSISTER_KAFKA_TOPIC}
+      PRODUCTS_SCHEDULING_MINUTES: ${PRODUCTS_SCHEDULING_MINUTES}
+      HIGH_PROB_RANGE: ${HIGH_PROB_RANGE}
+      LOW_PROB_RANGE: ${LOW_PROB_RANGE}
+      THRESHOLDS: ${THRESHOLDS}
+      NUM_RELEVANT_TWEETS_PRODUCTS: ${NUM_RELEVANT_TWEETS_PRODUCTS}
+      MYSQL_HOST: mysql
+      MYSQL_DBNAME: ${MYSQL_DBNAME}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
       CASSANDRA_KEYSPACE: ${CASSANDRA_KEYSPACE}
       CASSANDRA_HOST: ${CASSANDRA_HOST}
       CASSANDRA_PORT: ${CASSANDRA_PORT}
@@ -392,67 +430,20 @@ services:
       CASSANDRA_PASSWORD: ${CASSANDRA_PASSWORD}
       CASSANDRA_USE_CLUSTER: ${CASSANDRA_USE_CLUSTER}
       CASSANDRA_NODES: ${CASSANDRA_NODES}
-      AGGREGATOR_SCHEDULING_MINUTES: ${AGGREGATOR_SCHEDULING_MINUTES}
-      MYSQL_HOST: mysql
-      MYSQL_DBNAME: ${MYSQL_DBNAME}
-      MYSQL_USER: ${MYSQL_USER}
-      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
       http_proxy: ${http_proxy}
       https_proxy: ${https_proxy}
-    command: -- python3.6 start.py ${AGGREGATOR_RUN_CONF}
-
+    networks:
+      - back-tier
     depends_on:
-      - mysql
-      - cassandrasmfr
+    - mysql
+    - cassandrasmfr
     deploy:
       placement:
-        constraints: [ node.labels.large == true ]
+        constraints: [ node.labels.medium == true ]
       restart_policy:
         condition: on-failure
         max_attempts: 3
         window: 120s
-
-#  products:
-#    restart: on-failure
-#    container_name: products
-#    image: ${DOCKER_REGISTRY}/${PRODUCTS_IMAGE}:${image_tag}
-#    build:
-#      context: ./
-#      dockerfile: Dockerfile.products.ready
-#      args:
-#        http_proxy: ${http_proxy}
-#        https_proxy: ${https_proxy}
-#    working_dir: /products
-#    volumes:
-#    - './products/src:/products'
-#    environment:
-#      LOGGING_LEVEL: ${LOGGING_LEVEL}
-#      PYTHONUNBUFFERED: "true"
-#      CASSANDRA_KEYSPACE: ${CASSANDRA_KEYSPACE}
-#      CASSANDRA_HOST: ${CASSANDRA_HOST}
-#      CASSANDRA_PORT: ${CASSANDRA_PORT}
-#      CASSANDRA_USER: ${CASSANDRA_USER}
-#      CASSANDRA_PASSWORD: ${CASSANDRA_PASSWORD}
-#      PERSISTER_KAFKA_TOPIC: ${PERSISTER_KAFKA_TOPIC}
-#      PRODUCTS_SCHEDULING_MINUTES: ${PRODUCTS_SCHEDULING_MINUTES}
-#      MYSQL_HOST: mysql
-#      MYSQL_DBNAME: ${MYSQL_DBNAME}
-#      MYSQL_USER: ${MYSQL_USER}
-#      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
-#      http_proxy: ${http_proxy}
-#      https_proxy: ${https_proxy}
-#    networks:
-#      - back-tier
-#    depends_on:
-#    - mysql
-#    - cassandrasmfr
-#    deploy:
-#      placement:
-#        constraints: [ node.labels.medium == true ]
-#      restart_policy:
-#        condition: on-failure
-#        max_attempts: 3
-#        window: 120s
 
   restserver:
     restart: always
@@ -508,7 +499,6 @@ services:
       - '5555:5555'
     volumes:
       - './restserver/src:/restserver'
-      - './uploads:/smfr/uploads'
       - './downloads:/smfr/downloaded'
       - './restserver/logs:/logs'
     depends_on:
@@ -559,6 +549,24 @@ services:
         window: 120s
       placement:
         constraints: [ node.labels.small == true ]
+
+  zookeeper:
+    restart: always
+    image: ${DOCKER_REGISTRY}/${ZOOKEEPER_IMAGE}
+    container_name: zookeeper
+    hostname: zookeeper
+    ports:
+    - '2181:2181'
+    networks:
+    - back-tier
+
+    deploy:
+      restart_policy:
+        condition: on-failure
+        max_attempts: 3
+        window: 120s
+      placement:
+        constraints: [ node.labels.huge == true ]
 
 volumes:
   geonames_index:
