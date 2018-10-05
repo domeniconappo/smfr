@@ -8,8 +8,6 @@ ENV LANG=C.UTF-8
 
 RUN mkdir -p /products && mkdir -p /products/smfrcore && mkdir -p /config && mkdir -p /output && mkdir -p /scripts && mkdir -p /requirements
 
-COPY ./products/requirements.txt /requirements/
-
 COPY base/shared_libs/scripts/wait_for_it.sh /scripts/
 COPY base/shared_libs/smfr_utils/. /smfr_libs/utils/
 COPY base/shared_libs/smfr_models/. /smfr_libs/models/

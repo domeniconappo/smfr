@@ -1,24 +1,24 @@
 import os
 import logging
 from collections import defaultdict
-
 from datetime import datetime, timedelta
 
+import ujson
 import geojson
 from geojson import Feature, FeatureCollection
-import fiona
 from geojson.geometry import Geometry
+import fiona
 from Levenshtein import ratio
 
 from smfrcore.models.sql import TwitterCollection, Aggregation, create_app
-from smfrcore.utils import LOGGER_FORMAT, LOGGER_DATE_FORMAT, RUNNING_IN_DOCKER
+from smfrcore.utils import DEFAULT_HANDLER, RUNNING_IN_DOCKER
 from smfrcore.text_utils import tweet_normalization_aggressive
 from sqlalchemy import or_
 
-logging.basicConfig(level=os.environ.get('LOGGING_LEVEL', 'DEBUG'), format=LOGGER_FORMAT, datefmt=LOGGER_DATE_FORMAT)
-
 logger = logging.getLogger(__name__)
 logger.setLevel(os.environ.get('LOGGING_LEVEL', 'DEBUG'))
+logger.addHandler(DEFAULT_HANDLER)
+
 logging.getLogger('cassandra').setLevel(logging.ERROR)
 
 
@@ -28,8 +28,10 @@ class Products:
     """
     config_folder = '/config' if RUNNING_IN_DOCKER else os.path.join(os.path.dirname(__file__), '../config')
     output_folder = '/output' if RUNNING_IN_DOCKER else os.path.join(os.path.dirname(__file__), '../output')
+
     template = os.path.join(config_folder, 'maptemplate.shp')
     output_filename_tpl = os.path.join(output_folder, 'SMFR_products_{}.geojson')
+    out_crs = dict(type='EPSG', properties=dict(code=4326, coordinate_order=[1, 0]))
 
     RGB = {'red': '255 0 0', 'orange': '255 128 0', 'gray': '225 225 225'}
     high_prob_range = os.environ.get('HIGH_PROB_RANGE', '90-100')
@@ -99,12 +101,7 @@ class Products:
             counters_by_efas_id[efas_id][probs_interval] = value
 
         for efas_id, tweets in relevant_tweets_aggregated.items():
-            # TODO
-            # need to apply heuristic from
-            # https://bitbucket.org/lorinivalerio/smfr/src/master/lab/classify/select_representative_tweets.py
-            # mostly to deduplicate
-            relevant_tweets_aggregated[efas_id] = TweetsDeduplicator.deduplicate(relevant_tweets_aggregated[efas_id])
-            relevant_tweets_aggregated[efas_id] = tweets[:cls.max_relevant_tweets]
+            relevant_tweets_aggregated[efas_id] = TweetsDeduplicator.deduplicate(relevant_tweets_aggregated[efas_id])[:cls.max_relevant_tweets]
 
         geojson_output_filename = cls.output_filename_tpl.format(datetime.now().strftime('%Y%m%d%H%M'))
         logger.info('<<<<<< Producing %s', geojson_output_filename)
@@ -116,7 +113,11 @@ class Products:
                     risk_color = cls.determine_color(counters_by_efas_id[efas_id])
                     if risk_color == cls.RGB['gray'] and not relevant_tweets_aggregated[efas_id]:
                         continue
-                    geom = Geometry(coordinates=feat['geometry']['coordinates'], type=feat['geometry']['type'], crs=source.crs)
+                    geom = Geometry(
+                        coordinates=feat['geometry']['coordinates'],
+                        type=feat['geometry']['type'],
+                        # crs=cls.out_crs,
+                    )
                     out_data.append(Feature(geometry=geom, properties={
                         'efas_id': efas_id,
                         'risk_color': cls.determine_color(counters_by_efas_id[efas_id]),
@@ -176,12 +177,13 @@ class TweetsDeduplicator:
         deduplicated = []
         for t in tweets:
             if t['tweetid'] not in ids:
-                t['label_predicted'] = t["annotations"]["flood_probability"]["yes"]
+                t['label_predicted'] = t['annotations']['flood_probability']['yes']
+                t['tweet'] = ujson.loads(t['tweet'])
                 t['_normalized_text'] = tweet_normalization_aggressive(t['tweet']['text'])
                 deduplicated.append(t)
                 ids.append(t['tweetid'])
 
-        is_duplicate = []
+        is_duplicate = {}
         multiplicity = defaultdict(int)
         for tu in deduplicated:
             for tv in deduplicated:
@@ -224,6 +226,6 @@ class TweetsDeduplicator:
                 tweet['_centrality'] = 0.0
 
         # Sort by multiplicity and probability of being relevant
-        tweets_sorted = sorted(tweets_unique, key=lambda x: int(x['label_predicted']) * int(x['_multiplicity']) * int(x['_centrality']), reverse=True)
+        tweets_sorted = sorted(tweets_unique, key=lambda x: x['label_predicted'] * x['_multiplicity'] * x['_centrality'], reverse=True)
 
         return tweets_sorted

@@ -435,8 +435,8 @@ services:
     networks:
       - back-tier
     depends_on:
-    - mysql
-    - cassandrasmfr
+      - mysql
+      - cassandrasmfr
     deploy:
       placement:
         constraints: [ node.labels.medium == true ]
@@ -540,6 +540,7 @@ services:
       - '8888:8888'
     depends_on:
       - restserver
+      - products
     networks:
       - front-tier
     deploy:

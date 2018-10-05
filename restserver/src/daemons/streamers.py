@@ -91,6 +91,7 @@ class BaseStreamer(TwythonStreamer):
         self.disconnect(deactivate_collections=False)
         self.collections = []
         self.collection = None
+        time.sleep(30)
 
     def on_timeout(self):
         logger.error('Timeout...')
@@ -134,7 +135,7 @@ class BaseStreamer(TwythonStreamer):
             with app.app_context():
                 for c in self.collections:
                     c.deactivate()
-        super().disconnect()
+        self.connected = False
 
 
 class BackgroundStreamer(BaseStreamer):
@@ -188,20 +189,19 @@ class OnDemandStreamer(BaseStreamer):
                 logger.warning('Tweet %s was not reconciled with any collection', data.get('id_str'))
                 # we log it to use to improve reconciliation
                 file_logger.error('%s', data)
-                return
-
-            tweet = Tweet.build_from_tweet(collection.id, data, ttype='collected')
-            message = tweet.serialize()
-            if logger.isEnabledFor(logging.DEBUG):
-                logger.debug('\n\nSending to PERSISTER: %s\n', tweet)
-            self.producer.send(self.persister_kafka_topic, message)
-            # send to next topic in the pipeline in case collection.is_using_pipeline == True
-            # On Demand collections always use pipelines
-            if self.use_pipeline(collection) and lang in AnnotatorClient.available_languages():
-                topic = '{}_{}'.format(self.annotator_kafka_topic, lang)
+            else:
+                tweet = Tweet.build_from_tweet(collection.id, data, ttype='collected')
+                message = tweet.serialize()
                 if logger.isEnabledFor(logging.DEBUG):
-                    logger.debug('\n\nSending to annotator queue: %s %s\n', topic, tweet)
-                self.producer.send(topic, message)
+                    logger.debug('\n\nSending to PERSISTER: %s\n', tweet)
+                self.producer.send(self.persister_kafka_topic, message)
+                # send to next topic in the pipeline in case collection.is_using_pipeline == True
+                # On Demand collections always use pipelines
+                if self.use_pipeline(collection) and lang in AnnotatorClient.available_languages():
+                    topic = '{}_{}'.format(self.annotator_kafka_topic, lang)
+                    if logger.isEnabledFor(logging.DEBUG):
+                        logger.debug('\n\nSending to annotator queue: %s %s\n', topic, tweet)
+                    self.producer.send(topic, message)
 
     def use_pipeline(self, collection):
         return True
