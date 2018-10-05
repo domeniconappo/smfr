@@ -5,13 +5,14 @@ import os
 import schedule
 
 from smfrcore.models import TwitterCollection, create_app
-from smfrcore.utils import logged_job, job_exceptions_catcher, run_continuously
+from smfrcore.utils import logged_job, job_exceptions_catcher, run_continuously, DEFAULT_HANDLER
 
 from server.helpers import fetch_rra_helper, events_to_collections_payload
 from server.config import RestServerConfiguration, DEVELOPMENT
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger('RRA Scheduled Jobs')
 logger.setLevel(RestServerConfiguration.logger_level)
+logger.addHandler(DEFAULT_HANDLER)
 
 
 @logged_job

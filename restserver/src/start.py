@@ -5,13 +5,10 @@ import signal
 
 import connexion
 
-from smfrcore.utils import LOGGER_FORMAT, LOGGER_DATE_FORMAT
-
 from daemons.collector import BackgroundCollector, OnDemandCollector, ManualCollector
 from server.config import RestServerConfiguration, SERVER_BOOTSTRAP, MYSQL_MIGRATION
 from server.jobs import schedule_rra_jobs, add_rra_events, update_ondemand_collections_status
 
-logging.basicConfig(level=os.environ.get('LOGGING_LEVEL', 'DEBUG'), format=LOGGER_FORMAT, datefmt=LOGGER_DATE_FORMAT)
 logging.getLogger('cassandra').setLevel(logging.WARNING)
 
 

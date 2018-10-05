@@ -11,6 +11,7 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 
 from smfrcore.models import TwitterCollection, User, Aggregation, Tweet, TweetTuple
 from smfrcore.client.marshmallow import Collection as CollectionSchema, Aggregation as AggregationSchema
+from smfrcore.utils import DEFAULT_HANDLER
 from sqlalchemy.exc import OperationalError
 
 from smfrcore.errors import SMFRRestException
@@ -22,6 +23,8 @@ from server.helpers import (add_collection_helper, add_collection_from_rra_event
                             fetch_rra_helper, events_to_collections_payload)
 
 logger = logging.getLogger('RestServer API')
+logger.setLevel(RestServerConfiguration.logger_level)
+logger.addHandler(DEFAULT_HANDLER)
 
 
 # @jwt_required

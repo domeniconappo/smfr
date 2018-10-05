@@ -187,7 +187,8 @@ class OnDemandStreamer(BaseStreamer):
 
             tweet = Tweet.build_from_tweet(collection.id, data, ttype='collected')
             message = tweet.serialize()
-            logger.debug('\n\nSending to persister queue: %s\n', tweet)
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.debug('\n\nSending to PERSISTER: %s\n', tweet)
             self.producer.send(self.persister_kafka_topic, message)
             # send to next topic in the pipeline in case collection.is_using_pipeline == True
             # On Demand collections always use pipelines
