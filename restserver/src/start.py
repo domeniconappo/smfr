@@ -50,23 +50,23 @@ def create_app():
             signal.signal(sig, stop_active_collectors)
         logger.debug('Registered signals for graceful shutdown: %s', signals)
 
-        # RRA Scheduled jobs. First execution is performed ad bootstrap
-        update_ondemand_collections_status()
-        add_rra_events()
-
         background_collector = BackgroundCollector()
-        background_collector.start()
-
         ondemand_collector = OnDemandCollector()
-        ondemand_collector.start()
-
         manual_collector = ManualCollector()
-        manual_collector.start()
+
         logger.debug('---------- Registering collectors in main configuration:\n%s',
                      [background_collector, ondemand_collector, manual_collector])
         config.set_collectors({background_collector.type: background_collector,
                                ondemand_collector.type: ondemand_collector,
                                manual_collector.type: manual_collector})
+
+        # RRA Scheduled jobs. First execution is performed ad bootstrap
+        update_ondemand_collections_status()
+        add_rra_events()
+
+        background_collector.start()
+        ondemand_collector.start()
+        manual_collector.start()
 
         schedule_rra_jobs()
 

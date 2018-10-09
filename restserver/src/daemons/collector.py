@@ -1,9 +1,17 @@
 from abc import ABC, abstractmethod
+import logging
 
 from smfrcore.models import TwitterCollection
+from smfrcore.utils import DEFAULT_HANDLER
 
 from daemons.streamers import BackgroundStreamer, OnDemandStreamer, ManualStreamer
 from server.config import RestServerConfiguration
+
+
+logger = logging.getLogger('RestServer Collectors')
+logger.setLevel(RestServerConfiguration.logger_level)
+logger.addHandler(DEFAULT_HANDLER)
+logger.propagate = False
 
 
 class BaseCollector(ABC):
@@ -49,6 +57,8 @@ class BackgroundCollector(BaseCollector):
     StreamerClass = BackgroundStreamer
 
     def start(self):
+        if self.streamer.connected:
+
         collection = TwitterCollection.get_active_background()
         if not collection:
             return
