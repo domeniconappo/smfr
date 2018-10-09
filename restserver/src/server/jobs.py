@@ -17,7 +17,7 @@ logger.addHandler(DEFAULT_HANDLER)
 
 @logged_job
 @job_exceptions_catcher
-def add_rra_events(since='latest'):
+def add_rra_events(since='latest', restart_ondemand=True):
     current_app = create_app()
     with current_app.app_context():
         running_collections = TwitterCollection.get_active_ondemand()
@@ -25,7 +25,7 @@ def add_rra_events(since='latest'):
         logger.debug('FETCHED RRA %s', events)
         results = events_to_collections_payload(events, date)
         collections = TwitterCollection.add_rra_events(results)
-        if any(c not in running_collections for c in collections):
+        if any(c not in running_collections for c in collections) and restart_ondemand:
             # There is at least one new collection (even the same one with updated keywords)
             # Collector must be restarted
             on_demand_collector = RestServerConfiguration().collectors[TwitterCollection.TRIGGER_ONDEMAND]
@@ -35,11 +35,11 @@ def add_rra_events(since='latest'):
 
 @logged_job
 @job_exceptions_catcher
-def update_ondemand_collections_status():
+def update_ondemand_collections_status(restart_ondemand=True):
     current_app = create_app()
     with current_app.app_context():
         updated = TwitterCollection.update_status_by_runtime()
-        if updated:
+        if updated and restart_ondemand:
             logger.info(' ============== Some on demand collections were stopped...restarting collector')
             on_demand_collector = RestServerConfiguration().collectors[TwitterCollection.TRIGGER_ONDEMAND]
             on_demand_collector.restart()

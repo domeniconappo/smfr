@@ -61,6 +61,9 @@ class BaseStreamer(TwythonStreamer):
                          access_token, access_token_secret,
                          client_args=self.client_args)
 
+    def __str__(self):
+        return 'Streamer {o.__class__.name}'.format(o=self)
+
     def _build_query_for(self):
         query = {}
         locations = []
