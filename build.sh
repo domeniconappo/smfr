@@ -3,6 +3,7 @@
 source functions.sh
 
 command=${1:-1}
+second_command=${2:-1}
 
 SERVICES="web restserver geocoder annotator persister aggregator cassandrasmfr mysql products"
 logged=0
@@ -64,6 +65,9 @@ fi
 echo
 echo
 if [ -n "${DOCKER_ID_USER}" ] && [ ${command} == "push" ]; then
+    echo !!! Pushing images to ${DOCKER_REGISTRY} as user ${DOCKER_ID_USER}!!!
+    echo
+
     PERSISTER_IMAGE=$(getProperty "PERSISTER_IMAGE")
     AGGREGATOR_IMAGE=$(getProperty "AGGREGATOR_IMAGE")
     ANNOTATOR_IMAGE=$(getProperty "ANNOTATOR_IMAGE")
@@ -74,9 +78,6 @@ if [ -n "${DOCKER_ID_USER}" ] && [ ${command} == "push" ]; then
     CASSANDRA_IMAGE=$(getProperty "CASSANDRA_IMAGE")
     GEONAMES_IMAGE=$(getProperty "GEONAMES_IMAGE")
     PRODUCTS_IMAGE=$(getProperty "PRODUCTS_IMAGE")
-
-    echo !!! Pushing images to ${DOCKER_REGISTRY} as user ${DOCKER_ID_USER}!!!
-    echo
 
     docker push ${DOCKER_REGISTRY}/${PERSISTER_IMAGE}:${image_tag}
     docker push ${DOCKER_REGISTRY}/${AGGREGATOR_IMAGE}:${image_tag}
