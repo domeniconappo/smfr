@@ -37,21 +37,6 @@ def create_app():
         config.init_mysql()
         config.init_cassandra()
 
-        background_collector = BackgroundCollector()
-        background_collector.start()
-
-        ondemand_collector = OnDemandCollector()
-        ondemand_collector.start()
-
-        manual_collector = ManualCollector()
-        manual_collector.start()
-
-        logger.debug('---------- Registering collectors in main configuration:\n%s',
-                     [background_collector, ondemand_collector, manual_collector])
-        config.set_collectors({background_collector.type: background_collector,
-                               ondemand_collector.type: ondemand_collector,
-                               manual_collector.type: manual_collector})
-
         def stop_active_collectors(signum, _):
             deactivate_collections = False
             logger.info("Received %d", signum)
@@ -68,6 +53,21 @@ def create_app():
         # RRA Scheduled jobs. First execution is performed ad bootstrap
         update_ondemand_collections_status()
         add_rra_events()
+
+        background_collector = BackgroundCollector()
+        background_collector.start()
+
+        ondemand_collector = OnDemandCollector()
+        ondemand_collector.start()
+
+        manual_collector = ManualCollector()
+        manual_collector.start()
+        logger.debug('---------- Registering collectors in main configuration:\n%s',
+                     [background_collector, ondemand_collector, manual_collector])
+        config.set_collectors({background_collector.type: background_collector,
+                               ondemand_collector.type: ondemand_collector,
+                               manual_collector.type: manual_collector})
+
         schedule_rra_jobs()
 
     return config.flask_app

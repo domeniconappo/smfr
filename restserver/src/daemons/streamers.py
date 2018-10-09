@@ -45,7 +45,6 @@ class BaseStreamer(TwythonStreamer):
         # A Kafka Producer
         self.producer = producer
 
-        # starting streamer...
         self.collections = []
         self.collection = None
 
@@ -91,10 +90,12 @@ class BaseStreamer(TwythonStreamer):
         self.disconnect(deactivate_collections=False)
         self.collections = []
         self.collection = None
-        time.sleep(30)
+        sleep_time = 60 if str(status_code) == '420' else 30
+        time.sleep(sleep_time)
 
     def on_timeout(self):
         logger.error('Timeout...')
+        time.sleep(30)
 
     def use_pipeline(self, collection):
         return collection.is_using_pipeline
@@ -186,8 +187,7 @@ class OnDemandStreamer(BaseStreamer):
             data['lang'] = lang
             collection = self.reconcile_tweet_with_collection(data)
             if not collection:
-                logger.warning('Tweet %s was not reconciled with any collection', data.get('id_str'))
-                # we log it to use to improve reconciliation
+                # we log it to use to improve reconciliation in the future
                 file_logger.error('%s', data)
             else:
                 tweet = Tweet.build_from_tweet(collection.id, data, ttype='collected')
