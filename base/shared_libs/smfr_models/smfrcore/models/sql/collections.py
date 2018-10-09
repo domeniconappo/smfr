@@ -1,7 +1,7 @@
 import os
 import datetime
 import copy
-from math import cos, sin, atan2, sqrt
+import statistics
 
 import arrow
 from arrow.parser import ParserError
@@ -380,21 +380,8 @@ class TwitterCollection(SMFRModel):
         if not self.locations or not self.locations.get('min_lat'):
             # return europe center (ukraine)
             return 48.499998, 23.3833318
-        x = 0
-        y = 0
-        z = 0
-        coords = ((self.locations['min_lat'], self.locations['min_lon']), (self.locations['max_lat'], self.locations['max_lon']))
-        for lat, lon in coords:
-            lat = float(lat)
-            lon = float(lon)
-            x += cos(lat) * cos(lon)
-            y += cos(lat) * sin(lon)
-            z += sin(lat)
-
-        x = float(x / len(coords))
-        y = float(y / len(coords))
-        z = float(z / len(coords))
-        return atan2(y, x), atan2(z, sqrt(x * x + y * y))
+        coords = ((self.locations['min_lat'], self.locations['max_lat']), (self.locations['min_lon'], self.locations['max_lon']))
+        return statistics.mean(coords[:2]), statistics.mean(coords[2:])
 
     def tweet_matched_keyword(self, original_tweet_dict):
         from smfrcore.models import Tweet

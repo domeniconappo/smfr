@@ -263,7 +263,7 @@ class Tweet(cqldb.Model):
             'Type': obj.ttype,
             'Lang': obj.lang or '-',
             'Annotations': cls.pretty_annotations(tweet_tuple.annotations),
-
+            'raw_coords': (obj.latlong[0], obj.latlong[1]) if obj.latlong else (None, None),
             'LatLon': '<a href="https://www.openstreetmap.org/#map=13/{}/{}" target="_blank">lat: {}, lon: {}</a>'.format(
                 obj.latlong[0], obj.latlong[1], obj.latlong[0], obj.latlong[1]
             ) if obj.latlong else '',
