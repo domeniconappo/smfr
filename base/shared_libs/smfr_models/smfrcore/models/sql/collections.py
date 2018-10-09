@@ -380,7 +380,7 @@ class TwitterCollection(SMFRModel):
         if not self.locations or not self.locations.get('min_lat'):
             # return europe center (ukraine)
             return 48.499998, 23.3833318
-        coords = ((self.locations['min_lat'], self.locations['max_lat']), (self.locations['min_lon'], self.locations['max_lon']))
+        coords = (self.locations['min_lat'], self.locations['max_lat'], self.locations['min_lon'], self.locations['max_lon'])
         return statistics.mean(coords[:2]), statistics.mean(coords[2:])
 
     def tweet_matched_keyword(self, original_tweet_dict):

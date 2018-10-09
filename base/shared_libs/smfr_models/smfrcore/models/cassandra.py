@@ -268,7 +268,7 @@ class Tweet(cqldb.Model):
                 obj.latlong[0], obj.latlong[1], obj.latlong[0], obj.latlong[1]
             ) if obj.latlong else '',
             'Collected at': obj.created_at or '',
-            'Tweeted at': original_tweet['created_at'] or '',
+            'Tweeted at': original_tweet['created_at'].replace('+0000', '') or '',
             'Geo': cls.pretty_geo(obj.geo),
         }
         return obj
@@ -308,7 +308,7 @@ class Tweet(cqldb.Model):
     def pretty_annotations(cls, annotations):
         if not annotations:
             return '-'
-        out = ['{}: {}'.format(k, v[1]) if isinstance(v, tuple) else '{}: {}'.format(k, v['yes']) for k, v in annotations.items()]
+        out = ['{}: {:.3f}'.format(k.replace('_', ' ').title(), v[1]) if isinstance(v, tuple) else '{}: {:.3f}'.format(k.replace('_', ' ').title(), v['yes']) for k, v in annotations.items()]
         return '<pre>{}</pre>'.format('\n'.join(out))
 
     @classmethod
