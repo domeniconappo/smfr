@@ -28,9 +28,10 @@ def add_rra_events(since='latest', restart_ondemand=True):
         if any(c not in running_collections for c in collections) and restart_ondemand:
             # There is at least one new collection (even the same one with updated keywords)
             # Collector must be restarted
+            logger.info(' ============= Adding/Updating on-demand collections from RRA EFAS events:\n\n%s',
+                        '\n'.join(str(c) for c in collections))
             on_demand_collector = RestServerConfiguration().collectors[TwitterCollection.TRIGGER_ONDEMAND]
             on_demand_collector.restart()
-            logger.info(' ============= Added/Updated on-demand collections from RRA EFAS events:\n\n%s', '\n'.join(str(c) for c in collections))
 
 
 @logged_job

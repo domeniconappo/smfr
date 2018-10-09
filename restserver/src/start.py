@@ -37,6 +37,26 @@ def create_app():
         config.init_mysql()
         config.init_cassandra()
 
+        background_collector = BackgroundCollector()
+        ondemand_collector = OnDemandCollector()
+        manual_collector = ManualCollector()
+
+        logger.debug('---------- Registering collectors in main configuration:\n%s',
+                     [background_collector, ondemand_collector, manual_collector])
+        config.set_collectors({background_collector.type: background_collector,
+                               ondemand_collector.type: ondemand_collector,
+                               manual_collector.type: manual_collector})
+
+        # RRA Scheduled jobs. First execution is performed at bootstrap
+        update_ondemand_collections_status(restart_ondemand=False)
+        add_rra_events(restart_ondemand=False)
+
+        background_collector.start()
+        ondemand_collector.start()
+        manual_collector.start()
+
+        schedule_rra_jobs()
+
         def stop_active_collectors(signum, _):
             deactivate_collections = False
             logger.info("Received %d", signum)
@@ -49,26 +69,6 @@ def create_app():
         for sig in signals:
             signal.signal(sig, stop_active_collectors)
         logger.debug('Registered signals for graceful shutdown: %s', signals)
-
-        background_collector = BackgroundCollector()
-        ondemand_collector = OnDemandCollector()
-        manual_collector = ManualCollector()
-
-        logger.debug('---------- Registering collectors in main configuration:\n%s',
-                     [background_collector, ondemand_collector, manual_collector])
-        config.set_collectors({background_collector.type: background_collector,
-                               ondemand_collector.type: ondemand_collector,
-                               manual_collector.type: manual_collector})
-
-        # RRA Scheduled jobs. First execution is performed ad bootstrap
-        update_ondemand_collections_status(restart_ondemand=False)
-        add_rra_events(restart_ondemand=False)
-
-        background_collector.start()
-        ondemand_collector.start()
-        manual_collector.start()
-
-        schedule_rra_jobs()
 
     return config.flask_app
 
