@@ -6,8 +6,6 @@ import json
 import logging
 
 import requests
-from flask.json import jsonify
-from werkzeug.datastructures import FileStorage
 
 from smfrcore.client.conf import ServerConfiguration
 from smfrcore.errors import SMFRError
@@ -25,20 +23,20 @@ class ApiLocalClient:
     """
     logger = logging.getLogger(__name__)
     endpoints = {
+        'list_collectors': '/collectors',
+        'restart_collector': '/collectors/{trigger_type}/restart',
         'list_collections': '/collections',
         'new_collection': '/collections',
-        'stop_collector': '/collections/{id}/stop',
-        'start_collector': '/collections/{id}/start',
-        'list_running_collectors': '/collections/active',
-        'list_inactive_collectors': '/collections/inactive',
+        'stop_collection': '/collections/{id}/stop',
+        'start_collection': '/collections/{id}/start',
+        'list_running_collections': '/collections/active',
+        'list_inactive_collections': '/collections/inactive',
         'remove_collection': '/collections/{id}/remove',
         'collection_details': '/collections/{id}',
         'annotate_collection_start': '/collections/{id}/startannotate',
         'geotag_collection_start': '/collections/{id}/startgeo',
         'annotate_collection_stop': '/collections/{id}/stopannotate',
         'geotag_collection_stop': '/collections/{id}/stopgeo',
-        'signup_user': '/users',
-        'signin_user': '/users/signin',
         'fetch_efas': '/collections/fetch_efas',
         'add_ondemand': '/collections/add_ondemand',
     }
@@ -111,26 +109,32 @@ class ApiLocalClient:
             except ValueError:
                 return {}
 
+    def list_collectors(self):
+        return self._get('list_collectors'), 200
+
+    def restart_collector(self, trigger_type):
+        return self._post('restart_collector', path_kwargs={'trigger_type': trigger_type}), 204
+
     def list_collections(self):
         """
         Get all collections defined in SMFR
         :return: collections defined in SMFR
         """
-        return self._get('list_collections')
+        return self._get('list_collections'), 200
 
-    def list_running_collectors(self):
+    def list_running_collections(self):
         """
         Get collections that are currently fetching from Twitter Stream
         :return: running collections
         """
-        return self._get('list_running_collectors')
+        return self._get('list_running_collections'), 200
 
-    def list_inactive_collectors(self):
+    def list_inactive_collections(self):
         """
         Get inactive collections
         :return: Collections for whose collector was paused
         """
-        return self._get('list_inactive_collectors')
+        return self._get('list_inactive_collections'), 200
 
     def new_collection(self, input_payload):
         schema = CollectionPayload()
@@ -138,28 +142,20 @@ class ApiLocalClient:
         self.logger.debug('Payload %s', input_payload)
         return self._post('new_collection', payload=payload)
 
-    def signup_user(self, input_payload):
-        data = {'username': input_payload['username'], 'password': input_payload['password']}
-        return self._post('signup_user', data)
-
-    def login_user(self, input_payload):
-        data = {'username': input_payload['username'], 'password': input_payload['password']}
-        return self._post('login_user', data)
-
     def logout_user(self, user_id):
         return self._post('logout_user', path_kwargs={'id': user_id})
 
     def remove_collection(self, collection_id):
         return self._post('remove_collection', path_kwargs={'id': collection_id}), 204
 
-    def stop_collector(self, collector_id):
-        return self._post('stop_collector', path_kwargs={'id': collector_id})
+    def stop_collection(self, collector_id):
+        return self._post('stop_collection', path_kwargs={'id': collector_id})
 
-    def start_collector(self, collector_id):
-        return self._post('start_collector', path_kwargs={'id': collector_id})
+    def start_collection(self, collector_id):
+        return self._post('start_collection', path_kwargs={'id': collector_id})
 
     def get_collection(self, collection_id):
-        return self._get('collection_details', path_kwargs={'id': collection_id})
+        return self._get('collection_details', path_kwargs={'id': collection_id}), 200
 
     def start_annotation(self, collection_id):
         return self._post('annotate_collection_start', path_kwargs={'id': collection_id})

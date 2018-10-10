@@ -1,4 +1,6 @@
+import datetime
 import logging
+from collections import deque
 from logging.handlers import RotatingFileHandler
 import os
 import socket
@@ -13,7 +15,7 @@ from smfrcore.models import Tweet, create_app
 from smfrcore.utils import DEFAULT_HANDLER, NULL_HANDLER
 
 from daemons.utils import safe_langdetect, tweet_normalization_aggressive
-from server.config import RestServerConfiguration, MYSQL_MIGRATION, RUNNING_IN_DOCKER
+from server.config import RestServerConfiguration, MYSQL_MIGRATION, RUNNING_IN_DOCKER, DEVELOPMENT
 from server.api.clients import AnnotatorClient
 
 
@@ -41,7 +43,7 @@ class BaseStreamer(TwythonStreamer):
         self.query = {}
         self.persister_kafka_topic = RestServerConfiguration.persister_kafka_topic
         self.annotator_kafka_topic = RestServerConfiguration.annotator_kafka_topic
-
+        self.errors = deque(maxlen=50)
         # A Kafka Producer
         self.producer = producer
 
@@ -62,7 +64,7 @@ class BaseStreamer(TwythonStreamer):
                          client_args=self.client_args)
 
     def __str__(self):
-        return 'Streamer {o.__class__.name}'.format(o=self)
+        return '{o.__class__.__name__}'.format(o=self)
 
     def _build_query_for(self):
         query = {}
@@ -88,8 +90,10 @@ class BaseStreamer(TwythonStreamer):
         return query
 
     def on_error(self, status_code, data):
+        err = str(data) or 'No data'
         logger.error(status_code)
-        logger.error(str(data) or 'No data')
+        logger.error(err)
+        self.errors.append('{}: {} - {}'.format(status_code, datetime.datetime.now(), err))
         self.disconnect(deactivate_collections=False)
         self.collections = []
         self.collection = None
@@ -98,14 +102,14 @@ class BaseStreamer(TwythonStreamer):
 
     def on_timeout(self):
         logger.error('Timeout...')
+        self.errors.append('{}: {} - {}'.format('500', datetime.datetime.now(), 'Timeout'))
         time.sleep(30)
 
     def use_pipeline(self, collection):
         return collection.is_using_pipeline
 
     def run_collections(self, collections):
-        t = threading.Thread(target=self.connect, name='Streamer {}'.format(collections[0].trigger),
-                             args=(collections,), daemon=True)
+        t = threading.Thread(target=self.connect, name=str(self), args=(collections,), daemon=True)
         t.start()
 
     def connect(self, collections):
@@ -126,9 +130,14 @@ class BaseStreamer(TwythonStreamer):
                 logger.warning('A timeout occurred. Streamer is sleeping for 30 seconds: %s', e)
                 time.sleep(30)
             except Exception as e:
+                if DEVELOPMENT:
+                    import traceback
+                    traceback.print_exc()
                 logger.warning('An error occurred during filtering in Streamer %s: %s', self.__class__.__name__, e)
+
                 stay_active = False
                 logger.warning('Disconnecting collector due an unexpected error')
+                self.errors.append('{}: {} - {}'.format('500', datetime.datetime.now(), str(e)))
         self.disconnect(deactivate_collections=False)
 
     def disconnect(self, deactivate_collections=True):

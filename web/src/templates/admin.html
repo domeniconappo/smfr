@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block scripts %}
     {{ super() }}
-    <script src="/static/js/moment-with-locales.min.js"></script>
+    <script src="/static/js/moment-with-locales.min.js" xmlns="http://www.w3.org/1999/html"></script>
     <script>document.getElementById("tzclient").value = moment().format("Z");</script>
 {% endblock %}
 {% block app_content %}
@@ -14,6 +14,43 @@
             </div>
         </div>
         <div class="panel-body">
+            {%  if collectors %}
+                <table class="table table-striped table-bordered table-list">
+                <thead>
+                    <tr>
+                        <th><em class="fa fa-cogs"></em></th>
+                        <th>Trigger</th>
+                        <th>Collections</th>
+                        <th>Status</th>
+                        <th>Errors</th>
+                    </tr>
+                </thead>
+                <tbody>
+              {% for c in collectors %}
+                    <tr>
+                        <td>
+                        <a href="/restart_collector?ttype={{ c.trigger_type }}">
+                        <i class="fa fa-redo"></i>
+                        </a>
+                        </td>
+                        <td>{{ c.trigger_type }}</td>
+                        <td>
+                           {% for co in c.collections %}
+                               <a href="/details/{{ co }}" target="_self">{{ co }}</a>
+                           {% endfor %}
+                        </td>
+                        <td>{{ c.status }}</td>
+                        <td><p>
+                            {% for e in c.errors %}
+                                {{ e }}
+                            {% endfor %}
+                        </p></td>
+                    </tr>
+              {% endfor %}
+                </tbody>
+              </table>
+            {% endif %}
+            <hr />
             <form class="form_box" method="post" action="/fetch_efas">
                 <input id="tzclient" name="tzclient" type="hidden" value="" />
             {% if fetched_events and fetched_events|length > 0 %}

@@ -24,7 +24,16 @@ def index():
 
 @app.route('/admin', methods=('GET',))
 def admin():
-    return render_template('admin.html'), 200
+    res, _ = client.list_collectors()
+    return render_template('admin.html', collectors=res), 200
+
+
+@app.route('/restart_collector', methods=('GET',))
+def restart_collector():
+    ttype = request.args.get('ttype')
+    client.restart_collector(ttype)
+    res, _ = client.list_collectors()
+    return redirect('/admin')
 
 
 @app.route('/fetch_efas', methods=('GET', 'POST'))
@@ -54,19 +63,19 @@ def fetch_efas():
 
 @app.route('/list', methods=('GET',))
 def list_collections():
-    res = client.list_collections()
+    res, _ = client.list_collections()
     return render_template('list.html', collections=res), 200
 
 
 @app.route('/running', methods=('GET',))
 def list_active_collections():
-    res = client.list_running_collectors()
+    res, _ = client.list_running_collections()
     return render_template('list.html', collectors=res), 200
 
 
 @app.route('/stopped', methods=('GET',))
 def list_inactive_collections():
-    res = client.list_inactive_collectors()
+    res, _ = client.list_inactive_collections()
     return render_template('list.html', collectors=res), 200
 
 
@@ -103,7 +112,7 @@ def new_collection():
 @app.route('/start/<collection_id>', methods=('GET',))
 def start_collector(collection_id):
     try:
-        _ = client.start_collector(collection_id)
+        _ = client.start_collection(collection_id)
         add_message('The collection was started (collection id {})'.format(collection_id),
                     category=MessageClass.SUCCESS)
     except SMFRRestException as e:
@@ -116,7 +125,7 @@ def start_collector(collection_id):
 @app.route('/stop/<int:collection_id>', methods=('GET',))
 def stop_collector(collection_id):
     try:
-        client.stop_collector(collection_id)
+        client.stop_collection(collection_id)
         add_message('The collection was stopped (collection id {})'.format(collection_id), category=MessageClass.SUCCESS)
     except SMFRRestException as e:
         add_message('An error occurred: {}'.format(e), category=MessageClass.ERROR)
@@ -145,7 +154,7 @@ def remove_collection(collection_id):
 @app.route('/details/<int:collection_id>', methods=('GET',))
 def collection_details(collection_id):
     try:
-        res = client.get_collection(collection_id)
+        res, _ = client.get_collection(collection_id)
     except SMFRRestException as e:
         add_message('An error occurred: {}'.format(e), category=MessageClass.ERROR)
         logger.error(str(e))

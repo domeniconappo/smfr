@@ -87,6 +87,38 @@ paths:
         400:
           description: Bad JSON formatting in the request
 
+# COLLECTORS / STREAMERS
+
+  /collectors:
+    get:
+      tags: [collectors]
+      operationId: server.api.collectors.get
+      summary: Get all collectors defined in SMFR
+      responses:
+        200:
+          description: Return all collectors
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/Collector'
+
+  /collectors/{trigger_type}/restart:
+    post:
+      tags: [collectors]
+      operationId: server.api.collectors.restart
+      parameters:
+      - in: path
+        name: trigger_type
+        type: string
+        required: true
+        description: Collector/Streamer type to start.
+      summary: Restart a collector
+      responses:
+        204:
+          description: The collector was started successfully.
+
+
+# COLLECTIONS
 
   /collections:
     post:
@@ -515,6 +547,25 @@ definitions:
         type: array
         items:
           $ref: '#/definitions/CollectionTweetSample'
+
+  Collector:
+    type: object
+    properties:
+      trigger_type:
+        type: string
+        enum: [background, on-demand, manual]
+      status:
+        type: string
+        enum: [connected, disconnected]
+      collections:
+        type: array
+        items:
+          type: number
+          format: integer
+      errors:
+        type: array
+        items:
+          type: string
 
   # A simple username/password combo for logging in
   Login:
