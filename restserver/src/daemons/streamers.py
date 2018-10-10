@@ -134,21 +134,20 @@ class BaseStreamer(TwythonStreamer):
                     import traceback
                     traceback.print_exc()
                 logger.warning('An error occurred during filtering in Streamer %s: %s', self.__class__.__name__, e)
-
                 stay_active = False
+                self.disconnect(deactivate_collections=False)
                 logger.warning('Disconnecting collector due an unexpected error')
                 self.errors.append('{}: {} - {}'.format('500', datetime.datetime.now(), str(e)))
-        self.disconnect(deactivate_collections=False)
 
     def disconnect(self, deactivate_collections=True):
         logger.info('Disconnecting twitter streamer (thread %s)', threading.current_thread().name)
+        self.connected = False
         if deactivate_collections:
             logger.warning('Deactivating all collections!')
             app = create_app()
             with app.app_context():
                 for c in self.collections:
                     c.deactivate()
-        self.connected = False
 
 
 class BackgroundStreamer(BaseStreamer):
