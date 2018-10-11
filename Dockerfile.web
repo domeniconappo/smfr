@@ -10,7 +10,7 @@ RUN apt-get update && apt-get -y dist-upgrade && apt-get -y install apt-utils \
  && apt-get -y install net-tools nginx supervisor && pip3 install -U pip
 
 # build uwsgi and python plugin
-RUN mkdir -p /app && mkdir -p /app/smfrcore && mkdir -p /requirements \
+RUN mkdir -p /app && mkdir -p /app/smfrcore && mkdir -p /requirements && mkdir -p /products \
  && mkdir -p /scripts && mkdir -p /uwsgi && cd /uwsgi && wget https://projects.unbit.it/downloads/uwsgi-2.0.15.tar.gz \
  && tar xzvf uwsgi-2.0.15.tar.gz \
  && cd /uwsgi/uwsgi-2.0.15/ && python3.5 uwsgiconfig.py --build core \

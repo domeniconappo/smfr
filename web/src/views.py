@@ -1,4 +1,6 @@
+import glob
 import logging
+import os
 
 import ujson as json
 
@@ -16,6 +18,8 @@ logging.basicConfig(level=logging.INFO, format=LOGGER_FORMAT, datefmt=LOGGER_DAT
 logger = logging.getLogger('Web')
 client = ApiLocalClient()
 
+PRODUCTS_FOLDER = os.environ.get('PRODUCTS_OUTPUT_FOLDER', '/products')
+
 
 @app.route('/', methods=('GET',))
 def index():
@@ -32,7 +36,6 @@ def admin():
 def restart_collector():
     ttype = request.args.get('ttype')
     client.restart_collector(ttype)
-    res, _ = client.list_collectors()
     return redirect('/admin')
 
 
@@ -67,8 +70,14 @@ def list_collections():
     return render_template('list.html', collections=res), 200
 
 
-@app.route('/running', methods=('GET',))
+@app.route('/list_active', methods=('GET',))
 def list_active_collections():
+    res, _ = client.list_active_collections()
+    return render_template('list.html', collections=res), 200
+
+
+@app.route('/running', methods=('GET',))
+def list_running_collections():
     res, _ = client.list_running_collections()
     return render_template('list.html', collectors=res), 200
 
@@ -213,6 +222,33 @@ def stopgeolocalize_collection(collection_id):
         add_message('Geocoding stopped for collection: {}'.format(collection_id), category=MessageClass.SUCCESS)
     finally:
         return redirect('/details/{}'.format(collection_id))
+    
+
+@app.route('/products', methods=('GET',))
+def show_products():
+    geojson = {}
+    res = []
+    requested_date = request.args.get('date')
+    if requested_date:
+        filename = 'SMFR_products_{}.geojson'.format(requested_date)
+        geojson_path = os.path.join(PRODUCTS_FOLDER, filename)
+        with open(geojson_path) as fh:
+            geojson = json.load(fh)
+
+    files = glob.glob(PRODUCTS_FOLDER + '/*.geojson')[:30]
+    files = sorted(files, reverse=True)
+    for f in files:
+        filename = os.path.basename(f)
+        date = filename.split('_')[2].rstrip('.geojson')
+        with open(f) as prod:
+            try:
+                content = json.load(prod)
+            except ValueError:
+                logger.error('%s produced an error in json.load', f)
+                continue
+            else:
+                res.append({'name': filename, 'date': date, 'reported_regions': 0})
+    return render_template('products.html', files=res, geojson=geojson), 200
 
 
 @app.errorhandler(404)

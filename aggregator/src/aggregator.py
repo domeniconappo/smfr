@@ -107,6 +107,7 @@ def aggregate(running_conf=None):
 
 def find_collections_to_aggregate(running_conf):
     if running_conf.running:
+        collections_to_aggregate = TwitterCollection.get_active()
         collections_to_aggregate = TwitterCollection.query.filter(
             or_(
                 TwitterCollection.status == 'active',

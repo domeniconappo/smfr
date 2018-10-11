@@ -4,19 +4,32 @@ import sys
 import threading
 import time
 from collections import namedtuple, Counter
+from logging.handlers import RotatingFileHandler
 
 from cassandra import InvalidRequest
 from cassandra.cqlengine import ValidationError, CQLEngineException
 from kafka import KafkaConsumer
 from kafka.errors import CommitFailedError, NoBrokersAvailable
 
-from smfrcore.models import Tweet
-
+from smfrcore.models import Tweet, TwitterCollection, create_app
+from smfrcore.utils import RUNNING_IN_DOCKER, NULL_HANDLER, DEFAULT_HANDLER
 
 PersisterConfiguration = namedtuple('PersisterConfiguration', ['persister_kafka_topic', 'kafka_bootstrap_server'])
 
 logger = logging.getLogger('PERSISTER')
+logger.addHandler(DEFAULT_HANDLER)
 logger.setLevel(os.environ.get('LOGGING_LEVEL', 'DEBUG'))
+
+file_logger = logging.getLogger('Not Reconciled Tweets')
+file_logger.setLevel(logging.ERROR)
+file_logger.propagate = False
+file_logger.addHandler(NULL_HANDLER)
+
+if RUNNING_IN_DOCKER:
+    filelog_path = os.path.join(os.path.dirname(__file__), '../../logs/not_reconciled_tweets.log') if not RUNNING_IN_DOCKER else '/logs/not_reconciled_tweets.log'
+    hdlr = RotatingFileHandler(filelog_path, maxBytes=10485760, backupCount=2)
+    hdlr.setLevel(logging.ERROR)
+    file_logger.addHandler(hdlr)
 
 
 class Persister:
@@ -30,6 +43,7 @@ class Persister:
     )
     _running_instance = None
     _lock = threading.RLock()
+    app = create_app()
 
     @classmethod
     def running_instance(cls):
@@ -80,6 +94,15 @@ class Persister:
                     sys.exit(1)
             else:
                 break
+        with self.app.app_context():
+            self.collections = TwitterCollection.get_active_ondemand()
+
+    def reconcile_tweet_with_collection(self, tweet):
+        for c in self.collections:
+            if c.is_tweet_in_bounding_box(tweet) or c.tweet_matched_keyword(tweet):
+                return c
+        # no collection found for ingested tweet...
+        return None
 
     def start(self):
         """
@@ -95,7 +118,13 @@ class Persister:
                 try:
                     msg = msg.value.decode('utf-8')
                     tweet = Tweet.build_from_kafka_message(msg)
-                    logger.debug('Saving tweet: %s', tweet.tweetid)
+                    if tweet.collectionid == Tweet.NO_COLLECTION_ID:
+                        collection = self.reconcile_tweet_with_collection(tweet)
+                        if not collection:
+                            # we log it to use to improve reconciliation in the future
+                            file_logger.error('%s', tweet)
+                            continue
+                    logger.debug('Saving tweet: %s to collection %d', tweet.tweetid, tweet.collectionid)
                     tweet.save()
                     counter[tweet.ttype] += 1
                     if not (i % 5000):

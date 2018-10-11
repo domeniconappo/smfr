@@ -151,10 +151,23 @@ paths:
             items:
               $ref: '#/definitions/Collection'
 
-  /collections/active:
+  /collections/running:
     get:
       tags: [collections]
       operationId: server.api.collections.get_running_collections
+      summary: Get _running collectors
+      responses:
+        200:
+          description: Return collectors
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/Collection'
+
+  /collections/active:
+    get:
+      tags: [collections]
+      operationId: server.api.collections.get_active_collections
       summary: Get _running collectors
       responses:
         200:

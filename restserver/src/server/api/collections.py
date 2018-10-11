@@ -99,7 +99,14 @@ def get_running_collections():
     :return:
     """
     out_schema = CollectionSchema()
-    res = [c.collection for _, c in RestServerConfiguration().running_collections]
+    res = TwitterCollection.get_running()
+    res = out_schema.dump(res, many=True).data
+    return res, 200
+
+
+def get_active_collections():
+    out_schema = CollectionSchema()
+    res = TwitterCollection.get_active()
     res = out_schema.dump(res, many=True).data
     return res, 200
 

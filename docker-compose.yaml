@@ -372,6 +372,10 @@ services:
       PYTHONUNBUFFERED: 'true'
       PERSISTER_KAFKA_TOPIC: ${PERSISTER_KAFKA_TOPIC}
       KAFKA_BOOTSTRAP_SERVER: ${KAFKA_BOOTSTRAP_SERVER}
+      MYSQL_HOST: mysql
+      MYSQL_DBNAME: ${MYSQL_DBNAME}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
       CASSANDRA_HOST: ${CASSANDRA_HOST}
       CASSANDRA_PORT: ${CASSANDRA_PORT}
       CASSANDRA_USER: ${CASSANDRA_USER}
@@ -383,6 +387,7 @@ services:
       https_proxy: ${https_proxy}
     volumes:
       - './persister/src:/persister'
+      - './persister/logs:/logs'
     networks:
       - back-tier
     depends_on:
@@ -530,10 +535,12 @@ services:
     working_dir: /app
     volumes:
       - './web/src:/app'
+      - ${PRODUCTS_OUTPUT}:/products
     environment:
       PYTHONUNBUFFERED: 'true'
       RESTSERVER_PORT: ${RESTSERVER_PORT}
       RESTSERVER_BASEPATH: '/1.0'
+      PRODUCTS_OUTPUT_FOLDER: '/products'
       http_proxy: ${http_proxy}
       https_proxy: ${https_proxy}
     ports:

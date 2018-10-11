@@ -1,19 +1,18 @@
-import logging
-import os
 import signal
 
-from smfrcore.utils import LOGGER_FORMAT, LOGGER_DATE_FORMAT
+import schedule
+from smfrcore.models import TwitterCollection
 
-from persister import Persister
+from persister import Persister, logger
 
 
-logging.basicConfig(format=LOGGER_FORMAT, datefmt=LOGGER_DATE_FORMAT)
-logger = logging.getLogger('PERSISTER')
-logger.setLevel(os.environ.get('LOGGING_LEVEL', 'DEBUG'))
+def get_active_collections_for_persister(p):
+    with Persister.app.app_context():
+        p.collections = TwitterCollection.get_active_ondemand()
 
 
 if __name__ == '__main__':
-    def stop_active_collectors(signum, _):
+    def stop_persister(signum, _):
         logger.debug("Received %d", signum)
         logger.debug("Stopping any running collector...")
 
@@ -22,8 +21,10 @@ if __name__ == '__main__':
             logger.info("Stopping consumer %s", str(running_consumer))
             Persister.running_instance().stop()
 
-    signal.signal(signal.SIGINT, stop_active_collectors)
-    signal.signal(signal.SIGTERM, stop_active_collectors)
-    signal.signal(signal.SIGQUIT, stop_active_collectors)
+    signal.signal(signal.SIGINT, stop_persister)
+    signal.signal(signal.SIGTERM, stop_persister)
+    signal.signal(signal.SIGQUIT, stop_persister)
     logger.debug('Registered %d %d and %d', signal.SIGINT, signal.SIGTERM, signal.SIGQUIT)
-    Persister().start()
+    persister = Persister()
+    schedule.every(30).minutes.do(get_active_collections_for_persister, (persister,)).tag('update-collections-persister')
+    persister.start()

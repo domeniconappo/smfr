@@ -1,4 +1,3 @@
-import os
 import datetime
 import copy
 import statistics
@@ -7,14 +6,12 @@ import arrow
 from arrow.parser import ParserError
 from cachetools import TTLCache
 from fuzzywuzzy import process, fuzz
-from sqlalchemy import Column, Integer, ForeignKey, TIMESTAMP, Boolean, BigInteger, orm
+from sqlalchemy import Column, Integer, ForeignKey, TIMESTAMP, Boolean, BigInteger, orm, or_
 from sqlalchemy_utils import ChoiceType, ScalarListType, JSONType
 
 from .base import sqldb, SMFRModel, LongJSONType
 from .users import User
 from .nuts import Nuts2
-
-ENABLE_GEOPARSER_TWEET = bool(os.environ.get('ENABLE_GEOPARSER_TWEET', False))
 
 
 class TwitterCollection(SMFRModel):
@@ -64,6 +61,8 @@ class TwitterCollection(SMFRModel):
         'background': 'background-collection',
         'collection': 'id-{}',
         'manual': 'active-manual',
+        'active': 'active',
+        'running': 'running',
     }
 
     def __str__(self):
@@ -154,29 +153,28 @@ class TwitterCollection(SMFRModel):
 
         obj = cls()
         obj.status = data.get('status', cls.INACTIVE_STATUS)
-        trigger = data['trigger']
-        runtime = cls.convert_runtime(data.get('runtime'))
-        obj.runtime = runtime
+        obj.trigger = data['trigger']
+        obj.runtime = cls.convert_runtime(data.get('runtime'))
         obj.forecast_id = data.get('forecast_id')
+        obj.efas_id = data.get('efas_id')
+        obj.user_id = user.id if user else 1
+        obj.use_pipeline = data.get('use_pipeline', False)
 
-        if trigger == cls.TRIGGER_BACKGROUND:
+        if obj.is_background:
             existing = cls.get_active_background()
             if existing:
                 raise ValueError("You can't have more than one running background collection. "
                                  "First stop the active background collection.")
-        elif trigger == cls.TRIGGER_ONDEMAND:
+        elif obj.is_ondemand:
             existing = cls.query.filter_by(efas_id=data['efas_id']).first()
             if existing:
                 obj = existing
                 obj.runtime = existing.runtime if existing.forecast_id == obj.forecast_id else obj.runtime
-            if not existing or not obj.started_at or (obj.stopped_at and obj.started_at and obj.stopped_at > obj.started_at):
+            if not existing or not obj.started_at or (
+                    obj.stopped_at and obj.started_at and obj.stopped_at > obj.started_at):
                 obj.started_at = datetime.datetime.utcnow()
             obj.status = cls.ACTIVE_STATUS  # force active status when creating/updating on demand collections
 
-        obj.efas_id = data.get('efas_id')
-        obj.trigger = trigger
-        obj.user_id = user.id if user else 1
-        obj.use_pipeline = data.get('use_pipeline', False)
         obj._set_keywords_and_languages(data.get('keywords') or [], data.get('languages') or [])
         obj._set_locations(data.get('bounding_box') or data.get('locations'))
         obj.save()
@@ -184,27 +182,6 @@ class TwitterCollection(SMFRModel):
         # updating caches
         cls._update_caches(obj)
         return obj
-
-    @classmethod
-    def _update_caches(cls, obj):
-        if obj.trigger == cls.TRIGGER_BACKGROUND:
-            cls.cache[cls.cache_keys['background']] = obj
-        elif obj.trigger == cls.TRIGGER_ONDEMAND:
-            current_ondemand_collections = copy.deepcopy(cls.cache[cls.cache_keys['on-demand']])
-            for collection in current_ondemand_collections:
-                if obj.efas_id == collection.efas_id:
-                    current_ondemand_collections.remove(collection)
-            if obj not in current_ondemand_collections:
-                # This test would fail if keywords/locations are different.
-                # That's why we first remove the collection with same efas_id of the one we are adding
-                current_ondemand_collections.append(obj)
-            cls.cache[cls.cache_keys['on-demand']] = current_ondemand_collections
-        elif obj.trigger == cls.TRIGGER_MANUAL:
-            current_manual_collections = copy.deepcopy(cls.cache[cls.cache_keys['manual']])
-            current_manual_collections.append(obj)
-            cls.cache[cls.cache_keys['manual']] = current_manual_collections
-
-        cls.cache[cls.cache_keys['collection'].format(obj.id)] = obj
 
     @classmethod
     def add_rra_events(cls, events):
@@ -241,6 +218,29 @@ class TwitterCollection(SMFRModel):
         return res
 
     @classmethod
+    def get_active(cls):
+        key = cls.cache_keys['active']
+        res = cls.cache.get(key)
+        if not res:
+            res = cls.query.filter(
+                or_(
+                    TwitterCollection.status == 'active',
+                    TwitterCollection.stopped_at >= datetime.datetime.now() - datetime.timedelta(days=2)
+                )
+            ).all()
+            cls.cache[key] = res
+        return res
+
+    @classmethod
+    def get_running(cls):
+        key = cls.cache_keys['running']
+        res = cls.cache.get(key)
+        if not res:
+            res = cls.query.filter_by(status=cls.ACTIVE_STATUS).all()
+            cls.cache[key] = res
+        return res
+
+    @classmethod
     def get_active_ondemand(cls):
         key = cls.cache_keys['on-demand']
         res = cls.cache.get(key)
@@ -271,16 +271,97 @@ class TwitterCollection(SMFRModel):
         self.status = self.INACTIVE_STATUS
         self.stopped_at = datetime.datetime.utcnow()
         self.save()
+        self._update_caches(self, action='deactivate')
 
     def activate(self):
         self.status = self.ACTIVE_STATUS
         self.started_at = datetime.datetime.utcnow()
         self.save()
+        self._update_caches(self, action='activate')
 
     def delete(self):
-        key = self.cache_keys['collection'].format(self.id)
-        self.cache[key] = None
         super().delete()
+        self._update_caches(obj=self, action='delete')
+
+    @classmethod
+    def _update_caches(cls, obj, action='create'):
+        """
+        Updating all caches:
+        'on-demand': 'active-on-demand',
+        'background': 'background-collection',
+        'collection': 'id-{}',
+        'manual': 'active-manual',
+        'active': 'active',
+        'running': 'running',
+        :param obj: TwitterCollection object
+        :param action: 'create' or 'delete'
+        """
+
+        def _update_cached_list(cache_key):
+            current_cached_collections = copy.deepcopy(cache_key)
+            for c in current_cached_collections:
+                if obj.efas_id == c.efas_id:
+                    current_cached_collections.remove(c)
+                    break
+            if obj not in current_cached_collections:
+                # This test would fail if keywords/locations are different.
+                # That's why we first remove the collection with same efas_id of the one we are adding
+                current_cached_collections.append(obj)
+            cls.cache[cache_key] = current_cached_collections
+
+        collection_key = obj.cache_keys['collection'].format(obj.id)
+
+        if action == 'create':
+            cls.cache[collection_key] = obj
+            if obj.is_active:
+                _update_cached_list(cls.cache_keys['running'])
+                if obj.is_manual:
+                    # update manual active
+                    current_manual_collections = copy.deepcopy(cls.cache[cls.cache_keys['manual']])
+                    current_manual_collections.append(obj)
+                    cls.cache[cls.cache_keys['manual']] = current_manual_collections
+                elif obj.is_background:
+                    # update background active
+                    cls.cache[cls.cache_keys['background']] = obj
+                elif obj.is_ondemand:
+                    # update ondemand active
+                    _update_cached_list(cls.cache_keys['on-demand'])
+
+        elif action == 'delete':
+            cls.cache[collection_key] = None
+            try:
+                if obj.is_active_or_recent:
+                    cls.cache[cls.cache_keys['active']].remove(obj)
+                    if obj.is_active:
+                        cls.cache[cls.cache_keys['running']].remove(obj)
+                        if obj.is_manual:
+                            cls.cache[cls.cache_keys['manual']].remove(obj)
+                        elif obj.is_background:
+                            cls.cache[cls.cache_keys['background']] = None
+                        elif obj.is_ondemand:
+                            cls.cache[cls.cache_keys['on-demand']].remove(obj)
+            except ValueError:
+                pass
+        elif action == 'deactivate':
+            try:
+                cls.cache[cls.cache_keys['running']].remove(obj)
+                if obj.is_manual:
+                    cls.cache[cls.cache_keys['manual']].remove(obj)
+                elif obj.is_background:
+                    cls.cache[cls.cache_keys['background']] = None
+                elif obj.is_ondemand:
+                    cls.cache[cls.cache_keys['on-demand']].remove(obj)
+            except ValueError:
+                pass
+        elif action == 'activate':
+            cls.cache[cls.cache_keys['active']].append(obj)
+            cls.cache[cls.cache_keys['running']].append(obj)
+            if obj.is_manual:
+                cls.cache[cls.cache_keys['manual']].append(obj)
+            elif obj.is_background:
+                cls.cache[cls.cache_keys['background']] = obj
+            elif obj.is_ondemand:
+                cls.cache[cls.cache_keys['on-demand']].append(obj)
 
     @classmethod
     def update_status_by_runtime(cls):
@@ -292,8 +373,7 @@ class TwitterCollection(SMFRModel):
         collections = cls.query.filter(cls.runtime.isnot(None), cls.status == cls.ACTIVE_STATUS)
         for c in collections:
             if c.runtime < datetime.datetime.now():
-                c.status = cls.INACTIVE_STATUS
-                c.save()
+                cls.deactivate(c)
                 updated = True
         return updated
 
@@ -304,7 +384,8 @@ class TwitterCollection(SMFRModel):
         :param lead_time: number of days before the peak occurs
         :return: runtime in format %Y-%m-%d %H:%M
         """
-        runtime = (datetime.datetime.utcnow() + datetime.timedelta(days=int(lead_time) + 2)).replace(hour=0, minute=0, second=0, microsecond=0)
+        runtime = (datetime.datetime.utcnow() +
+                   datetime.timedelta(days=int(lead_time) + 2)).replace(hour=0, minute=0, second=0, microsecond=0)
         return runtime.strftime('%Y-%m-%d %H:%M')
 
     @classmethod
@@ -346,13 +427,15 @@ class TwitterCollection(SMFRModel):
             bbox = 'Lower left: {min_lon} - {min_lat}, Upper Right: {max_lon} - {max_lat}'.format(**self.locations)
         return bbox
 
-    def is_tweet_in_bounding_box(self, original_tweet_dict):
+    def is_tweet_in_bounding_box(self, tweet):
+
         from smfrcore.models import Tweet
         if not self.locations or not self.locations.get('min_lat'):
             return False
         res = False
-
-        min_lat, max_lat, min_lon, max_lon = self.locations['min_lat'], self.locations['max_lat'], self.locations['min_lon'], self.locations['max_lon']
+        original_tweet_dict = tweet.original_tweet_as_dict
+        min_lat, max_lat, min_lon, max_lon = self.locations['min_lat'], self.locations['max_lat'], self.locations[
+            'min_lon'], self.locations['max_lon']
         lat, lon = Tweet.coords_from_raw_tweet(original_tweet_dict)
         min_tweet_lat, max_tweet_lat, min_tweet_lon, max_tweet_lon = Tweet.get_tweet_bbox(original_tweet_dict)
 
@@ -383,9 +466,10 @@ class TwitterCollection(SMFRModel):
         coords = (self.locations['min_lat'], self.locations['max_lat'], self.locations['min_lon'], self.locations['max_lon'])
         return statistics.mean(coords[:2]), statistics.mean(coords[2:])
 
-    def tweet_matched_keyword(self, original_tweet_dict):
+    def tweet_matched_keyword(self, tweet):
         from smfrcore.models import Tweet
 
+        original_tweet_dict = tweet.original_tweet_as_dict
         matching_properties_text = Tweet.get_contributing_match_keywords_fields(original_tweet_dict)
         text_to_match = matching_properties_text.strip()
         res = None
@@ -393,9 +477,7 @@ class TwitterCollection(SMFRModel):
             if kw in text_to_match:
                 res = kw
         if not res:
-            res = process.extractOne(text_to_match, self.tracking_keywords,
-                                     scorer=fuzz.partial_ratio,
-                                     score_cutoff=80)
+            res = process.extractOne(text_to_match, self.tracking_keywords, scorer=fuzz.partial_ratio, score_cutoff=80)
         return res[0] if res else None
 
     @property
@@ -407,8 +489,20 @@ class TwitterCollection(SMFRModel):
         return self.trigger == self.TRIGGER_ONDEMAND
 
     @property
+    def is_manual(self):
+        return self.trigger == self.TRIGGER_MANUAL
+
+    @property
+    def is_background(self):
+        return self.trigger == self.TRIGGER_BACKGROUND
+
+    @property
     def is_using_pipeline(self):
         return self.is_ondemand or self.use_pipeline
+
+    @property
+    def is_active_or_recent(self):
+        return self.status == self.ACTIVE_STATUS or self.stopped_at >= (datetime.datetime.now() - datetime.timedelta(days=2))
 
 
 class Aggregation(SMFRModel):

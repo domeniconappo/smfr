@@ -7,7 +7,7 @@ ENV http_proxy ${http_proxy}
 ENV https_proxy ${https_proxy}
 ENV LANG C.UTF-8
 
-RUN mkdir -p /persister && mkdir -p /requirements \
+RUN mkdir -p /persister && mkdir -p /requirements && mkdir -p /logs \
  && mkdir -p /persister/smfrcore && mkdir -p /config && mkdir -p /scripts
 
 COPY base/shared_libs/scripts/wait_for_it.sh /scripts/

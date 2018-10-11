@@ -29,8 +29,9 @@ class ApiLocalClient:
         'new_collection': '/collections',
         'stop_collection': '/collections/{id}/stop',
         'start_collection': '/collections/{id}/start',
-        'list_running_collections': '/collections/active',
+        'list_running_collections': '/collections/running',
         'list_inactive_collections': '/collections/inactive',
+        'list_active_collections': '/collections/active',
         'remove_collection': '/collections/{id}/remove',
         'collection_details': '/collections/{id}',
         'annotate_collection_start': '/collections/{id}/startannotate',
@@ -128,6 +129,13 @@ class ApiLocalClient:
         :return: running collections
         """
         return self._get('list_running_collections'), 200
+
+    def list_active_collections(self):
+        """
+        Get collections that are currently fetching from Twitter Stream or were stopped recently
+        :return: active collections
+        """
+        return self._get('list_active_collections'), 200
 
     def list_inactive_collections(self):
         """

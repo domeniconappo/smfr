@@ -68,6 +68,7 @@ class Tweet(cqldb.Model):
         (COLLECTED_TYPE, 'Collected'),
         (GEOTAGGED_TYPE, 'Geocoded'),
     ]
+    NO_COLLECTION_ID = -1
 
     tweetid = cqldb.columns.Text(primary_key=True, required=True)
     tweet_id = cqldb.columns.BigInt(index=True)

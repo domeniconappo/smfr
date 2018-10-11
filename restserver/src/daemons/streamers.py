@@ -1,7 +1,8 @@
 import datetime
+import http
 import logging
 from collections import deque
-from logging.handlers import RotatingFileHandler
+from http.client import IncompleteRead
 import os
 import socket
 import threading
@@ -12,10 +13,10 @@ import requests
 from twython import TwythonStreamer
 
 from smfrcore.models import Tweet, create_app
-from smfrcore.utils import DEFAULT_HANDLER, NULL_HANDLER
+from smfrcore.utils import DEFAULT_HANDLER
 
 from daemons.utils import safe_langdetect, tweet_normalization_aggressive
-from server.config import RestServerConfiguration, MYSQL_MIGRATION, RUNNING_IN_DOCKER, DEVELOPMENT
+from server.config import RestServerConfiguration, DEVELOPMENT
 from server.api.clients import AnnotatorClient
 
 
@@ -23,16 +24,6 @@ logger = logging.getLogger('RestServer Streamer')
 logger.setLevel(RestServerConfiguration.logger_level)
 logger.addHandler(DEFAULT_HANDLER)
 logger.propagate = False
-
-file_logger = logging.getLogger('Not Reconciled Tweets')
-file_logger.setLevel(logging.ERROR)
-file_logger.propagate = False
-file_logger.addHandler(NULL_HANDLER)
-
-if RUNNING_IN_DOCKER and not MYSQL_MIGRATION:
-    hdlr = RotatingFileHandler(RestServerConfiguration.not_reconciled_log_path, maxBytes=10485760, backupCount=2)
-    hdlr.setLevel(logging.ERROR)
-    file_logger.addHandler(hdlr)
 
 
 class BaseStreamer(TwythonStreamer):
@@ -126,21 +117,25 @@ class BaseStreamer(TwythonStreamer):
         while stay_active:
             try:
                 self.statuses.filter(**filter_args)
-            except (urllib3.exceptions.ReadTimeoutError, socket.timeout, requests.exceptions.ConnectionError) as e:
+            except (urllib3.exceptions.ReadTimeoutError, socket.timeout, requests.exceptions.ConnectionError,) as e:
                 logger.warning('A timeout occurred. Streamer is sleeping for 30 seconds: %s', e)
                 time.sleep(30)
+            except (requests.exceptions.ChunkedEncodingError, http.client.IncompleteRead) as e:
+                logger.warning('Incomplete Read: %s. Streamer is sleeping for 5 seconds', e)
+                time.sleep(5)
             except Exception as e:
                 if DEVELOPMENT:
                     import traceback
                     traceback.print_exc()
-                logger.warning('An error occurred during filtering in Streamer %s: %s', self.__class__.__name__, e)
+                logger.warning('An error occurred during filtering in Streamer %s: %s. '
+                               'Disconnecting collector due an unexpected error', self.__class__.__name__, e)
                 stay_active = False
                 self.disconnect(deactivate_collections=False)
-                logger.warning('Disconnecting collector due an unexpected error')
                 self.errors.append('{}: {} - {}'.format('500', datetime.datetime.now(), str(e)))
 
     def disconnect(self, deactivate_collections=True):
         logger.info('Disconnecting twitter streamer (thread %s)', threading.current_thread().name)
+        super().disconnect()
         self.connected = False
         if deactivate_collections:
             logger.warning('Deactivating all collections!')
@@ -178,41 +173,31 @@ class BackgroundStreamer(BaseStreamer):
                     if logger.isEnabledFor(logging.DEBUG):
                         logger.debug('\n\nSending to annotator queue: %s %s\n', topic, tweet)
                     self.producer.send(topic, message)
+        else:
+            logger.error('No Data: %s', str(data))
 
 
 class OnDemandStreamer(BaseStreamer):
     """
 
     """
-    def reconcile_tweet_with_collection(self, data):
-        for c in self.collections:
-            if c.is_tweet_in_bounding_box(data) or c.tweet_matched_keyword(data):
-                return c
-        # no collection found for ingested tweet...
-        return None
 
     def on_success(self, data):
 
         if 'text' in data:
             lang = safe_langdetect(tweet_normalization_aggressive(data['text']))
             data['lang'] = lang
-            collection = self.reconcile_tweet_with_collection(data)
-            if not collection:
-                # we log it to use to improve reconciliation in the future
-                file_logger.error('%s', data)
-            else:
-                tweet = Tweet.build_from_tweet(collection.id, data, ttype='collected')
-                message = tweet.serialize()
+            tweet = Tweet.build_from_tweet(Tweet.NO_COLLECTION_ID, data, ttype='collected')
+            message = tweet.serialize()
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.debug('\n\nSending to PERSISTER: %s\n', tweet)
+            self.producer.send(self.persister_kafka_topic, message)
+            # On Demand collections always use pipelines
+            if lang in AnnotatorClient.available_languages():
+                topic = '{}_{}'.format(self.annotator_kafka_topic, lang)
                 if logger.isEnabledFor(logging.DEBUG):
-                    logger.debug('\n\nSending to PERSISTER: %s\n', tweet)
-                self.producer.send(self.persister_kafka_topic, message)
-                # send to next topic in the pipeline in case collection.is_using_pipeline == True
-                # On Demand collections always use pipelines
-                if self.use_pipeline(collection) and lang in AnnotatorClient.available_languages():
-                    topic = '{}_{}'.format(self.annotator_kafka_topic, lang)
-                    if logger.isEnabledFor(logging.DEBUG):
-                        logger.debug('\n\nSending to annotator queue: %s %s\n', topic, tweet)
-                    self.producer.send(topic, message)
+                    logger.debug('\n\nSending to annotator queue: %s %s\n', topic, tweet)
+                self.producer.send(topic, message)
 
     def use_pipeline(self, collection):
         return True
