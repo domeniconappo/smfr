@@ -383,6 +383,9 @@ services:
       CASSANDRA_KEYSPACE: ${CASSANDRA_KEYSPACE}
       CASSANDRA_USE_CLUSTER: ${CASSANDRA_USE_CLUSTER}
       CASSANDRA_NODES: ${CASSANDRA_NODES}
+      ANNOTATOR_KAFKA_TOPIC: ${ANNOTATOR_KAFKA_TOPIC}
+      ANNOTATOR_PORT: ${ANNOTATOR_PORT}
+      GEOCODER_PORT: ${GEOCODER_PORT}
       http_proxy: ${http_proxy}
       https_proxy: ${https_proxy}
     volumes:

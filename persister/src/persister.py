@@ -8,13 +8,19 @@ from logging.handlers import RotatingFileHandler
 
 from cassandra import InvalidRequest
 from cassandra.cqlengine import ValidationError, CQLEngineException
-from kafka import KafkaConsumer
+from kafka import KafkaConsumer, KafkaProducer
 from kafka.errors import CommitFailedError, NoBrokersAvailable
 
 from smfrcore.models import Tweet, TwitterCollection, create_app
 from smfrcore.utils import RUNNING_IN_DOCKER, NULL_HANDLER, DEFAULT_HANDLER
+from smfrcore.client.api_client import AnnotatorClient
 
 PersisterConfiguration = namedtuple('PersisterConfiguration', ['persister_kafka_topic', 'kafka_bootstrap_server'])
+
+logging.getLogger('kafka').setLevel(logging.WARNING)
+logging.getLogger('urllib3').setLevel(logging.WARNING)
+
+os.environ['NO_PROXY'] = ','.join((AnnotatorClient.host,))
 
 logger = logging.getLogger('PERSISTER')
 logger.addHandler(DEFAULT_HANDLER)
@@ -44,6 +50,7 @@ class Persister:
     _running_instance = None
     _lock = threading.RLock()
     app = create_app()
+    annotator_kafka_topic = os.environ.get('ANNOTATOR_KAFKA_TOPIC', 'annotator')
 
     @classmethod
     def running_instance(cls):
@@ -77,6 +84,7 @@ class Persister:
         self.bootstrap_server = self.config.kafka_bootstrap_server
         self.auto_offset_reset = auto_offset_reset
         self.group_id = group_id
+        self.language_models = AnnotatorClient.available_languages()
 
         retries = 5
 
@@ -86,6 +94,7 @@ class Persister:
                                               auto_offset_reset=self.auto_offset_reset,
                                               bootstrap_servers=self.bootstrap_server,
                                               session_timeout_ms=90000, heartbeat_interval_ms=15000)
+                self.producer = KafkaProducer(bootstrap_servers=self.bootstrap_server, compression_type='gzip')
             except NoBrokersAvailable:
                 logger.warning('Waiting for Kafka to boot...')
                 time.sleep(5)
@@ -95,7 +104,7 @@ class Persister:
             else:
                 break
         with self.app.app_context():
-            self.collections = TwitterCollection.get_active_ondemand()
+            self.collections = TwitterCollection.get_running()
 
     def reconcile_tweet_with_collection(self, tweet):
         for c in self.collections:
@@ -119,16 +128,26 @@ class Persister:
                     msg = msg.value.decode('utf-8')
                     tweet = Tweet.build_from_kafka_message(msg)
                     if tweet.collectionid == Tweet.NO_COLLECTION_ID:
+                        # reconcile with running collections
                         collection = self.reconcile_tweet_with_collection(tweet)
                         if not collection:
                             # we log it to use to improve reconciliation in the future
                             file_logger.error('%s', tweet)
                             continue
-                    logger.debug('Saving tweet: %s to collection %d', tweet.tweetid, tweet.collectionid)
+                        tweet.collectionid = collection.id
+                    logger.debug('Saving tweet: %s - collection %d', tweet.tweetid, tweet.collectionid)
                     tweet.save()
                     counter[tweet.ttype] += 1
+                    if tweet.use_pipeline and tweet.ttype == Tweet.COLLECTED_TYPE and tweet.lang in self.language_models:
+                        topic = '{}_{}'.format(self.annotator_kafka_topic, tweet.lang)
+                        if logger.isEnabledFor(logging.DEBUG):
+                            logger.debug('\n\nSending to annotator queue: %s %s\n', topic, tweet)
+                        message = tweet.serialize()
+                        self.producer.send(topic, message)
+
                     if not (i % 5000):
                         logger.info('Saved since last restart TOTAL: %d \n%s', i, str(counter))
+
                 except (ValidationError, ValueError, TypeError, InvalidRequest) as e:
                     logger.error(e)
                     logger.error('Poison message for Cassandra: %s', tweet or msg)

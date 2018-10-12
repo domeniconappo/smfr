@@ -122,6 +122,7 @@ class BaseStreamer(TwythonStreamer):
                 time.sleep(30)
             except (requests.exceptions.ChunkedEncodingError, http.client.IncompleteRead) as e:
                 logger.warning('Incomplete Read: %s. Streamer is sleeping for 5 seconds', e)
+                self.errors.append('{}: {} - {}'.format('400', datetime.datetime.now(), 'Incomplete Read'))
                 time.sleep(5)
             except Exception as e:
                 if DEVELOPMENT:
@@ -192,12 +193,6 @@ class OnDemandStreamer(BaseStreamer):
             if logger.isEnabledFor(logging.DEBUG):
                 logger.debug('\n\nSending to PERSISTER: %s\n', tweet)
             self.producer.send(self.persister_kafka_topic, message)
-            # On Demand collections always use pipelines
-            if lang in AnnotatorClient.available_languages():
-                topic = '{}_{}'.format(self.annotator_kafka_topic, lang)
-                if logger.isEnabledFor(logging.DEBUG):
-                    logger.debug('\n\nSending to annotator queue: %s %s\n', topic, tweet)
-                self.producer.send(topic, message)
 
     def use_pipeline(self, collection):
         return True

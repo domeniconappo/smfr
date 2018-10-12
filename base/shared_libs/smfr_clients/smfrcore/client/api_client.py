@@ -9,7 +9,7 @@ import requests
 
 from smfrcore.client.conf import ServerConfiguration
 from smfrcore.errors import SMFRError
-from smfrcore.utils import LOGGER_FORMAT, LOGGER_DATE_FORMAT, smfr_json_encoder
+from smfrcore.utils import LOGGER_FORMAT, LOGGER_DATE_FORMAT, smfr_json_encoder, RUNNING_IN_DOCKER
 
 from .marshmallow import OnDemandPayload, CollectionPayload
 
@@ -195,3 +195,126 @@ class SMFRRestException(SMFRError):
 
     def __str__(self):
         return '<{o.status_code}: {o.message}>'.format(o=self)
+
+
+class MicroserviceClient:
+    """Base classe for microservices with common methods"""
+
+    base_uri = None
+    host = None
+    port = None
+
+    @classmethod
+    def _check_response(cls, res, code):
+        if code >= 400:
+            raise SMFRRestException(res.json(), code)
+
+    @classmethod
+    def running(cls):
+        """
+
+        :return:
+        :rtype:
+        """
+        url = '{}/running'.format(cls.base_uri)
+        res = requests.get(url)
+        cls._check_response(res, res.status_code)
+        return res.json(), res.status_code
+
+
+class AnnotatorClient(MicroserviceClient):
+    """
+
+    """
+    host = '127.0.0.1' if not RUNNING_IN_DOCKER else 'annotator'
+    port = os.environ.get('ANNOTATOR_PORT', 5556)
+
+    base_uri = 'http://{}:{}'.format(host, port)
+    _models = None
+
+    @classmethod
+    def models(cls):
+        if cls._models:
+            return cls._models, 200
+
+        url = '{}/models'.format(cls.base_uri)
+        res = requests.get(url)
+        cls._check_response(res, res.status_code)
+        cls._models = res.json()
+        return cls._models, res.status_code
+
+    @classmethod
+    def available_languages(cls):
+        models = cls.models()[0]['models']
+        return tuple(models.keys())
+
+    @classmethod
+    def start(cls, collection_id, start_date=None, end_date=None):
+        """
+
+        :param end_date:
+        :param start_date:
+        :param collection_id: ID of Collection as it's stored in virtual_twitter_collection.id field in MySQL
+        :type collection_id: int
+        :return: JSON result from Geocoder API
+        :rtype: dict
+        """
+        url = '{}/{}/start'.format(cls.base_uri, collection_id)
+        params = {'start_date': start_date, 'end_date': end_date}
+        res = requests.put(url, params=params)
+        cls._check_response(res, res.status_code)
+        return res.json(), res.status_code
+
+    @classmethod
+    def stop(cls, collection_id):
+        """
+
+        :param collection_id: ID of Collection as it's stored in virtual_twitter_collection.id field in MySQL
+        :type collection_id: int
+        :return: JSON result from Geocoder API
+        :rtype: dict
+        """
+        url = '{}/{}/stop'.format(cls.base_uri, collection_id)
+        res = requests.put(url)
+        cls._check_response(res, res.status_code)
+        return res.json(), res.status_code
+
+
+class GeocoderClient(MicroserviceClient):
+    """
+
+    """
+    host = '127.0.0.1' if not RUNNING_IN_DOCKER else 'geocoder'
+    port = os.environ.get('GEOCODER_PORT', 5557)
+    base_uri = 'http://{}:{}'.format(host, port)
+
+    @classmethod
+    def start(cls, collection_id, start_date, end_date):
+        """
+
+        :param end_date:
+        :param start_date:
+        :param collection_id: ID of Collection as it's stored in virtual_twitter_collection.id field in MySQL
+        :type collection_id: int
+        :return: JSON result from Geocoder API
+        :rtype: dict
+        """
+        url = '{}/{}/start'.format(cls.base_uri, collection_id)
+        params = {'start_date': start_date, 'end_date': end_date}
+        res = requests.put(url, params=params)
+        cls._check_response(res, res.status_code)
+        return res.json(), res.status_code
+
+    @classmethod
+    def stop(cls, collection_id):
+        """
+
+        :param collection_id: ID of Collection as it's stored in virtual_twitter_collection.id field in MySQL
+        :type collection_id: int
+        :return: JSON result from Geocoder API
+        :rtype: dict
+        """
+        url = '{}/{}/stop'.format(cls.base_uri, collection_id)
+        res = requests.put(url)
+        cls._check_response(res, res.status_code)
+        return res.json(), res.status_code

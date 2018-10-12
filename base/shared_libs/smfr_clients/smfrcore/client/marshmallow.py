@@ -109,6 +109,13 @@ class CollectionResponseRunning_annotatorsItem(BaseSchema):
     pass
 
 
+class Collector(BaseSchema):
+    trigger_type = fields.String(validate=[OneOf(choices=['background', 'on-demand', 'manual'], labels=[])])
+    status = fields.String(validate=[OneOf(choices=['connected', 'disconnected'], labels=[])])
+    collections = fields.List(fields.Integer())
+    errors = fields.List(fields.String())
+
+
 class Login(BaseSchema):
     email = fields.String(required=True, validate=[Length(min=1, max=None, equal=None)])
     password = fields.String(required=True, validate=[Length(min=1, max=None, equal=None)])
