@@ -342,12 +342,12 @@ class Tweet(cqldb.Model):
         return cls.to_obj(row).serialize()
 
     @classmethod
-    def build_from_tweet(cls, collectionid, tweet, ttype='collected'):
+    def from_tweet(cls, collectionid, tweet, ttype='collected'):
         """
 
         :param ttype:
         :param collectionid:
-        :param tweet:
+        :param tweet: tweet dictionary coming from Twitter API (stream API)
         :return:
         """
         created = tweet.get('created_at')
@@ -362,10 +362,10 @@ class Tweet(cqldb.Model):
         )
 
     @classmethod
-    def build_from_kafka_message(cls, message):
+    def from_json(cls, message):
         """
 
-        :param message: json string from Kafka queue
+        :param message: json string representing a Tweet object (tipically from Kafka queue)
         :return: Tweet object
         """
         values = json.loads(message)

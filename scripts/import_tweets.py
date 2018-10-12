@@ -33,7 +33,7 @@ def main():
     tweets_to_import = ujson.load(conf.input_file, precise_float=True)
     print('<<<<<<<<<<<< STARTING INGESTION OF TWEETS')
     for t in tweets_to_import:
-        tweet = Tweet.build_from_tweet(collection_id, t)
+        tweet = Tweet.from_tweet(collection_id, t)
         tweet.save()
     print('>>>>>>>>>>>> ENDED INGESTION OF TWEETS')
 

@@ -1,10 +1,10 @@
+from collections import namedtuple, Counter
 import os
 import logging
+from logging.handlers import RotatingFileHandler
 import sys
 import threading
 import time
-from collections import namedtuple, Counter
-from logging.handlers import RotatingFileHandler
 
 from cassandra import InvalidRequest
 from cassandra.cqlengine import ValidationError, CQLEngineException
@@ -49,8 +49,8 @@ class Persister:
     )
     _running_instance = None
     _lock = threading.RLock()
-    app = create_app()
     annotator_kafka_topic = os.environ.get('ANNOTATOR_KAFKA_TOPIC', 'annotator')
+    app = create_app()
 
     @classmethod
     def running_instance(cls):
@@ -85,6 +85,8 @@ class Persister:
         self.auto_offset_reset = auto_offset_reset
         self.group_id = group_id
         self.language_models = AnnotatorClient.available_languages()
+        with self.app.app_context():
+            self.collections = TwitterCollection.get_running()
 
         retries = 5
 
@@ -93,7 +95,8 @@ class Persister:
                 self.consumer = KafkaConsumer(self.topic, group_id=self.group_id,
                                               auto_offset_reset=self.auto_offset_reset,
                                               bootstrap_servers=self.bootstrap_server,
-                                              session_timeout_ms=90000, heartbeat_interval_ms=15000)
+                                              max_poll_records=100, max_poll_interval_ms=1000000,
+                                              session_timeout_ms=90000, heartbeat_interval_ms=90000)
                 self.producer = KafkaProducer(bootstrap_servers=self.bootstrap_server, compression_type='gzip')
             except NoBrokersAvailable:
                 logger.warning('Waiting for Kafka to boot...')
@@ -103,8 +106,6 @@ class Persister:
                     sys.exit(1)
             else:
                 break
-        with self.app.app_context():
-            self.collections = TwitterCollection.get_running()
 
     def reconcile_tweet_with_collection(self, tweet):
         for c in self.collections:
@@ -126,13 +127,13 @@ class Persister:
                 tweet = None
                 try:
                     msg = msg.value.decode('utf-8')
-                    tweet = Tweet.build_from_kafka_message(msg)
+                    tweet = Tweet.from_json(msg)
                     if tweet.collectionid == Tweet.NO_COLLECTION_ID:
                         # reconcile with running collections
                         collection = self.reconcile_tweet_with_collection(tweet)
                         if not collection:
                             # we log it to use to improve reconciliation in the future
-                            file_logger.error('%s', tweet)
+                            file_logger.error('%s', msg)
                             continue
                         tweet.collectionid = collection.id
                     logger.debug('Saving tweet: %s - collection %d', tweet.tweetid, tweet.collectionid)

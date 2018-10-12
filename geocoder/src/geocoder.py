@@ -402,7 +402,7 @@ class Geocoder:
                     errors = 0
                     try:
                         msg = msg.value.decode('utf-8')
-                        tweet = Tweet.build_from_kafka_message(msg)
+                        tweet = Tweet.from_json(msg)
                         try:
                             # COMMENT OUT CODE BELOW: we will geolocate everything for the moment
                             # flood_prob = t.annotations.get('flood_probability', ('', 0.0))[1]

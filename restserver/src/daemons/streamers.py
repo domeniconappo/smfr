@@ -162,7 +162,7 @@ class BackgroundStreamer(BaseStreamer):
 
             if lang == 'en' or lang in self.collection.languages:
                 data['lang'] = lang
-                tweet = Tweet.build_from_tweet(self.collection.id, data, ttype='collected')
+                tweet = Tweet.from_tweet(self.collection.id, data, ttype='collected')
                 # the tweet is sent immediately to kafka queue
                 message = tweet.serialize()
                 if logger.isEnabledFor(logging.DEBUG):
@@ -188,7 +188,7 @@ class OnDemandStreamer(BaseStreamer):
         if 'text' in data:
             lang = safe_langdetect(tweet_normalization_aggressive(data['text']))
             data['lang'] = lang
-            tweet = Tweet.build_from_tweet(Tweet.NO_COLLECTION_ID, data, ttype='collected')
+            tweet = Tweet.from_tweet(Tweet.NO_COLLECTION_ID, data, ttype='collected')
             message = tweet.serialize()
             if logger.isEnabledFor(logging.DEBUG):
                 logger.debug('\n\nSending to PERSISTER: %s\n', tweet)
