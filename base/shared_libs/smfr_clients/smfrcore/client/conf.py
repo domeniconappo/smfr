@@ -9,3 +9,4 @@ class ServerConfiguration:
     restserver_host = 'localhost' if not RUNNING_IN_DOCKER else 'restserver'
     restserver_basepath = os.environ.get('RESTSERVER_BASEPATH', '/1.0')
     restserver_baseurl = 'http://{}:{}{}'.format(restserver_host, restserver_port, restserver_basepath)
+    development = os.environ.get('DEVELOPMENT', '0') in ('1', 'yes', 'Yes', 'True', 'true')
