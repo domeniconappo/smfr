@@ -71,18 +71,22 @@
                                        <tr>
                                            <th>Languages</th>
                                            <td>{{ data.collection.languages|join(', ') }}</td>
+
                                            <th>Last started (UTC)</th>
                                            <td>{{ data.collection.started_at|datetimeformat('%Y-%m-%d %H:%M:%S') }}</td>
+
                                            <th>Last stopped (UTC)</th>
                                            <td>{{ data.collection.stopped_at|datetimeformat('%Y-%m-%d %H:%M:%S') }}</td>
+
                                            <th>Pipeline activated</th>
-                                           <td>{% if data.collection.is_using_pipeline %} YES {% else %} NO {% endif %}</td>
+                                           <td>{% if data.collection.is_using_pipeline %} <span class="color-green">YES{% else %}<span class="color-red">NO{% endif %}</span></td>
                                        </tr>
 
                                        {% if data.collection.runtime %}
                                        <tr>
-                                           <th colspan="4">Run until (local time)</th>
-                                           <td colspan="4">{{ data.collection.runtime|datetimeformat('%Y-%m-%d %H:%M') }}</td>
+                                           <th colspan="2">Run until (local time)</th>
+                                           <td colspan="2">{{ data.collection.runtime|datetimeformat('%Y-%m-%d %H:%M') }}</td>
+                                           <td colspan="4">&nbsp;</td>
                                        </tr>
                                        {% endif %}
 

@@ -256,7 +256,6 @@ class Geocoder:
                                   result['geo'].get('geonameid', '')))
         return mentions_list
 
-
     @classmethod
     def find_nuts_heuristic(cls, tweet, tagger):
         """
@@ -415,8 +414,12 @@ class Geocoder:
 
                             cls.set_geo_fields(coordinates, nuts2, nuts_source, country_code, place, geonameid, tweet)
                             message = tweet.serialize()
-                            logger.info('Send geocoded tweet to PERSISTER: %s', tweet.geo)
+
+                            if logger.isEnabledFor(logging.DEBUG):
+                                logger.debug('Send geocoded tweet to PERSISTER: %s', tweet.geo)
+
                             cls.producer.send(cls.persister_kafka_topic, message)
+
                             if not (i % 1000):
                                 logger.info('Geotagged so far %d', i)
 
