@@ -198,6 +198,7 @@ class Tweet(cqldb.Model):
                 res[k] = innerres
             else:
                 res[k] = v
+        res['full_text'] = cls.get_full_text(row)
         return res
 
     @classmethod

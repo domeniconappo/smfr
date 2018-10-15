@@ -86,43 +86,50 @@
                 'Imagery © <a href="https://www.mapbox.com/">Mapbox</a>',
             id: 'mapbox.streets'
         }).addTo(map);
-
-        {% if geojson %}
-            var features = {{ geojson | tojson }};
-            L.geoJSON(features, {
-                 style: function(feature) {
-                    switch (feature.properties.risk_color) {
-                        case '225 225 225': return {color: "#292929", weight: 3, opacity: 0.9, fillColor: "#575757"};
-                        case '255 0 0': return {color: "#ff0000", weight: 5, opacity: 0.9, fillColor: "#ff646e"};
-                        case '255 128 0': return {color: "#ffb21a", weight: 4, opacity: 0.9, fillColor: "#ffb01c"};
-                    }
-                 }
-            }).addTo(map);
-        {% endif %}
-
         var markers = L.markerClusterGroup({
             spiderfyOnMaxZoom: true,
             showCoverageOnHover: true,
             zoomToBoundsOnClick: true
         });
 
-        function onEachFeature(feature, layer) {
-            // does this feature have a property named popupContent?
-            if (feature.properties && feature.properties.popupContent) {
-                layer.bindPopup(feature.properties.popupContent);
+        {% if geojson %}
+
+            var features = {{ geojson | tojson }};
+
+            function onEachFeature(feature, layer) {
+                if (feature.properties && feature.properties.relevant_tweets) {
+                    $.each(feature.properties.relevant_tweets, function(index, tweet) {
+                         var tweet_lat = tweet['geo']['latitude'];
+                         var tweet_lon = tweet['geo']['longitude'];
+                         var text;
+                         if (tweet['full_text'] !== undefined) {
+                             text = tweet['full_text'];
+                         } else {
+                             text = tweet['tweet']['text'];
+                         }
+                         var tweet_text = text + '<br />' + tweet['label_predicted'];
+                         var marker = L.marker([tweet_lat, tweet_lon]);
+                         marker.bindPopup(tweet_text);
+                         markers.addLayer(marker);
+                    });
+                    layer.bindPopup(feature.properties.popupContent);
+                }
             }
-        }
 
-        //$.each(dataSet, function (index, tweet) {
-        //    var tweet_lat = tweet['raw_coords'][0];
-        //    var tweet_lon = tweet['raw_coords'][1];
-        //    var tweet_text = tweet['Full Text'];
-        //    var marker = L.marker([tweet_lat, tweet_lon]);
-        //    marker.bindPopup(tweet_text);
-        //    markers.addLayer(marker);
-        //});
+            L.geoJSON(features, {
+                 onEachFeature: onEachFeature,
+                 style: function(feature) {
+                    switch (feature.properties.risk_color) {
+                        case '225 225 225': return {color: "#e1e1e1", weight: 3, opacity: 0.9, fillColor: "#ababab"};
+                        case '255 0 0': return {color: "#ff0000", weight: 5, opacity: 0.9, fillColor: "#ff646e"};
+                        case '255 128 0': return {color: "#ffb21a", weight: 4, opacity: 0.9, fillColor: "#ffb01c"};
+                    }
+                 }
+            }).addTo(map);
 
-        //map.addLayer(markers);
+            map.addLayer(markers);
+        {% endif %}
+
     });
     </script>
 {% endblock scripts %}

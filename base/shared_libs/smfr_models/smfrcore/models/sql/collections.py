@@ -227,7 +227,7 @@ class TwitterCollection(SMFRModel):
                     TwitterCollection.status == 'active',
                     TwitterCollection.stopped_at >= datetime.datetime.now() - datetime.timedelta(days=2)
                 )
-            ).all()
+            ).order_by(cls.status).all()
             cls.cache[key] = res
         return res
 
