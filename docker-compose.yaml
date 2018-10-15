@@ -546,6 +546,7 @@ services:
       PRODUCTS_OUTPUT_FOLDER: '/products'
       http_proxy: ${http_proxy}
       https_proxy: ${https_proxy}
+      DEVELOPMENT: ${DEVELOPMENT}
     ports:
       - '8888:8888'
     depends_on:

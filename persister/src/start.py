@@ -2,13 +2,15 @@ import signal
 
 import schedule
 from smfrcore.models import TwitterCollection
+from smfrcore.utils import logged_job
 
 from persister import Persister, logger
 
 
+@logged_job
 def get_active_collections_for_persister(p):
     with Persister.app.app_context():
-        p.collections = TwitterCollection.get_active_ondemand()
+        p.collections = TwitterCollection.get_running()
 
 
 if __name__ == '__main__':
@@ -26,5 +28,5 @@ if __name__ == '__main__':
     signal.signal(signal.SIGQUIT, stop_persister)
     logger.debug('Registered %d %d and %d', signal.SIGINT, signal.SIGTERM, signal.SIGQUIT)
     persister = Persister()
-    schedule.every(30).minutes.do(get_active_collections_for_persister, (persister,)).tag('update-collections-persister')
+    schedule.every(30).minutes.do(get_active_collections_for_persister, (persister,)).tag('update-running-collections')
     persister.start()

@@ -194,7 +194,7 @@ class Annotator:
                     consumer = KafkaConsumer(
                         topic, check_crcs=False,
                         group_id='ANNOTATOR-{}'.format(lang),
-                        auto_offset_reset='earliest', max_poll_records=100, max_poll_interval_ms=1000000,
+                        auto_offset_reset='earliest', max_poll_records=300, max_poll_interval_ms=1000000,
                         bootstrap_servers=cls.kafka_bootstrap_server,
                         session_timeout_ms=60000, heartbeat_interval_ms=60000
                     )
@@ -203,7 +203,7 @@ class Annotator:
                         tweet = None
                         try:
                             msg = msg.value.decode('utf-8')
-                            tweet = Tweet.build_from_kafka_message(msg)
+                            tweet = Tweet.from_json(msg)
                             logger.debug('Read from queue tweetid: %s', tweet.tweetid)
                             tweet.ttype = 'annotated'
                             tweet = cls.annotate(model, tweet, tokenizer)

@@ -84,7 +84,7 @@ def get():
     :return:
     """
     try:
-        collections = TwitterCollection.query.all()
+        collections = TwitterCollection.query.order_by(TwitterCollection.status).all()
         res = CollectionSchema().dump(collections, many=True).data
     except OperationalError:
         return {'error': {'description': 'DB link was lost. Try again'}}, 500

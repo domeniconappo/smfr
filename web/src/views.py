@@ -7,6 +7,7 @@ import ujson as json
 from flask import render_template, redirect, request
 
 from smfrcore.client.api_client import ApiLocalClient, SMFRRestException
+from smfrcore.client.conf import ServerConfiguration
 from smfrcore.utils import LOGGER_FORMAT, LOGGER_DATE_FORMAT
 
 from forms import NewCollectorForm, ExportForm
@@ -226,7 +227,7 @@ def stopgeolocalize_collection(collection_id):
 
 @app.route('/products', methods=('GET',))
 def show_products():
-    geojson = {}
+    geojson = None
     res = []
     requested_date = request.args.get('date')
     if requested_date:
@@ -247,8 +248,8 @@ def show_products():
                 logger.error('%s produced an error in json.load', f)
                 continue
             else:
-                res.append({'name': filename, 'date': date, 'reported_regions': 0})
-    return render_template('products.html', files=res, geojson=geojson), 200
+                res.append({'name': filename, 'date': date, 'details': ''})
+    return render_template('products.html', files=res, geojson=geojson, development=ServerConfiguration.development), 200
 
 
 @app.errorhandler(404)
