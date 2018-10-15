@@ -23,7 +23,7 @@ def clean_compose(d_in):
     for service in d_out['services']:
         if service in ('annotator', 'geocoder', 'web', 'restserver', 'persister', 'aggregator', 'products',) \
                 and 'volumes' in d_out['services'][service]:
-            if service not in ('products', 'web'):
+            if service not in ('products', 'web', 'restserver'):
                 del d_out['services'][service]['volumes']
             else:
                 # keep volumes but get rid of the src mapped folder
