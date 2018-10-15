@@ -332,7 +332,7 @@
             $.each(dataSet, function(index, tweet) {
                 var tweet_lat = tweet['raw_coords'][0];
                 var tweet_lon = tweet['raw_coords'][1];
-                var tweet_text = tweet['Full Text'];
+                var tweet_text = tweet['Full Text'] + '<br />' + tweet['Annotations'];
                 var marker = L.marker([tweet_lat, tweet_lon]);
                 marker.bindPopup(tweet_text);
                 markers.addLayer(marker);
