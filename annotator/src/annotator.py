@@ -4,8 +4,6 @@ import sys
 import threading
 import time
 
-import ujson as json
-
 from cassandra import InvalidRequest
 from cassandra.cqlengine import CQLEngineException, ValidationError
 from kafka import KafkaProducer, KafkaConsumer
@@ -106,7 +104,7 @@ class Annotator:
 
                 message = Tweet.serializetuple(tweet)
                 topic = '{}_{}'.format(cls.annotator_kafka_topic, lang)
-                logger.debug('Sending tweet to ANNOTATOR %s', tweet.tweetid)
+                logger.debug('Sending tweet to ANNOTATOR %s %s', lang, tweet.tweetid, )
                 cls.producer.send(topic, message)
             except KafkaTimeoutError as e:
                 logger.error(e)
@@ -122,12 +120,12 @@ class Annotator:
     def annotate(cls, model, t, tokenizer):
         """
 
-        :param model:
-        :param t:
+        :param model: CNN model used for prediction
+        :param t: smfrcore.models.Tweet object
         :param tokenizer:
         :return:
         """
-        original_json = json.loads(t.tweet)
+        original_json = t.original_tweet_as_dict
         text = create_text_for_cnn(original_json, [])
         sequences = tokenizer.texts_to_sequences([text])
         data = pad_sequences(sequences, maxlen=model.layers[0].input_shape[1])
@@ -204,17 +202,19 @@ class Annotator:
                         try:
                             msg = msg.value.decode('utf-8')
                             tweet = Tweet.from_json(msg)
-                            logger.debug('Read from queue tweetid: %s', tweet.tweetid)
-                            tweet.ttype = 'annotated'
+                            if logger.isEnabledFor(logging.DEBUG):
+                                logger.debug('Read from queue tweetid: %s', tweet.tweetid)
                             tweet = cls.annotate(model, tweet, tokenizer)
                             message = tweet.serialize()
-                            logger.debug('Sending annotated tweet to PERSISTER: %s', tweet.annotations)
+                            if logger.isEnabledFor(logging.DEBUG):
+                                logger.debug('Sending annotated tweet to PERSISTER: %s', tweet.annotations)
 
                             # persist the annotated tweet
                             cls.producer.send(cls.persister_kafka_topic, message)
                             # send annotated tweet to geocoding if pipeline is enabled
                             if tweet.use_pipeline:
-                                logger.debug('Sending annotated tweet to GEOCODER: %s', tweet.annotations)
+                                if logger.isEnabledFor(logging.DEBUG):
+                                    logger.debug('Sending annotated tweet to GEOCODER: %s', tweet.annotations)
                                 cls.producer.send(cls.geocoder_kafka_topic, message)
                             if not (i % 1000):
                                 logger.info('%s: Annotated so far %d', lang.capitalize(), i)
