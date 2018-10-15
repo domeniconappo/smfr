@@ -10,18 +10,20 @@ RUN mkdir -p /scripts && mkdir -p /geocoder && mkdir -p /requirements \
 ARG http_proxy
 ARG https_proxy
 
+COPY ./geocoder/config/countries.json.tar.gz /config/
+
+COPY ./geocoder/requirements.txt /requirements/
+RUN pip3.6 install -r /requirements/requirements.txt
+
 COPY base/shared_libs/scripts/wait_for_it.sh /scripts/
 COPY base/shared_libs/smfr_utils/. /smfr_libs/utils/
 COPY base/shared_libs/smfr_models/. /smfr_libs/models/
-COPY ./geocoder/requirements.txt /requirements/
 
-RUN pip3.6 install -r /requirements/requirements.txt
 RUN pip3.6 install /smfr_libs/utils/ \
  && pip3.6 install /smfr_libs/models/ \
  && chmod -R a+x /scripts/ && rm -R /root/.cache
 
 COPY ./geocoder/src/. /geocoder
-COPY ./geocoder/config/countries.json.tar.gz /config/
 WORKDIR /geocoder
 
 EXPOSE 5557 6006
