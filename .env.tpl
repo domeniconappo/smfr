@@ -33,6 +33,8 @@ GEOCODER_PORT=5557
 
 # REST API CONFIGURATION
 NUM_SAMPLES=100
+COLLECTOR_KEYS_PATH=./restserver/src/config/admin_collector.yaml
+FLOOD_KEYWORDS_PATH=./restserver/src/config/flood_keywords.yaml
 
 # ANNOTATOR COMPONENT CONFIGURATION
 GIT_REPO_MODELS=https://user:pass@bitbucket.org/lorinivalerio/smfr_models_data.git

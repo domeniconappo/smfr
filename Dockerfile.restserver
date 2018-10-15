@@ -31,8 +31,6 @@ RUN pip3.6 install /smfr_libs/utils/ \
  && chmod -R a+x /scripts/ && rm -R /root/.cache
 
 RUN mkdir -p /logs
-COPY ./restserver/src/config/admin_collector.yaml /configuration/admin_collector.yaml
-COPY ./restserver/src/config/flood_keywords.yaml /configuration/flood_keywords.yaml
 
 COPY ./restserver/src/. /restserver/
 

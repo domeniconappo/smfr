@@ -29,7 +29,9 @@ def clean_compose(d_in):
                 # keep volumes but get rid of the src mapped folder
                 cleaned_volumes = []
                 for v in d_out['services'][service]['volumes']:
-                    if '/src' in v:
+                    # Skip source mapped folder
+                    # (but in DEV, some yaml configs can be mapped directly from src/config folders)
+                    if '/src' in v and '.yaml' not in v:
                         continue
                     cleaned_volumes.append(v)
                 d_out['services'][service]['volumes'] = cleaned_volumes

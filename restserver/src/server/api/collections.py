@@ -196,6 +196,7 @@ def get_collection_details(collection_id):
         samples_tweets = {'relevant': []}
         for i, t in enumerate(relevant_tweets, start=1):
             t['created_at'] = time.mktime(datetime.datetime.strptime(t['created_at'], "%Y-%m-%dT%H:%M:%S").timetuple())
+            t.pop('full_text', None)
             samples_tweets['relevant'].append(Tweet.make_table_object(i, TweetTuple(**t)))
 
         res = {'collection': collection_dump, 'aggregation': aggregation_dump,

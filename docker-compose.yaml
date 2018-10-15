@@ -509,6 +509,9 @@ services:
       - './restserver/src:/restserver'
       - './downloads:/smfr/downloaded'
       - './restserver/logs:/logs'
+      - '${COLLECTOR_KEYS_PATH}:/configuration/admin_collector.yaml'
+      - '${FLOOD_KEYWORDS_PATH}:/configuration/flood_keywords.yaml'
+
     depends_on:
       - mysql
       - kafka
@@ -538,7 +541,7 @@ services:
     working_dir: /app
     volumes:
       - './web/src:/app'
-      - ${PRODUCTS_OUTPUT}:/products
+      - '${PRODUCTS_OUTPUT}:/products'
     environment:
       PYTHONUNBUFFERED: 'true'
       RESTSERVER_PORT: ${RESTSERVER_PORT}
