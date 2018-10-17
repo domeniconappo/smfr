@@ -65,6 +65,13 @@ class TwitterCollection(SMFRModel):
         'running': 'running',
     }
 
+    # init caches
+    for key in cache_keys:
+        if key in ('collection', 'background'):
+            continue
+        cache[key] = []
+    cache['background'] = None
+
     def __str__(self):
         return 'Collection<{o.id}: {o.forecast_id} - {o.trigger}>' \
                '\n Tracking: {o.tracking_keywords} ' \
