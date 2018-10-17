@@ -298,16 +298,17 @@ class TwitterCollection(SMFRModel):
         """
 
         def _update_cached_list(cache_key):
-            current_cached_collections = copy.deepcopy(cache_key)
+            current_cached_collections = cls.cache[cache_key]
+            updated_collections_cache = copy.deepcopy(current_cached_collections)
             for c in current_cached_collections:
                 if obj.efas_id == c.efas_id:
-                    current_cached_collections.remove(c)
+                    updated_collections_cache.remove(c)
                     break
-            if obj not in current_cached_collections:
+            if obj not in updated_collections_cache:
                 # This test would fail if keywords/locations are different.
                 # That's why we first remove the collection with same efas_id of the one we are adding
-                current_cached_collections.append(obj)
-            cls.cache[cache_key] = current_cached_collections
+                updated_collections_cache.append(obj)
+            cls.cache[cache_key] = updated_collections_cache
 
         collection_key = obj.cache_keys['collection'].format(obj.id)
 
