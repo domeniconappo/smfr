@@ -236,8 +236,8 @@ def show_products():
         with open(geojson_path) as fh:
             geojson = json.load(fh)
 
-    files = glob.glob(PRODUCTS_FOLDER + '/*.geojson')[:30]
-    files = sorted(files, reverse=True)
+    files = glob.glob(PRODUCTS_FOLDER + '/*.geojson')
+    files = sorted(files, reverse=True)[:31]
     for f in files:
         filename = os.path.basename(f)
         date = filename.split('_')[2].rstrip('.geojson')

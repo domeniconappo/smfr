@@ -298,7 +298,7 @@ class TwitterCollection(SMFRModel):
         """
 
         def _update_cached_list(cache_key):
-            current_cached_collections = cls.cache[cache_key]
+            current_cached_collections = cls.cache.get(cache_key) or []
             updated_collections_cache = copy.deepcopy(current_cached_collections)
             for c in current_cached_collections:
                 if obj.efas_id == c.efas_id:
