@@ -192,7 +192,8 @@ class Annotator:
         """
         import tensorflow as tf
 
-        graph = tf.Graph()
+        # graph = tf.Graph()
+        graph = tf.get_default_graph()
         with graph.as_default():
             session = tf.Session()
             with session.as_default():
