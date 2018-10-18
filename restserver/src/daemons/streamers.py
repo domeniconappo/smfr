@@ -51,7 +51,7 @@ class BaseStreamer(TwythonStreamer):
             }
         logger.debug('Instantiate a streamer with args %s', str(self.client_args))
         super().__init__(consumer_key, consumer_secret,
-                         access_token, access_token_secret,
+                         access_token, access_token_secret, retry_count=3, retry_in=10, chunk_size=10,
                          client_args=self.client_args)
 
     def __str__(self):
@@ -88,7 +88,7 @@ class BaseStreamer(TwythonStreamer):
         self.disconnect(deactivate_collections=False)
         self.collections = []
         self.collection = None
-        sleep_time = 60 if str(status_code) == '420' else 30
+        sleep_time = 60 if str(status_code) == '420' and 'Exceeded connection limit' in 'data' else 5
         time.sleep(sleep_time)
 
     def on_timeout(self):
