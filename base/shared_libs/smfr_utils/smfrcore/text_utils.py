@@ -110,9 +110,8 @@ def tweet_normalization_aggressive(text):
 def create_text_for_cnn(tweet, locations):
     """Tokenization/string cleaning for conv neural network: removes all quote characters;
     it also append metadata features at the end of the tweet."""
-    text = tweet['text']
     # Remove locations
-    # text = replace_locations_loc_text(tweet['text'], locations)
+    text = replace_locations_loc_text(tweet['text'], locations)
 
     string = tweet_normalization_aggressive(text)
 

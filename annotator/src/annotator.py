@@ -38,28 +38,33 @@ class Annotator:
 
     kafka_bootstrap_server = os.environ.get('KAFKA_BOOTSTRAP_SERVER', 'kafka:9094') if RUNNING_IN_DOCKER else '127.0.0.1:9094'
     available_languages = list(models.keys())
-    retries = 5
-
-    while retries >= 0:
-        try:
-            producer = KafkaProducer(bootstrap_servers=kafka_bootstrap_server, retries=5,
-                                     compression_type='gzip', buffer_memory=134217728,
-                                     batch_size=1048576)
-            logger.info('[OK] KAFKA Producer')
-        except NoBrokersAvailable:
-            logger.warning('Waiting for Kafka to boot...')
-            time.sleep(5)
-            retries -= 1
-            if retries < 0:
-                logger.error('Kafka server was not listening. Exiting...')
-                sys.exit(1)
-        else:
-            break
+    producer = None
 
     persister_kafka_topic = os.environ.get('PERSISTER_KAFKA_TOPIC', 'persister')
     annotator_kafka_topic = os.environ.get('ANNOTATOR_KAFKA_TOPIC', 'annotator')
     # next topic in pipeline
     geocoder_kafka_topic = os.environ.get('GEOCODER_KAFKA_TOPIC', 'geocoder')
+
+    @classmethod
+    def connect_producer(cls, kafka_server=None):
+        if not kafka_server:
+            kafka_server = cls.kafka_bootstrap_server
+        retries = 5
+        while retries >= 0:
+            try:
+                cls.producer = KafkaProducer(bootstrap_servers=kafka_server, retries=5,
+                                             compression_type='gzip', buffer_memory=134217728,
+                                             batch_size=1048576)
+                logger.info('[OK] KAFKA Producer')
+            except NoBrokersAvailable:
+                logger.warning('Waiting for Kafka to boot...')
+                time.sleep(5)
+                retries -= 1
+                if retries < 0:
+                    logger.error('Kafka server was not listening. Exiting...')
+                    sys.exit(1)
+            else:
+                break
 
     @classmethod
     def running(cls):
@@ -107,7 +112,8 @@ class Annotator:
 
                 message = Tweet.serializetuple(tweet)
                 topic = '{}_{}'.format(cls.annotator_kafka_topic, lang)
-                logger.debug('Sending tweet to ANNOTATOR %s %s', lang, tweet.tweetid, )
+                if logger.isEnabledFor(logging.DEBUG):
+                    logger.debug('Sending tweet to ANNOTATOR %s %s', lang, tweet.tweetid, )
                 cls.producer.send(topic, message)
             except KafkaTimeoutError as e:
                 logger.error(e)
@@ -156,6 +162,8 @@ class Annotator:
         Start Annotator for a collection in background (i.e. in a different thread)
         :param collection_id: int Collection Id as it's stored in MySQL virtual_twitter_collection table
         """
+        if not cls.producer:
+            cls.connect_producer()
         t = threading.Thread(target=cls.start, args=(collection_id,),
                              name='Annotator {}'.format(collection_id))
         t.start()
@@ -170,6 +178,8 @@ class Annotator:
         Start Annotator consumer in background (i.e. in a different thread)
         :param lang: str two characters string denoting a language (e.g. 'en')
         """
+        if not cls.producer:
+            cls.connect_producer()
         t = threading.Thread(target=cls.start_consumer, args=(lang,),
                              name='Annotator Consumer {}'.format(lang))
         t.start()
@@ -181,7 +191,6 @@ class Annotator:
         build a Tweet object and send it to next in pipeline.
         """
         import tensorflow as tf
-        logger.info('+++++++++++++ Annotator consumer lang=%s connected', lang)
 
         graph = tf.Graph()
         with graph.as_default():
@@ -199,26 +208,28 @@ class Annotator:
                         bootstrap_servers=cls.kafka_bootstrap_server,
                         session_timeout_ms=60000, heartbeat_interval_ms=60000
                     )
+                    logger.info('+++++++++++++ Annotator consumer lang=%s connected', lang)
 
                     for i, msg in enumerate(consumer, start=1):
                         tweet = None
                         try:
                             msg = msg.value.decode('utf-8')
                             tweet = Tweet.from_json(msg)
-                            if logger.isEnabledFor(logging.DEBUG):
-                                logger.debug('Read from queue tweetid: %s', tweet.tweetid)
                             tweet = cls.annotate(model, tweet, tokenizer)
                             message = tweet.serialize()
+
                             if logger.isEnabledFor(logging.DEBUG):
                                 logger.debug('Sending annotated tweet to PERSISTER: %s', tweet.annotations)
 
                             # persist the annotated tweet
                             cls.producer.send(cls.persister_kafka_topic, message)
+
                             # send annotated tweet to geocoding if pipeline is enabled
                             if tweet.use_pipeline:
                                 if logger.isEnabledFor(logging.DEBUG):
                                     logger.debug('Sending annotated tweet to GEOCODER: %s', tweet.annotations)
                                 cls.producer.send(cls.geocoder_kafka_topic, message)
+
                             if not (i % 1000):
                                 logger.info('%s: Annotated so far %d', lang.capitalize(), i)
                         except (ValidationError, ValueError, TypeError, InvalidRequest) as e:
