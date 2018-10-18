@@ -230,6 +230,13 @@ class Tweet(cqldb.Model):
         return (getattr(cls, 'to_{}'.format(out_format))(row) for row in results if not lang or row.lang == lang)
 
     @classmethod
+    def get_tweet(cls, collection_id, ttype, tweetid):
+        if not hasattr(cls, 'stmt'):
+            cls.generate_prepared_statements()
+        results = list(cls.session.execute(cls.stmt_single, parameters=(collection_id, ttype, tweetid), timeout=None))
+        return cls.to_obj(results[0]) if results and len(results) == 1 else None
+
+    @classmethod
     def generate_prepared_statements(cls):
         """
         Generate prepared CQL statements for existing tables
@@ -242,6 +249,9 @@ class Tweet(cqldb.Model):
         )
         cls.stmt_with_last_tweetid = cls.session.prepare(
             'SELECT * FROM {}.tweet WHERE collectionid=? AND ttype=? AND tweet_id>?'.format(cls.__keyspace__)
+        )
+        cls.stmt_single = cls.session.prepare(
+            'SELECT * FROM {}.tweet WHERE collectionid=? AND ttype=? and tweetid=?'.format(cls.__keyspace__)
         )
 
     @classmethod
