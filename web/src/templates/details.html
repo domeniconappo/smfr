@@ -31,7 +31,7 @@
                                            <th>Collection Id</th>
                                            <td>{{ data.collection.id }}</td>
                                            <th>Status</th>
-                                           <td>{{ data.collection.status }}</td>
+                                           <td><span class="{% if data.collection.status =='Running' %}color-green{% else %}color-red">{{ data.collection.status }}</span>{{ data.collection.status }}</td>
                                            <th>Trigger</th>
                                            <td>{{ data.collection.trigger }}</td>
                                            <th>Forecast date id</th>
