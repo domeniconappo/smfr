@@ -29,6 +29,7 @@ products/output
 /downloads/*.csv
 docker-compose-*.yaml
 ignoreme*.*
+annotator/models
 
 base/shared_libs/smfr_*/VERSION
 

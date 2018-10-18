@@ -16,7 +16,10 @@ from smfrcore.models import Tweet
 from smfrcore.utils import RUNNING_IN_DOCKER, LOGGER_FORMAT, LOGGER_DATE_FORMAT
 from smfrcore.text_utils import create_text_for_cnn
 
-from helpers import models, models_path
+try:
+    from helpers import models, models_path
+except (ModuleNotFoundError, ImportError):
+    from .helpers import models, models_path
 
 DEVELOPMENT = bool(int(os.environ.get('DEVELOPMENT', 0)))
 
