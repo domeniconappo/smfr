@@ -165,10 +165,9 @@ class Annotator:
         """
         if not cls.producer:
             cls.connect_producer()
-        # TODO maybe a new process
-        t = threading.Thread(target=cls.start, args=(collection_id,),
-                             name='Annotator {}'.format(collection_id))
-        t.start()
+        p = multiprocessing.Process(target=cls.start, args=(collection_id,), name='Annotator collection {}'.format(collection_id))
+        p.daemon = True
+        p.start()
 
     @classmethod
     def available_models(cls):
