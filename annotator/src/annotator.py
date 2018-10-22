@@ -85,13 +85,13 @@ class Annotator:
     @classmethod
     def start(cls, collection_id):
         """
-        Annotation process for a collection using a specified language model.
+        Annotation process for a collection. Useful to force annotation overwriting in some cases (e.g. to test a new model)
         :param collection_id: int Collection Id as it's stored in MySQL virtual_twitter_collection table
         """
-        logger.info('>>>>>>>>>>>> Starting Annotation tweets selection for collection: %s', collection_id)
+        logger.info('>>>>>>>>>>>> Forcing Annotation for collection: %s', collection_id)
         with cls._lock:
             cls._running.append(collection_id)
-        ttype = 'collected'
+        ttype = 'geotagged'
         dataset = Tweet.get_iterator(collection_id, ttype)
 
         for i, tweet in enumerate(dataset, start=1):
@@ -222,7 +222,7 @@ class Annotator:
                         cls.producer.send(cls.persister_kafka_topic, message)
 
                         # send annotated tweet to geocoding if pipeline is enabled
-                        if tweet.use_pipeline:
+                        if tweet.use_pipeline and tweet.ttype != Tweet.GEOTAGGED_TYPE:
                             if logger.isEnabledFor(logging.DEBUG):
                                 logger.debug('Sending annotated tweet to GEOCODER: %s', tweet.annotations)
                             cls.producer.send(cls.geocoder_kafka_topic, message)

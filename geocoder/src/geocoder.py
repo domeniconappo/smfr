@@ -17,7 +17,7 @@ from cassandra.cqlengine import ValidationError, CQLEngineException
 from kafka import KafkaProducer, KafkaConsumer
 from kafka.errors import NoBrokersAvailable, CommitFailedError, KafkaTimeoutError
 from mordecai import Geoparser
-from shapely.geometry import Point, Polygon, MultiPolygon
+from shapely.geometry import Point, Polygon
 
 from smfrcore.models import Tweet, Nuts2, create_app
 from smfrcore.utils import RUNNING_IN_DOCKER

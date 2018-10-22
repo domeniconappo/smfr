@@ -16,12 +16,11 @@ def get():
     :return:
     """
     config = RestServerConfiguration()
-    collectors = config.collectors
     res = []
-    for ttype, c in collectors.items():
+    for ttype, c in config.collectors.items():
         item = {
             'trigger_type': ttype,
-            'errors': list(c.streamer.errors),
+            'errors': c.streamer.errors,
             'status': 'connected' if c.streamer.connected else 'disconnected',
             'collections': [co.id for co in c.streamer.collections],
         }

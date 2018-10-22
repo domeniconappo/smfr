@@ -5,7 +5,7 @@ import logging
 from flask_restful import Resource, Api, fields, marshal_with, marshal_with_field
 
 from smfrcore.models import create_app
-from smfrcore.utils import LOGGER_FORMAT, LOGGER_DATE_FORMAT
+from smfrcore.utils import DEFAULT_HANDLER
 
 from geocoder import Geocoder
 
@@ -13,9 +13,10 @@ from geocoder import Geocoder
 app = create_app()
 api = Api(app)
 
-logging.basicConfig(format=LOGGER_FORMAT, datefmt=LOGGER_DATE_FORMAT)
 logger = logging.getLogger('GEOCODER')
 logger.setLevel(os.environ.get('LOGGING_LEVEL', 'DEBUG'))
+logger.addHandler(DEFAULT_HANDLER)
+
 logging.getLogger('cassandra').setLevel(logging.WARNING)
 logging.getLogger('kafka').setLevel(logging.WARNING)
 

@@ -38,7 +38,7 @@ class BaseStreamer(TwythonStreamer):
         self.access_token_secret = api_keys['access_token_secret']
         self.persister_kafka_topic = RestServerConfiguration.persister_kafka_topic
         self.annotator_kafka_topic = RestServerConfiguration.annotator_kafka_topic
-        self.errors = deque(maxlen=50)
+        self._errors = deque(maxlen=50)
         # A Kafka Producer
         self.producer = producer
 
@@ -84,7 +84,7 @@ class BaseStreamer(TwythonStreamer):
         err = str(data) or 'No data'
         logger.error(status_code)
         logger.error(err)
-        self.errors.append('{}: {} - {}'.format(status_code, datetime.datetime.now(), err))
+        self._errors.append('{}: {} - {}'.format(status_code, datetime.datetime.now(), err))
         self.disconnect(deactivate_collections=False)
         self.collections = []
         self.collection = None
@@ -93,7 +93,7 @@ class BaseStreamer(TwythonStreamer):
 
     def on_timeout(self):
         logger.error('Timeout...')
-        self.errors.append('{}: {} - {}'.format('500', datetime.datetime.now(), 'Timeout'))
+        self._errors.append('{}: {} - {}'.format('500', datetime.datetime.now(), 'Timeout'))
         time.sleep(30)
 
     def use_pipeline(self, collection):
@@ -122,7 +122,7 @@ class BaseStreamer(TwythonStreamer):
                 time.sleep(30)
             except (requests.exceptions.ChunkedEncodingError, http.client.IncompleteRead) as e:
                 logger.warning('Incomplete Read: %s. Streamer is sleeping for 5 seconds', e)
-                self.errors.append('{}: {} - {}'.format('400', datetime.datetime.now(), 'Incomplete Read'))
+                self._errors.append('{}: {} - {}'.format('400', datetime.datetime.now(), 'Incomplete Read'))
                 time.sleep(5)
             except Exception as e:
                 if DEVELOPMENT:
@@ -132,7 +132,7 @@ class BaseStreamer(TwythonStreamer):
                                'Disconnecting collector due an unexpected error', self.__class__.__name__, e)
                 stay_active = False
                 self.disconnect(deactivate_collections=False)
-                self.errors.append('{}: {} - {}'.format('500', datetime.datetime.now(), str(e)))
+                self._errors.append('{}: {} - {}'.format('500', datetime.datetime.now(), str(e)))
 
     def disconnect(self, deactivate_collections=True):
         logger.info('Disconnecting twitter streamer (thread %s)', threading.current_thread().name)
@@ -144,6 +144,13 @@ class BaseStreamer(TwythonStreamer):
             with app.app_context():
                 for c in self.collections:
                     c.deactivate()
+
+    @property
+    def errors(self):
+        return list(self.errors)
+
+    def track_error(self, http_error_code, message):
+        self._errors.append('{}: {} - {}'.format(http_error_code, datetime.datetime.now(), message))
 
 
 class BackgroundStreamer(BaseStreamer):

@@ -173,7 +173,7 @@
 	                        <div class="panel panel-primary">
 
                                <div class="panel-heading">
-                                   <h4>Classification</h4>
+                                   <h4>Classification {% if data.collection.is_using_pipeline %} (using pipeline){% endif %} </h4>
 	                           </div>
 	                           <div class="panel-body">
 
@@ -186,8 +186,9 @@
                                                 <em class="fas fa-tasks"></em> Stop Annotation
                                             </a>
                                            {% elif data.collection.is_using_pipeline %}
-                                            <a title="Pipeline is active for this collection" class="btn btn-default disabled" href="#">
-                                                <em class="fas fa-tasks"></em> Annotating with pipeline
+                                            <a title="Pipeline is active for this collection" class="btn btn-default"
+                                               href="/annotate/{{ data.collection.id }}/start">
+                                                <em class="fas fa-tasks"></em> Re-do geotagged tweets annotation
                                             </a>
                                            {% else %}
                                             <a  title="Start annotating for this collection" class="btn btn-default"
