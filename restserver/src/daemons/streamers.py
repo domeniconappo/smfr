@@ -30,8 +30,12 @@ class BaseStreamer(TwythonStreamer):
     """
 
     """
-    def __init__(self, producer, consumer_key, consumer_secret, access_token, access_token_secret):
+    def __init__(self, producer, **api_keys):
         self.query = {}
+        self.consumer_key = api_keys['consumer_key']
+        self.consumer_secret = api_keys['consumer_secret']
+        self.access_token = api_keys['access_token']
+        self.access_token_secret = api_keys['access_token_secret']
         self.persister_kafka_topic = RestServerConfiguration.persister_kafka_topic
         self.annotator_kafka_topic = RestServerConfiguration.annotator_kafka_topic
         self.errors = deque(maxlen=50)
@@ -43,15 +47,11 @@ class BaseStreamer(TwythonStreamer):
 
         self.client_args = {}
         if os.environ.get('http_proxy'):
-            self.client_args = {
-                'proxies': {
-                    'http': os.environ['http_proxy'],
-                    'https': os.environ.get('https_proxy') or os.environ['http_proxy']
-                }
-            }
+            self.client_args = dict(proxies=dict(http=os.environ['http_proxy'],
+                                                 https=os.environ.get('https_proxy') or os.environ['http_proxy']))
         logger.debug('Instantiate a streamer with args %s', str(self.client_args))
-        super().__init__(consumer_key, consumer_secret,
-                         access_token, access_token_secret, retry_count=3, retry_in=10, chunk_size=10,
+        super().__init__(self.consumer_key, self.consumer_secret,
+                         self.access_token, self.access_token_secret, retry_count=3, retry_in=30, chunk_size=10,
                          client_args=self.client_args)
 
     def __str__(self):
