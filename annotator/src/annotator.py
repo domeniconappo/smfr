@@ -2,6 +2,7 @@ import os
 import logging
 import sys
 import threading
+import multiprocessing
 import time
 
 from cassandra import InvalidRequest
@@ -164,6 +165,7 @@ class Annotator:
         """
         if not cls.producer:
             cls.connect_producer()
+        # TODO maybe a new process
         t = threading.Thread(target=cls.start, args=(collection_id,),
                              name='Annotator {}'.format(collection_id))
         t.start()
@@ -180,9 +182,9 @@ class Annotator:
         """
         if not cls.producer:
             cls.connect_producer()
-        t = threading.Thread(target=cls.start_consumer, args=(lang,),
-                             name='Annotator Consumer {}'.format(lang))
-        t.start()
+        p = multiprocessing.Process(target=cls.start_consumer, args=(lang,), name='Annotator Consumer {}'.format(lang))
+        p.daemon = True
+        p.start()
 
     @classmethod
     def start_consumer(cls, lang='en'):
@@ -192,68 +194,67 @@ class Annotator:
         """
         import tensorflow as tf
 
-        # graph = tf.Graph()
-        graph = tf.get_default_graph()
-        with graph.as_default():
-            session = tf.Session()
-            with session.as_default():
-                model, tokenizer = cls.load_annotation_model(lang)
+        session_conf = tf.ConfigProto(intra_op_parallelism_threads=1, inter_op_parallelism_threads=1)
+        session = tf.Session(graph=tf.get_default_graph(), config=session_conf)
 
-                try:
-                    topic = '{}_{}'.format(cls.annotator_kafka_topic, lang)
+        with session.as_default():
+            model, tokenizer = cls.load_annotation_model(lang)
 
-                    consumer = KafkaConsumer(
-                        topic, check_crcs=False,
-                        group_id='ANNOTATOR-{}'.format(lang),
-                        auto_offset_reset='earliest', max_poll_records=300, max_poll_interval_ms=1000000,
-                        bootstrap_servers=cls.kafka_bootstrap_server,
-                        session_timeout_ms=60000, heartbeat_interval_ms=60000
-                    )
-                    logger.info('+++++++++++++ Annotator consumer lang=%s connected', lang)
+            try:
+                topic = '{}_{}'.format(cls.annotator_kafka_topic, lang)
 
-                    for i, msg in enumerate(consumer, start=1):
-                        tweet = None
-                        try:
-                            msg = msg.value.decode('utf-8')
-                            tweet = Tweet.from_json(msg)
-                            tweet = cls.annotate(model, tweet, tokenizer)
-                            message = tweet.serialize()
+                consumer = KafkaConsumer(
+                    topic, check_crcs=False,
+                    group_id='ANNOTATOR-{}'.format(lang),
+                    auto_offset_reset='earliest', max_poll_records=300, max_poll_interval_ms=1000000,
+                    bootstrap_servers=cls.kafka_bootstrap_server,
+                    session_timeout_ms=60000, heartbeat_interval_ms=60000
+                )
+                logger.info('+++++++++++++ Annotator consumer lang=%s connected', lang)
 
+                for i, msg in enumerate(consumer, start=1):
+                    tweet = None
+                    try:
+                        msg = msg.value.decode('utf-8')
+                        tweet = Tweet.from_json(msg)
+                        tweet = cls.annotate(model, tweet, tokenizer)
+                        message = tweet.serialize()
+
+                        if logger.isEnabledFor(logging.DEBUG):
+                            logger.debug('Sending annotated tweet to PERSISTER: %s', tweet.annotations)
+
+                        # persist the annotated tweet
+                        cls.producer.send(cls.persister_kafka_topic, message)
+
+                        # send annotated tweet to geocoding if pipeline is enabled
+                        if tweet.use_pipeline:
                             if logger.isEnabledFor(logging.DEBUG):
-                                logger.debug('Sending annotated tweet to PERSISTER: %s', tweet.annotations)
+                                logger.debug('Sending annotated tweet to GEOCODER: %s', tweet.annotations)
+                            cls.producer.send(cls.geocoder_kafka_topic, message)
 
-                            # persist the annotated tweet
-                            cls.producer.send(cls.persister_kafka_topic, message)
+                        if not (i % 1000):
+                            logger.info('%s: Annotated so far %d', lang.capitalize(), i)
+                    except (ValidationError, ValueError, TypeError, InvalidRequest) as e:
+                        logger.error(e)
+                        logger.error('Poison message for Cassandra: %s', tweet if tweet else msg)
+                    except (CQLEngineException, KafkaTimeoutError) as e:
+                        logger.error(e)
+                    except Exception as e:
+                        logger.error(type(e))
+                        logger.error(e)
+                        logger.error(msg)
 
-                            # send annotated tweet to geocoding if pipeline is enabled
-                            if tweet.use_pipeline:
-                                if logger.isEnabledFor(logging.DEBUG):
-                                    logger.debug('Sending annotated tweet to GEOCODER: %s', tweet.annotations)
-                                cls.producer.send(cls.geocoder_kafka_topic, message)
-
-                            if not (i % 1000):
-                                logger.info('%s: Annotated so far %d', lang.capitalize(), i)
-                        except (ValidationError, ValueError, TypeError, InvalidRequest) as e:
-                            logger.error(e)
-                            logger.error('Poison message for Cassandra: %s', tweet if tweet else msg)
-                        except (CQLEngineException, KafkaTimeoutError) as e:
-                            logger.error(e)
-                        except Exception as e:
-                            logger.error(type(e))
-                            logger.error(e)
-                            logger.error(msg)
-
-                except CommitFailedError:
-                    logger.error('Annotator consumer was disconnected during I/O operations. Exited.')
-                except ValueError:
-                    # tipically an I/O operation on closed epoll object
-                    # as the consumer can be disconnected in another thread (see signal handling in start.py)
-                    if consumer._closed:
-                        logger.info('Annotator consumer was disconnected during I/O operations. Exited.')
-                    else:
-                        consumer.close()
-                except KeyboardInterrupt:
+            except CommitFailedError:
+                logger.error('Annotator consumer was disconnected during I/O operations. Exited.')
+            except ValueError:
+                # tipically an I/O operation on closed epoll object
+                # as the consumer can be disconnected in another thread (see signal handling in start.py)
+                if consumer._closed:
+                    logger.info('Annotator consumer was disconnected during I/O operations. Exited.')
+                else:
                     consumer.close()
+            except KeyboardInterrupt:
+                consumer.close()
 
     @classmethod
     def load_annotation_model(cls, lang):
