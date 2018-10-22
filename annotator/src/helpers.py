@@ -4,13 +4,16 @@ from subprocess import Popen, PIPE
 
 import ujson
 
-from smfrcore.utils import RUNNING_IN_DOCKER
+from smfrcore.utils import RUNNING_IN_DOCKER, DEFAULT_HANDLER
 
 CNN_MAX_SEQUENCE_LENGTH = 100
 
 models_path = os.path.join(os.environ.get('MODELS_PATH', '/'), 'models') if RUNNING_IN_DOCKER else os.path.join(os.path.dirname(__file__), '../models/models')
 current_models_mapping = os.path.join(models_path, 'current-model.json')
-logger = logging.getLogger(__name__)
+
+logger = logging.getLogger('ANNOTATOR')
+logger.setLevel(os.environ.get('LOGGING_LEVEL', 'DEBUG'))
+logger.addHandler(DEFAULT_HANDLER)
 
 
 def rchop(str_, ending):

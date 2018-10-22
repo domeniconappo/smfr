@@ -14,19 +14,15 @@ from keras.models import load_model
 from keras.preprocessing.sequence import pad_sequences
 
 from smfrcore.models import Tweet
-from smfrcore.utils import RUNNING_IN_DOCKER, LOGGER_FORMAT, LOGGER_DATE_FORMAT
+from smfrcore.utils import RUNNING_IN_DOCKER
 from smfrcore.text_utils import create_text_for_cnn
 
 try:
-    from helpers import models, models_path
+    from helpers import models, models_path, logger
 except (ModuleNotFoundError, ImportError):
-    from .helpers import models, models_path
+    from .helpers import models, models_path, logger
 
 DEVELOPMENT = bool(int(os.environ.get('DEVELOPMENT', 0)))
-
-logging.basicConfig(format=LOGGER_FORMAT, datefmt=LOGGER_DATE_FORMAT)
-logger = logging.getLogger('ANNOTATOR')
-logger.setLevel(os.environ.get('LOGGING_LEVEL', 'DEBUG'))
 
 
 class Annotator:

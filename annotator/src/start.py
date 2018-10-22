@@ -3,8 +3,8 @@ import logging
 from flask import Flask
 from flask_restful import Resource, Api, marshal_with, fields, marshal_with_field
 
-from annotator import Annotator, logger, DEVELOPMENT
-from helpers import models, models_path
+from annotator import Annotator, DEVELOPMENT
+from helpers import models, models_path, logger
 
 app = Flask(__name__)
 api = Api(app)
