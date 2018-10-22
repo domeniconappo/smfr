@@ -17,8 +17,8 @@ logger.setLevel(os.environ.get('LOGGING_LEVEL', 'DEBUG'))
 
 FALSE_VALUES = (False, 0, None, 'False', 'false', 'NO', 'no', 'No', '0', 'FALSE', 'null', 'None', 'NULL', 'NONE')
 
-LOGGER_FORMAT = '[%(asctime)s]-> <%(name)s[%(filename)s:%(lineno)d]>[%(levelname)s] (%(threadName)s) %(message)s'
-LOGGER_DATE_FORMAT = '%Y%m%d %H:%M:%S'
+LOGGER_FORMAT = '[%(asctime)s -> (%(threadName)s@%(process)d:%(processName)s) <%(filename)s:%(lineno)d>-%(levelname)s] %(message)s'
+LOGGER_DATE_FORMAT = '%Y%m%d%H%M%S'
 SMFR_DATE_FORMAT = '%Y-%m-%d %H:%M'
 
 DEFAULT_HANDLER = StreamHandler()
