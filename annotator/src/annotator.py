@@ -101,8 +101,11 @@ class Annotator:
                     with cls._lock:
                         cls._stop_signals.remove(collection_id)
                     break
-                lang = tweet.lang
 
+                if not (i % 1000):
+                    logger.info('%s: Scan so far %d', lang.capitalize(), i)
+
+                lang = tweet.lang
                 if lang not in cls.available_languages or (DEVELOPMENT and lang != 'en'):
                     logger.debug('Skipping tweet %s - language %s', tweet.tweetid, lang)
                     continue
