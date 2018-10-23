@@ -64,7 +64,9 @@
                                                </a>
                                            </td>
                                            <th colspan="2">Centroid</th>
-                                           <td colspan="2"><a href="https://www.openstreetmap.org/#map=13/{{ data.collection.centroid.0 }}/{{ data.collection.centroid.1 }}" target="_blank">Lat: {{ data.collection.centroid.0 }} Lon: {{ data.collection.centroid.1 }}</td>
+                                           <td colspan="2"><a href="https://www.openstreetmap.org/#map=13/{{ data.collection.centroid.0 }}/{{ data.collection.centroid.1 }}" target="_blank">
+                                               Lat: {{ '%0.3f' % data.collection.centroid.0|float }} Lon: {{ '%0.3f' % data.collection.centroid.1|float }}
+                                           </td>
                                        </tr>
                                        {% endif %}
                                        <tr>

@@ -147,7 +147,7 @@ class BaseStreamer(TwythonStreamer):
 
     @property
     def errors(self):
-        return list(self.errors)
+        return list(self._errors)
 
     def track_error(self, http_error_code, message):
         self._errors.append('{}: {} - {}'.format(http_error_code, datetime.datetime.now(), message))
