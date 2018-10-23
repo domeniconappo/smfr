@@ -57,7 +57,7 @@ class BackgroundCollector(BaseCollector):
     StreamerClass = BackgroundStreamer
 
     def start(self):
-        if self.streamer.connected:
+        if self.streamer.is_connected:
             logger.info('Trying to start an already connected streamer %s', self.streamer)
             return
         collection = TwitterCollection.get_active_background()

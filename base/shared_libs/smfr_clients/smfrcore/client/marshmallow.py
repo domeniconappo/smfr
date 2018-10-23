@@ -116,6 +116,11 @@ class Collector(BaseSchema):
     errors = fields.List(fields.String())
 
 
+class Admin(BaseSchema):
+    collectors = fields.List(fields.Nested('Collector'))
+    counters = fields.Field()
+
+
 class Login(BaseSchema):
     email = fields.String(required=True, validate=[Length(min=1, max=None, equal=None)])
     password = fields.String(required=True, validate=[Length(min=1, max=None, equal=None)])

@@ -14,7 +14,7 @@
             </div>
         </div>
         <div class="panel-body">
-            {%  if collectors %}
+            {%  if data.collectors %}
                 <table class="table table-striped table-bordered table-list">
                 <thead>
                     <tr>
@@ -26,7 +26,7 @@
                     </tr>
                 </thead>
                 <tbody>
-              {% for c in collectors %}
+              {% for c in data.collectors %}
                     <tr>
                         <td>
                         <a href="/restart_collector?ttype={{ c.trigger_type }}" title="Restart...">
@@ -45,6 +45,25 @@
                                 {{ e }}
                             {% endfor %}
                         </p></td>
+                    </tr>
+              {% endfor %}
+                </tbody>
+              </table>
+            {% endif %}
+
+             {%  if data.counters %}
+                <table class="table table-striped table-bordered table-list">
+                <thead>
+                    <tr>
+                        <th>Lang</th>
+                        <th>Annotated from last restart</th>
+                    </tr>
+                </thead>
+                <tbody>
+              {% for l, c in data.counters.items %}
+                    <tr>
+                        <td>{{ l }}</td>
+                        <td>{{  c }}</td>
                     </tr>
               {% endfor %}
                 </tbody>

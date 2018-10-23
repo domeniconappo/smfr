@@ -54,6 +54,16 @@ class AnnotatorModels(Resource):
         return Annotator.available_models(), 200
 
 
+class AnnotatorCounters(Resource):
+    """
+    API for `/counters` endpoint
+    """
+
+    @marshal_with_field(fields.Raw)
+    def get(self):
+        return Annotator.counters(), 200
+
+
 if __name__ == 'start':
 
     def log_config():
@@ -65,6 +75,7 @@ if __name__ == 'start':
     api.add_resource(AnnotatorApi, '/<int:collection_id>/<string:action>')
     api.add_resource(RunningAnnotatorsApi, '/running')
     api.add_resource(AnnotatorModels, '/models')
+    api.add_resource(AnnotatorCounters, '/counters')
 
     logger.info('[OK] Annotator Microservice ready for incoming requests')
     log_config()

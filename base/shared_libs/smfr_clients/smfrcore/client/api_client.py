@@ -23,8 +23,8 @@ class ApiLocalClient:
     """
     logger = logging.getLogger(__name__)
     endpoints = {
-        'list_collectors': '/collectors',
-        'restart_collector': '/collectors/{trigger_type}/restart',
+        'list_admin': '/admin',
+        'restart_collector': '/admin/{trigger_type}/restart',
         'list_collections': '/collections',
         'new_collection': '/collections',
         'stop_collection': '/collections/{id}/stop',
@@ -111,7 +111,7 @@ class ApiLocalClient:
                 return {}
 
     def list_collectors(self):
-        return self._get('list_collectors'), 200
+        return self._get('list_admin'), 200
 
     def restart_collector(self, trigger_type):
         return self._post('restart_collector', path_kwargs={'trigger_type': trigger_type}), 204

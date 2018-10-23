@@ -104,6 +104,11 @@ class BaseStreamer(TwythonStreamer):
         t = threading.Thread(target=self.connect, name=str(self), args=(collections,), daemon=True)
         t.start()
 
+    @property
+    def is_connected(self):
+        with self._lock:
+            return self.connected
+
     def connect(self, collections):
         with self._lock:
             if self.connected:
@@ -119,8 +124,8 @@ class BaseStreamer(TwythonStreamer):
             try:
                 self.statuses.filter(**filter_args)
             except (urllib3.exceptions.ReadTimeoutError, socket.timeout, requests.exceptions.ConnectionError,) as e:
-                logger.warning('A timeout occurred. Streamer is sleeping for 30 seconds: %s', e)
-                time.sleep(30)
+                logger.warning('A timeout occurred. Streamer is sleeping for 10 seconds: %s', e)
+                time.sleep(10)
             except (requests.exceptions.ChunkedEncodingError, http.client.IncompleteRead) as e:
                 logger.warning('Incomplete Read: %s.', e)
                 self._errors.append('{}: {} - {}'.format('400', datetime.datetime.now(), 'Incomplete Read'))

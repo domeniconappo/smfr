@@ -89,10 +89,10 @@ paths:
 
 # COLLECTORS / STREAMERS
 
-  /collectors:
+  /admin:
     get:
       tags: [collectors]
-      operationId: server.api.collectors.get
+      operationId: server.api.admin.get
       summary: Get all collectors defined in SMFR
       responses:
         200:
@@ -100,12 +100,12 @@ paths:
           schema:
             type: array
             items:
-              $ref: '#/definitions/Collector'
+              $ref: '#/definitions/Admin'
 
-  /collectors/{trigger_type}/restart:
+  /admin/{trigger_type}/restart:
     post:
       tags: [collectors]
-      operationId: server.api.collectors.restart
+      operationId: server.api.admin.restart_collectors
       parameters:
       - in: path
         name: trigger_type
@@ -561,6 +561,7 @@ definitions:
         items:
           $ref: '#/definitions/CollectionTweetSample'
 
+
   Collector:
     type: object
     properties:
@@ -579,6 +580,16 @@ definitions:
         type: array
         items:
           type: string
+
+  Admin:
+    type: object
+    properties:
+      collectors:
+        type: array
+        items:
+          $ref: '#/definitions/Collector'
+      counters:
+        type: object
 
   # A simple username/password combo for logging in
   Login:

@@ -32,6 +32,8 @@ class Annotator:
     _running = []
     _stop_signals = []
     _lock = threading.RLock()
+    _manager = multiprocessing.Manager()
+    shared_counter = _manager.dict()
 
     kafka_bootstrap_server = os.environ.get('KAFKA_BOOTSTRAP_SERVER', 'kafka:9094') if RUNNING_IN_DOCKER else '127.0.0.1:9094'
     available_languages = list(models.keys())
@@ -173,6 +175,10 @@ class Annotator:
         return {'models': models} if not DEVELOPMENT else {'models': {'en': models['en']}}
 
     @classmethod
+    def counters(cls):
+        return cls.shared_counter
+
+    @classmethod
     def consumer_in_background(cls, lang='en'):
         """
         Start Annotator consumer in background (i.e. in a different thread)
@@ -209,13 +215,14 @@ class Annotator:
                     session_timeout_ms=60000, heartbeat_interval_ms=60000
                 )
                 logger.info('+++++++++++++ Annotator consumer lang=%s connected', lang)
-
+                cls.shared_counter[lang] = 0
                 for i, msg in enumerate(consumer, start=1):
                     tweet = None
                     try:
                         msg = msg.value.decode('utf-8')
                         tweet = Tweet.from_json(msg)
                         tweet = cls.annotate(model, tweet, tokenizer)
+                        cls.shared_counter[lang] +=1
                         message = tweet.serialize()
 
                         if logger.isEnabledFor(logging.DEBUG):

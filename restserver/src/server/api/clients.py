@@ -54,6 +54,15 @@ class AnnotatorClient(MicroserviceClient):
         return cls._models, res.status_code
 
     @classmethod
+    def counters(cls):
+
+        url = '{}/counters'.format(cls.base_uri)
+        res = requests.get(url)
+        cls._check_response(res, res.status_code)
+        result = res.json()
+        return result, res.status_code
+
+    @classmethod
     def available_languages(cls):
         models = cls.models()[0]['models']
         return tuple(models.keys())
