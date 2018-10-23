@@ -44,3 +44,8 @@ a.btn.disabled {
 
 #relevant_tweets_map {height: 400px;}
 #product_map {height: 800px;}
+.btn {font-size: 12px !important;}
+
+.h4, h4 {
+    font-size: 16px;
+}
