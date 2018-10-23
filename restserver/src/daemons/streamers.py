@@ -40,7 +40,8 @@ class BaseStreamer(TwythonStreamer):
         self.persister_kafka_topic = RestServerConfiguration.persister_kafka_topic
         self.annotator_kafka_topic = RestServerConfiguration.annotator_kafka_topic
         self._errors = deque(maxlen=50)
-        # A Kafka Producer
+
+        # A Kafka Producer to send tweets to store to PERSISTER queue
         self.producer = producer
 
         self.collections = []
@@ -110,9 +111,8 @@ class BaseStreamer(TwythonStreamer):
             return self.connected
 
     def connect(self, collections):
-        with self._lock:
-            if self.connected:
-                self.disconnect(deactivate_collections=False)
+        if self.is_connected:
+            self.disconnect(deactivate_collections=False)
 
         self.collections = collections
         self.query = self._build_query_for()
@@ -153,10 +153,15 @@ class BaseStreamer(TwythonStreamer):
 
     @property
     def errors(self):
-        return list(self._errors)
+        with self._lock:
+            return list(self._errors)
 
     def track_error(self, http_error_code, message):
-        self._errors.append('{}: {} - {}'.format(http_error_code, datetime.datetime.now().strftime('%Y%m%d %H:%M'), str(message).strip('\n').strip('\r')))
+        with self._lock:
+            self._errors.append('{code}: {date} - {error}'.format(
+                code=http_error_code,
+                date=datetime.datetime.now().strftime('%Y%m%d %H:%M'),
+                error=str(message).strip('\n').strip('\r')))
 
 
 class BackgroundStreamer(BaseStreamer):
@@ -178,14 +183,18 @@ class BackgroundStreamer(BaseStreamer):
                 tweet = Tweet.from_tweet(self.collection.id, data, ttype='collected')
                 # the tweet is sent immediately to kafka queue
                 message = tweet.serialize()
+
                 if logger.isEnabledFor(logging.DEBUG):
                     logger.debug('\n\nSending to PERSISTER: %s\n', tweet)
+
                 self.producer.send(self.persister_kafka_topic, message)
 
                 if self.use_pipeline(self.collection) and lang in AnnotatorClient.available_languages():
                     topic = '{}_{}'.format(self.annotator_kafka_topic, lang)
+
                     if logger.isEnabledFor(logging.DEBUG):
                         logger.debug('\n\nSending to annotator queue: %s %s\n', topic, tweet)
+
                     self.producer.send(topic, message)
         else:
             logger.error('No Data: %s', str(data))
