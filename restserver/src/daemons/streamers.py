@@ -85,7 +85,7 @@ class BaseStreamer(TwythonStreamer):
         err = str(data) or 'No data'
         logger.error(status_code)
         logger.error(err)
-        self._errors.append('{}: {} - {}'.format(status_code, datetime.datetime.now(), err))
+        self.track_error(status_code, err)
         self.disconnect(deactivate_collections=False)
         self.collections = []
         self.collection = None
@@ -94,7 +94,7 @@ class BaseStreamer(TwythonStreamer):
 
     def on_timeout(self):
         logger.error('Timeout...')
-        self._errors.append('{}: {} - {}'.format('500', datetime.datetime.now(), 'Timeout'))
+        self.track_error(500, 'Timeout')
         time.sleep(30)
 
     def use_pipeline(self, collection):
@@ -128,7 +128,7 @@ class BaseStreamer(TwythonStreamer):
                 time.sleep(10)
             except (requests.exceptions.ChunkedEncodingError, http.client.IncompleteRead) as e:
                 logger.warning('Incomplete Read: %s.', e)
-                self._errors.append('{}: {} - {}'.format('400', datetime.datetime.now(), 'Incomplete Read'))
+                self.track_error(400, 'Incomplete Read')
             except Exception as e:
                 if DEVELOPMENT:
                     import traceback
@@ -137,7 +137,7 @@ class BaseStreamer(TwythonStreamer):
                                'Disconnecting collector due an unexpected error', self.__class__.__name__, e)
                 stay_active = False
                 self.disconnect(deactivate_collections=False)
-                self._errors.append('{}: {} - {}'.format('500', datetime.datetime.now(), str(e)))
+                self.track_error(500, str(e))
 
     def disconnect(self, deactivate_collections=True):
         with self._lock:
@@ -156,7 +156,7 @@ class BaseStreamer(TwythonStreamer):
         return list(self._errors)
 
     def track_error(self, http_error_code, message):
-        self._errors.append('{}: {} - {}'.format(http_error_code, datetime.datetime.now(), message))
+        self._errors.append('{}: {} - {}'.format(http_error_code, datetime.datetime.now().strftime('%Y%m%d %H:%M'), str(message).strip('\n').strip('\r')))
 
 
 class BackgroundStreamer(BaseStreamer):

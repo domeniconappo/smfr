@@ -30,7 +30,7 @@ def index():
 @app.route('/admin', methods=('GET',))
 def admin():
     res, _ = client.list_collectors()
-    return render_template('admin.html', collectors=res), 200
+    return render_template('admin.html', data=res), 200
 
 
 @app.route('/restart_collector', methods=('GET',))

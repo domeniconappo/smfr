@@ -40,11 +40,7 @@
                            {% endfor %}
                         </td>
                         <td>{{ c.status }}</td>
-                        <td><p>
-                            {% for e in c.errors %}
-                                {{ e }}
-                            {% endfor %}
-                        </p></td>
+                        <td>{% for e in c.errors %}<p>{{ e }}</p>{% endfor %}</td>
                     </tr>
               {% endfor %}
                 </tbody>
@@ -60,7 +56,7 @@
                     </tr>
                 </thead>
                 <tbody>
-              {% for l, c in data.counters.items %}
+              {% for l, c in data.counters.items() %}
                     <tr>
                         <td>{{ l }}</td>
                         <td>{{  c }}</td>

@@ -63,10 +63,10 @@ services:
         models_repo: ${GIT_REPO_MODELS}
     working_dir: /annotator
     ports:
-    - '5556:5556'
-    - '6006:6006'
+      - '5556:5556'
+      - '6006:6006'
     networks:
-    - back-tier
+      - back-tier
 
     environment:
       LOGGING_LEVEL: ${LOGGING_LEVEL}
@@ -93,11 +93,11 @@ services:
       http_proxy: ${http_proxy}
       https_proxy: ${https_proxy}
     volumes:
-    - './annotator/src:/annotator'
+      - './annotator/src:/annotator'
     depends_on:
-    - kafka
-    - cassandrasmfr
-    - persister
+      - kafka
+      - cassandrasmfr
+      - persister
     deploy:
       restart_policy:
         condition: on-failure

@@ -176,7 +176,7 @@ class Annotator:
 
     @classmethod
     def counters(cls):
-        return cls.shared_counter
+        return dict(cls.shared_counter)
 
     @classmethod
     def consumer_in_background(cls, lang='en'):

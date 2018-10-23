@@ -41,7 +41,7 @@ class RunningAnnotatorsApi(Resource):
 
     @marshal_with_field(fields.List(fields.Raw))
     def get(self):
-        return Annotator.running(), 200
+        return dict(Annotator.running()), 200
 
 
 class AnnotatorModels(Resource):
