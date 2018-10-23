@@ -31,6 +31,7 @@ class BaseStreamer(TwythonStreamer):
 
     """
     def __init__(self, producer, **api_keys):
+        self._lock = threading.RLock()
         self.query = {}
         self.consumer_key = api_keys['consumer_key']
         self.consumer_secret = api_keys['consumer_secret']
@@ -104,9 +105,9 @@ class BaseStreamer(TwythonStreamer):
         t.start()
 
     def connect(self, collections):
-
-        if self.connected:
-            self.disconnect(deactivate_collections=False)
+        with self._lock:
+            if self.connected:
+                self.disconnect(deactivate_collections=False)
 
         self.collections = collections
         self.query = self._build_query_for()
@@ -121,9 +122,8 @@ class BaseStreamer(TwythonStreamer):
                 logger.warning('A timeout occurred. Streamer is sleeping for 30 seconds: %s', e)
                 time.sleep(30)
             except (requests.exceptions.ChunkedEncodingError, http.client.IncompleteRead) as e:
-                logger.warning('Incomplete Read: %s. Streamer is sleeping for 5 seconds', e)
+                logger.warning('Incomplete Read: %s.', e)
                 self._errors.append('{}: {} - {}'.format('400', datetime.datetime.now(), 'Incomplete Read'))
-                time.sleep(5)
             except Exception as e:
                 if DEVELOPMENT:
                     import traceback
@@ -135,9 +135,10 @@ class BaseStreamer(TwythonStreamer):
                 self._errors.append('{}: {} - {}'.format('500', datetime.datetime.now(), str(e)))
 
     def disconnect(self, deactivate_collections=True):
-        logger.info('Disconnecting twitter streamer (thread %s)', threading.current_thread().name)
-        super().disconnect()
-        self.connected = False
+        with self._lock:
+            logger.info('Disconnecting twitter streamer (thread %s)', threading.current_thread().name)
+            super().disconnect()
+            self.connected = False
         if deactivate_collections:
             logger.warning('Deactivating all collections!')
             app = create_app()
