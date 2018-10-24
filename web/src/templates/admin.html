@@ -15,6 +15,7 @@
         </div>
         <div class="panel-body">
             {%  if data.collectors %}
+
                 <table class="table table-striped table-bordered table-list">
                 <thead>
                     <tr>
@@ -25,7 +26,9 @@
                         <th>Errors</th>
                     </tr>
                 </thead>
+
                 <tbody>
+
               {% for c in data.collectors %}
                     <tr>
                         <td>
@@ -34,16 +37,18 @@
                         </a>
                         </td>
                         <td>{{ c.trigger_type }}</td>
+                        <td>{{ c.status }}</td>
+                        <td>{% for e in c.errors %}<p>{{ e }}</p>{% endfor %}</td>
                         <td>
                            {% for co in c.collections %}
                                <a href="/details/{{ co }}" target="_self">{{ co }}</a>
                            {% endfor %}
                         </td>
-                        <td>{{ c.status }}</td>
-                        <td>{% for e in c.errors %}<p>{{ e }}</p>{% endfor %}</td>
                     </tr>
               {% endfor %}
-                </tbody>
+
+              </tbody>
+
               </table>
             {% endif %}
 
@@ -56,15 +61,19 @@
                     </tr>
                 </thead>
                 <tbody>
-              {% for l, c in data.counters.items() %}
+              {% for lang_code, count in data.counters.items() %}
                     <tr>
-                        <td>{{ l }}</td>
-                        <td>{{  c }}</td>
+                        <td>{{ lang_code }}</td>
+                        <td>{{ count }}</td>
                     </tr>
               {% endfor %}
                 </tbody>
               </table>
             {% endif %}
+
+            <!-- FETCH EFAS EVENTS -->
+            <!-- FETCH EFAS EVENTS -->
+            <!-- FETCH EFAS EVENTS -->
             <hr />
             <form class="form_box" method="post" action="/fetch_efas">
                 <input id="tzclient" name="tzclient" type="hidden" value="" />

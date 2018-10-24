@@ -103,11 +103,10 @@ class Annotator:
                     with cls._lock:
                         cls._stop_signals.remove(collection_id)
                     break
-
+                lang = tweet.lang
                 if not (i % 1000):
                     logger.info('%s: Scan so far %d', lang.capitalize(), i)
 
-                lang = tweet.lang
                 if lang not in cls.available_languages or (DEVELOPMENT and lang != 'en'):
                     logger.debug('Skipping tweet %s - language %s', tweet.tweetid, lang)
                     continue
@@ -126,25 +125,6 @@ class Annotator:
         with cls._lock:
             cls._running.remove(collection_id)
         logger.info('<<<<<<<<<<<<< Annotation tweets selection terminated for collection: %s', collection_id)
-
-    @classmethod
-    def annotate(cls, model, t, tokenizer):
-        """
-
-        :param model: CNN model used for prediction
-        :param t: smfrcore.models.Tweet object
-        :param tokenizer:
-        :return:
-        """
-        original_json = t.original_tweet_as_dict
-        text = create_text_for_cnn(original_json, [])
-        sequences = tokenizer.texts_to_sequences([text])
-        data = pad_sequences(sequences, maxlen=model.layers[0].input_shape[1])
-        predictions_list = model.predict(data)
-        flood_probability = 1. * predictions_list[:, 1][0]
-        t.annotations = {'flood_probability': ('yes', flood_probability)}
-        t.ttype = 'annotated'
-        return t
 
     @classmethod
     def stop(cls, collection_id):
@@ -191,6 +171,29 @@ class Annotator:
         p.start()
 
     @classmethod
+    def annotate(cls, model, tweets, tokenizer):
+        """
+        Annotate the tweet t using model and tokenizer
+
+        :param model: CNN model used for prediction
+        :param tweets: list of smfrcore.models.Tweet objects
+        :param tokenizer:
+        :return:
+        """
+        texts = (create_text_for_cnn(t.original_tweet_as_dict, []) for t in tweets)
+        sequences = tokenizer.texts_to_sequences(texts)
+        data = pad_sequences(sequences, maxlen=model.layers[0].input_shape[1])
+        predictions_list = model.predict(data)
+        res = []
+        predictions = predictions_list[:, 1]
+        for i, t in enumerate(tweets):
+            flood_probability = 1. * predictions[i]
+            t.annotations = {'flood_probability': ('yes', flood_probability)}
+            t.ttype = 'annotated'
+            res.append(t)
+        return res
+
+    @classmethod
     def start_consumer(cls, lang='en'):
         """
         Main method that iterate over messages coming from Kafka queue,
@@ -216,29 +219,35 @@ class Annotator:
                 )
                 logger.info('+++++++++++++ Annotator consumer lang=%s connected', lang)
                 cls.shared_counter[lang] = 0
+                buffer_to_annotate = []
+
                 for i, msg in enumerate(consumer, start=1):
                     tweet = None
                     try:
                         msg = msg.value.decode('utf-8')
                         tweet = Tweet.from_json(msg)
-                        tweet = cls.annotate(model, tweet, tokenizer)
-                        cls.shared_counter[lang] +=1
-                        message = tweet.serialize()
+                        buffer_to_annotate.append(tweet)
 
-                        if logger.isEnabledFor(logging.DEBUG):
-                            logger.debug('Sending annotated tweet to PERSISTER: %s', tweet.annotations)
+                        if len(buffer_to_annotate) >= 100:
+                            tweets = cls.annotate(model, buffer_to_annotate, tokenizer)
+                            cls.shared_counter[lang] += len(buffer_to_annotate)
 
-                        # persist the annotated tweet
-                        cls.producer.send(cls.persister_kafka_topic, message)
+                            for tweet in tweets:
+                                message = tweet.serialize()
 
-                        # send annotated tweet to geocoding if pipeline is enabled
-                        if tweet.use_pipeline and tweet.ttype != Tweet.GEOTAGGED_TYPE:
-                            if logger.isEnabledFor(logging.DEBUG):
-                                logger.debug('Sending annotated tweet to GEOCODER: %s', tweet.annotations)
-                            cls.producer.send(cls.geocoder_kafka_topic, message)
+                                if logger.isEnabledFor(logging.DEBUG):
+                                    logger.debug('Sending annotated tweet to PERSISTER: %s', tweet.annotations)
 
-                        if not (i % 1000):
-                            logger.info('%s: Annotated so far %d', lang.capitalize(), i)
+                                # persist the annotated tweet
+                                cls.producer.send(cls.persister_kafka_topic, message)
+
+                                # send annotated tweet to geocoding if pipeline is enabled
+                                if tweet.use_pipeline and tweet.ttype != Tweet.GEOTAGGED_TYPE:
+                                    if logger.isEnabledFor(logging.DEBUG):
+                                        logger.debug('Sending annotated tweet to GEOCODER: %s', tweet.annotations)
+                                    cls.producer.send(cls.geocoder_kafka_topic, message)
+                            buffer_to_annotate.clear()
+
                     except (ValidationError, ValueError, TypeError, InvalidRequest) as e:
                         logger.error(e)
                         logger.error('Poison message for Cassandra: %s', tweet if tweet else msg)
