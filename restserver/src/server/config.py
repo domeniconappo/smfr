@@ -107,8 +107,6 @@ class RestServerConfiguration(metaclass=Singleton):
     annotator_port = os.getenv('ANNOTATOR_PORT', 5556)
     geocoder_port = os.getenv('GEOCODER_PORT', 5557)
     persister_kafka_topic = os.getenv('PERSISTER_KAFKA_TOPIC', 'persister')
-    annotator_kafka_topic = os.getenv('ANNOTATOR_KAFKA_TOPIC', 'annotator')
-    geocoder_kafka_topic = os.getenv('GEOCODER_KAFKA_TOPIC', 'geocoder')
 
     debug = not UNDER_TESTS and os.getenv('DEVELOPMENT', True)
     not_reconciled_log_path = os.path.join(os.path.dirname(__file__), '../../logs/not_reconciled_tweets.log') if not RUNNING_IN_DOCKER else '/logs/not_reconciled_tweets.log'
