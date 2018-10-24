@@ -14,7 +14,7 @@ app = create_app()
 api = Api(app)
 
 logger = logging.getLogger('GEOCODER')
-logger.setLevel(os.environ.get('LOGGING_LEVEL', 'DEBUG'))
+logger.setLevel(os.getenv('LOGGING_LEVEL', 'DEBUG'))
 logger.addHandler(DEFAULT_HANDLER)
 
 logging.getLogger('cassandra').setLevel(logging.WARNING)

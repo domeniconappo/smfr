@@ -6,12 +6,12 @@ import paramiko
 
 class FTPEfas:
     host_keys = paramiko.util.load_host_keys(os.path.expanduser('~/.ssh/known_hosts'))
-    user = os.environ.get('FTP_USER')
-    pwd = os.environ.get('FTP_PASS')
-    host = os.environ.get('FTP_HOST')
-    server_folder = os.environ.get('FTP_PATH')
-    local_folder = os.environ.get('DOWNLOAD_FOLDER')
-    filename_template = os.environ.get('RRA_ONDEMAND_FILENAME')
+    user = os.getenv('FTP_USER')
+    pwd = os.getenv('FTP_PASS')
+    host = os.getenv('FTP_HOST')
+    server_folder = os.getenv('FTP_PATH')
+    local_folder = os.getenv('DOWNLOAD_FOLDER')
+    filename_template = os.getenv('RRA_ONDEMAND_FILENAME')
 
     def __init__(self):
 

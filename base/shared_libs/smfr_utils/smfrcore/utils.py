@@ -13,7 +13,7 @@ import schedule
 from flask.json import JSONEncoder
 
 logger = logging.getLogger('SMFR utils')
-logger.setLevel(os.environ.get('LOGGING_LEVEL', 'DEBUG'))
+logger.setLevel(os.getenv('LOGGING_LEVEL', 'DEBUG'))
 
 FALSE_VALUES = (False, 0, None, 'False', 'false', 'NO', 'no', 'No', '0', 'FALSE', 'null', 'None', 'NULL', 'NONE')
 

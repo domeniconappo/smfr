@@ -22,7 +22,7 @@ try:
 except (ModuleNotFoundError, ImportError):
     from .helpers import models, models_path, logger
 
-DEVELOPMENT = bool(int(os.environ.get('DEVELOPMENT', 0)))
+DEVELOPMENT = bool(int(os.getenv('DEVELOPMENT', 0)))
 
 
 class Annotator:
@@ -35,14 +35,12 @@ class Annotator:
     _manager = multiprocessing.Manager()
     shared_counter = _manager.dict()
 
-    kafka_bootstrap_server = os.environ.get('KAFKA_BOOTSTRAP_SERVER', 'kafka:9094') if RUNNING_IN_DOCKER else '127.0.0.1:9094'
+    kafka_bootstrap_server = os.getenv('KAFKA_BOOTSTRAP_SERVER', 'kafka:9094') if RUNNING_IN_DOCKER else '127.0.0.1:9094'
     available_languages = list(models.keys())
     producer = None
 
-    persister_kafka_topic = os.environ.get('PERSISTER_KAFKA_TOPIC', 'persister')
-    annotator_kafka_topic = os.environ.get('ANNOTATOR_KAFKA_TOPIC', 'annotator')
-    # next topic in pipeline
-    geocoder_kafka_topic = os.environ.get('GEOCODER_KAFKA_TOPIC', 'geocoder')
+    persister_kafka_topic = os.getenv('PERSISTER_KAFKA_TOPIC', 'persister')
+    annotator_kafka_topic = os.getenv('ANNOTATOR_KAFKA_TOPIC', 'annotator')
 
     @classmethod
     def connect_producer(cls, kafka_server=None):
@@ -189,7 +187,7 @@ class Annotator:
         for i, t in enumerate(tweets):
             flood_probability = 1. * predictions[i]
             t.annotations = {'flood_probability': ('yes', flood_probability)}
-            t.ttype = 'annotated'
+            t.ttype = Tweet.ANNOTATED_TYPE
             res.append(t)
         return res
 
@@ -229,6 +227,7 @@ class Annotator:
                         tweet = Tweet.from_json(msg)
                         buffer_to_annotate.append(tweet)
                         cls.shared_counter['waiting-{}'.format(lang)] += 1
+
                         if len(buffer_to_annotate) >= 100:
                             tweets = cls.annotate(model, buffer_to_annotate, tokenizer)
                             cls.shared_counter[lang] += len(buffer_to_annotate)
@@ -242,11 +241,6 @@ class Annotator:
                                 # persist the annotated tweet
                                 cls.producer.send(cls.persister_kafka_topic, message)
 
-                                # send annotated tweet to geocoding if pipeline is enabled
-                                if tweet.use_pipeline and tweet.ttype != Tweet.GEOTAGGED_TYPE:
-                                    if logger.isEnabledFor(logging.DEBUG):
-                                        logger.debug('Sending annotated tweet to GEOCODER: %s', tweet.annotations)
-                                    cls.producer.send(cls.geocoder_kafka_topic, message)
                             buffer_to_annotate.clear()
                             cls.shared_counter['waiting-{}'.format(lang)] = 0
 

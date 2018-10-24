@@ -19,7 +19,7 @@ logging.basicConfig(level=logging.INFO, format=LOGGER_FORMAT, datefmt=LOGGER_DAT
 logger = logging.getLogger('Web')
 client = ApiLocalClient()
 
-PRODUCTS_FOLDER = os.environ.get('PRODUCTS_OUTPUT_FOLDER', '/products')
+PRODUCTS_FOLDER = os.getenv('PRODUCTS_OUTPUT_FOLDER', '/products')
 
 
 @app.route('/', methods=('GET',))

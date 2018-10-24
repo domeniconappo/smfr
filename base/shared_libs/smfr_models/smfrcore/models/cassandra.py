@@ -23,17 +23,17 @@ from smfrcore.models.utils import get_cassandra_hosts
 
 
 logger = logging.getLogger('models')
-logger.setLevel(os.environ.get('LOGGING_LEVEL', 'DEBUG'))
+logger.setLevel(os.getenv('LOGGING_LEVEL', 'DEBUG'))
 logger.addHandler(DEFAULT_HANDLER)
 
 logging.getLogger('cassandra').setLevel(logging.WARNING)
 
 cqldb = CQLAlchemy()
 
-_keyspace = os.environ.get('CASSANDRA_KEYSPACE', 'smfr_persistent')
-_port = os.environ.get('CASSANDRA_PORT', 9042)
-_cassandra_user = os.environ.get('CASSANDRA_USER')
-_cassandra_password = os.environ.get('CASSANDRA_PASSWORD')
+_keyspace = os.getenv('CASSANDRA_KEYSPACE', 'smfr_persistent')
+_port = os.getenv('CASSANDRA_PORT', 9042)
+_cassandra_user = os.getenv('CASSANDRA_USER')
+_cassandra_password = os.getenv('CASSANDRA_PASSWORD')
 
 cluster_kwargs = {'compression': True, 'load_balancing_policy': default_lbp_factory(),
                   'auth_provider': PlainTextAuthProvider(username=_cassandra_user, password=_cassandra_password)}
@@ -43,7 +43,7 @@ _hosts = get_cassandra_hosts()
 cassandra_cluster = Cluster(_hosts, port=_port, **cluster_kwargs) if RUNNING_IN_DOCKER else Cluster(**cluster_kwargs)
 cassandra_session = cassandra_cluster.connect()
 cassandra_session.default_timeout = None
-cassandra_session.default_fetch_size = os.environ.get('CASSANDRA_FETCH_SIZE', 1000)
+cassandra_session.default_fetch_size = os.getenv('CASSANDRA_FETCH_SIZE', 1000)
 
 cassandra_default_connection = Connection.from_session(DEFAULT_CONNECTION, session=cassandra_session)
 _connections[DEFAULT_CONNECTION] = cassandra_default_connection
@@ -353,7 +353,7 @@ class Tweet(cqldb.Model):
         return cls.to_obj(row).serialize()
 
     @classmethod
-    def from_tweet(cls, collectionid, tweet, ttype='collected'):
+    def from_tweet(cls, collectionid, tweet, ttype=COLLECTED_TYPE):
         """
 
         :param ttype:

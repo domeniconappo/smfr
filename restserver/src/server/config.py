@@ -29,16 +29,16 @@ from flask_jwt_extended import (
 from smfrcore.auth import authenticate, identity
 from smfrcore.utils import RUNNING_IN_DOCKER, DEFAULT_HANDLER
 
-DEVELOPMENT = os.environ.get('DEVELOPMENT', '0') in ('1', 'yes', 'Yes', 'True', 'true')
+DEVELOPMENT = os.getenv('DEVELOPMENT', '0') in ('1', 'yes', 'Yes', 'True', 'true')
 UNDER_TESTS = any('nose2' in x for x in sys.argv)
 SERVER_BOOTSTRAP = 'gunicorn' in sys.argv[0]
 MYSQL_MIGRATION = all(os.path.basename(a) in ('flask', 'db', 'migrate') for a in sys.argv) \
                   or all(os.path.basename(a) in ('flask', 'db', 'upgrade') for a in sys.argv) \
                   or all(os.path.basename(a) in ('flask', 'db', 'init') for a in sys.argv)
 
-CONFIG_STORE_PATH = os.environ.get('SERVER_PATH_UPLOADS', os.path.join(os.path.dirname(__file__), '../../../uploads/'))
+CONFIG_STORE_PATH = os.getenv('SERVER_PATH_UPLOADS', os.path.join(os.path.dirname(__file__), '../../../uploads/'))
 CONFIG_FOLDER = '/configuration/' if RUNNING_IN_DOCKER else os.path.join(os.path.dirname(__file__), '../config/')
-NUM_SAMPLES = os.environ.get('NUM_SAMPLES', 100)
+NUM_SAMPLES = os.getenv('NUM_SAMPLES', 100)
 
 logging.getLogger('cassandra').setLevel(logging.WARNING)
 logging.getLogger('kafka').setLevel(logging.WARNING)
@@ -92,28 +92,28 @@ class RestServerConfiguration(metaclass=Singleton):
     Constructor accepts a connexion app object.
     """
     geonames_host = '127.0.0.1' if not RUNNING_IN_DOCKER else 'geonames'
-    kafka_bootstrap_server = '127.0.0.1' if not RUNNING_IN_DOCKER else os.environ.get('KAFKA_BOOTSTRAP_SERVER', 'kafka:9094')
-    mysql_host = '127.0.0.1' if not RUNNING_IN_DOCKER else os.environ.get('MYSQL_HOST', 'mysql')
-    __mysql_user = os.environ.get('MYSQL_USER', 'root')
-    __mysql_pass = os.environ.get('MYSQL_PASSWORD', 'example')
-    cassandra_host = '127.0.0.1' if not RUNNING_IN_DOCKER else os.environ.get('CASSANDRA_HOST', 'cassandrasmfr')
+    kafka_bootstrap_server = '127.0.0.1' if not RUNNING_IN_DOCKER else os.getenv('KAFKA_BOOTSTRAP_SERVER', 'kafka:9094')
+    mysql_host = '127.0.0.1' if not RUNNING_IN_DOCKER else os.getenv('MYSQL_HOST', 'mysql')
+    __mysql_user = os.getenv('MYSQL_USER', 'root')
+    __mysql_pass = os.getenv('MYSQL_PASSWORD', 'example')
+    cassandra_host = '127.0.0.1' if not RUNNING_IN_DOCKER else os.getenv('CASSANDRA_HOST', 'cassandrasmfr')
     annotator_host = '127.0.0.1' if not RUNNING_IN_DOCKER else 'annotator'
     geocoder_host = '127.0.0.1' if not RUNNING_IN_DOCKER else 'geocoder'
     restserver_host = '127.0.0.1' if not RUNNING_IN_DOCKER else 'restserver'
 
-    cassandra_keyspace = '{}{}'.format(os.environ.get('CASSANDRA_KEYSPACE', 'smfr_persistent'), '_test' if UNDER_TESTS else '')
-    mysql_db_name = '{}{}'.format(os.environ.get('MYSQL_DBNAME', 'smfr'), '_test' if UNDER_TESTS else '')
-    restserver_port = os.environ.get('RESTSERVER_PORT', 5555)
-    annotator_port = os.environ.get('ANNOTATOR_PORT', 5556)
-    geocoder_port = os.environ.get('GEOCODER_PORT', 5557)
-    persister_kafka_topic = os.environ.get('PERSISTER_KAFKA_TOPIC', 'persister')
-    annotator_kafka_topic = os.environ.get('ANNOTATOR_KAFKA_TOPIC', 'annotator')
-    geocoder_kafka_topic = os.environ.get('GEOCODER_KAFKA_TOPIC', 'geocoder')
+    cassandra_keyspace = '{}{}'.format(os.getenv('CASSANDRA_KEYSPACE', 'smfr_persistent'), '_test' if UNDER_TESTS else '')
+    mysql_db_name = '{}{}'.format(os.getenv('MYSQL_DBNAME', 'smfr'), '_test' if UNDER_TESTS else '')
+    restserver_port = os.getenv('RESTSERVER_PORT', 5555)
+    annotator_port = os.getenv('ANNOTATOR_PORT', 5556)
+    geocoder_port = os.getenv('GEOCODER_PORT', 5557)
+    persister_kafka_topic = os.getenv('PERSISTER_KAFKA_TOPIC', 'persister')
+    annotator_kafka_topic = os.getenv('ANNOTATOR_KAFKA_TOPIC', 'annotator')
+    geocoder_kafka_topic = os.getenv('GEOCODER_KAFKA_TOPIC', 'geocoder')
 
-    debug = not UNDER_TESTS and os.environ.get('DEVELOPMENT', True)
+    debug = not UNDER_TESTS and os.getenv('DEVELOPMENT', True)
     not_reconciled_log_path = os.path.join(os.path.dirname(__file__), '../../logs/not_reconciled_tweets.log') if not RUNNING_IN_DOCKER else '/logs/not_reconciled_tweets.log'
 
-    logger_level = logging.ERROR if UNDER_TESTS else logging.getLevelName(os.environ.get('LOGGING_LEVEL', 'DEBUG').upper())
+    logger_level = logging.ERROR if UNDER_TESTS else logging.getLevelName(os.getenv('LOGGING_LEVEL', 'DEBUG').upper())
     logger = logging.getLogger('RestServer config')
     logger.setLevel(logger_level)
     logger.addHandler(DEFAULT_HANDLER)
@@ -177,7 +177,7 @@ class RestServerConfiguration(metaclass=Singleton):
             self = self.__class__.instances[RestServerConfiguration]
         else:
             self.flask_app = self.set_flaskapp(connexion_app)
-            self.flask_app.config['JWT_SECRET_KEY'] = os.environ.get('SECRET_KEY', 'super-secret')
+            self.flask_app.config['JWT_SECRET_KEY'] = os.getenv('SECRET_KEY', 'super-secret')
             self.jwt = JWTManager(self.flask_app)
             self.flask_app.app_context().push()
             self.producer = None
@@ -224,8 +224,8 @@ class RestServerConfiguration(metaclass=Singleton):
         app.config['CASSANDRA_HOSTS'] = [self.cassandra_host]
         app.config['CASSANDRA_KEYSPACE'] = self.cassandra_keyspace
         app.config['CASSANDRA_SETUP_KWARGS'] = {
-            'auth_provider': PlainTextAuthProvider(username=os.environ.get('CASSANDRA_USER'),
-                                                   password=os.environ.get('CASSANDRA_PASSWORD')),
+            'auth_provider': PlainTextAuthProvider(username=os.getenv('CASSANDRA_USER'),
+                                                   password=os.getenv('CASSANDRA_PASSWORD')),
             'load_balancing_policy': default_lbp_factory(),
             'compression': True,
         }
@@ -233,7 +233,7 @@ class RestServerConfiguration(metaclass=Singleton):
 
     @property
     def base_path(self):
-        return os.environ.get('RESTSERVER_BASEPATH', '/1.0')
+        return os.getenv('RESTSERVER_BASEPATH', '/1.0')
 
     def init_cassandra(self):
         """

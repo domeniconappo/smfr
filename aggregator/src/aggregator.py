@@ -13,7 +13,7 @@ from smfrcore.utils import LOGGER_FORMAT, LOGGER_DATE_FORMAT, logged_job, job_ex
 
 from smfrcore.models import TwitterCollection, Aggregation, create_app
 
-log_level = os.environ.get('LOGGING_LEVEL', 'DEBUG')
+log_level = os.getenv('LOGGING_LEVEL', 'DEBUG')
 logging.basicConfig(level=log_level, format=LOGGER_FORMAT, datefmt=LOGGER_DATE_FORMAT)
 
 logger = logging.getLogger('AGGREGATOR')
@@ -23,13 +23,13 @@ logging.getLogger('cassandra').setLevel(logging.WARNING)
 flask_app = create_app()
 
 running_aggregators = set()
-flood_propability_ranges_env = os.environ.get('FLOOD_PROBABILITY_RANGES', '0-10,10-90,90-100')
+flood_propability_ranges_env = os.getenv('FLOOD_PROBABILITY_RANGES', '0-10,10-90,90-100')
 flood_propability_ranges = [[int(g) for g in t.split('-')] for t in flood_propability_ranges_env.split(',')]
 
 
 class MostRelevantTweets:
-    min_relevant_probability = int(os.environ.get('MIN_RELEVANT_FLOOD_PROBABILITY', 90)) / 100
-    max_size = int(os.environ.get('NUM_RELEVANT_TWEETS_AGGREGATED', 100))
+    min_relevant_probability = int(os.getenv('MIN_RELEVANT_FLOOD_PROBABILITY', 90)) / 100
+    max_size = int(os.getenv('NUM_RELEVANT_TWEETS_AGGREGATED', 100))
 
     @classmethod
     def _sortkey(cls, t):

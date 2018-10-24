@@ -8,7 +8,7 @@ from aggregator import aggregate, pretty_running_conf, logger
 
 
 if __name__ == '__main__':
-    scheduling_interval = int(os.environ.get('AGGREGATOR_SCHEDULING_MINUTES', 30))
+    scheduling_interval = int(os.getenv('AGGREGATOR_SCHEDULING_MINUTES', 30))
 
     parser = argparse.ArgumentParser()
     parser.add_argument('-a', '--all', action='store_true', default=False,

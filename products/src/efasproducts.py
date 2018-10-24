@@ -16,7 +16,7 @@ from smfrcore.text_utils import tweet_normalization_aggressive
 from sqlalchemy import or_
 
 logger = logging.getLogger(__name__)
-logger.setLevel(os.environ.get('LOGGING_LEVEL', 'DEBUG'))
+logger.setLevel(os.getenv('LOGGING_LEVEL', 'DEBUG'))
 logger.addHandler(DEFAULT_HANDLER)
 
 logging.getLogger('cassandra').setLevel(logging.ERROR)
@@ -34,15 +34,15 @@ class Products:
     out_crs = dict(type='EPSG', properties=dict(code=4326, coordinate_order=[1, 0]))
 
     RGB = {'red': '255 0 0', 'orange': '255 128 0', 'gray': '225 225 225'}
-    high_prob_range = os.environ.get('HIGH_PROB_RANGE', '90-100')
-    low_prob_range = os.environ.get('LOW_PROB_RANGE', '0-10')
+    high_prob_range = os.getenv('HIGH_PROB_RANGE', '90-100')
+    low_prob_range = os.getenv('LOW_PROB_RANGE', '0-10')
 
     # this variable reflects the following heuristic:
     # GREEN - less than 10 high relevant tweets
     # ORANGE - num of high rel > 5 * num low rel
     # RED - num of high rel > 9 * num low rel
-    alert_heuristic = os.environ.get('THRESHOLDS', '10:5:9')
-    max_relevant_tweets = int(os.environ.get('NUM_RELEVANT_TWEETS_PRODUCTS', 5))
+    alert_heuristic = os.getenv('THRESHOLDS', '10:5:9')
+    max_relevant_tweets = int(os.getenv('NUM_RELEVANT_TWEETS_PRODUCTS', 5))
 
     @classmethod
     def log_config(cls):

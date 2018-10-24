@@ -8,6 +8,6 @@ from .collections import TwitterCollection, Aggregation
 from .nuts import (Nuts2, Nuts3)
 
 logger = logging.getLogger('SQL')
-logger.setLevel(os.environ.get('LOGGING_LEVEL', 'DEBUG'))
+logger.setLevel(os.getenv('LOGGING_LEVEL', 'DEBUG'))
 
 

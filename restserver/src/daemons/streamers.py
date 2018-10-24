@@ -38,7 +38,6 @@ class BaseStreamer(TwythonStreamer):
         self.access_token = api_keys['access_token']
         self.access_token_secret = api_keys['access_token_secret']
         self.persister_kafka_topic = RestServerConfiguration.persister_kafka_topic
-        self.annotator_kafka_topic = RestServerConfiguration.annotator_kafka_topic
         self._errors = deque(maxlen=50)
 
         # A Kafka Producer to send tweets to store to PERSISTER queue
@@ -48,9 +47,9 @@ class BaseStreamer(TwythonStreamer):
         self.collection = None
 
         self.client_args = {}
-        if os.environ.get('http_proxy'):
+        if os.getenv('http_proxy'):
             self.client_args = dict(proxies=dict(http=os.environ['http_proxy'],
-                                                 https=os.environ.get('https_proxy') or os.environ['http_proxy']))
+                                                 https=os.getenv('https_proxy') or os.environ['http_proxy']))
         logger.debug('Instantiate a streamer with args %s', str(self.client_args))
         super().__init__(self.consumer_key, self.consumer_secret,
                          self.access_token, self.access_token_secret, retry_count=3, retry_in=30, chunk_size=10,
@@ -180,22 +179,14 @@ class BackgroundStreamer(BaseStreamer):
 
             if lang == 'en' or lang in self.collection.languages:
                 data['lang'] = lang
-                tweet = Tweet.from_tweet(self.collection.id, data, ttype='collected')
+                tweet = Tweet.from_tweet(self.collection.id, data, ttype=Tweet.COLLECTED_TYPE)
                 # the tweet is sent immediately to kafka queue
                 message = tweet.serialize()
-
-                if logger.isEnabledFor(logging.DEBUG):
-                    logger.debug('\n\nSending to PERSISTER: %s\n', tweet)
-
                 self.producer.send(self.persister_kafka_topic, message)
 
-                if self.use_pipeline(self.collection) and lang in AnnotatorClient.available_languages():
-                    topic = '{}_{}'.format(self.annotator_kafka_topic, lang)
+                if logger.isEnabledFor(logging.DEBUG):
+                    logger.debug('Collected tweet sent to PERSISTER: %s', tweet.tweetid)
 
-                    if logger.isEnabledFor(logging.DEBUG):
-                        logger.debug('\n\nSending to annotator queue: %s %s\n', topic, tweet)
-
-                    self.producer.send(topic, message)
         else:
             logger.error('No Data: %s', str(data))
 
@@ -210,11 +201,11 @@ class OnDemandStreamer(BaseStreamer):
         if 'text' in data:
             lang = safe_langdetect(tweet_normalization_aggressive(data['text']))
             data['lang'] = lang
-            tweet = Tweet.from_tweet(Tweet.NO_COLLECTION_ID, data, ttype='collected')
+            tweet = Tweet.from_tweet(Tweet.NO_COLLECTION_ID, data, ttype=Tweet.COLLECTED_TYPE)
             message = tweet.serialize()
-            if logger.isEnabledFor(logging.DEBUG):
-                logger.debug('\n\nSending to PERSISTER: %s\n', tweet)
             self.producer.send(self.persister_kafka_topic, message)
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.debug('Sent to PERSISTER: %s', tweet.tweetid)
 
     def use_pipeline(self, collection):
         return True

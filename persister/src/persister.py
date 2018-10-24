@@ -15,7 +15,9 @@ from smfrcore.models import Tweet, TwitterCollection, create_app
 from smfrcore.utils import RUNNING_IN_DOCKER, NULL_HANDLER, DEFAULT_HANDLER
 from smfrcore.client.api_client import AnnotatorClient
 
-PersisterConfiguration = namedtuple('PersisterConfiguration', ['persister_kafka_topic', 'kafka_bootstrap_server'])
+PersisterConfiguration = namedtuple('PersisterConfiguration', ['persister_kafka_topic', 'kafka_bootstrap_server',
+                                                               'annotator_kafka_topic', 'geocoder_kafka_topic']
+                                    )
 
 logging.getLogger('kafka').setLevel(logging.WARNING)
 logging.getLogger('urllib3').setLevel(logging.WARNING)
@@ -24,7 +26,7 @@ os.environ['NO_PROXY'] = ','.join((AnnotatorClient.host,))
 
 logger = logging.getLogger('PERSISTER')
 logger.addHandler(DEFAULT_HANDLER)
-logger.setLevel(os.environ.get('LOGGING_LEVEL', 'DEBUG'))
+logger.setLevel(os.getenv('LOGGING_LEVEL', 'DEBUG'))
 
 file_logger = logging.getLogger('Not Reconciled Tweets')
 file_logger.setLevel(logging.ERROR)
@@ -44,12 +46,13 @@ class Persister:
         It listens to the Kafka queue, build a Tweet object from messages and save it in Cassandra.
         """
     config = PersisterConfiguration(
-        persister_kafka_topic=os.environ.get('PERSISTER_KAFKA_TOPIC', 'persister'),
-        kafka_bootstrap_server=os.environ.get('KAFKA_BOOTSTRAP_SERVER', 'kafka:9094'),
+        persister_kafka_topic=os.getenv('PERSISTER_KAFKA_TOPIC', 'persister'),
+        kafka_bootstrap_server=os.getenv('KAFKA_BOOTSTRAP_SERVER', 'kafka:9094'),
+        annotator_kafka_topic=os.getenv('ANNOTATOR_KAFKA_TOPIC', 'annotator'),
+        geocoder_kafka_topic=os.getenv('GEOCODER_KAFKA_TOPIC', 'geocoder'),
     )
     _running_instance = None
     _lock = threading.RLock()
-    annotator_kafka_topic = os.environ.get('ANNOTATOR_KAFKA_TOPIC', 'annotator')
     app = create_app()
 
     @classmethod
@@ -137,18 +140,17 @@ class Persister:
                             file_logger.error('%s', msg)
                             continue
                         tweet.collectionid = collection.id
-                    logger.debug('Saving tweet: %s - collection %d', tweet.tweetid, tweet.collectionid)
+
+                    if logger.isEnabledFor(logging.DEBUG):
+                        logger.debug('Saving tweet: %s - collection %d', tweet.tweetid, tweet.collectionid)
+
                     tweet.save()
                     counter[tweet.ttype] += 1
-                    if tweet.use_pipeline and tweet.ttype == Tweet.COLLECTED_TYPE and tweet.lang in self.language_models:
-                        topic = '{}_{}'.format(self.annotator_kafka_topic, tweet.lang)
-                        if logger.isEnabledFor(logging.DEBUG):
-                            logger.debug('\n\nSending to annotator queue: %s %s\n', topic, tweet)
-                        message = tweet.serialize()
-                        self.producer.send(topic, message)
 
-                    if not (i % 5000):
-                        logger.info('Saved since last restart TOTAL: %d \n%s', i, str(counter))
+                    self.send_to_pipeline(tweet)
+
+                    if logger.isEnabledFor(logging.INFO) and not (i % 5000):
+                        logger.info('Scanned/Saved since last restart \nTOTAL: %d \n%s', i, str(counter))
 
                 except (ValidationError, ValueError, TypeError, InvalidRequest) as e:
                     logger.error(e)
@@ -171,6 +173,22 @@ class Persister:
                 self.running_instance().stop()
         except KeyboardInterrupt:
             self.stop()
+
+    def send_to_pipeline(self, tweet):
+        if not tweet.use_pipeline:
+            return
+        topic = None
+        if tweet.ttype == Tweet.COLLECTED_TYPE and tweet.lang in self.language_models:
+            # tweet will go to the next in pipeline: annotator queue
+            topic = '{}_{}'.format(self.config.annotator_kafka_topic, tweet.lang)
+        elif tweet.ttype == Tweet.ANNOTATED_TYPE:
+            # tweet will go to the next in pipeline: geocoder queue
+            topic = self.config.geocoder_kafka_topic
+        if topic:
+            message = tweet.serialize()
+            self.producer.send(topic, message)
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.debug('Sent to pipeline: %s %s', topic, tweet.tweetid)
 
     def stop(self):
         """

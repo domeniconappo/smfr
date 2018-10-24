@@ -184,10 +184,10 @@ sqldb = SQLAlchemy(metadata=metadata, session_options={'expire_on_commit': False
 
 
 def create_app(app_name='SMFR'):
-    _mysql_host = '127.0.0.1' if not RUNNING_IN_DOCKER else os.environ.get('MYSQL_HOST', 'mysql')
-    _mysql_db_name = os.environ.get('MYSQL_DBNAME', 'smfr')
-    _mysql_user = os.environ.get('MYSQL_USER')
-    _mysql_pass = os.environ.get('MYSQL_PASSWORD')
+    _mysql_host = '127.0.0.1' if not RUNNING_IN_DOCKER else os.getenv('MYSQL_HOST', 'mysql')
+    _mysql_db_name = os.getenv('MYSQL_DBNAME', 'smfr')
+    _mysql_user = os.getenv('MYSQL_USER')
+    _mysql_pass = os.getenv('MYSQL_PASSWORD')
     app = Flask(app_name)
     app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://{}:{}@{}/{}?charset=utf8mb4'.format(
         _mysql_user, _mysql_pass, _mysql_host, _mysql_db_name

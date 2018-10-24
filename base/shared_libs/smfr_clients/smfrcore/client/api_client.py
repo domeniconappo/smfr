@@ -13,7 +13,7 @@ from smfrcore.utils import LOGGER_FORMAT, LOGGER_DATE_FORMAT, smfr_json_encoder,
 
 from .marshmallow import OnDemandPayload, CollectionPayload
 
-logging.basicConfig(level=os.environ.get('LOGGING_LEVEL', 'DEBUG'),
+logging.basicConfig(level=os.getenv('LOGGING_LEVEL', 'DEBUG'),
                     format=LOGGER_FORMAT, datefmt=LOGGER_DATE_FORMAT)
 
 
@@ -227,7 +227,7 @@ class AnnotatorClient(MicroserviceClient):
 
     """
     host = '127.0.0.1' if not RUNNING_IN_DOCKER else 'annotator'
-    port = os.environ.get('ANNOTATOR_PORT', 5556)
+    port = os.getenv('ANNOTATOR_PORT', 5556)
 
     base_uri = 'http://{}:{}'.format(host, port)
     _models = None
@@ -285,7 +285,7 @@ class GeocoderClient(MicroserviceClient):
 
     """
     host = '127.0.0.1' if not RUNNING_IN_DOCKER else 'geocoder'
-    port = os.environ.get('GEOCODER_PORT', 5557)
+    port = os.getenv('GEOCODER_PORT', 5557)
     base_uri = 'http://{}:{}'.format(host, port)
 
     @classmethod

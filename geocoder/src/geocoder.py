@@ -24,7 +24,7 @@ from smfrcore.utils import RUNNING_IN_DOCKER
 
 
 logger = logging.getLogger('GEOCODER')
-logger.setLevel(os.environ.get('LOGGING_LEVEL', 'DEBUG'))
+logger.setLevel(os.getenv('LOGGING_LEVEL', 'DEBUG'))
 
 
 class Nuts2Finder:
@@ -105,15 +105,15 @@ class Geocoder:
     _lock = threading.RLock()
     logger = logging.getLogger(__name__)
     geonames_host = 'geonames' if RUNNING_IN_DOCKER else '127.0.0.1'
-    kafka_bootstrap_server = os.environ.get('KAFKA_BOOTSTRAP_SERVER', 'kafka:9094') if RUNNING_IN_DOCKER else '127.0.0.1:9094'
+    kafka_bootstrap_server = os.getenv('KAFKA_BOOTSTRAP_SERVER', 'kafka:9094') if RUNNING_IN_DOCKER else '127.0.0.1:9094'
 
     flask_app = create_app()
 
     # FIXME duplicated code (same as Annotator)
     # TODO Need a class in shared_lib where to put common code for microservices like this
     retries = 5
-    persister_kafka_topic = os.environ.get('PERSISTER_KAFKA_TOPIC', 'persister')
-    geocoder_kafka_topic = os.environ.get('GEOCODER_KAFKA_TOPIC', 'geocoder')
+    persister_kafka_topic = os.getenv('PERSISTER_KAFKA_TOPIC', 'persister')
+    geocoder_kafka_topic = os.getenv('GEOCODER_KAFKA_TOPIC', 'geocoder')
 
     while retries >= 0:
         try:
@@ -191,7 +191,7 @@ class Geocoder:
         with cls._lock:
             cls._running.append(collection_id)
 
-        ttype = 'annotated'
+        ttype = Tweet.ANNOTATED_TYPE
         dataset = Tweet.get_iterator(collection_id, ttype)
 
         for i, tweet in enumerate(dataset, start=1):
@@ -371,7 +371,7 @@ class Geocoder:
 
     @classmethod
     def set_geo_fields(cls, latlong, nuts2, nuts2_source, country_code, place, geonameid, tweet):
-        tweet.ttype = 'geotagged'
+        tweet.ttype = Tweet.GEOTAGGED_TYPE
         tweet.latlong = latlong
         tweet.nuts2 = str(nuts2.efas_id) if nuts2 else None
         tweet.nuts2source = nuts2_source
@@ -413,11 +413,10 @@ class Geocoder:
                                 continue
 
                             cls.set_geo_fields(coordinates, nuts2, nuts_source, country_code, place, geonameid, tweet)
-                            message = tweet.serialize()
-
                             if logger.isEnabledFor(logging.DEBUG):
                                 logger.debug('Send geocoded tweet to PERSISTER: %s', tweet.geo)
 
+                            message = tweet.serialize()
                             cls.producer.send(cls.persister_kafka_topic, message)
 
                             if not (i % 1000):
