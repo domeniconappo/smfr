@@ -219,6 +219,7 @@ class Annotator:
                 )
                 logger.info('+++++++++++++ Annotator consumer lang=%s connected', lang)
                 cls.shared_counter[lang] = 0
+                cls.shared_counter['waiting-{}'.format(lang)] = 0
                 buffer_to_annotate = []
 
                 for i, msg in enumerate(consumer, start=1):
@@ -227,7 +228,7 @@ class Annotator:
                         msg = msg.value.decode('utf-8')
                         tweet = Tweet.from_json(msg)
                         buffer_to_annotate.append(tweet)
-
+                        cls.shared_counter['waiting-{}'.format(lang)] += 1
                         if len(buffer_to_annotate) >= 100:
                             tweets = cls.annotate(model, buffer_to_annotate, tokenizer)
                             cls.shared_counter[lang] += len(buffer_to_annotate)
@@ -247,6 +248,7 @@ class Annotator:
                                         logger.debug('Sending annotated tweet to GEOCODER: %s', tweet.annotations)
                                     cls.producer.send(cls.geocoder_kafka_topic, message)
                             buffer_to_annotate.clear()
+                            cls.shared_counter['waiting-{}'.format(lang)] = 0
 
                     except (ValidationError, ValueError, TypeError, InvalidRequest) as e:
                         logger.error(e)
