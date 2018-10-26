@@ -16,14 +16,16 @@ RUN chown -R elasticsearch /var/log/elasticsearch/
 RUN chown -R elasticsearch /usr/share/elasticsearch/data
 
 USER elasticsearch
+WORKDIR /usr/share/elasticsearch/
 COPY geonames/elasticsearch.yml /usr/share/elasticsearch/config/
 COPY geonames/log4j2.properties /usr/share/elasticsearch/config/
 COPY geonames/jvm.options /usr/share/elasticsearch/config/
 RUN elasticsearch-plugin remove x-pack
 
-WORKDIR /usr/share/elasticsearch/
-RUN wget https://s3.amazonaws.com/ahalterman-geo/geonames_index.tar.gz && tar xzf geonames_index.tar.gz \
-    && rm geonames_index.tar.gz && mv geonames_index/nodes/ data/
+RUN wget https://s3.amazonaws.com/ahalterman-geo/geonames_index.tar.gz \
+    && tar xzf geonames_index.tar.gz \
+    && rm geonames_index.tar.gz \
+    && mv geonames_index/nodes/ data/
 
 ENV PATH=$PATH:/usr/share/elasticsearch/bin
 CMD ["elasticsearch"]
