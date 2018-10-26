@@ -5,6 +5,7 @@ from logging.handlers import RotatingFileHandler
 import sys
 import threading
 import time
+import multiprocessing
 
 from cassandra import InvalidRequest
 from cassandra.cqlengine import ValidationError, CQLEngineException
@@ -55,6 +56,8 @@ class Persister:
     _running_instance = None
     _lock = threading.RLock()
     app = create_app()
+    _manager = multiprocessing.Manager()
+    shared_counter = _manager.dict({Tweet.ANNOTATED_TYPE: 0, Tweet.COLLECTED_TYPE: 0, Tweet.GEOTAGGED_TYPE: 0})
 
     @classmethod
     def running_instance(cls):
@@ -102,7 +105,6 @@ class Persister:
                     sys.exit(1)
             else:
                 break
-        self.counter = Counter()
 
     def set_collections(self, collections):
         with self._lock:
@@ -115,6 +117,11 @@ class Persister:
         # no collection found for ingested tweet...
         return None
 
+    def start_in_background(self):
+        p = multiprocessing.Process(target=self.start, name='Persister Consumer')
+        p.daemon = True
+        p.start()
+
     def start(self):
         """
         Main method that iterate over messages coming from Kafka queue, build a Tweet object and save it in Cassandra
@@ -122,7 +129,6 @@ class Persister:
 
         logger.info('Persister started %s...Resetting counters', str(self))
         self.set_running(inst=self)
-        self.counter = Counter({Tweet.ANNOTATED_TYPE: 0, Tweet.COLLECTED_TYPE: 0, Tweet.GEOTAGGED_TYPE: 0})
         try:
             for i, msg in enumerate(self.consumer, start=1):
                 tweet = None
@@ -142,13 +148,13 @@ class Persister:
                         logger.debug('Saving tweet: %s - collection %d', tweet.tweetid, tweet.collectionid)
 
                     tweet.save()
-                    self.counter[tweet.ttype] += 1
-                    self.counter['{}-{}'.format(tweet.lang, tweet.ttype)] += 1
+                    self.shared_counter[tweet.ttype] += 1
+                    self.shared_counter['{}-{}'.format(tweet.lang, tweet.ttype)] += 1
 
                     self.send_to_pipeline(tweet)
 
                     if logger.isEnabledFor(logging.INFO) and not (i % 5000):
-                        logger.info('Scanned/Saved since last restart \nTOTAL: %d \n%s', i, str(self.counter))
+                        logger.info('Scanned/Saved since last restart \nTOTAL: %d \n%s', i, str(self.shared_counter))
 
                 except (ValidationError, ValueError, TypeError, InvalidRequest) as e:
                     logger.error(e)
@@ -200,4 +206,4 @@ class Persister:
         return 'Persister ({}): {}@{}:{}'.format(id(self), self.topic, self.bootstrap_server, self.group_id)
 
     def counters(self):
-        return self.counter
+        return self.shared_counter

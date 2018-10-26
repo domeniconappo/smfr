@@ -1,7 +1,6 @@
 import signal
 
 import schedule
-from flask import Flask
 from flask_restful import Resource, fields, marshal_with_field, Api
 from smfrcore.models import TwitterCollection
 from smfrcore.utils import logged_job
@@ -9,7 +8,7 @@ from smfrcore.utils import logged_job
 from persister import Persister, logger
 
 
-app = Flask(__name__)
+app = Persister.app
 api = Api(app)
 
 
@@ -19,7 +18,7 @@ def get_active_collections_for_persister(p):
         p.set_collections(TwitterCollection.get_running())
 
 
-if __name__ == '__main__':
+if __name__ in ('__main__', 'start'):
     def stop_persister(signum, _):
         logger.debug("Received %d", signum)
         logger.debug("Stopping any running collector...")
@@ -47,4 +46,4 @@ if __name__ == '__main__':
 
     api.add_resource(PersisterCounters, '/counters')
     schedule.every(30).minutes.do(get_active_collections_for_persister, (persister,)).tag('update-running-collections')
-    persister.start()
+    persister.start_in_background()
