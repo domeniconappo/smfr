@@ -11,11 +11,13 @@ RUN mkdir -p /products && mkdir -p /products/smfrcore && mkdir -p /config && mkd
 COPY base/shared_libs/scripts/wait_for_it.sh /scripts/
 COPY base/shared_libs/smfr_utils/. /smfr_libs/utils/
 COPY base/shared_libs/smfr_models/. /smfr_libs/models/
+COPY base/shared_libs/smfr_clients/. /smfr_libs/clients/
 COPY ./products/requirements.txt /requirements/
 
 RUN pip3.6 install -r /requirements/requirements.txt
 RUN pip3.6 install /smfr_libs/utils/ \
  && pip3.6 install /smfr_libs/models/ \
+ && pip3.6 install /smfr_libs/clients/ \
  && chmod -R a+x /scripts/ && rm -R /root/.cache && chmod -R a+w /products/
 
 COPY ./products/config/. /config/

@@ -258,8 +258,6 @@ class Annotator:
                     except (ValidationError, ValueError, TypeError, InvalidRequest) as e:
                         logger.error(e)
                         logger.error('Poison message for Cassandra: %s', tweet if tweet else msg)
-                    except (CQLEngineException, KafkaTimeoutError) as e:
-                        logger.error(e)
                     except Exception as e:
                         logger.error(type(e))
                         logger.error(e)

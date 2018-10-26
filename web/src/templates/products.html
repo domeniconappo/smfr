@@ -7,6 +7,7 @@
    crossorigin=""/>
     <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.css"/>
     <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.Default.css"/>
+    <link rel="stylesheet" href="/static/css/leaflet.extra-markers.min.css">
 {% endblock %}
 
 {% block app_content %}
@@ -70,9 +71,9 @@
     {{ super() }}
     <script src="https://unpkg.com/leaflet@1.3.4/dist/leaflet.js"
    integrity="sha512-nMMmRyTVoLYqjP9hrbed9S+FzjZHW5gY1TWCHA5ckwXZBadntCNs8kEqAWdrb9O7rxbCaA4lKTIWjDXZxflOcA=="
-   crossorigin="">
-    </script>
+   crossorigin=""></script>
     <script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster.js"></script>
+    <script src="/static/js/leaflet.extra-markers.min.js"></script>
     <script>
     $(document).ready(function() {
 
@@ -112,8 +113,25 @@
                          marker.bindPopup(tweet_text);
                          markers.addLayer(marker);
                     });
-                    layer.bindPopup(feature.properties.popupContent);
                 }
+
+                if (feature.properties && feature.properties.incidents) {
+                    var incidentMarker = L.ExtraMarkers.icon({
+                        icon: 'fa-car-crash',
+                        markerColor: 'red',
+                        shape: 'square',
+                        prefix: 'fas'
+                    });
+                    $.each(feature.properties.incidents, function(index, incident) {
+                         var incident_lat = incident['lat'];
+                         var incident_lon = incident['lon'];
+                         var incident_text = incident['text'];
+                         var marker = L.marker([incident_lat, incident_lon], {icon: incidentMarker});
+                         marker.bindPopup(incident_text);
+                         markers.addLayer(marker);
+                    });
+                }
+
             }
 
             L.geoJSON(features, {

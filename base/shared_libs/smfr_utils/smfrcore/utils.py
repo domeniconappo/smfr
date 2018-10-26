@@ -26,6 +26,8 @@ formatter = logging.Formatter(fmt=LOGGER_FORMAT, datefmt=LOGGER_DATE_FORMAT)
 DEFAULT_HANDLER.setFormatter(formatter)
 NULL_HANDLER = logging.NullHandler()
 
+RGB = {'red': '255 0 0', 'orange': '255 128 0', 'gray': '225 225 225'}
+
 
 def _running_in_docker():
     """

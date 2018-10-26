@@ -155,11 +155,12 @@ class BaseStreamer(TwythonStreamer):
             return list(self._errors)
 
     def track_error(self, http_error_code, message):
+        message = message.decode('utf-8') if isinstance(message, bytes) else str(message)
         with self._lock:
             self._errors.append('{code}: {date} - {error}'.format(
                 code=http_error_code,
                 date=datetime.datetime.now().strftime('%Y%m%d %H:%M'),
-                error=str(message).strip('\n').strip('\r')))
+                error=message.strip('\r\n')))
 
 
 class BackgroundStreamer(BaseStreamer):

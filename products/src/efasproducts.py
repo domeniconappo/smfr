@@ -10,8 +10,9 @@ from geojson.geometry import Geometry
 import fiona
 from Levenshtein import ratio
 
-from smfrcore.models.sql import TwitterCollection, Aggregation, create_app
-from smfrcore.utils import DEFAULT_HANDLER, IN_DOCKER
+from smfrcore.models.sql import TwitterCollection, Aggregation, Nuts2, create_app
+from smfrcore.utils import DEFAULT_HANDLER, IN_DOCKER, RGB
+from smfrcore.client.api_here import HereClient
 from smfrcore.text_utils import tweet_normalization_aggressive
 from sqlalchemy import or_
 
@@ -32,8 +33,6 @@ class Products:
     template = os.path.join(config_folder, 'maptemplate.shp')
     output_filename_tpl = os.path.join(output_folder, 'SMFR_products_{}.geojson')
     out_crs = dict(type='EPSG', properties=dict(code=4326, coordinate_order=[1, 0]))
-
-    RGB = {'red': '255 0 0', 'orange': '255 128 0', 'gray': '225 225 225'}
     high_prob_range = os.getenv('HIGH_PROB_RANGE', '90-100')
     low_prob_range = os.getenv('LOW_PROB_RANGE', '0-10')
 
@@ -43,6 +42,9 @@ class Products:
     # RED - num of high rel > 9 * num low rel
     alert_heuristic = os.getenv('THRESHOLDS', '10:5:9')
     max_relevant_tweets = int(os.getenv('NUM_RELEVANT_TWEETS_PRODUCTS', 5))
+
+    # here api
+    here_client = HereClient()
 
     @classmethod
     def log_config(cls):
@@ -122,7 +124,8 @@ class Products:
                         'efas_id': efas_id,
                         'risk_color': cls.determine_color(counters_by_efas_id[efas_id]),
                         'counters': counters_by_efas_id[efas_id],
-                        'relevant_tweets': relevant_tweets_aggregated[efas_id]
+                        'relevant_tweets': relevant_tweets_aggregated[efas_id],
+                        'incidents': cls.get_incidents(efas_id),
                     }))
 
                 geojson.dump(FeatureCollection(out_data), sink, sort_keys=True, indent=2)
@@ -147,7 +150,7 @@ class Products:
             color = 'orange'
         else:
             color = 'red'
-        return cls.RGB[color]
+        return RGB[color]
 
     @classmethod
     def is_efas_id(cls, key):
@@ -156,6 +159,12 @@ class Products:
             return True
         except ValueError:
             return False
+
+    @classmethod
+    def get_incidents(cls, efas_id):
+        bbox = Nuts2.efas_id_bbox(efas_id)
+        bbox_for_here = '{max_lat},{min_lon};{min_lat},{max_lon}'.format(max_lat=bbox['max_lat'], min_lon=bbox['min_lon'], min_lat=bbox['min_lat'], max_lon=bbox['max_lon'])
+        return cls.here_client.get_by_bbox(bbox_for_here)
 
 
 class TweetsDeduplicator:
