@@ -17,7 +17,6 @@ from smfrcore.utils import DEFAULT_HANDLER
 
 from daemons.utils import safe_langdetect, tweet_normalization_aggressive
 from server.config import RestServerConfiguration, DEVELOPMENT
-from server.api.clients import AnnotatorClient
 
 
 logger = logging.getLogger('RestServer Streamer')

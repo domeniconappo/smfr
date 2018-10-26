@@ -121,9 +121,9 @@ class RestServerConfiguration(metaclass=Singleton):
     if SERVER_BOOTSTRAP:
         # Flask apps are setup when issuing CLI commands as well.
         # This code is executed in case of launching REST Server
-        producer = KafkaProducer(bootstrap_servers=kafka_bootstrap_server,
+        producer = KafkaProducer(bootstrap_servers=kafka_bootstrap_server, linger_ms=500, batch_size=1048576,
                                  retries=5, compression_type='gzip',
-                                 buffer_memory=134217728, batch_size=1048576)
+                                 buffer_memory=134217728)
 
     @classmethod
     def default_keywords(cls):
@@ -196,7 +196,9 @@ class RestServerConfiguration(metaclass=Singleton):
                     if SERVER_BOOTSTRAP and not self.producer:
                         # Flask apps are setup when issuing CLI commands as well.
                         # This code is executed in case of launching REST Server
-                        self.producer = KafkaProducer(bootstrap_servers=self.kafka_bootstrap_server, compression_type='gzip')
+                        self.producer = KafkaProducer(bootstrap_servers=self.kafka_bootstrap_server, linger_ms=500,
+                                                      batch_size=1048576, retries=5, compression_type='gzip',
+                                                      buffer_memory=134217728)
                 except (NoHostAvailable, OperationalError, NoBrokersAvailable, socket.gaierror):
                     self.logger.error('Missing link with a db server.')
                     self.logger.warning('C*/Mysql/Kafka/ES were not up. Wait 5 seconds before retrying')

@@ -119,7 +119,7 @@ class Geocoder:
         try:
             producer = KafkaProducer(bootstrap_servers=kafka_bootstrap_server, retries=5,
                                      compression_type='gzip', buffer_memory=134217728,
-                                     batch_size=1048576)
+                                     linger_ms=500, batch_size=1048576)
             logger.info('[OK] KAFKA Producer')
             consumer = KafkaConsumer(geocoder_kafka_topic,
                                      group_id='GEOCODER',
