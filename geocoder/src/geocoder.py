@@ -20,7 +20,7 @@ from mordecai import Geoparser
 from shapely.geometry import Point, Polygon
 
 from smfrcore.models import Tweet, Nuts2, create_app
-from smfrcore.utils import RUNNING_IN_DOCKER
+from smfrcore.utils import IN_DOCKER
 
 
 logger = logging.getLogger('GEOCODER')
@@ -104,8 +104,8 @@ class Geocoder:
     stop_signals = []
     _lock = threading.RLock()
     logger = logging.getLogger(__name__)
-    geonames_host = 'geonames' if RUNNING_IN_DOCKER else '127.0.0.1'
-    kafka_bootstrap_server = os.getenv('KAFKA_BOOTSTRAP_SERVER', 'kafka:9094') if RUNNING_IN_DOCKER else '127.0.0.1:9094'
+    geonames_host = 'geonames' if IN_DOCKER else '127.0.0.1'
+    kafka_bootstrap_server = os.getenv('KAFKA_BOOTSTRAP_SERVER', 'kafka:9094') if IN_DOCKER else '127.0.0.1:9094'
 
     flask_app = create_app()
 

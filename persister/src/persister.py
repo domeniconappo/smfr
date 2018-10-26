@@ -13,7 +13,7 @@ from kafka import KafkaConsumer, KafkaProducer
 from kafka.errors import CommitFailedError, NoBrokersAvailable
 
 from smfrcore.models import Tweet, TwitterCollection, create_app
-from smfrcore.utils import RUNNING_IN_DOCKER, NULL_HANDLER, DEFAULT_HANDLER
+from smfrcore.utils import IN_DOCKER, NULL_HANDLER, DEFAULT_HANDLER
 from smfrcore.client.api_client import AnnotatorClient
 
 PersisterConfiguration = namedtuple('PersisterConfiguration', ['persister_kafka_topic', 'kafka_bootstrap_server',
@@ -35,8 +35,8 @@ file_logger.setLevel(logging.ERROR)
 file_logger.propagate = False
 
 
-if RUNNING_IN_DOCKER:
-    filelog_path = os.path.join(os.path.dirname(__file__), '../../logs/not_reconciled_tweets.log') if not RUNNING_IN_DOCKER else '/logs/not_reconciled_tweets.log'
+if IN_DOCKER:
+    filelog_path = os.path.join(os.path.dirname(__file__), '../../logs/not_reconciled_tweets.log') if not IN_DOCKER else '/logs/not_reconciled_tweets.log'
     hdlr = RotatingFileHandler(filelog_path, maxBytes=10485760, backupCount=2)
     hdlr.setLevel(logging.ERROR)
     file_logger.addHandler(hdlr)

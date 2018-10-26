@@ -11,7 +11,7 @@ import fiona
 from Levenshtein import ratio
 
 from smfrcore.models.sql import TwitterCollection, Aggregation, create_app
-from smfrcore.utils import DEFAULT_HANDLER, RUNNING_IN_DOCKER
+from smfrcore.utils import DEFAULT_HANDLER, IN_DOCKER
 from smfrcore.text_utils import tweet_normalization_aggressive
 from sqlalchemy import or_
 
@@ -26,8 +26,8 @@ class Products:
     """
     Products component implementation
     """
-    config_folder = '/config' if RUNNING_IN_DOCKER else os.path.join(os.path.dirname(__file__), '../config')
-    output_folder = '/output' if RUNNING_IN_DOCKER else os.path.join(os.path.dirname(__file__), '../output')
+    config_folder = '/config' if IN_DOCKER else os.path.join(os.path.dirname(__file__), '../config')
+    output_folder = '/output' if IN_DOCKER else os.path.join(os.path.dirname(__file__), '../output')
 
     template = os.path.join(config_folder, 'maptemplate.shp')
     output_filename_tpl = os.path.join(output_folder, 'SMFR_products_{}.geojson')

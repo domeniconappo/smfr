@@ -9,7 +9,7 @@ from flask import Flask
 
 from flask_sqlalchemy import SQLAlchemy as SQLAlchemyBase
 
-from smfrcore.utils import RUNNING_IN_DOCKER
+from smfrcore.utils import IN_DOCKER
 
 
 class Pagination:
@@ -184,7 +184,7 @@ sqldb = SQLAlchemy(metadata=metadata, session_options={'expire_on_commit': False
 
 
 def create_app(app_name='SMFR'):
-    _mysql_host = '127.0.0.1' if not RUNNING_IN_DOCKER else os.getenv('MYSQL_HOST', 'mysql')
+    _mysql_host = '127.0.0.1' if not IN_DOCKER else os.getenv('MYSQL_HOST', 'mysql')
     _mysql_db_name = os.getenv('MYSQL_DBNAME', 'smfr')
     _mysql_user = os.getenv('MYSQL_USER')
     _mysql_pass = os.getenv('MYSQL_PASSWORD')

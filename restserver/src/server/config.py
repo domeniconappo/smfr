@@ -27,7 +27,7 @@ from flask_jwt_extended import (
 )
 
 from smfrcore.auth import authenticate, identity
-from smfrcore.utils import RUNNING_IN_DOCKER, DEFAULT_HANDLER
+from smfrcore.utils import IN_DOCKER, DEFAULT_HANDLER
 
 DEVELOPMENT = os.getenv('DEVELOPMENT', '0') in ('1', 'yes', 'Yes', 'True', 'true')
 UNDER_TESTS = any('nose2' in x for x in sys.argv)
@@ -37,7 +37,7 @@ MYSQL_MIGRATION = all(os.path.basename(a) in ('flask', 'db', 'migrate') for a in
                   or all(os.path.basename(a) in ('flask', 'db', 'init') for a in sys.argv)
 
 CONFIG_STORE_PATH = os.getenv('SERVER_PATH_UPLOADS', os.path.join(os.path.dirname(__file__), '../../../uploads/'))
-CONFIG_FOLDER = '/configuration/' if RUNNING_IN_DOCKER else os.path.join(os.path.dirname(__file__), '../config/')
+CONFIG_FOLDER = '/configuration/' if IN_DOCKER else os.path.join(os.path.dirname(__file__), '../config/')
 NUM_SAMPLES = os.getenv('NUM_SAMPLES', 100)
 
 logging.getLogger('cassandra').setLevel(logging.WARNING)
@@ -91,16 +91,16 @@ class RestServerConfiguration(metaclass=Singleton):
     A class whose objects hold SMFR Rest Server Configuration as singletons.
     Constructor accepts a connexion app object.
     """
-    geonames_host = '127.0.0.1' if not RUNNING_IN_DOCKER else 'geonames'
-    kafka_bootstrap_server = '127.0.0.1' if not RUNNING_IN_DOCKER else os.getenv('KAFKA_BOOTSTRAP_SERVER', 'kafka:9094')
-    mysql_host = '127.0.0.1' if not RUNNING_IN_DOCKER else os.getenv('MYSQL_HOST', 'mysql')
+    geonames_host = '127.0.0.1' if not IN_DOCKER else 'geonames'
+    kafka_bootstrap_server = '127.0.0.1' if not IN_DOCKER else os.getenv('KAFKA_BOOTSTRAP_SERVER', 'kafka:9094')
+    mysql_host = '127.0.0.1' if not IN_DOCKER else os.getenv('MYSQL_HOST', 'mysql')
     __mysql_user = os.getenv('MYSQL_USER', 'root')
     __mysql_pass = os.getenv('MYSQL_PASSWORD', 'example')
-    cassandra_host = '127.0.0.1' if not RUNNING_IN_DOCKER else os.getenv('CASSANDRA_HOST', 'cassandrasmfr')
-    annotator_host = '127.0.0.1' if not RUNNING_IN_DOCKER else 'annotator'
-    persister_host = '127.0.0.1' if not RUNNING_IN_DOCKER else 'persister'
-    geocoder_host = '127.0.0.1' if not RUNNING_IN_DOCKER else 'geocoder'
-    restserver_host = '127.0.0.1' if not RUNNING_IN_DOCKER else 'restserver'
+    cassandra_host = '127.0.0.1' if not IN_DOCKER else os.getenv('CASSANDRA_HOST', 'cassandrasmfr')
+    annotator_host = '127.0.0.1' if not IN_DOCKER else 'annotator'
+    persister_host = '127.0.0.1' if not IN_DOCKER else 'persister'
+    geocoder_host = '127.0.0.1' if not IN_DOCKER else 'geocoder'
+    restserver_host = '127.0.0.1' if not IN_DOCKER else 'restserver'
 
     cassandra_keyspace = '{}{}'.format(os.getenv('CASSANDRA_KEYSPACE', 'smfr_persistent'), '_test' if UNDER_TESTS else '')
     mysql_db_name = '{}{}'.format(os.getenv('MYSQL_DBNAME', 'smfr'), '_test' if UNDER_TESTS else '')
@@ -111,7 +111,7 @@ class RestServerConfiguration(metaclass=Singleton):
     persister_kafka_topic = os.getenv('PERSISTER_KAFKA_TOPIC', 'persister')
 
     debug = not UNDER_TESTS and os.getenv('DEVELOPMENT', True)
-    not_reconciled_log_path = os.path.join(os.path.dirname(__file__), '../../logs/not_reconciled_tweets.log') if not RUNNING_IN_DOCKER else '/logs/not_reconciled_tweets.log'
+    not_reconciled_log_path = os.path.join(os.path.dirname(__file__), '../../logs/not_reconciled_tweets.log') if not IN_DOCKER else '/logs/not_reconciled_tweets.log'
 
     logger_level = logging.ERROR if UNDER_TESTS else logging.getLevelName(os.getenv('LOGGING_LEVEL', 'DEBUG').upper())
     logger = logging.getLogger('RestServer config')

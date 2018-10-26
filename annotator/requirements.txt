@@ -5,6 +5,7 @@ scikit-learn
 sklearn ~= 0.0
 tensorflow==1.10.0
 ujson
+schedule
 flask
 flask-restful
 flask-jwt-extended

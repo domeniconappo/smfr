@@ -9,7 +9,7 @@ import requests
 
 from smfrcore.client.conf import ServerConfiguration
 from smfrcore.errors import SMFRError
-from smfrcore.utils import LOGGER_FORMAT, LOGGER_DATE_FORMAT, smfr_json_encoder, RUNNING_IN_DOCKER
+from smfrcore.utils import LOGGER_FORMAT, LOGGER_DATE_FORMAT, smfr_json_encoder, IN_DOCKER
 
 from .marshmallow import OnDemandPayload, CollectionPayload
 
@@ -226,7 +226,7 @@ class AnnotatorClient(MicroserviceClient):
     """
 
     """
-    host = '127.0.0.1' if not RUNNING_IN_DOCKER else 'annotator'
+    host = '127.0.0.1' if not IN_DOCKER else 'annotator'
     port = os.getenv('ANNOTATOR_PORT', 5556)
 
     base_uri = 'http://{}:{}'.format(host, port)
@@ -284,7 +284,7 @@ class GeocoderClient(MicroserviceClient):
     """
 
     """
-    host = '127.0.0.1' if not RUNNING_IN_DOCKER else 'geocoder'
+    host = '127.0.0.1' if not IN_DOCKER else 'geocoder'
     port = os.getenv('GEOCODER_PORT', 5557)
     base_uri = 'http://{}:{}'.format(host, port)
 

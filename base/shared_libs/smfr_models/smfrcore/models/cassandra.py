@@ -17,7 +17,7 @@ from cassandra.auth import PlainTextAuthProvider
 from cassandra.util import OrderedMapSerializedKey
 from flask_cqlalchemy import CQLAlchemy
 
-from smfrcore.utils import RUNNING_IN_DOCKER, DEFAULT_HANDLER, FALSE_VALUES
+from smfrcore.utils import IN_DOCKER, DEFAULT_HANDLER, FALSE_VALUES
 from smfrcore.models.sql import TwitterCollection, create_app
 from smfrcore.models.utils import get_cassandra_hosts
 
@@ -40,7 +40,7 @@ cluster_kwargs = {'compression': True, 'load_balancing_policy': default_lbp_fact
 
 
 _hosts = get_cassandra_hosts()
-cassandra_cluster = Cluster(_hosts, port=_port, **cluster_kwargs) if RUNNING_IN_DOCKER else Cluster(**cluster_kwargs)
+cassandra_cluster = Cluster(_hosts, port=_port, **cluster_kwargs) if IN_DOCKER else Cluster(**cluster_kwargs)
 cassandra_session = cassandra_cluster.connect()
 cassandra_session.default_timeout = None
 cassandra_session.default_fetch_size = os.getenv('CASSANDRA_FETCH_SIZE', 1000)

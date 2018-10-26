@@ -14,7 +14,7 @@ from keras.models import load_model
 from keras.preprocessing.sequence import pad_sequences
 
 from smfrcore.models import Tweet
-from smfrcore.utils import RUNNING_IN_DOCKER
+from smfrcore.utils import IN_DOCKER
 from smfrcore.text_utils import create_text_for_cnn
 
 try:
@@ -35,7 +35,7 @@ class Annotator:
     _manager = multiprocessing.Manager()
     shared_counter = _manager.dict()
 
-    kafka_bootstrap_server = os.getenv('KAFKA_BOOTSTRAP_SERVER', 'kafka:9094') if RUNNING_IN_DOCKER else '127.0.0.1:9094'
+    kafka_bootstrap_server = os.getenv('KAFKA_BOOTSTRAP_SERVER', 'kafka:9094') if IN_DOCKER else '127.0.0.1:9094'
     available_languages = list(models.keys())
     producer = None
 
@@ -49,7 +49,7 @@ class Annotator:
         retries = 5
         while retries >= 0:
             try:
-                cls.producer = KafkaProducer(bootstrap_servers=kafka_server, retries=5,
+                cls.producer = KafkaProducer(bootstrap_servers=kafka_server, retries=5, max_block_ms=120000,
                                              compression_type='gzip', buffer_memory=134217728,
                                              linger_ms=500, batch_size=1048576,)
                 logger.info('[OK] KAFKA Producer')
@@ -239,7 +239,18 @@ class Annotator:
                                     logger.debug('Sending annotated tweet to PERSISTER: %s', tweet.annotations)
 
                                 # persist the annotated tweet
-                                cls.producer.send(cls.persister_kafka_topic, message)
+                                sent_to_persister = False
+                                while not sent_to_persister:
+                                    try:
+                                        cls.producer.send(cls.persister_kafka_topic, message)
+                                    except KafkaTimeoutError as e:
+                                        # try to mitigate kafka timeout error
+                                        # KafkaTimeoutError: Failed to allocate memory
+                                        # within the configured max blocking time
+                                        logger.error(e)
+                                        time.sleep(2)
+                                    else:
+                                        sent_to_persister = True
 
                             buffer_to_annotate.clear()
                             cls.shared_counter['waiting-{}'.format(lang)] = 0

@@ -88,4 +88,4 @@ def run_continuously(interval=1):
 
 
 smfr_json_encoder = JSONEncoder().default
-RUNNING_IN_DOCKER = _running_in_docker()
+IN_DOCKER = _running_in_docker()

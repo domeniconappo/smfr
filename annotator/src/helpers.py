@@ -4,11 +4,11 @@ from subprocess import Popen, PIPE
 
 import ujson
 
-from smfrcore.utils import RUNNING_IN_DOCKER, DEFAULT_HANDLER
+from smfrcore.utils import IN_DOCKER, DEFAULT_HANDLER
 
 CNN_MAX_SEQUENCE_LENGTH = 100
 
-models_path = os.path.join(os.getenv('MODELS_PATH', '/'), 'models') if RUNNING_IN_DOCKER else os.path.join(os.path.dirname(__file__), '../models/models')
+models_path = os.path.join(os.getenv('MODELS_PATH', '/'), 'models') if IN_DOCKER else os.path.join(os.path.dirname(__file__), '../models/models')
 current_models_mapping = os.path.join(models_path, 'current-model.json')
 
 logger = logging.getLogger('ANNOTATOR')
