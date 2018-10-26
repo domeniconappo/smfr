@@ -98,6 +98,7 @@ class RestServerConfiguration(metaclass=Singleton):
     __mysql_pass = os.getenv('MYSQL_PASSWORD', 'example')
     cassandra_host = '127.0.0.1' if not RUNNING_IN_DOCKER else os.getenv('CASSANDRA_HOST', 'cassandrasmfr')
     annotator_host = '127.0.0.1' if not RUNNING_IN_DOCKER else 'annotator'
+    persister_host = '127.0.0.1' if not RUNNING_IN_DOCKER else 'persister'
     geocoder_host = '127.0.0.1' if not RUNNING_IN_DOCKER else 'geocoder'
     restserver_host = '127.0.0.1' if not RUNNING_IN_DOCKER else 'restserver'
 
@@ -105,6 +106,7 @@ class RestServerConfiguration(metaclass=Singleton):
     mysql_db_name = '{}{}'.format(os.getenv('MYSQL_DBNAME', 'smfr'), '_test' if UNDER_TESTS else '')
     restserver_port = os.getenv('RESTSERVER_PORT', 5555)
     annotator_port = os.getenv('ANNOTATOR_PORT', 5556)
+    persister_port = os.getenv('PERSISTER_PORT_PORT', 5558)
     geocoder_port = os.getenv('GEOCODER_PORT', 5557)
     persister_kafka_topic = os.getenv('PERSISTER_KAFKA_TOPIC', 'persister')
 

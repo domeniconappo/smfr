@@ -24,6 +24,8 @@ RUN pip3.6 install /smfr_libs/utils/ \
 
 COPY ./persister/src/. /persister
 WORKDIR /persister
+EXPOSE 5558 6006
 
 ENTRYPOINT ["/scripts/wait_for_it.sh", "cassandrasmfr:9160"]
 CMD ["--", "python3.6", "start.py"]
+CMD ["--", "gunicorn", "-b", "0.0.0.0:5558", "--workers", "1", "--log-level", "warning", "--timeout", "240", "--threads", "4", "-k", "gthread", "--reload", "--access-logfile", "-", "--name", "persister", "start:app"]

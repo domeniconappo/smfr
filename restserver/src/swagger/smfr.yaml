@@ -590,6 +590,9 @@ definitions:
           $ref: '#/definitions/Collector'
       counters:
         type: object
+      persisted:
+        type: object
+
 
   # A simple username/password combo for logging in
   Login:

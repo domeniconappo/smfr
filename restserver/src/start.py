@@ -14,6 +14,7 @@ logging.getLogger('cassandra').setLevel(logging.WARNING)
 
 os.environ['NO_PROXY'] = ','.join((RestServerConfiguration.restserver_host,
                                    RestServerConfiguration.annotator_host,
+                                   RestServerConfiguration.persister_host,
                                    RestServerConfiguration.geocoder_host))
 
 

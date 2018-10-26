@@ -391,6 +391,8 @@ services:
       GEOCODER_PORT: ${GEOCODER_PORT}
       http_proxy: ${http_proxy}
       https_proxy: ${https_proxy}
+    ports:
+    - '5558:5558'
     volumes:
       - './persister/src:/persister'
       - './persister/logs:/logs'
@@ -490,6 +492,7 @@ services:
       RESTSERVER_PORT: ${RESTSERVER_PORT}
       ANNOTATOR_PORT: ${ANNOTATOR_PORT}
       GEOCODER_PORT: ${GEOCODER_PORT}
+      PERSISTER_PORT: ${PERSISTER_PORT}
       FLASK_APP: smfr.py
       SERVER_PATH_UPLOADS: /smfr/uploads/
       CQLENG_ALLOW_SCHEMA_MANAGEMENT: 1

@@ -119,6 +119,7 @@ class Collector(BaseSchema):
 class Admin(BaseSchema):
     collectors = fields.List(fields.Nested('Collector'))
     counters = fields.Field()
+    persisted = fields.Field()
 
 
 class Login(BaseSchema):

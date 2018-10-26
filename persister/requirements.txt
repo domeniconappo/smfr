@@ -2,3 +2,6 @@ schedule
 cassandra-driver
 kafka-python
 arrow
+flask
+flask-restful
+gunicorn

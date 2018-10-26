@@ -29,9 +29,10 @@ logger.addHandler(DEFAULT_HANDLER)
 logger.setLevel(os.getenv('LOGGING_LEVEL', 'DEBUG'))
 
 file_logger = logging.getLogger('Not Reconciled Tweets')
+file_logger.addHandler(NULL_HANDLER)
 file_logger.setLevel(logging.ERROR)
 file_logger.propagate = False
-file_logger.addHandler(NULL_HANDLER)
+
 
 if RUNNING_IN_DOCKER:
     filelog_path = os.path.join(os.path.dirname(__file__), '../../logs/not_reconciled_tweets.log') if not RUNNING_IN_DOCKER else '/logs/not_reconciled_tweets.log'
@@ -67,20 +68,11 @@ class Persister:
     @classmethod
     def set_running(cls, inst=None):
         """
-        Set _unning instance
+        Set the running instance
         :param inst: Persister object
         """
         with cls._lock:
             cls._running_instance = inst
-
-    @classmethod
-    def build_and_start(cls):
-        """
-        Instantiate a Persister object and call Persister.start() method in another thread
-        """
-        persister = cls()
-        t_cons = threading.Thread(target=persister.start, name='Persister {}'.format(id(persister)), daemon=True)
-        t_cons.start()
 
     def __init__(self, group_id='PERSISTER', auto_offset_reset='earliest'):
         self.topic = self.config.persister_kafka_topic
@@ -110,6 +102,11 @@ class Persister:
                     sys.exit(1)
             else:
                 break
+        self.counter = Counter()
+
+    def set_collections(self, collections):
+        with self._lock:
+            self.collections = collections
 
     def reconcile_tweet_with_collection(self, tweet):
         for c in self.collections:
@@ -123,9 +120,9 @@ class Persister:
         Main method that iterate over messages coming from Kafka queue, build a Tweet object and save it in Cassandra
         """
 
-        logger.info('Persister started %s', str(self))
+        logger.info('Persister started %s...Resetting counters', str(self))
         self.set_running(inst=self)
-        counter = Counter({Tweet.ANNOTATED_TYPE: 0, Tweet.COLLECTED_TYPE: 0, Tweet.GEOTAGGED_TYPE: 0})
+        self.counter = Counter({Tweet.ANNOTATED_TYPE: 0, Tweet.COLLECTED_TYPE: 0, Tweet.GEOTAGGED_TYPE: 0})
         try:
             for i, msg in enumerate(self.consumer, start=1):
                 tweet = None
@@ -145,12 +142,13 @@ class Persister:
                         logger.debug('Saving tweet: %s - collection %d', tweet.tweetid, tweet.collectionid)
 
                     tweet.save()
-                    counter[tweet.ttype] += 1
+                    self.counter[tweet.ttype] += 1
+                    self.counter['{}-{}'.format(tweet.lang, tweet.ttype)] += 1
 
                     self.send_to_pipeline(tweet)
 
                     if logger.isEnabledFor(logging.INFO) and not (i % 5000):
-                        logger.info('Scanned/Saved since last restart \nTOTAL: %d \n%s', i, str(counter))
+                        logger.info('Scanned/Saved since last restart \nTOTAL: %d \n%s', i, str(self.counter))
 
                 except (ValidationError, ValueError, TypeError, InvalidRequest) as e:
                     logger.error(e)
@@ -200,3 +198,6 @@ class Persister:
 
     def __str__(self):
         return 'Persister ({}): {}@{}:{}'.format(id(self), self.topic, self.bootstrap_server, self.group_id)
+
+    def counters(self):
+        return self.counter

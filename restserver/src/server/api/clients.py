@@ -33,6 +33,23 @@ class MicroserviceClient:
         return res.json(), res.status_code
 
 
+class PersisterClient(MicroserviceClient):
+    """
+
+    """
+    host = RestServerConfiguration.persister_host
+    port = RestServerConfiguration.persister_port
+    base_uri = 'http://{}:{}'.format(host, port)
+
+    @classmethod
+    def counters(cls):
+        url = '{}/counters'.format(cls.base_uri)
+        res = requests.get(url)
+        cls._check_response(res, res.status_code)
+        result = res.json()
+        return result, res.status_code
+
+
 class AnnotatorClient(MicroserviceClient):
     """
 

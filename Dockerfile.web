@@ -7,7 +7,7 @@ ARG https_proxy
 ENV LANG=C.UTF-8
 
 RUN apt-get update && apt-get -y dist-upgrade && apt-get -y install apt-utils \
- && apt-get -y install net-tools nginx supervisor && pip3 install -U pip
+ && apt-get -y install net-tools nginx supervisor && pip3 install -U pip==18.1
 
 # build uwsgi and python plugin
 RUN mkdir -p /app && mkdir -p /app/smfrcore && mkdir -p /requirements && mkdir -p /products \
