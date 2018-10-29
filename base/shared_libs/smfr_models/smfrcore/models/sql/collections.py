@@ -177,7 +177,7 @@ class TwitterCollection(SMFRModel):
             existing = cls.query.filter_by(efas_id=data['efas_id']).first()
             if not existing or not existing.started_at or (existing.stopped_at and existing.started_at and existing.stopped_at > existing.started_at):
                 obj.started_at = datetime.datetime.utcnow()
-                obj.stopped_at = existing.stopped_at
+                obj.stopped_at = existing.stopped_at if existing else None
 
             if existing:
                 obj.runtime = existing.runtime if existing.forecast_id == obj.forecast_id else obj.runtime

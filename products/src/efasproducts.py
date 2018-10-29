@@ -45,6 +45,7 @@ class Products:
 
     # here api
     here_client = HereClient()
+    app = create_app()
 
     @classmethod
     def log_config(cls):
@@ -64,9 +65,8 @@ class Products:
     @classmethod
     def produce(cls):
         # create products for on-demand active colletions or recently stopped collections
-        app = create_app()
 
-        with app.app_context():
+        with cls.app.app_context():
             collections = TwitterCollection.query.filter(
                 TwitterCollection.trigger == TwitterCollection.TRIGGER_ONDEMAND).filter(
                 or_(
@@ -105,31 +105,34 @@ class Products:
         for efas_id, tweets in relevant_tweets_aggregated.items():
             relevant_tweets_aggregated[efas_id] = TweetsDeduplicator.deduplicate(relevant_tweets_aggregated[efas_id])[:cls.max_relevant_tweets]
 
+        cls.write_geojson(counters_by_efas_id, relevant_tweets_aggregated)
+
+    @classmethod
+    def write_geojson(cls, counters_by_efas_id, relevant_tweets_aggregated):
         geojson_output_filename = cls.output_filename_tpl.format(datetime.now().strftime('%Y%m%d%H%M'))
         logger.info('<<<<<< Producing %s', geojson_output_filename)
-        with fiona.open(cls.template) as source:
-            with open(geojson_output_filename, 'w') as sink:
-                out_data = []
-                for feat in source:
-                    efas_id = feat['id']
-                    risk_color = cls.determine_color(counters_by_efas_id[efas_id])
-                    if risk_color == cls.RGB['gray'] and not relevant_tweets_aggregated[efas_id]:
-                        continue
-                    geom = Geometry(
-                        coordinates=feat['geometry']['coordinates'],
-                        type=feat['geometry']['type'],
-                        # crs=cls.out_crs,
-                    )
-                    out_data.append(Feature(geometry=geom, properties={
-                        'efas_id': efas_id,
-                        'risk_color': cls.determine_color(counters_by_efas_id[efas_id]),
-                        'counters': counters_by_efas_id[efas_id],
-                        'relevant_tweets': relevant_tweets_aggregated[efas_id],
-                        'incidents': cls.get_incidents(efas_id),
-                    }))
-
-                geojson.dump(FeatureCollection(out_data), sink, sort_keys=True, indent=2)
-        logger.info('>>>>>> Wrote %s', geojson_output_filename)
+        with cls.app.app_context():
+            with fiona.open(cls.template) as source:
+                with open(geojson_output_filename, 'w') as sink:
+                    out_data = []
+                    for feat in source:
+                        efas_id = feat['id']
+                        risk_color = cls.determine_color(counters_by_efas_id[efas_id])
+                        if risk_color == RGB['gray'] and not relevant_tweets_aggregated[efas_id]:
+                            continue
+                        geom = Geometry(
+                            coordinates=feat['geometry']['coordinates'],
+                            type=feat['geometry']['type'],
+                        )
+                        out_data.append(Feature(geometry=geom, properties={
+                            'efas_id': efas_id,
+                            'risk_color': cls.determine_color(counters_by_efas_id[efas_id]),
+                            'counters': counters_by_efas_id[efas_id],
+                            'relevant_tweets': relevant_tweets_aggregated[efas_id],
+                            'incidents': cls.get_incidents(efas_id),
+                        }))
+                    geojson.dump(FeatureCollection(out_data), sink, sort_keys=True, indent=2)
+                    logger.info('>>>>>> Wrote %s', geojson_output_filename)
 
     @classmethod
     def is_efas_id_counter(cls, key):
@@ -170,12 +173,12 @@ class Products:
 class TweetsDeduplicator:
     # A threshold of predicted probabily under which
     # edit distance is checked (to discard duplicates)
-    SIMILAR_PREDICTION_TRIGGER_EDIT_DISTANCE_CHECK = 0.0001
+    SIMILAR_PREDICTION_TRIGGER_DISTANCE_CHECK = 0.0001
 
     # A threshold for edit distance; this is applied twice:
     # 1. For pairs of tweets with predictions within SIMILAR_PREDICTION_TRIGGER_EDIT_DISTANCE_CHECK
     # 2. For all pairs of the top MAX_TWEETS_CENTRALITY tweets
-    SIMILAR_PREDICTION_EDIT_DISTANCE_MAX = 0.8
+    SIMILAR_PREDICTION_DISTANCE_MAX = 0.8
 
     # Tweets for centrality computation (cost is quadratic on this number, so stay small)
     MAX_TWEETS_CENTRALITY = 100
@@ -196,13 +199,14 @@ class TweetsDeduplicator:
         multiplicity = defaultdict(int)
         for tu in deduplicated:
             for tv in deduplicated:
-                if abs(tu['label_predicted'] - tv['label_predicted']) < cls.SIMILAR_PREDICTION_TRIGGER_EDIT_DISTANCE_CHECK:
+                if abs(tu['label_predicted'] - tv['label_predicted']) < cls.SIMILAR_PREDICTION_TRIGGER_DISTANCE_CHECK:
                     normalized_edit_similarity = ratio(tu['_normalized_text'], tv['_normalized_text'])
-                    if normalized_edit_similarity > cls.SIMILAR_PREDICTION_EDIT_DISTANCE_MAX:
+                    if normalized_edit_similarity > cls.SIMILAR_PREDICTION_DISTANCE_MAX:
 
                         # The newer tweet (larger id) is marked as a duplicate of the older (smaller id) tweet
                         # Count the == in case there are duplicate ids in the
-                        # REMEMBER: tweet_id is an integer (same as t['tweet']['id']) while tweetid is a string (same as t['tweet']['id_str'])
+                        # REMEMBER: tweet_id is an integer (same as t['tweet']['id'])
+                        # while tweetid is a string (same as t['tweet']['id_str'])
                         if tu['tweet_id'] < tv['tweet_id']:
                             is_duplicate[tv['tweetid']] = tu['tweetid']
                             multiplicity[tu['tweetid']] = multiplicity[tu['tweetid']] + 1
@@ -223,7 +227,7 @@ class TweetsDeduplicator:
                 centrality[tv['tweetid']] = centrality[tv['tweetid']] + normalized_edit_similarity
 
                 # Discard duplicates
-                if normalized_edit_similarity > cls.SIMILAR_PREDICTION_EDIT_DISTANCE_MAX:
+                if normalized_edit_similarity > cls.SIMILAR_PREDICTION_DISTANCE_MAX:
                     if tu['tweet_id'] < tv['tweet_id']:
                         is_duplicate[tv['tweetid']] = tu['tweetid']
 
