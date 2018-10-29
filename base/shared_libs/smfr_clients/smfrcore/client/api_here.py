@@ -1,8 +1,14 @@
 import os
+import logging
+from json import JSONDecodeError
 
 import requests
 
-from smfrcore.utils import RGB
+from smfrcore.utils import RGB, DEFAULT_HANDLER
+
+logger = logging.getLogger(__name__)
+logger.setLevel(os.getenv('LOGGING_LEVEL', 'DEBUG'))
+logger.addHandler(DEFAULT_HANDLER)
 
 
 class HereClient:
@@ -45,26 +51,30 @@ class HereClient:
         incidents = []
         url = '{}&bbox={}'.format(self.base_uri, bbox)
         res = requests.get(url)
-        res = res.json()
-        if 'TRAFFIC_ITEMS' not in res or 'TRAFFIC_ITEM' not in res['TRAFFIC_ITEMS'] or not res['TRAFFIC_ITEMS']['TRAFFIC_ITEM']:
-            return incidents
-        items = [i for i in res['TRAFFIC_ITEMS']['TRAFFIC_ITEM'] if self._is_flooding_incident(i)]
-        for item in items:
-            try:
-                incident = {
-                    'traffic_item_id': item['TRAFFIC_ITEM_ID'],
-                    'start_date': item['START_TIME'],
-                    'end_date': item['END_TIME'],
-                    'lat': item['GEOLOC']['ORIGIN']['LATITUDE'],
-                    'lon': item['GEOLOC']['ORIGIN']['LONGITUDE'],
-                    'text': 'Flooding incident: from {} to {}. Severity: {}'.format(
-                        item['START_TIME'], item['END_TIME'], item['CRITICALITY'].get('DESCRIPTION', 'minor'))
-                    ,
-                    'risk_color': self._risk_color(item['CRITICALITY'])
-                }
-            except KeyError:
-                continue
-            else:
-                incidents.append(incident)
+        try:
+            res = res.json()
+        except JSONDecodeError as e:
+            logger.error('Cannot parse response: %s - %s', res.text, str(e))
+        else:
+            if 'TRAFFIC_ITEMS' not in res or 'TRAFFIC_ITEM' not in res['TRAFFIC_ITEMS'] or not res['TRAFFIC_ITEMS']['TRAFFIC_ITEM']:
+                return incidents
+            items = [i for i in res['TRAFFIC_ITEMS']['TRAFFIC_ITEM'] if self._is_flooding_incident(i)]
+            for item in items:
+                try:
+                    incident = {
+                        'traffic_item_id': item['TRAFFIC_ITEM_ID'],
+                        'start_date': item['START_TIME'],
+                        'end_date': item['END_TIME'],
+                        'lat': item['GEOLOC']['ORIGIN']['LATITUDE'],
+                        'lon': item['GEOLOC']['ORIGIN']['LONGITUDE'],
+                        'text': 'Flooding incident: from {} to {}. Severity: {}'.format(
+                            item['START_TIME'], item['END_TIME'], item['CRITICALITY'].get('DESCRIPTION', 'minor'))
+                        ,
+                        'risk_color': self._risk_color(item['CRITICALITY'])
+                    }
+                except KeyError:
+                    continue
+                else:
+                    incidents.append(incident)
         return incidents
 
