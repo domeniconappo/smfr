@@ -6,7 +6,7 @@ import multiprocessing
 import time
 
 from cassandra import InvalidRequest
-from cassandra.cqlengine import CQLEngineException, ValidationError
+from cassandra.cqlengine import ValidationError
 from kafka import KafkaProducer, KafkaConsumer
 from kafka.errors import NoBrokersAvailable, CommitFailedError, KafkaTimeoutError
 import sklearn
@@ -145,7 +145,6 @@ class Annotator:
         if not cls.producer:
             cls.connect_producer()
         p = multiprocessing.Process(target=cls.start, args=(collection_id,), name='Annotator collection {}'.format(collection_id))
-        p.daemon = True
         p.start()
 
     @classmethod
@@ -165,7 +164,6 @@ class Annotator:
         if not cls.producer:
             cls.connect_producer()
         p = multiprocessing.Process(target=cls.start_consumer, args=(lang,), name='Annotator Consumer {}'.format(lang))
-        p.daemon = True
         p.start()
 
     @classmethod

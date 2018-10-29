@@ -100,7 +100,7 @@ class BaseStreamer(TwythonStreamer):
         return collection.is_using_pipeline
 
     def run_collections(self, collections):
-        t = threading.Thread(target=self.connect, name=str(self), args=(collections,), daemon=True)
+        t = threading.Thread(target=self.connect, name=str(self), args=(collections,))
         t.start()
 
     @property

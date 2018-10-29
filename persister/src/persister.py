@@ -17,9 +17,7 @@ from smfrcore.utils import IN_DOCKER, NULL_HANDLER, DEFAULT_HANDLER
 from smfrcore.client.api_client import AnnotatorClient
 
 PersisterConfiguration = namedtuple('PersisterConfiguration', ['persister_kafka_topic', 'kafka_bootstrap_server',
-                                                               'annotator_kafka_topic', 'geocoder_kafka_topic']
-                                    )
-
+                                                               'annotator_kafka_topic', 'geocoder_kafka_topic'])
 logging.getLogger('kafka').setLevel(logging.WARNING)
 logging.getLogger('urllib3').setLevel(logging.WARNING)
 
@@ -53,29 +51,10 @@ class Persister:
         annotator_kafka_topic=os.getenv('ANNOTATOR_KAFKA_TOPIC', 'annotator'),
         geocoder_kafka_topic=os.getenv('GEOCODER_KAFKA_TOPIC', 'geocoder'),
     )
-    _running_instance = None
     _lock = threading.RLock()
     app = create_app()
     _manager = multiprocessing.Manager()
     shared_counter = _manager.dict({Tweet.ANNOTATED_TYPE: 0, Tweet.COLLECTED_TYPE: 0, Tweet.GEOTAGGED_TYPE: 0})
-
-    @classmethod
-    def running_instance(cls):
-        """
-        The running Persister object
-        :return: Persister instance
-        """
-        with cls._lock:
-            return cls._running_instance
-
-    @classmethod
-    def set_running(cls, inst=None):
-        """
-        Set the running instance
-        :param inst: Persister object
-        """
-        with cls._lock:
-            cls._running_instance = inst
 
     def __init__(self, group_id='PERSISTER', auto_offset_reset='earliest'):
         self.topic = self.config.persister_kafka_topic
@@ -83,6 +62,7 @@ class Persister:
         self.auto_offset_reset = auto_offset_reset
         self.group_id = group_id
         self.language_models = AnnotatorClient.available_languages()
+        self.background_process = None
         with self.app.app_context():
             self.collections = TwitterCollection.get_running()
 
@@ -122,7 +102,7 @@ class Persister:
 
     def start_in_background(self):
         p = multiprocessing.Process(target=self.start, name='Persister Consumer')
-        p.daemon = True
+        self.background_process = p
         p.start()
 
     def start(self):
@@ -130,8 +110,7 @@ class Persister:
         Main method that iterate over messages coming from Kafka queue, build a Tweet object and save it in Cassandra
         """
 
-        logger.info('Persister started %s...Resetting counters', str(self))
-        self.set_running(inst=self)
+        logger.info('Persister started %s...Reset counters', str(self))
         try:
             for i, msg in enumerate(self.consumer, start=1):
                 tweet = None
@@ -144,6 +123,8 @@ class Persister:
                         if not collection:
                             # we log it to use to improve reconciliation in the future
                             file_logger.error('%s', msg)
+                            if logger.isEnabledFor(logging.DEBUG):
+                                logger.debug('No collection for tweet %s', tweet.tweetid)
                             continue
                         tweet.collectionid = collection.id
 
@@ -176,8 +157,6 @@ class Persister:
             # as the consumer can be disconnected in another thread (see signal handling in start.py)
             if self.consumer._closed:
                 logger.info('Persister was disconnected during I/O operations. Exited.')
-            elif self.running_instance() and not self.consumer._closed:
-                self.running_instance().stop()
         except KeyboardInterrupt:
             self.stop()
 
@@ -201,8 +180,9 @@ class Persister:
         """
         Stop processing messages from queue, close KafkaConsumer and unset running instance.
         """
+        if self.background_process:
+            self.background_process.terminate()
         self.consumer.close()
-        self.set_running(inst=None)
         logger.info('Persister connection closed!')
 
     def __str__(self):

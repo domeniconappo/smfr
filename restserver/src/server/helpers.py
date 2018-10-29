@@ -12,11 +12,10 @@ logger = logging.getLogger('RestServer API')
 
 def add_collection_helper(**data):
     collection = TwitterCollection.create(**data)
-    if collection.trigger == TwitterCollection.TRIGGER_ONDEMAND:
-        # when adding an on-demand collection we start collecting tweets right away
-        from server.config import RestServerConfiguration
-        collector = RestServerConfiguration().collectors[collection.trigger]
-        collector.restart()
+    # when adding an on-demand collection we start collecting tweets right away
+    from server.config import RestServerConfiguration
+    collector = RestServerConfiguration().collectors[collection.trigger]
+    collector.restart()
     return collection
 
 
