@@ -206,4 +206,4 @@ class Persister:
         return 'Persister ({}): {}@{}:{}'.format(id(self), self.topic, self.bootstrap_server, self.group_id)
 
     def counters(self):
-        return self.shared_counter
+        return dict(self.shared_counter)
