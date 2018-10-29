@@ -26,11 +26,12 @@ os.environ['NO_PROXY'] = ','.join((AnnotatorClient.host,))
 logger = logging.getLogger('PERSISTER')
 logger.addHandler(DEFAULT_HANDLER)
 logger.setLevel(os.getenv('LOGGING_LEVEL', 'DEBUG'))
+logger.propagate = False
 
 file_logger = logging.getLogger('Not Reconciled Tweets')
 file_logger.addHandler(NULL_HANDLER)
 file_logger.setLevel(logging.ERROR)
-file_logger.propagate = False
+# file_logger.propagate = False
 
 
 if IN_DOCKER:
@@ -128,17 +129,17 @@ class Persister:
                             continue
                         tweet.collectionid = collection.id
 
-                    if logger.isEnabledFor(logging.DEBUG):
-                        logger.debug('Saving tweet: %s - collection %d', tweet.tweetid, tweet.collectionid)
-
                     tweet.save()
+
+                    if logger.isEnabledFor(logging.DEBUG):
+                        logger.debug('Saved tweet: %s - collection %d', tweet.tweetid, tweet.collectionid)
+                    if logger.isEnabledFor(logging.INFO) and not (i % 5000):
+                        logger.info('Scanned/Saved since last restart \nTOTAL: %d \n%s', i, str(self.shared_counter))
+
                     self.shared_counter[tweet.ttype] += 1
                     self.shared_counter['{}-{}'.format(tweet.lang, tweet.ttype)] += 1
 
                     self.send_to_pipeline(tweet)
-
-                    if logger.isEnabledFor(logging.INFO) and not (i % 5000):
-                        logger.info('Scanned/Saved since last restart \nTOTAL: %d \n%s', i, str(self.shared_counter))
 
                 except (ValidationError, ValueError, TypeError, InvalidRequest) as e:
                     logger.error(e)
@@ -170,11 +171,12 @@ class Persister:
         elif tweet.ttype == Tweet.ANNOTATED_TYPE:
             # tweet will go to the next in pipeline: geocoder queue
             topic = self.config.geocoder_kafka_topic
-        if topic:
-            message = tweet.serialize()
-            self.producer.send(topic, message)
-            if logger.isEnabledFor(logging.DEBUG):
-                logger.debug('Sent to pipeline: %s %s', topic, tweet.tweetid)
+        if not topic:
+            return
+        message = tweet.serialize()
+        self.producer.send(topic, message)
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.debug('Sent to pipeline: %s %s', topic, tweet.tweetid)
 
     def stop(self):
         """
