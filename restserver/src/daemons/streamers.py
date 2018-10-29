@@ -115,11 +115,11 @@ class BaseStreamer(TwythonStreamer):
         self.collections = collections
         self.query = self._build_query_for()
         filter_args = {k: ','.join(v) for k, v in self.query.items() if k != 'languages' and v}
-        logger.info('Starting twython filtering with %s', str(filter_args))
         logger.info('Streaming for collections: \n%s', '\n'.join(str(c) for c in collections))
         stay_active = True
         while stay_active:
             try:
+                logger.info('Connecting to streamer %s', str(filter_args))
                 self.statuses.filter(**filter_args)
             except (urllib3.exceptions.ReadTimeoutError, socket.timeout, requests.exceptions.ConnectionError,) as e:
                 logger.warning('A timeout occurred. Streamer is sleeping for 10 seconds: %s', e)
