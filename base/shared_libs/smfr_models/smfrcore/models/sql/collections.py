@@ -48,6 +48,7 @@ class TwitterCollection(SMFRModel):
     status = Column(ChoiceType(STATUSES), nullable=False, default='inactive')
     efas_id = Column(Integer, nullable=True)
     started_at = Column(TIMESTAMP, nullable=True)
+    created_at = Column(TIMESTAMP, nullable=True, default=datetime.datetime.utcnow)
     stopped_at = Column(TIMESTAMP, nullable=True)
     runtime = Column(TIMESTAMP, nullable=True)
     use_pipeline = Column(Boolean, nullable=False, default=False)
@@ -86,6 +87,7 @@ class TwitterCollection(SMFRModel):
         self.nuts2 = None
         if kwargs.get('efas_id') is not None:
             self.nuts2 = Nuts2.get_by_efas_id(kwargs['efas_id'])
+        self.created_at = kwargs.get('created_at') or datetime.datetime.utcnow()
         super().__init__(*args, **kwargs)
 
     # the two methods below (_set_keywords_and_languages and _set_locations)
@@ -188,6 +190,8 @@ class TwitterCollection(SMFRModel):
                     # collection is being reactivated but too many days passed so we need a new collection
                     obj.id = None
                     obj.stopped_at = None
+                else:
+                    obj.created_at = existing.created_at
 
         obj._set_keywords_and_languages(data.get('keywords') or [], data.get('languages') or [])
         obj._set_locations(data.get('bounding_box') or data.get('locations'))

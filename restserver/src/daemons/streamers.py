@@ -82,8 +82,8 @@ class BaseStreamer(TwythonStreamer):
 
     def on_error(self, status_code, data):
         err = str(data) or 'No data'
-        logger.error(status_code)
-        logger.error(err)
+        logger.error('ON ERROR EVENT: %s', status_code)
+        logger.error('ON ERROR EVENT: %s', err)
         self.track_error(status_code, err)
         self.disconnect(deactivate_collections=False)
         self.collections = []
@@ -114,7 +114,7 @@ class BaseStreamer(TwythonStreamer):
 
         self.collections = collections
         self.query = self._build_query_for()
-        filter_args = {k: ','.join(v) for k, v in self.query.items() if k != 'languages' and v}
+        filter_args = {k: ','.join(v).strip(',') for k, v in self.query.items() if k != 'languages' and v}
         logger.info('Streaming for collections: \n%s', '\n'.join(str(c) for c in collections))
         stay_active = True
         while stay_active:
@@ -123,6 +123,7 @@ class BaseStreamer(TwythonStreamer):
                 self.statuses.filter(**filter_args)
             except (urllib3.exceptions.ReadTimeoutError, socket.timeout, requests.exceptions.ConnectionError,) as e:
                 logger.warning('A timeout occurred. Streamer is sleeping for 10 seconds: %s', e)
+                self.track_error(500, 'Timeout')
                 time.sleep(10)
             except (requests.exceptions.ChunkedEncodingError, http.client.IncompleteRead) as e:
                 logger.warning('Incomplete Read: %s.', e)
