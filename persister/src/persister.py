@@ -94,9 +94,12 @@ class Persister:
                                               auto_offset_reset=self.auto_offset_reset,
                                               bootstrap_servers=self.bootstrap_server,
                                               max_poll_records=100, max_poll_interval_ms=1000000,
-                                              session_timeout_ms=90000, heartbeat_interval_ms=90000)
+                                              request_timeout_ms=40000,
+                                              session_timeout_ms=30000, heartbeat_interval_ms=3000)
+
                 self.producer = KafkaProducer(bootstrap_servers=self.bootstrap_server, compression_type='gzip',
-                                              buffer_memory=134217728, linger_ms=500, batch_size=1048576)
+                                              request_timeout_ms=50000, buffer_memory=134217728,
+                                              linger_ms=500, batch_size=1048576)
             except NoBrokersAvailable:
                 logger.warning('Waiting for Kafka to boot...')
                 time.sleep(5)

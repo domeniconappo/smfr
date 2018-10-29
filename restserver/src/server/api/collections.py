@@ -36,7 +36,7 @@ def add_collection(payload):
     :return: the created collection as a dict, 201
     """
     payload = json.loads(payload) if payload and not isinstance(payload, dict) else payload or {}
-    if not payload.get('keywords'):
+    if not payload.get('keywords') and not payload.get('languages'):
         payload['languages'], payload['keywords'] = RestServerConfiguration.default_keywords()
     payload['timezone'] = payload.get('tzclient') or '+00:00'
     collection = add_collection_helper(**payload)

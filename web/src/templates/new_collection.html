@@ -58,15 +58,29 @@
     </fieldset>
     <fieldset>
         <legend>Keywords</legend>
-    <div class="form-group {% if form.keywords.errors %} has-error {% endif %}">
-        {{form.keywords.label(class="col-sm-4")}}
-        Eg: <em>it: inondazione,...,inondato</em> or <em>flood,...,inundated</em> if language is not specified.
-        Max 400 keywords.
-        <div class="col-sm-3">
-        {{ form.keywords(class="form-control") }}
+        <div class="form-group {% if form.keywords.errors %} has-error {% endif %}">
+            {{form.keywords.label(class="col-sm-4")}}
+            Eg: <em>it: inondazione,...,inondato</em> or <em>flood,...,inundated</em> if language is not specified.
+            Max 400 keywords.
+            <div class="col-sm-3">
+            {{ form.keywords(class="form-control") }}
+            </div>
+            <p class="col-sm-5 help-block">{{ form.keywords.errors[0] }}</p>
         </div>
-        <p class="col-sm-5 help-block">{{ form.keywords.errors[0] }}</p>
-    </div>
+    </fieldset>
+    <fieldset>
+        <legend>Languages (use this fields if you didn't provide keywords in the previous field
+            or if you provided keywords in the simple form  of a list of keywords (so without specifying languages)
+        </legend>
+        <div class="form-group {% if form.languages.errors %} has-error {% endif %}">
+            {{form.languages.label(class="col-sm-4")}}
+            Eg: <em>ro,sr,hr</em>
+            Max 400 keywords.
+            <div class="col-sm-3">
+            {{ form.languages(class="form-control") }}
+            </div>
+            <p class="col-sm-5 help-block">{{ form.languages.errors[0] }}</p>
+        </div>
     </fieldset>
     <fieldset>
         <legend>{{ form.bounding_box.label.text }}</legend>

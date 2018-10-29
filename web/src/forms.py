@@ -31,7 +31,8 @@ class NewCollectorForm(FlaskForm):
                          )
 
     configuration = FormField(TwitterKeysField, label='Twitter consumer keys')
-    keywords = StringField('List of keywords comma separated', validators=(Optional(),))
+    keywords = StringField('List of keywords, comma separated', validators=(Optional(),))
+    languages = StringField('List of ISO language codes, comma separated', validators=(Optional(),))
     bounding_box = FormField(BoundingBoxField, label='Bounding box coordinates')
 
     forecast_id = StringField('Forecast Id', validators=(Optional(),))

@@ -88,6 +88,8 @@ class TwitterCollection(SMFRModel):
             self.nuts2 = Nuts2.get_by_efas_id(kwargs['efas_id'])
         super().__init__(*args, **kwargs)
 
+    # the two methods below (_set_keywords_and_languages and _set_locations)
+    # are a bit intricated as they deal with WEB UI input forms
     def _set_keywords_and_languages(self, keywords, languages):
 
         if not keywords:
@@ -111,7 +113,8 @@ class TwitterCollection(SMFRModel):
                 self.languages = sorted(list(kwdict.keys()))
                 self.tracking_keywords = sorted(list(set(w for s in kwdict.values() for w in s)))
             else:
-                # keywords from Web UI as text in the form of comma separated words "kw1,kw2,kw3,kw4"
+                # keywords from Web UI as text in the form of comma separated words "kw1,kw2,kw3,kw4".
+                # No language specified
                 self.tracking_keywords = list(map(str.strip, sorted(list(set(w for w in keywords.split(','))))))
                 self.languages = []
 
@@ -130,8 +133,7 @@ class TwitterCollection(SMFRModel):
 
     def _set_locations(self, locations):
         locations = locations or {}
-        if isinstance(locations, dict) and not all(
-                locations.get(k) for k in ('min_lon', 'min_lat', 'max_lon', 'max_lat')):
+        if isinstance(locations, dict) and not all(locations.get(k) for k in ('min_lon', 'min_lat', 'max_lon', 'max_lat')):
             locations = {}
         if locations:
             if isinstance(locations, str):
