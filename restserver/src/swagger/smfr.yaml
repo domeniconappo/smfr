@@ -470,6 +470,8 @@ definitions:
         type: string
       keywords:
         type: string
+      languages:
+        type: string
       bounding_box:
         type: object
       configuration:

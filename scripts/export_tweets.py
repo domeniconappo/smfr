@@ -79,6 +79,8 @@ def write_json(conf, tweets):
         out.append(t if conf.exportonlytweets else t['tweet'])
         if conf.maxnum and i >= conf.maxnum:
             break
+        if not (i % 500):
+            print('Exported so far...', str(i))
     with open(conf.output_file, 'w', encoding='utf-8') as fd:
         json.dump(out, fd, indent=2, ensure_ascii=False, sort_keys=True, default=CustomJSONEncoder().default)
 

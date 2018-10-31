@@ -1,7 +1,9 @@
 schedule
 cassandra-driver
-kafka-python
+kafka-python==1.4.2
 arrow
 flask
 flask-restful
 gunicorn
+python-Levenshtein
+fuzzywuzzy

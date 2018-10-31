@@ -473,11 +473,11 @@ class Tweet(cqldb.Model):
     @classmethod
     def get_contributing_match_keywords_fields(cls, data):
         """
-        The text of the Tweet and some entity fields are considered for matches.
+        The text of the Tweet and some entity fields are considered for matches by Twitter Stream API.
         Specifically, the text attribute of the Tweet, expanded_url and display_url for links and media,
         text for hashtags, and screen_name for user mentions are checked for matches.
-        :param data:
-        :return:
+        :param data: tweet dictionary
+        :return: text to match for keywords filtering in stream api
         """
         res = {cls.full_text_from_raw_tweet(data)}
         user_loc = cls.user_location_from_raw_tweet(data)
@@ -494,7 +494,7 @@ class Tweet(cqldb.Model):
                 # urls
                 urls = entities.get('urls', []) + entities.get('media', [])
                 for url in urls:
-                    res |= {url.get('display_url'), url.get('expanded_url')}
+                    res |= {url.get('display_url') or '', url.get('expanded_url') or ''}
                 # hashtags
                 res |= {h.get('text', '') for h in entities.get('hashtags', [])}
                 # user mentions
@@ -503,7 +503,7 @@ class Tweet(cqldb.Model):
             # full texts and extended entities
             if d.get('extended_tweet'):
                 extended_tweet = d['extended_tweet']
-                res |= {extended_tweet.get('full_text') or ''}
+                res |= {extended_tweet.get('full_text') or extended_tweet.get('text') or ''}
                 for ext_entities in (extended_tweet.get('entities'), extended_tweet.get('extended_entities')):
                     if not ext_entities:
                         continue
@@ -517,13 +517,11 @@ class Tweet(cqldb.Model):
 
     @property
     def coordinates(self):
-        tweet = self.original_tweet_as_dict
-        return self.coords_from_raw_tweet(tweet)
+        return self.coords_from_raw_tweet(self.original_tweet_as_dict)
 
     @property
     def centroid(self):
-        tweet = self.original_tweet_as_dict
-        return self.centroid_from_raw_tweet(tweet)
+        return self.centroid_from_raw_tweet(self.original_tweet_as_dict)
 
     @property
     def user_location(self):

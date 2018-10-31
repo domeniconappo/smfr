@@ -457,8 +457,7 @@ class TwitterCollection(SMFRModel):
             return False
         res = False
         original_tweet_dict = tweet.original_tweet_as_dict
-        min_lat, max_lat, min_lon, max_lon = self.locations['min_lat'], self.locations['max_lat'], self.locations[
-            'min_lon'], self.locations['max_lon']
+        min_lat, max_lat, min_lon, max_lon = self.locations['min_lat'], self.locations['max_lat'], self.locations['min_lon'], self.locations['max_lon']
         lat, lon = Tweet.coords_from_raw_tweet(original_tweet_dict)
         min_tweet_lat, max_tweet_lat, min_tweet_lon, max_tweet_lon = Tweet.get_tweet_bbox(original_tweet_dict)
 
@@ -490,17 +489,20 @@ class TwitterCollection(SMFRModel):
         return statistics.mean(coords[:2]), statistics.mean(coords[2:])
 
     def tweet_matched_keyword(self, tweet):
+        """
+        Returns the matched tweet keyword for this collection if existing, None otherwise
+        :param tweet: smfrcore.models.Tweet object
+        :return: matched keyword
+        :rtype: str
+        """
         from smfrcore.models import Tweet
 
         original_tweet_dict = tweet.original_tweet_as_dict
-        matching_properties_text = Tweet.get_contributing_match_keywords_fields(original_tweet_dict)
-        text_to_match = matching_properties_text.strip()
-        res = None
+        text_to_match = Tweet.get_contributing_match_keywords_fields(original_tweet_dict).strip()
         for kw in self.tracking_keywords:
             if kw in text_to_match:
-                res = kw
-        if not res:
-            res = process.extractOne(text_to_match, self.tracking_keywords, scorer=fuzz.partial_ratio, score_cutoff=80)
+                return kw
+        res = process.extractOne(text_to_match, self.tracking_keywords, scorer=fuzz.partial_ratio, score_cutoff=80)
         return res[0] if res else None
 
     @property

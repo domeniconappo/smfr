@@ -92,7 +92,7 @@ class RestServerConfiguration(metaclass=Singleton):
     Constructor accepts a connexion app object.
     """
     geonames_host = '127.0.0.1' if not IN_DOCKER else 'geonames'
-    kafka_bootstrap_server = '127.0.0.1' if not IN_DOCKER else os.getenv('KAFKA_BOOTSTRAP_SERVER', 'kafka:9094')
+    kafka_bootstrap_server = '127.0.0.1:9092' if not IN_DOCKER else os.getenv('KAFKA_BOOTSTRAP_SERVER', 'kafka:9092')
     mysql_host = '127.0.0.1' if not IN_DOCKER else os.getenv('MYSQL_HOST', 'mysql')
     __mysql_user = os.getenv('MYSQL_USER', 'root')
     __mysql_pass = os.getenv('MYSQL_PASSWORD', 'example')

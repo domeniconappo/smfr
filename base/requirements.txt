@@ -1,5 +1,5 @@
 arrow
-kafka-python
+kafka-python==1.4.2
 cassandra-driver
 mysqlclient
 requests

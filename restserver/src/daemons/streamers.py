@@ -139,6 +139,7 @@ class BaseStreamer(TwythonStreamer):
                 self.track_error(500, str(e))
 
     def disconnect(self, deactivate_collections=True):
+        self.producer.flush()
         with self._lock:
             logger.info('Disconnecting twitter streamer (thread %s)', threading.current_thread().name)
             super().disconnect()

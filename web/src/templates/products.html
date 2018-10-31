@@ -18,25 +18,21 @@
             <tr>
                 <th>Filename</th>
                 <th>Date</th>
-                <th>Details</th>
             </tr>
         </thead>
+
         <tbody>
         {%  if files %}
-      {% for f in files %}
-            <tr>
-                <td><a href="/products?date={{ f.date }}">{{ f.name }}</a></td>
-                <td>{{ f.date }}</td>
-                <td><p>
-                    {{ f.efas_regions }}
-                    {{ f.reported_regions }}
-
-                </p></td>
-            </tr>
-      {% endfor %}
+          {% for f in files %}
+                <tr>
+                    <td><a href="/products?date={{ f.date }}">{{ f.name }}</a></td>
+                    <td>{{ f.date }}</td>
+                </tr>
+          {% endfor %}
         {% endif %}
         </tbody>
-      </table>
+
+        </table>
     </div>
 
     <div class="col-lg-7">
@@ -108,7 +104,7 @@
                          } else {
                              text = tweet['tweet']['text'];
                          }
-                         var tweet_text = text + '<br />' + tweet['label_predicted'];
+                         var tweet_text = tweet['created_at'] + '<br />' + text + '<br />' + tweet['label_predicted'];
                          var marker = L.marker([tweet_lat, tweet_lon]);
                          marker.bindPopup(tweet_text);
                          markers.addLayer(marker);

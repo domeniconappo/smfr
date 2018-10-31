@@ -9,7 +9,7 @@ schedule
 flask
 flask-restful
 flask-jwt-extended
-kafka-python
+kafka-python==1.4.2
 cassandra-driver
 mysqlclient
 sqlalchemy

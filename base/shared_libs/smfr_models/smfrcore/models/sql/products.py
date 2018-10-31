@@ -1,7 +1,9 @@
+import datetime
+
 from sqlalchemy import Column, Integer, TIMESTAMP
 from sqlalchemy_utils import ScalarListType
 
-from .base import sqldb, SMFRModel, LongJSONType
+from .base import SMFRModel, LongJSONType
 
 
 class Product(SMFRModel):
@@ -13,11 +15,18 @@ class Product(SMFRModel):
 
     id = Column(Integer, primary_key=True, autoincrement=True, nullable=False)
     collection_ids = Column(ScalarListType(int))
-    collection = sqldb.relationship('TwitterCollection', backref=sqldb.backref('aggregation', uselist=False))
     highlights = Column(LongJSONType, nullable=True)
     created_at = Column(TIMESTAMP, nullable=True)
     relevant_tweets = Column(LongJSONType, nullable=True)
     aggregated = Column(LongJSONType, nullable=False)
+
+    def __init__(self, *args, **kwargs):
+        self.created_at = datetime.datetime.utcnow()
+        self.aggregated = kwargs.get('aggregated')
+        self.relevant_tweets = kwargs.get('relevant_tweets')
+        self.collection_ids = kwargs.get('collection_ids')
+        self.highlights = kwargs.get('highlights')
+        super().__init__(*args, **kwargs)
 
     def __str__(self):
         return 'Product ID: {}'.format(self.id)

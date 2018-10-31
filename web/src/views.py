@@ -241,14 +241,7 @@ def show_products():
     for f in files:
         filename = os.path.basename(f)
         date = filename.split('_')[2].rstrip('.geojson')
-        with open(f) as prod:
-            try:
-                content = json.load(prod)
-            except ValueError:
-                logger.error('%s produced an error in json.load', f)
-                continue
-            else:
-                res.append({'name': filename, 'date': date, 'details': ''})
+        res.append({'name': filename, 'date': date})
     return render_template('products.html', files=res, geojson=geojson, development=ServerConfiguration.development), 200
 
 

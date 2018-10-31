@@ -10,7 +10,7 @@ from geojson.geometry import Geometry
 import fiona
 from Levenshtein import ratio
 
-from smfrcore.models.sql import TwitterCollection, Aggregation, Nuts2, create_app
+from smfrcore.models.sql import TwitterCollection, Aggregation, Nuts2, Product, create_app
 from smfrcore.utils import DEFAULT_HANDLER, IN_DOCKER, RGB
 from smfrcore.client.api_here import HereClient
 from smfrcore.text_utils import tweet_normalization_aggressive
@@ -65,7 +65,7 @@ class Products:
     @classmethod
     def produce(cls):
         # create products for on-demand active colletions or recently stopped collections
-
+        collection_ids = []
         with cls.app.app_context():
             collections = TwitterCollection.query.filter(
                 TwitterCollection.trigger == TwitterCollection.TRIGGER_ONDEMAND).filter(
@@ -77,7 +77,7 @@ class Products:
             aggregations = Aggregation.query.filter(Aggregation.collection_id.in_([c.id for c in collections])).all()
             counters = defaultdict(int)
             relevant_tweets_aggregated = defaultdict(list)
-
+            collection_ids = [c.id for c in collections]
             # TODO it's a mapreduce procedure...it can be parallelized somehow
             for aggregation in aggregations:
 
@@ -102,10 +102,26 @@ class Products:
             probs_interval = tokens[-1]
             counters_by_efas_id[efas_id][probs_interval] = value
 
-        for efas_id, tweets in relevant_tweets_aggregated.items():
+        for efas_id in relevant_tweets_aggregated:
             relevant_tweets_aggregated[efas_id] = TweetsDeduplicator.deduplicate(relevant_tweets_aggregated[efas_id])[:cls.max_relevant_tweets]
 
         cls.write_geojson(counters_by_efas_id, relevant_tweets_aggregated)
+        cls.write_to_sql(counters_by_efas_id, relevant_tweets_aggregated, collection_ids)
+
+    @classmethod
+    def write_to_sql(cls, counters_by_efas_id, relevant_tweets_aggregated, collection_ids):
+        heuristics = list(map(int, cls.alert_heuristic.split(':')))
+        gray_th = heuristics[0]
+        orange_th = heuristics[1]
+        red_th = heuristics[2]
+        with cls.app.app_context():
+            highlights = {}
+            for efas_id, counters in counters_by_efas_id:
+                if not (counters.get(cls.high_prob_range, 0) < gray_th or counters.get(cls.high_prob_range, 0) <= orange_th * counters.get(cls.low_prob_range, 0)) or orange_th * counters.get(cls.low_prob_range, 0) < counters.get(cls.high_prob_range, 0) <= red_th * counters.get(cls.low_prob_range, 0):
+                    highlights[efas_id] = counters
+            product = Product(aggregated=counters_by_efas_id, relevant_tweets=relevant_tweets_aggregated,
+                              highlights=highlights, collection_ids=collection_ids)
+            product.save()
 
     @classmethod
     def write_geojson(cls, counters_by_efas_id, relevant_tweets_aggregated):

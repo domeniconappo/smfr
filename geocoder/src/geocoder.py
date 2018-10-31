@@ -105,7 +105,7 @@ class Geocoder:
     _lock = threading.RLock()
     logger = logging.getLogger(__name__)
     geonames_host = 'geonames' if IN_DOCKER else '127.0.0.1'
-    kafka_bootstrap_server = os.getenv('KAFKA_BOOTSTRAP_SERVER', 'kafka:9094') if IN_DOCKER else '127.0.0.1:9094'
+    kafka_bootstrap_server = os.getenv('KAFKA_BOOTSTRAP_SERVER', 'kafka:9092') if IN_DOCKER else '127.0.0.1:9092'
 
     flask_app = create_app()
 

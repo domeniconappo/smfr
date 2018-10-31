@@ -25,7 +25,7 @@ if __name__ in ('__main__', 'start'):
         logger.debug("Received %d", signum)
         logger.debug("Stopping any running collector...")
 
-        if persister:
+        if persister and persister.background_process:
             logger.info("Stopping consumer %s", str(persister))
             persister.stop()
 
@@ -45,4 +45,5 @@ if __name__ in ('__main__', 'start'):
 
     api.add_resource(PersisterCounters, '/counters')
     schedule.every(30).minutes.do(get_active_collections_for_persister, (persister,)).tag('update-running-collections')
+    logger.info('----- Starting KAFKA consumer on topic: persister')
     persister.start_in_background()

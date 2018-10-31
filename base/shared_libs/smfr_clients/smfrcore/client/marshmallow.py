@@ -63,6 +63,7 @@ class CollectionPayload(BaseSchema):
     runtime = DateTime()
     nuts2 = fields.String()
     keywords = fields.String()
+    languages = fields.String()
     bounding_box = fields.Field()
     configuration = fields.Field()
     use_pipeline = fields.Boolean()

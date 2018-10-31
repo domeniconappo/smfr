@@ -232,6 +232,7 @@ services:
       PYTHONUNBUFFERED: 'true'
       PERSISTER_KAFKA_TOPIC: ${PERSISTER_KAFKA_TOPIC}
       GEOCODER_KAFKA_TOPIC: ${GEOCODER_KAFKA_TOPIC}
+      KAFKA_BOOTSTRAP_SERVER: ${KAFKA_BOOTSTRAP_SERVER}
       CASSANDRA_HOST: ${CASSANDRA_HOST}
       CASSANDRA_PORT: ${CASSANDRA_PORT}
       CASSANDRA_USER: ${CASSANDRA_USER}
@@ -296,24 +297,32 @@ services:
     container_name: kafka
     hostname: kafka
     environment:
+      KAFKA_ADVERTISED_HOST_NAME: kafka
+      KAFKA_ADVERTISED_PORT: 9092
       HOSTNAME_COMMAND: "echo kafka"
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INSIDE:PLAINTEXT,OUTSIDE:PLAINTEXT
-      KAFKA_ADVERTISED_LISTENERS: INSIDE://:9092,OUTSIDE://kafka:9094
+#      KAFKA_ADVERTISED_LISTENERS: INSIDE://:9092,OUTSIDE://kafka:9094
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
       KAFKA_INTER_BROKER_LISTENER_NAME: INSIDE
-      KAFKA_LISTENERS: INSIDE://:9092,OUTSIDE://kafka:9094
+      KAFKA_LISTENERS: PLAINTEXT://:9092
+#      KAFKA_LISTENERS: INSIDE://:9092,OUTSIDE://kafka:9094
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
       KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'true'  # true by default anyway
-      KAFKA_CREATE_TOPICS: '${PERSISTER_KAFKA_TOPIC}:1:1,${ANNOTATOR_KAFKA_TOPIC}:1:1,${GEOCODER_KAFKA_TOPIC}:1:1'
+      KAFKA_CREATE_TOPICS: '${PERSISTER_KAFKA_TOPIC}:1:1,${ALL_ANNOTATOR_KAFKA_TOPICS},${GEOCODER_KAFKA_TOPIC}:1:1'
       KAFKA_MAX_BLOCK_MS: 90000
-      KAFKA_REQUEST_TIMEOUT_MS: 60000
-      KAFKA_MAX_POLL_RECORDS: 150
-      KAFKA_MAX_POLL_INTERVAL_MS: 10000
+      KAFKA_REQUEST_TIMEOUT_MS: 300000
+      KAFKA_MAX_POLL_RECORDS: 100
+      KAFKA_MAX_POLL_INTERVAL_MS: 600000
       KAFKA_MESSAGE_MAX_BYTES: 4000048
-      KAFKA_HEAP_OPTS: -Xmx4096m -Xms4096m
+      KAFKA_HEAP_OPTS: -Xmx8912m -Xms8912m
     ports:
       - target: 9094
         published: 9094
+        protocol: tcp
+        mode: host
+      - target: 9092
+        published: 9092
         protocol: tcp
         mode: host
     networks:
@@ -462,9 +471,6 @@ services:
 
   restserver:
     restart: always
-    networks:
-      - front-tier
-      - back-tier
     container_name: restserver
     image: ${DOCKER_REGISTRY}/${RESTSERVER_IMAGE}:${image_tag}
     build:
@@ -479,7 +485,6 @@ services:
     environment:
       LOGGING_LEVEL: ${LOGGING_LEVEL}
       DEVELOPMENT: ${DEVELOPMENT}
-      PERSISTER_KAFKA_TOPIC: ${PERSISTER_KAFKA_TOPIC}
       MYSQL_HOST: mysql
       MYSQL_USER: ${MYSQL_USER}
       MYSQL_PASSWORD: ${MYSQL_PASSWORD}
@@ -495,6 +500,8 @@ services:
       ANNOTATOR_PORT: ${ANNOTATOR_PORT}
       GEOCODER_PORT: ${GEOCODER_PORT}
       PERSISTER_PORT: ${PERSISTER_PORT}
+      KAFKA_BOOTSTRAP_SERVER: ${KAFKA_BOOTSTRAP_SERVER}
+      PERSISTER_KAFKA_TOPIC: ${PERSISTER_KAFKA_TOPIC}
       FLASK_APP: smfr.py
       SERVER_PATH_UPLOADS: /smfr/uploads/
       CQLENG_ALLOW_SCHEMA_MANAGEMENT: 1
@@ -513,13 +520,15 @@ services:
       https_proxy: ${http_proxy}
     ports:
       - '5555:5555'
+    networks:
+    - front-tier
+    - back-tier
     volumes:
       - './restserver/src:/restserver'
       - './downloads:/smfr/downloaded'
       - './restserver/logs:/logs'
       - '${COLLECTOR_KEYS_PATH}:/configuration/admin_collector.yaml'
       - '${FLOOD_KEYWORDS_PATH}:/configuration/flood_keywords.yaml'
-
     depends_on:
       - mysql
       - kafka

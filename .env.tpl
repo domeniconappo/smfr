@@ -25,6 +25,7 @@ KAFKA_BOOTSTRAP_SERVER=kafka:9094
 PERSISTER_KAFKA_TOPIC=persister
 ANNOTATOR_KAFKA_TOPIC=annotator
 GEOCODER_KAFKA_TOPIC=geocoder
+ALL_ANNOTATOR_KAFKA_TOPICS=annotator-en:1:1,annotator-es:1:1,annotator-fr:1:1,annotator-it:1:1,annotator-de:1:1,annotator-ro:1:1
 
 # REST SERVICES PORTS CONFIGURATIONS
 RESTSERVER_PORT=5555

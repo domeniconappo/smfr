@@ -1,6 +1,6 @@
 numpy==1.14.5
 mordecai==2.0.1
-kafka-python
+kafka-python==1.4.2
 ujson
 mysqlclient
 flask

@@ -16,10 +16,10 @@ from smfrcore.models import Tweet, TwitterCollection, create_app
 from smfrcore.utils import IN_DOCKER, NULL_HANDLER, DEFAULT_HANDLER
 from smfrcore.client.api_client import AnnotatorClient
 
-PersisterConfiguration = namedtuple('PersisterConfiguration', ['persister_kafka_topic', 'kafka_bootstrap_server',
-                                                               'annotator_kafka_topic', 'geocoder_kafka_topic'])
+
 logging.getLogger('kafka').setLevel(logging.WARNING)
 logging.getLogger('urllib3').setLevel(logging.WARNING)
+logging.getLogger('cassandra').setLevel(logging.WARNING)
 
 os.environ['NO_PROXY'] = ','.join((AnnotatorClient.host,))
 
@@ -28,10 +28,10 @@ logger.addHandler(DEFAULT_HANDLER)
 logger.setLevel(os.getenv('LOGGING_LEVEL', 'DEBUG'))
 logger.propagate = False
 
-file_logger = logging.getLogger('Not Reconciled Tweets')
+file_logger = logging.getLogger('UNRECONCILED')
 file_logger.addHandler(NULL_HANDLER)
 file_logger.setLevel(logging.ERROR)
-# file_logger.propagate = False
+file_logger.propagate = False
 
 
 if IN_DOCKER:
@@ -46,9 +46,11 @@ class Persister:
         Persister component to save Tweet messages in Cassandra.
         It listens to the Kafka queue, build a Tweet object from messages and save it in Cassandra.
         """
+    PersisterConfiguration = namedtuple('PersisterConfiguration', ['persister_kafka_topic', 'kafka_bootstrap_server',
+                                                                   'annotator_kafka_topic', 'geocoder_kafka_topic'])
     config = PersisterConfiguration(
         persister_kafka_topic=os.getenv('PERSISTER_KAFKA_TOPIC', 'persister'),
-        kafka_bootstrap_server=os.getenv('KAFKA_BOOTSTRAP_SERVER', 'kafka:9094'),
+        kafka_bootstrap_server=os.getenv('KAFKA_BOOTSTRAP_SERVER', 'kafka:9092') if IN_DOCKER else '127.0.0.1:9092',
         annotator_kafka_topic=os.getenv('ANNOTATOR_KAFKA_TOPIC', 'annotator'),
         geocoder_kafka_topic=os.getenv('GEOCODER_KAFKA_TOPIC', 'geocoder'),
     )
@@ -71,12 +73,15 @@ class Persister:
 
         while retries >= 0:
             try:
-                self.consumer = KafkaConsumer(self.topic, group_id=self.group_id,
+                self.consumer = KafkaConsumer(self.topic,
+                                              group_id=self.group_id,
                                               auto_offset_reset=self.auto_offset_reset,
+                                              check_crcs=False,
                                               bootstrap_servers=self.bootstrap_server,
-                                              max_poll_records=100, max_poll_interval_ms=1000000,
-                                              request_timeout_ms=40000,
-                                              session_timeout_ms=30000, heartbeat_interval_ms=3000)
+                                              max_poll_records=100, max_poll_interval_ms=600000,
+                                              request_timeout_ms=300000,
+                                              session_timeout_ms=10000, heartbeat_interval_ms=3000
+                                              )
 
                 self.producer = KafkaProducer(bootstrap_servers=self.bootstrap_server, compression_type='gzip',
                                               request_timeout_ms=50000, buffer_memory=134217728,
@@ -111,9 +116,12 @@ class Persister:
         Main method that iterate over messages coming from Kafka queue, build a Tweet object and save it in Cassandra
         """
 
-        logger.info('Persister started %s...Reset counters', str(self))
+        logger.info('Starting %s...Reset counters', str(self))
         try:
+            logger.info('===> Entering in consumer loop...')
             for i, msg in enumerate(self.consumer, start=1):
+                if logger.isEnabledFor(logging.DEBUG):
+                    logger.debug('Fetched %d', i)
                 tweet = None
                 try:
                     msg = msg.value.decode('utf-8')
@@ -167,7 +175,7 @@ class Persister:
         topic = None
         if tweet.ttype == Tweet.COLLECTED_TYPE and tweet.lang in self.language_models:
             # tweet will go to the next in pipeline: annotator queue
-            topic = '{}_{}'.format(self.config.annotator_kafka_topic, tweet.lang)
+            topic = '{}-{}'.format(self.config.annotator_kafka_topic, tweet.lang)
         elif tweet.ttype == Tweet.ANNOTATED_TYPE:
             # tweet will go to the next in pipeline: geocoder queue
             topic = self.config.geocoder_kafka_topic

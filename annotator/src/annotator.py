@@ -35,7 +35,7 @@ class Annotator:
     _manager = multiprocessing.Manager()
     shared_counter = _manager.dict()
 
-    kafka_bootstrap_server = os.getenv('KAFKA_BOOTSTRAP_SERVER', 'kafka:9094') if IN_DOCKER else '127.0.0.1:9094'
+    kafka_bootstrap_server = os.getenv('KAFKA_BOOTSTRAP_SERVER', 'kafka:9092') if IN_DOCKER else '127.0.0.1:9092'
     available_languages = list(models.keys())
     producer = None
 
@@ -110,7 +110,7 @@ class Annotator:
                     continue
 
                 message = Tweet.serializetuple(tweet)
-                topic = '{}_{}'.format(cls.annotator_kafka_topic, lang)
+                topic = '{}-{}'.format(cls.annotator_kafka_topic, lang)
                 if logger.isEnabledFor(logging.DEBUG):
                     logger.debug('Sending tweet to ANNOTATOR %s %s', lang, tweet.tweetid, )
                 cls.producer.send(topic, message)
@@ -204,14 +204,15 @@ class Annotator:
             model, tokenizer = cls.load_annotation_model(lang)
 
             try:
-                topic = '{}_{}'.format(cls.annotator_kafka_topic, lang)
+                topic = '{}-{}'.format(cls.annotator_kafka_topic, lang)
 
                 consumer = KafkaConsumer(
                     topic, check_crcs=False,
                     group_id='ANNOTATOR-{}'.format(lang),
-                    auto_offset_reset='earliest', max_poll_records=300, max_poll_interval_ms=1000000,
+                    auto_offset_reset='earliest',
+                    max_poll_records=300, max_poll_interval_ms=1000000,
                     bootstrap_servers=cls.kafka_bootstrap_server,
-                    session_timeout_ms=60000, heartbeat_interval_ms=60000
+                    session_timeout_ms=10000, heartbeat_interval_ms=3000
                 )
                 logger.info('+++++++++++++ Annotator consumer lang=%s connected', lang)
                 cls.shared_counter[lang] = 0
