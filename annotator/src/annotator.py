@@ -16,11 +16,12 @@ from keras.preprocessing.sequence import pad_sequences
 from smfrcore.models import Tweet
 from smfrcore.utils import IN_DOCKER
 from smfrcore.text_utils import create_text_for_cnn
+from smfrcore.ml.helpers import models, models_path, logger
 
-try:
-    from helpers import models, models_path, logger
-except (ModuleNotFoundError, ImportError):
-    from .helpers import models, models_path, logger
+# try:
+#     from helpers import models, models_path, logger
+# except (ModuleNotFoundError, ImportError):
+#     from .helpers import models, models_path, logger
 
 DEVELOPMENT = bool(int(os.getenv('DEVELOPMENT', 0)))
 

@@ -54,7 +54,7 @@ class Persister:
         annotator_kafka_topic=os.getenv('ANNOTATOR_KAFKA_TOPIC', 'annotator'),
         geocoder_kafka_topic=os.getenv('GEOCODER_KAFKA_TOPIC', 'geocoder'),
     )
-    _lock = threading.RLock()
+    _lock = multiprocessing.RLock()
     app = create_app()
     _manager = multiprocessing.Manager()
     shared_counter = _manager.dict({Tweet.ANNOTATED_TYPE: 0, Tweet.COLLECTED_TYPE: 0, Tweet.GEOTAGGED_TYPE: 0})
@@ -128,7 +128,10 @@ class Persister:
                     tweet = Tweet.from_json(msg)
                     if tweet.collectionid == Tweet.NO_COLLECTION_ID:
                         # reconcile with running collections
+                        start = time.time()
+                        logger.debug('Start Reconcile')
                         collection = self.reconcile_tweet_with_collection(tweet)
+                        logger.debug('End Reconcile in %s', time.time() - start)
                         if not collection:
                             # we log it to use to improve reconciliation in the future
                             file_logger.error('%s', msg)
@@ -144,8 +147,9 @@ class Persister:
                     if logger.isEnabledFor(logging.INFO) and not (i % 5000):
                         logger.info('Scanned/Saved since last restart \nTOTAL: %d \n%s', i, str(self.shared_counter))
 
-                    self.shared_counter[tweet.ttype] += 1
-                    self.shared_counter['{}-{}'.format(tweet.lang, tweet.ttype)] += 1
+                    with self._lock:
+                        self.shared_counter[tweet.ttype] += 1
+                        self.shared_counter['{}-{}'.format(tweet.lang, tweet.ttype)] += 1
 
                     self.send_to_pipeline(tweet)
 
@@ -199,4 +203,5 @@ class Persister:
         return 'Persister ({}): {}@{}:{}'.format(id(self), self.topic, self.bootstrap_server, self.group_id)
 
     def counters(self):
-        return dict(self.shared_counter)
+        with self._lock:
+            return dict(self.shared_counter)

@@ -5,7 +5,8 @@ from collections import deque
 from http.client import IncompleteRead
 import os
 import socket
-import threading
+# import threading
+import multiprocessing
 import time
 import urllib3
 
@@ -29,15 +30,19 @@ class BaseStreamer(TwythonStreamer):
     """
 
     """
+    mp_manager = multiprocessing.Manager()
+    max_errors_len = 50
+
     def __init__(self, producer, **api_keys):
-        self._lock = threading.RLock()
+        self._lock = multiprocessing.RLock()
         self.query = {}
         self.consumer_key = api_keys['consumer_key']
         self.consumer_secret = api_keys['consumer_secret']
         self.access_token = api_keys['access_token']
         self.access_token_secret = api_keys['access_token_secret']
         self.persister_kafka_topic = RestServerConfiguration.persister_kafka_topic
-        self._errors = deque(maxlen=50)
+        # self._errors = deque(maxlen=50)
+        self._shared_errors = multiprocessing.Queue(maxsize=self.max_errors_len)
 
         # A Kafka Producer to send tweets to store to PERSISTER queue
         self.producer = producer
@@ -81,14 +86,17 @@ class BaseStreamer(TwythonStreamer):
         return query
 
     def on_error(self, status_code, data):
-        err = str(data) or 'No data'
+        status_code = int(status_code)
+        data = data.decode('utf-8') if isinstance(data, bytes) else str(data)
+        err = str(data) or 'No error message'
         logger.error('ON ERROR EVENT: %s', status_code)
         logger.error('ON ERROR EVENT: %s', err)
         self.track_error(status_code, err)
         self.disconnect(deactivate_collections=False)
         self.collections = []
         self.collection = None
-        sleep_time = 60 if str(status_code) == '420' and 'Exceeded connection limit' in 'data' else 5
+        sleep_time = 60 if status_code == 420 and 'Exceeded connection limit' in err else 5
+        logger.debug('Sleeping %d secs', sleep_time)
         time.sleep(sleep_time)
 
     def on_timeout(self):
@@ -100,16 +108,16 @@ class BaseStreamer(TwythonStreamer):
         return collection.is_using_pipeline
 
     def run_collections(self, collections):
-        t = threading.Thread(target=self.connect, name=str(self), args=(collections,))
+        t = multiprocessing.Process(target=self.connect, name=str(self), args=(collections,))
         t.start()
 
-    @property
-    def is_connected(self):
-        with self._lock:
-            return self.connected
+    # @property
+    # def is_connected(self):
+    #     with self._lock:
+    #         return self.connected
 
     def connect(self, collections):
-        if self.is_connected:
+        if self.connected:
             self.disconnect(deactivate_collections=False)
 
         self.collections = collections
@@ -140,10 +148,10 @@ class BaseStreamer(TwythonStreamer):
 
     def disconnect(self, deactivate_collections=True):
         self.producer.flush()
-        with self._lock:
-            logger.info('Disconnecting twitter streamer (thread %s)', threading.current_thread().name)
-            super().disconnect()
-            self.connected = False
+        # with self._lock:
+        logger.info('Disconnecting twitter streamer')
+        super().disconnect()
+        self.connected = False
         if deactivate_collections:
             logger.warning('Deactivating all collections!')
             app = create_app()
@@ -154,15 +162,18 @@ class BaseStreamer(TwythonStreamer):
     @property
     def errors(self):
         with self._lock:
-            return list(self._errors)
+            return list(self._shared_errors)
 
     def track_error(self, http_error_code, message):
         message = message.decode('utf-8') if isinstance(message, bytes) else str(message)
         with self._lock:
-            self._errors.append('{code}: {date} - {error}'.format(
+            if self._shared_errors.full():
+                self._shared_errors = multiprocessing.Queue()
+            self._shared_errors.put('{code}: {date} - {error}'.format(
                 code=http_error_code,
                 date=datetime.datetime.now().strftime('%Y%m%d %H:%M'),
-                error=message.strip('\r\n')))
+                error=message.strip('\r\n')), block=False
+            )
 
 
 class BackgroundStreamer(BaseStreamer):
