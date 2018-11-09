@@ -1,7 +1,6 @@
 import os
 import logging
 import sys
-import threading
 import multiprocessing
 import time
 
@@ -9,14 +8,15 @@ from cassandra import InvalidRequest
 from cassandra.cqlengine import ValidationError
 from kafka import KafkaProducer, KafkaConsumer
 from kafka.errors import NoBrokersAvailable, CommitFailedError, KafkaTimeoutError
-import sklearn
-from keras.models import load_model
-from keras.preprocessing.sequence import pad_sequences
+# import sklearn
+# from keras.models import load_model
+# from keras.preprocessing.sequence import pad_sequences
 
 from smfrcore.models import Tweet
 from smfrcore.utils import IN_DOCKER
-from smfrcore.text_utils import create_text_for_cnn
-from smfrcore.ml.helpers import models, models_path, logger
+# from smfrcore.text_utils import create_text_for_cnn
+from smfrcore.ml.helpers import models, logger, available_languages
+from smfrcore.ml.annotator import Annotator
 
 # try:
 #     from helpers import models, models_path, logger
@@ -26,18 +26,17 @@ from smfrcore.ml.helpers import models, models_path, logger
 DEVELOPMENT = bool(int(os.getenv('DEVELOPMENT', 0)))
 
 
-class Annotator:
+class AnnotatorContainer:
     """
     Annotator component implementation
     """
     _running = []
     _stop_signals = []
-    _lock = threading.RLock()
+    _lock = multiprocessing.RLock()
     _manager = multiprocessing.Manager()
     shared_counter = _manager.dict()
 
     kafka_bootstrap_server = os.getenv('KAFKA_BOOTSTRAP_SERVER', 'kafka:9092') if IN_DOCKER else '127.0.0.1:9092'
-    available_languages = list(models.keys())
     producer = None
 
     persister_kafka_topic = os.getenv('PERSISTER_KAFKA_TOPIC', 'persister')
@@ -106,7 +105,7 @@ class Annotator:
                 if not (i % 1000):
                     logger.info('%s: Scan so far %d', lang.capitalize(), i)
 
-                if lang not in cls.available_languages or (DEVELOPMENT and lang != 'en'):
+                if lang not in available_languages or (DEVELOPMENT and lang != 'en'):
                     logger.debug('Skipping tweet %s - language %s', tweet.tweetid, lang)
                     continue
 
@@ -167,28 +166,28 @@ class Annotator:
         p = multiprocessing.Process(target=cls.start_consumer, args=(lang,), name='Annotator Consumer {}'.format(lang))
         p.start()
 
-    @classmethod
-    def annotate(cls, model, tweets, tokenizer):
-        """
-        Annotate the tweet t using model and tokenizer
-
-        :param model: CNN model used for prediction
-        :param tweets: list of smfrcore.models.Tweet objects
-        :param tokenizer:
-        :return:
-        """
-        texts = (create_text_for_cnn(t.original_tweet_as_dict, []) for t in tweets)
-        sequences = tokenizer.texts_to_sequences(texts)
-        data = pad_sequences(sequences, maxlen=model.layers[0].input_shape[1])
-        predictions_list = model.predict(data)
-        res = []
-        predictions = predictions_list[:, 1]
-        for i, t in enumerate(tweets):
-            flood_probability = 1. * predictions[i]
-            t.annotations = {'flood_probability': ('yes', flood_probability)}
-            t.ttype = Tweet.ANNOTATED_TYPE
-            res.append(t)
-        return res
+    # @classmethod
+    # def annotate(cls, model, tweets, tokenizer):
+    #     """
+    #     Annotate the tweet t using model and tokenizer
+    #
+    #     :param model: CNN model used for prediction
+    #     :param tweets: list of smfrcore.models.Tweet objects
+    #     :param tokenizer:
+    #     :return:
+    #     """
+    #     texts = (create_text_for_cnn(t.original_tweet_as_dict, []) for t in tweets)
+    #     sequences = tokenizer.texts_to_sequences(texts)
+    #     data = pad_sequences(sequences, maxlen=model.layers[0].input_shape[1])
+    #     predictions_list = model.predict(data)
+    #     res = []
+    #     predictions = predictions_list[:, 1]
+    #     for i, t in enumerate(tweets):
+    #         flood_probability = 1. * predictions[i]
+    #         t.annotations = {'flood_probability': ('yes', flood_probability)}
+    #         t.ttype = Tweet.ANNOTATED_TYPE
+    #         res.append(t)
+    #     return res
 
     @classmethod
     def start_consumer(cls, lang='en'):
@@ -202,7 +201,7 @@ class Annotator:
         session = tf.Session(graph=tf.get_default_graph(), config=session_conf)
 
         with session.as_default():
-            model, tokenizer = cls.load_annotation_model(lang)
+            model, tokenizer = Annotator.load_annotation_model(lang)
 
             try:
                 topic = '{}-{}'.format(cls.annotator_kafka_topic, lang)
@@ -229,7 +228,7 @@ class Annotator:
                         cls.shared_counter['waiting-{}'.format(lang)] += 1
 
                         if len(buffer_to_annotate) >= 100:
-                            tweets = cls.annotate(model, buffer_to_annotate, tokenizer)
+                            tweets = Annotator.annotate(model, buffer_to_annotate, tokenizer)
                             cls.shared_counter[lang] += len(buffer_to_annotate)
 
                             for tweet in tweets:
@@ -275,11 +274,11 @@ class Annotator:
             except KeyboardInterrupt:
                 consumer.close()
 
-    @classmethod
-    def load_annotation_model(cls, lang):
-        tokenizer_path = os.path.join(models_path, models[lang] + '.tokenizer')
-        tokenizer = sklearn.externals.joblib.load(tokenizer_path)
-        tokenizer.oov_token = None
-        model_path = os.path.join(models_path, models[lang] + '.model.h5')
-        model = load_model(model_path)
-        return model, tokenizer
+    # @classmethod
+    # def load_annotation_model(cls, lang):
+    #     tokenizer_path = os.path.join(models_path, models[lang] + '.tokenizer')
+    #     tokenizer = sklearn.externals.joblib.load(tokenizer_path)
+    #     tokenizer.oov_token = None
+    #     model_path = os.path.join(models_path, models[lang] + '.model.h5')
+    #     model = load_model(model_path)
+    #     return model, tokenizer

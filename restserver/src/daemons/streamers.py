@@ -85,6 +85,10 @@ class BaseStreamer(TwythonStreamer):
             query['languages'] = languages
         return query
 
+    def log(self, tweet):
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.debug('Sent to %s topic: %s', self.persister_kafka_topic, tweet.tweetid)
+
     def on_error(self, status_code, data):
         status_code = int(status_code)
         data = data.decode('utf-8') if isinstance(data, bytes) else str(data)
@@ -162,7 +166,7 @@ class BaseStreamer(TwythonStreamer):
     @property
     def errors(self):
         with self._lock:
-            return list(self._shared_errors)
+            return [e for e in iter(self._shared_errors.get_nowait, None)]
 
     def track_error(self, http_error_code, message):
         message = message.decode('utf-8') if isinstance(message, bytes) else str(message)
@@ -196,9 +200,7 @@ class BackgroundStreamer(BaseStreamer):
                 # the tweet is sent immediately to kafka queue
                 message = tweet.serialize()
                 self.producer.send(self.persister_kafka_topic, message)
-
-                if logger.isEnabledFor(logging.DEBUG):
-                    logger.debug('Collected tweet sent to PERSISTER: %s', tweet.tweetid)
+                self.log(tweet)
 
         else:
             logger.error('No Data: %s', str(data))
@@ -217,8 +219,7 @@ class OnDemandStreamer(BaseStreamer):
             tweet = Tweet.from_tweet(Tweet.NO_COLLECTION_ID, data, ttype=Tweet.COLLECTED_TYPE)
             message = tweet.serialize()
             self.producer.send(self.persister_kafka_topic, message)
-            if logger.isEnabledFor(logging.DEBUG):
-                logger.debug('Sent to PERSISTER: %s', tweet.tweetid)
+            self.log(tweet)
 
     def use_pipeline(self, collection):
         return True

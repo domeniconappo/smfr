@@ -282,7 +282,7 @@ services:
       bootstrap.memory_lock: 'true'
       discovery.type: 'single-node'
     volumes:
-    - geonames_index:/usr/share/elasticsearch/data:rw
+      - geonames_index:/usr/share/elasticsearch/data:rw
     deploy:
       restart_policy:
         condition: on-failure
@@ -309,7 +309,7 @@ services:
 
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
       KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'true'  # true by default anyway
-      KAFKA_CREATE_TOPICS: '${PERSISTER_KAFKA_TOPIC}:1:1,${ALL_ANNOTATOR_KAFKA_TOPICS},${GEOCODER_KAFKA_TOPIC}:1:1'
+#      KAFKA_CREATE_TOPICS: '${PERSISTER_KAFKA_TOPIC}:1:1,${ALL_ANNOTATOR_KAFKA_TOPICS},${GEOCODER_KAFKA_TOPIC}:1:1'
       KAFKA_MAX_BLOCK_MS: 90000
       KAFKA_REQUEST_TIMEOUT_MS: 300000
       KAFKA_MAX_POLL_RECORDS: 100
@@ -317,20 +317,20 @@ services:
       KAFKA_MESSAGE_MAX_BYTES: 4000048
       KAFKA_HEAP_OPTS: -Xmx8912m -Xms8912m
     ports:
-      - target: 9090
-        published: 9090
-        protocol: tcp
-        mode: host
+#      - target: 9090
+#        published: 9090
+#        protocol: tcp
+#        mode: host
       - target: 9092
         published: 9092
         protocol: tcp
         mode: host
     networks:
-    - back-tier
+      - back-tier
     depends_on:
-    - zookeeper
+      - zookeeper
     volumes:
-    - /var/run/docker.sock:/var/run/docker.sock
+      - /var/run/docker.sock:/var/run/docker.sock
 
     deploy:
       restart_policy:
@@ -382,6 +382,8 @@ services:
       LOGGING_LEVEL: ${LOGGING_LEVEL}
       PYTHONUNBUFFERED: 'true'
       PERSISTER_KAFKA_TOPIC: ${PERSISTER_KAFKA_TOPIC}
+      ANNOTATOR_KAFKA_TOPIC: ${ANNOTATOR_KAFKA_TOPIC}
+      GEOCODER_KAFKA_TOPIC: ${GEOCODER_KAFKA_TOPIC}
       KAFKA_BOOTSTRAP_SERVER: ${KAFKA_BOOTSTRAP_SERVER}
       MYSQL_HOST: mysql
       MYSQL_DBNAME: ${MYSQL_DBNAME}
@@ -394,14 +396,12 @@ services:
       CASSANDRA_KEYSPACE: ${CASSANDRA_KEYSPACE}
       CASSANDRA_USE_CLUSTER: ${CASSANDRA_USE_CLUSTER}
       CASSANDRA_NODES: ${CASSANDRA_NODES}
-      ANNOTATOR_KAFKA_TOPIC: ${ANNOTATOR_KAFKA_TOPIC}
-      GEOCODER_KAFKA_TOPIC: ${GEOCODER_KAFKA_TOPIC}
       ANNOTATOR_PORT: ${ANNOTATOR_PORT}
       GEOCODER_PORT: ${GEOCODER_PORT}
       http_proxy: ${http_proxy}
       https_proxy: ${https_proxy}
     ports:
-    - '5558:5558'
+      - '5558:5558'
     volumes:
       - './persister/src:/persister'
       - './persister/logs:/logs'
@@ -521,8 +521,8 @@ services:
     ports:
       - '5555:5555'
     networks:
-    - front-tier
-    - back-tier
+      - front-tier
+      - back-tier
     volumes:
       - './restserver/src:/restserver'
       - './downloads:/smfr/downloaded'
@@ -588,10 +588,9 @@ services:
     container_name: zookeeper
     hostname: zookeeper
     ports:
-    - '2181:2181'
+      - '2181:2181'
     networks:
-    - back-tier
-
+      - back-tier
     deploy:
       restart_policy:
         condition: on-failure

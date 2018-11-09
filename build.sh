@@ -18,12 +18,12 @@ DOCKER_ID_PASSWORD=$(getProperty "DOCKER_ID_PASSWORD")
 DOCKER_REGISTRY=$(getProperty "DOCKER_REGISTRY")
 SMFR_IMAGE=$(getProperty "SMFR_IMAGE")
 
-if [ -n "${DOCKER_ID_USER}" ] && [ ${DOCKER_REGISTRY} != "index.docker.io" ]; then
+if [[ -n "${DOCKER_ID_USER}" ]] && [[ ${DOCKER_REGISTRY} != "index.docker.io" ]]; then
     echo Pulling from a private registry: ${DOCKER_REGISTRY} - need to login
     docker login -u ${DOCKER_ID_USER} -p ${DOCKER_ID_PASSWORD} ${DOCKER_REGISTRY}
     logged=1
 fi
-if [ ! -d ${SMFR_DATADIR} ]; then
+if [[ ! -d ${SMFR_DATADIR} ]]; then
     mkdir -p ${SMFR_DATADIR}
 fi
 
@@ -38,8 +38,8 @@ echo
 echo
 
 # push base image
-if [ -n "${DOCKER_ID_USER}" ] && [ ${command} == "push" ]; then
-    if  [ ${logged} == 0 ]; then
+if [[ -n "${DOCKER_ID_USER}" ]] && [[ ${command} == "push" ]]; then
+    if  [[ ${logged} == 0 ]]; then
         docker login -u ${DOCKER_ID_USER} -p ${DOCKER_ID_PASSWORD} ${DOCKER_REGISTRY}
     fi
     docker tag ${SMFR_IMAGE}:${image_tag} ${DOCKER_REGISTRY}/${SMFR_IMAGE}:${image_tag}
@@ -53,7 +53,7 @@ cp base/shared_libs/VERSION base/shared_libs/smfr_models/
 cp base/shared_libs/VERSION base/shared_libs/smfr_clients/
 cp base/shared_libs/VERSION base/shared_libs/smfr_utils/
 
-if [ -n "`echo ${SERVICES} | xargs -n1 echo | grep ${command}`" ]; then
+if [[ -n "`echo ${SERVICES} | xargs -n1 echo | grep ${command}`" ]]; then
     echo  ++++++++++++++++++++ Building ${command} service +++++++++++++++++++++++++++++++
     docker-compose build ${command}
 else
@@ -64,7 +64,7 @@ fi
 # push images
 echo
 echo
-if [ -n "${DOCKER_ID_USER}" ] && [ ${command} == "push" ]; then
+if [[ -n "${DOCKER_ID_USER}" ]] && [[ ${command} == "push" ]]; then
     echo !!! Pushing images to ${DOCKER_REGISTRY} as user ${DOCKER_ID_USER}!!!
     echo
 

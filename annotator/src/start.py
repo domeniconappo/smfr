@@ -3,8 +3,9 @@ import logging
 from flask import Flask
 from flask_restful import Resource, Api, marshal_with, fields, marshal_with_field
 
-from annotator import Annotator, DEVELOPMENT
-from helpers import models, models_path, logger
+from annotatorcontainer import AnnotatorContainer, DEVELOPMENT
+# from helpers import models, models_path, logger
+from smfrcore.ml.helpers import models, models_path, logger, available_languages
 
 app = Flask(__name__)
 api = Api(app)
@@ -25,11 +26,11 @@ class AnnotatorApi(Resource):
             return {'error': {'description': 'Unknown operation {}'.format(action)}}, 400
 
         if action == 'start':
-            if Annotator.is_running_for(collection_id):
+            if AnnotatorContainer.is_running_for(collection_id):
                 return {'error': {'description': 'Annotator already running (collection: {})'.format(collection_id)}}, 400
-            Annotator.launch_in_background(collection_id)
+            AnnotatorContainer.launch_in_background(collection_id)
         elif action == 'stop':
-            Annotator.stop(collection_id)
+            AnnotatorContainer.stop(collection_id)
 
         return {'result': 'success', 'action_performed': action}, 201
 
@@ -41,7 +42,7 @@ class RunningAnnotatorsApi(Resource):
 
     @marshal_with_field(fields.List(fields.Raw))
     def get(self):
-        return dict(Annotator.running()), 200
+        return dict(AnnotatorContainer.running()), 200
 
 
 class AnnotatorModels(Resource):
@@ -51,7 +52,7 @@ class AnnotatorModels(Resource):
 
     @marshal_with_field(fields.Raw)
     def get(self):
-        return Annotator.available_models(), 200
+        return AnnotatorContainer.available_models(), 200
 
 
 class AnnotatorCounters(Resource):
@@ -61,7 +62,7 @@ class AnnotatorCounters(Resource):
 
     @marshal_with_field(fields.Raw)
     def get(self):
-        return Annotator.counters(), 200
+        return AnnotatorContainer.counters(), 200
 
 
 if __name__ == 'start':
@@ -81,9 +82,9 @@ if __name__ == 'start':
     log_config()
 
     # start topic consumers for pipeline
-    for language in Annotator.available_languages:
+    for language in available_languages:
         # if running docker compose on a single server/development,
         # we just bootstrap Annotator EN to avoid eating the whole memory
         if (DEVELOPMENT and language == 'en') or not DEVELOPMENT:
             logger.info('----- Starting KAFKA consumer on topic: annotator_%s', language)
-            Annotator.consumer_in_background(language)
+            AnnotatorContainer.consumer_in_background(language)

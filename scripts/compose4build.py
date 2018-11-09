@@ -16,7 +16,6 @@ def replace_image_variable(component_folder, variable):
     dockerfile_out = os.path.join(component_folder, 'Dockerfile')
     with open(dockerfile_in, 'r') as fin, open(dockerfile_out, 'w') as fout:
         read = fin.read()
-        # print('replacing', '${%s}' % variable, 'with', properties[variable])
         wrote = read.replace('${%s}' % variable, properties[variable])
         fout.write(wrote)
 

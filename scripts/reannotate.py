@@ -14,6 +14,8 @@ logger = logging.getLogger('Reannotator')
 logger.setLevel(logging.DEBUG)
 logger.addHandler(DEFAULT_HANDLER)
 
+buffer_to_annotate = []
+previous_annotation = {}
 
 def add_args(parser):
     parser.add_argument('-c', '--collection_id', help='collection id', type=int,
@@ -26,13 +28,13 @@ def add_args(parser):
 
 
 def main():
-    bootstrap_server = os.getenv('KAFKA_BOOTSTRAP_SERVER', '127.0.0.1:9092')
-    annotator_topic = os.getenv('ANNOTATOR_KAFKA_TOPIC', 'annotator')
+    # bootstrap_server = os.getenv('KAFKA_BOOTSTRAP_SERVER', '127.0.0.1:9092')
+    # annotator_topic = os.getenv('ANNOTATOR_KAFKA_TOPIC', 'annotator')
 
     parser = ParserHelpOnError(description='Reannotate tweets for a collection')
-    producer = KafkaProducer(bootstrap_servers=bootstrap_server, compression_type='gzip',
-                             request_timeout_ms=50000, buffer_memory=134217728,
-                             linger_ms=500, batch_size=1048576)
+    # producer = KafkaProducer(bootstrap_servers=bootstrap_server, compression_type='gzip',
+    #                          request_timeout_ms=50000, buffer_memory=134217728,
+    #                          linger_ms=500, batch_size=1048576)
 
     add_args(parser)
     conf = parser.parse_args()
@@ -41,11 +43,14 @@ def main():
         sys.exit('Cannot annotate: model not available %s' % lang)
     tweets = Tweet.get_iterator(conf.collection_id, conf.ttype, conf.lang, out_format='obj')
     model, tokenizer = Annotator.load_annotation_model(conf.lang)
-    buffer_to_annotate = []
+
     for i, t in enumerate(tweets, start=1):
         buffer_to_annotate.append(t)
+        previous_annotation[t.tweetid] = t.annotations['flood_probability'][0]
         if len(buffer_to_annotate) >= 100:
             annotate_tweets(buffer_to_annotate, model, tokenizer)
+            buffer_to_annotate.clear()
+
     if buffer_to_annotate:
         annotate_tweets(buffer_to_annotate, model, tokenizer)
 
@@ -53,4 +58,6 @@ def main():
 def annotate_tweets(buffer_to_annotate, model, tokenizer):
     annotated_tweets = Annotator.annotate(model, buffer_to_annotate, tokenizer)
     for tweet in annotated_tweets:
+        if previous_annotation[tweet.tweetid] != tweet.annotations['flood_probability'][0]:
+            logger.warning('%s -> old: %s new: %s', tweet.tweetid, previous_annotation[tweet.tweetid], tweet.annotations['flood_probability'][0])
         tweet.save()

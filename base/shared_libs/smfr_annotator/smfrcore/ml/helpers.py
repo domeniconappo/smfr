@@ -43,3 +43,4 @@ def update_models():
 
 
 models = update_models()
+available_languages = list(models.keys())
