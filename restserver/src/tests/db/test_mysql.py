@@ -1,6 +1,6 @@
 from tests.db import DBTest
 
-from smfrcore.models import TwitterCollection
+from smfrcore.models.sql import TwitterCollection
 
 
 class TwitterCollectionTest(DBTest):

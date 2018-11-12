@@ -2,18 +2,17 @@ from collections import namedtuple
 import os
 import logging
 from logging.handlers import RotatingFileHandler
-import sys
-# import threading
 import time
 import multiprocessing
+from multiprocessing.managers import BaseManager, DictProxy
+from collections import defaultdict
 
 from cassandra import InvalidRequest
 from cassandra.cqlengine import ValidationError, CQLEngineException
-from kafka import KafkaConsumer, KafkaProducer, SimpleConsumer, TopicPartition
-from kafka.errors import CommitFailedError, NoBrokersAvailable, ConsumerTimeout
+from kafka.errors import CommitFailedError, ConsumerTimeout
 
-from smfrcore.models import Tweet, TwitterCollection, create_app
-from smfrcore.utils import IN_DOCKER, NULL_HANDLER, DEFAULT_HANDLER
+from smfrcore.models.sql import TwitterCollection, create_app
+from smfrcore.utils import IN_DOCKER, NULL_HANDLER, DEFAULT_HANDLER, make_kafka_consumer, make_kafka_producer
 from smfrcore.client.api_client import AnnotatorClient
 
 logging.getLogger('kafka').setLevel(logging.WARNING)
@@ -40,6 +39,14 @@ if IN_DOCKER:
     file_logger.addHandler(hdlr)
 
 
+class DefaultDictSyncManager(BaseManager):
+    pass
+
+
+# multiprocessing.Manager does not include defaultdict: we need to use a customized Manager
+DefaultDictSyncManager.register('defaultdict', defaultdict, DictProxy)
+
+
 class Persister:
     """
         Persister component to save Tweet messages in Cassandra.
@@ -47,59 +54,28 @@ class Persister:
         """
     auto_offset_reset = 'earliest'
     group_id = 'PERSISTER'
-    PersisterConfiguration = namedtuple('PersisterConfiguration', ['persister_kafka_topic', 'kafka_bootstrap_server',
+    PersisterConfiguration = namedtuple('PersisterConfiguration', ['persister_kafka_topic', 'kafka_bootstrap_servers',
                                                                    'annotator_kafka_topic', 'geocoder_kafka_topic'])
     config = PersisterConfiguration(
         persister_kafka_topic=os.getenv('PERSISTER_KAFKA_TOPIC', 'persister'),
-        kafka_bootstrap_server=os.getenv('KAFKA_BOOTSTRAP_SERVER', 'kafka:9092') if IN_DOCKER else '127.0.0.1:9092',
+        kafka_bootstrap_servers=os.getenv('KAFKA_BOOTSTRAP_SERVERS', 'kafka:9090,kafka:9092') if IN_DOCKER else '127.0.0.1:9090,127.0.0.1:9092',
         annotator_kafka_topic=os.getenv('ANNOTATOR_KAFKA_TOPIC', 'annotator'),
         geocoder_kafka_topic=os.getenv('GEOCODER_KAFKA_TOPIC', 'geocoder'),
     )
     _lock = multiprocessing.RLock()
     app = create_app()
-    _manager = multiprocessing.Manager()
-    shared_counter = _manager.dict({Tweet.ANNOTATED_TYPE: 0, Tweet.COLLECTED_TYPE: 0, Tweet.GEOTAGGED_TYPE: 0})
+    _manager = DefaultDictSyncManager()
+    _manager.start()
+    shared_counter = _manager.defaultdict(int)
 
     def __init__(self):
         self.topic = self.config.persister_kafka_topic
-        self.bootstrap_server = self.config.kafka_bootstrap_server
+        self.bootstrap_servers = self.config.kafka_bootstrap_servers.split(',')
         self.language_models = AnnotatorClient.available_languages()
         self.background_process = None
-        self.active = False
+        self.active = True
         with self.app.app_context():
             self.collections = TwitterCollection.get_running()
-
-        # self.make_kafka_connections()
-
-    def make_kafka_connections(self):
-        retries = 5
-        while retries >= 0:
-            try:
-                consumer = KafkaConsumer(
-                    group_id=self.group_id,
-                    auto_offset_reset=self.auto_offset_reset,
-                    check_crcs=False,
-                    bootstrap_servers=self.bootstrap_server,
-                    consumer_timeout_ms=3000,
-                    max_poll_records=100, max_poll_interval_ms=600000,
-                    request_timeout_ms=300000,
-                    session_timeout_ms=10000, heartbeat_interval_ms=3000
-                )
-                partitions = [TopicPartition(self.topic, 0)]
-                consumer.assign(partitions)
-                # consumer = SimpleConsumer(self.topic, auto_offset_reset=self.auto_offset_reset)
-
-                producer = KafkaProducer(bootstrap_servers=self.bootstrap_server, compression_type='gzip',
-                                         request_timeout_ms=50000, buffer_memory=134217728,
-                                         linger_ms=500, batch_size=1048576)
-            except NoBrokersAvailable:
-                logger.warning('Waiting for Kafka to boot...')
-                time.sleep(5)
-                retries -= 1
-                if retries < 0:
-                    sys.exit(1)
-            else:
-                return producer, consumer
 
     def set_collections(self, collections):
         with self._lock:
@@ -113,8 +89,9 @@ class Persister:
         return None
 
     def start_in_background(self):
-        p = multiprocessing.Process(target=self.start, name='Persister Consumer')
+        p = multiprocessing.Process(target=self.start, name='PersisterProcess')
         self.background_process = p
+        p.daemon = True
         p.start()
         return p
 
@@ -122,16 +99,14 @@ class Persister:
         """
         Main method that iterate over messages coming from Kafka queue, build a Tweet object and save it in Cassandra
         """
-
+        from smfrcore.models.cassandra import Tweet
         logger.info('Starting %s...Reset counters and making kafka connections', str(self))
-        producer, consumer = self.make_kafka_connections()
+        producer = make_kafka_producer()
+        consumer = make_kafka_consumer(topic=self.topic)
         while self.active:
             try:
                 logger.info('===> Entering in consumer loop...')
                 for i, msg in enumerate(consumer, start=1):
-
-                    if logger.isEnabledFor(logging.DEBUG):
-                        logger.debug('Fetched %d', i)
                     tweet = None
                     try:
                         msg = msg.value.decode('utf-8')
@@ -139,24 +114,20 @@ class Persister:
                         if tweet.collectionid == Tweet.NO_COLLECTION_ID:
                             # reconcile with running collections
                             start = time.time()
-                            logger.debug('Start Reconcile')
                             collection = self.reconcile_tweet_with_collection(tweet)
-                            logger.debug('End Reconcile in %s', time.time() - start)
                             if not collection:
-                                # we log it to use to improve reconciliation in the future
-                                file_logger.error('%s', msg)
                                 if logger.isEnabledFor(logging.DEBUG):
                                     logger.debug('No collection for tweet %s', tweet.tweetid)
-                                continue
+                                # we log it to file as data for improving reconciliation in the future
+                                logger.debug('Saving to file unreconciled tweet %s', tweet.tweetid)
+                                file_logger.error('%s', msg)
+                                continue  # continue the consumer for loop
                             tweet.collectionid = collection.id
-
                         tweet.save()
-
                         if logger.isEnabledFor(logging.DEBUG):
                             logger.debug('Saved tweet: %s - collection %d', tweet.tweetid, tweet.collectionid)
                         if logger.isEnabledFor(logging.INFO) and not (i % 5000):
-                            logger.info('Scanned/Saved since last restart \nTOTAL: %d \n%s', i,
-                                        str(self.shared_counter))
+                            logger.info('Scanned/Saved since last restart \nTOTAL: %d \n%s', i, str(self.shared_counter))
 
                         with self._lock:
                             self.shared_counter[tweet.ttype] += 1
@@ -167,14 +138,16 @@ class Persister:
                     except (ValidationError, ValueError, TypeError, InvalidRequest) as e:
                         logger.error(e)
                         logger.error('Poison message for Cassandra: %s', tweet or msg)
+                        continue
                     except CQLEngineException as e:
                         logger.error(e)
+                        continue
                     except Exception as e:
                         logger.error(type(e))
                         logger.error(e)
-                        logger.error(msg)
+                        continue
             except ConsumerTimeout:
-                logger.error('Consumer Timeout...')
+                logger.warning('Consumer Timeout...sleep 5 seconds')
                 time.sleep(5)
             except CommitFailedError:
                 self.active = False
@@ -184,7 +157,7 @@ class Persister:
                 # as the consumer can be disconnected in another thread (see signal handling in start.py)
                 if consumer._closed:
                     logger.info('Persister was disconnected during I/O operations. Exited.')
-                self.active = False
+                    self.active = False
             except KeyboardInterrupt:
                 self.stop()
                 self.active = False
@@ -193,6 +166,7 @@ class Persister:
         if not tweet.use_pipeline:
             return
         topic = None
+        from smfrcore.models.cassandra import Tweet
         if tweet.ttype == Tweet.COLLECTED_TYPE and tweet.lang in self.language_models:
             # tweet will go to the next in pipeline: annotator queue
             topic = '{}-{}'.format(self.config.annotator_kafka_topic, tweet.lang)
@@ -213,11 +187,11 @@ class Persister:
         if self.background_process:
             self.background_process.terminate()
         with self._lock:
-            self.active = True
+            self.active = False
         logger.info('Persister connection closed!')
 
     def __str__(self):
-        return 'Persister ({}): {}@{}:{}'.format(id(self), self.topic, self.bootstrap_server, self.group_id)
+        return 'Persister ({}): {}@{}:{}'.format(id(self), self.topic, self.bootstrap_servers, self.group_id)
 
     def counters(self):
         with self._lock:

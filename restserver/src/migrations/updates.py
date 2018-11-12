@@ -2,7 +2,7 @@ import os
 import tarfile
 
 import ujson
-from smfrcore.models import Nuts2, Nuts3, create_app
+from smfrcore.models.sql import Nuts2, Nuts3, create_app
 
 
 def update_nutstables_8163c029df4e():

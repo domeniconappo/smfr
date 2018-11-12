@@ -4,7 +4,7 @@ import logging
 import os
 
 from smfrcore.client.ftp import FTPEfas
-from smfrcore.models import TwitterCollection, Nuts3, Nuts2
+from smfrcore.models.sql import TwitterCollection, Nuts3, Nuts2
 
 
 logger = logging.getLogger('RestServer API')

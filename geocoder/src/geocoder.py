@@ -19,7 +19,8 @@ from kafka.errors import NoBrokersAvailable, CommitFailedError, KafkaTimeoutErro
 from mordecai import Geoparser
 from shapely.geometry import Point, Polygon
 
-from smfrcore.models import Tweet, Nuts2, create_app
+from smfrcore.models.cassandra import Tweet
+from smfrcore.models.sql import Nuts2, create_app
 from smfrcore.utils import IN_DOCKER
 
 
@@ -105,7 +106,7 @@ class Geocoder:
     _lock = threading.RLock()
     logger = logging.getLogger(__name__)
     geonames_host = 'geonames' if IN_DOCKER else '127.0.0.1'
-    kafka_bootstrap_server = os.getenv('KAFKA_BOOTSTRAP_SERVER', 'kafka:9092') if IN_DOCKER else '127.0.0.1:9092'
+    kafka_bootstrap_servers = os.getenv('KAFKA_BOOTSTRAP_SERVERS', 'kafka:9090,kafka:9092') if IN_DOCKER else '127.0.0.1:9090,127.0.0.1:9092'
 
     flask_app = create_app()
 
@@ -117,7 +118,7 @@ class Geocoder:
 
     while retries >= 0:
         try:
-            producer = KafkaProducer(bootstrap_servers=kafka_bootstrap_server, retries=5,
+            producer = KafkaProducer(bootstrap_servers=kafka_bootstrap_servers.split(','), retries=5,
                                      compression_type='gzip', buffer_memory=134217728,
                                      linger_ms=500, batch_size=1048576)
             logger.info('[OK] KAFKA Producer')
@@ -126,7 +127,7 @@ class Geocoder:
                                      check_crcs=False,
                                      max_poll_records=100, max_poll_interval_ms=600000,
                                      auto_offset_reset='earliest',
-                                     bootstrap_servers=kafka_bootstrap_server,
+                                     bootstrap_servers=kafka_bootstrap_servers.split(','),
                                      session_timeout_ms=40000, heartbeat_interval_ms=15000)
         except NoBrokersAvailable:
             logger.warning('Waiting for Kafka to boot...retry')

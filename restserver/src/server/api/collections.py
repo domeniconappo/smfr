@@ -9,7 +9,8 @@ import ujson as json
 from flask import abort
 from flask_jwt_extended import jwt_required, get_jwt_identity
 
-from smfrcore.models import TwitterCollection, User, Aggregation, Tweet, TweetTuple
+from smfrcore.models.sql import TwitterCollection, User, Aggregation
+from smfrcore.models.cassandra import Tweet, TweetTuple
 from smfrcore.client.marshmallow import Collection as CollectionSchema, Aggregation as AggregationSchema
 from smfrcore.utils import DEFAULT_HANDLER
 from sqlalchemy.exc import OperationalError

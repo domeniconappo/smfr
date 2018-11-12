@@ -5,7 +5,7 @@ from keras.models import load_model
 from keras_preprocessing.sequence import pad_sequences
 
 from smfrcore.text_utils import create_text_for_cnn
-from smfrcore.models import Tweet
+from smfrcore.models.cassandra import Tweet
 
 from .helpers import models_path, models, logger
 

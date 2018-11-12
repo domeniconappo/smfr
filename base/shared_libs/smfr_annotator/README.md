@@ -11,6 +11,6 @@ as a standard python package in containers that needs SMFR core models and tools
 Example of usage:
 
 ```python
-from smfrcore.models import TwitterCollection
+from smfrcore.models.sql import TwitterCollection
 tweets = Tweet.get_iterator(collection_id=0, ttype='collected')
 ```

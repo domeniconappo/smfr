@@ -452,7 +452,7 @@ class TwitterCollection(SMFRModel):
 
     def is_tweet_in_bounding_box(self, tweet):
 
-        from smfrcore.models import Tweet
+        from smfrcore.models.cassandra import Tweet
         if not self.locations or not self.locations.get('min_lat'):
             return False
         res = False
@@ -495,7 +495,7 @@ class TwitterCollection(SMFRModel):
         :return: matched keyword
         :rtype: str
         """
-        from smfrcore.models import Tweet
+        from smfrcore.models.cassandra import Tweet
 
         original_tweet_dict = tweet.original_tweet_as_dict
         text_to_match = Tweet.get_contributing_match_keywords_fields(original_tweet_dict).strip()

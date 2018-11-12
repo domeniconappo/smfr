@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 import logging
 
-from smfrcore.models import TwitterCollection
+from smfrcore.models.sql import TwitterCollection
 from smfrcore.utils import DEFAULT_HANDLER
 
 from daemons.streamers import BackgroundStreamer, OnDemandStreamer, ManualStreamer
@@ -20,12 +20,8 @@ class BaseCollector(ABC):
     StreamerClass = None
 
     def __init__(self):
-        self.server_conf = RestServerConfiguration()
         api_keys = self.twitter_keys()
-        self.streamer = self.StreamerClass(
-            producer=self.server_conf.kafka_producer,
-            **api_keys
-        )
+        self.streamer = self.StreamerClass(**api_keys)
         super().__init__()
 
     def __str__(self):
@@ -36,7 +32,8 @@ class BaseCollector(ABC):
         pass
 
     def stop(self, deactivate=True):
-        self.streamer.disconnect(deactivate)
+        with self.streamer.lock:
+            self.streamer.disconnect(deactivate)
 
     def restart(self):
         self.stop(deactivate=False)
@@ -57,12 +54,14 @@ class BackgroundCollector(BaseCollector):
     StreamerClass = BackgroundStreamer
 
     def start(self):
-        if self.streamer.connected:
-            logger.info('Trying to start an already connected streamer %s', self.streamer)
-            return
+        with self.streamer.lock:
+            if self.streamer.connected:
+                logger.info('Trying to start an already connected streamer %s', self.streamer)
+                return
         collection = TwitterCollection.get_active_background()
         if not collection:
             return
+        # Launch streamer based on track/location params from collection
         self.streamer.run_collections([collection])
 
 
@@ -72,12 +71,14 @@ class OnDemandCollector(BaseCollector):
     StreamerClass = OnDemandStreamer
 
     def start(self):
-        if self.streamer.connected:
-            logger.info('Trying to start an already connected streamer %s', self.streamer)
-            return
+        with self.streamer.lock:
+            if self.streamer.connected:
+                logger.info('Trying to start an already connected streamer %s', self.streamer)
+                return
         collections = TwitterCollection.get_active_ondemand()
         if not collections:
             return
+        # Launch streamer based on track/location params from collection
         self.streamer.run_collections(collections)
 
 
@@ -86,9 +87,10 @@ class ManualCollector(OnDemandCollector):
     StreamerClass = ManualStreamer
 
     def start(self):
-        if self.streamer.connected:
-            logger.info('Trying to start an already connected streamer %s', self.streamer)
-            return
+        with self.streamer.lock:
+            if self.streamer.connected:
+                logger.info('Trying to start an already connected streamer %s', self.streamer)
+                return
         collections = TwitterCollection.get_active_manual()
         if not collections:
             return

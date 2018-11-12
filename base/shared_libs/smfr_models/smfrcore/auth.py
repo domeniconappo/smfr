@@ -1,6 +1,6 @@
 from werkzeug.security import safe_str_cmp
 
-from smfrcore.models import User
+from smfrcore.models.sql import User
 
 
 def authenticate(email, password):

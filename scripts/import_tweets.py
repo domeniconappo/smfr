@@ -11,7 +11,7 @@ import argparse
 import sys
 import ujson
 
-from smfrcore.models import Tweet
+from smfrcore.models.cassandra import Tweet
 
 from scripts.utils import ParserHelpOnError
 

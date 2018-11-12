@@ -1,26 +1,28 @@
 import datetime
 import http
 import logging
-from collections import deque
 from http.client import IncompleteRead
 import os
+import sys
 import socket
-# import threading
 import multiprocessing
 import time
 import urllib3
 
 import requests
+from kafka import KafkaProducer
+from kafka.errors import NoBrokersAvailable
 from twython import TwythonStreamer
 
-from smfrcore.models import Tweet, create_app
+from smfrcore.models.cassandra import Tweet
+from smfrcore.models.sql import create_app
 from smfrcore.utils import DEFAULT_HANDLER
 
 from daemons.utils import safe_langdetect, tweet_normalization_aggressive
 from server.config import RestServerConfiguration, DEVELOPMENT
 
 
-logger = logging.getLogger('RestServer Streamer')
+logger = logging.getLogger('Streamer')
 logger.setLevel(RestServerConfiguration.logger_level)
 logger.addHandler(DEFAULT_HANDLER)
 logger.propagate = False
@@ -33,19 +35,17 @@ class BaseStreamer(TwythonStreamer):
     mp_manager = multiprocessing.Manager()
     max_errors_len = 50
 
-    def __init__(self, producer, **api_keys):
-        self._lock = multiprocessing.RLock()
+    def __init__(self, **api_keys):
+        self.lock = multiprocessing.RLock()
         self.query = {}
         self.consumer_key = api_keys['consumer_key']
         self.consumer_secret = api_keys['consumer_secret']
         self.access_token = api_keys['access_token']
         self.access_token_secret = api_keys['access_token_secret']
         self.persister_kafka_topic = RestServerConfiguration.persister_kafka_topic
-        # self._errors = deque(maxlen=50)
         self._shared_errors = multiprocessing.Queue(maxsize=self.max_errors_len)
 
-        # A Kafka Producer to send tweets to store to PERSISTER queue
-        self.producer = producer
+        self.producer = None
 
         self.collections = []
         self.collection = None
@@ -113,16 +113,36 @@ class BaseStreamer(TwythonStreamer):
 
     def run_collections(self, collections):
         t = multiprocessing.Process(target=self.connect, name=str(self), args=(collections,))
+        t.daemon = True
         t.start()
 
-    # @property
-    # def is_connected(self):
-    #     with self._lock:
-    #         return self.connected
+    def make_kafka_connections(self):
+        retries = 5
+        while retries >= 0:
+            try:
+
+                producer = KafkaProducer(bootstrap_servers=RestServerConfiguration.kafka_bootstrap_servers,
+                                         compression_type='gzip',
+                                         request_timeout_ms=50000,
+                                         buffer_memory=134217728,
+                                         linger_ms=500,
+                                         batch_size=1048576)
+            except NoBrokersAvailable:
+                logger.warning('Waiting for Kafka to boot...')
+                time.sleep(5)
+                retries -= 1
+                if retries < 0:
+                    sys.exit(1)
+            else:
+                return producer
 
     def connect(self, collections):
-        if self.connected:
-            self.disconnect(deactivate_collections=False)
+
+        # A Kafka Producer to send tweets to store to PERSISTER queue. Must be instantiated in same process
+        self.producer = self.make_kafka_connections()
+        with self.lock:
+            if self.connected:
+                self.disconnect(deactivate_collections=False)
 
         self.collections = collections
         self.query = self._build_query_for()
@@ -154,8 +174,9 @@ class BaseStreamer(TwythonStreamer):
         self.producer.flush()
         # with self._lock:
         logger.info('Disconnecting twitter streamer')
-        super().disconnect()
-        self.connected = False
+        with self.lock:
+            super().disconnect()
+            self.connected = False
         if deactivate_collections:
             logger.warning('Deactivating all collections!')
             app = create_app()
@@ -165,12 +186,12 @@ class BaseStreamer(TwythonStreamer):
 
     @property
     def errors(self):
-        with self._lock:
-            return [e for e in iter(self._shared_errors.get_nowait, None)]
+        with self.lock:
+            return [e for e in iter(self._shared_errors.get_nowait, None)] if not self._shared_errors.empty() else []
 
     def track_error(self, http_error_code, message):
         message = message.decode('utf-8') if isinstance(message, bytes) else str(message)
-        with self._lock:
+        with self.lock:
             if self._shared_errors.full():
                 self._shared_errors = multiprocessing.Queue()
             self._shared_errors.put('{code}: {date} - {error}'.format(
@@ -197,11 +218,9 @@ class BackgroundStreamer(BaseStreamer):
             if lang == 'en' or lang in self.collection.languages:
                 data['lang'] = lang
                 tweet = Tweet.from_tweet(self.collection.id, data, ttype=Tweet.COLLECTED_TYPE)
-                # the tweet is sent immediately to kafka queue
                 message = tweet.serialize()
                 self.producer.send(self.persister_kafka_topic, message)
                 self.log(tweet)
-
         else:
             logger.error('No Data: %s', str(data))
 

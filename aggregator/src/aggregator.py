@@ -11,7 +11,7 @@ from sqlalchemy import or_
 
 from smfrcore.utils import LOGGER_FORMAT, LOGGER_DATE_FORMAT, logged_job, job_exceptions_catcher, FALSE_VALUES
 
-from smfrcore.models import TwitterCollection, Aggregation, create_app
+from smfrcore.models.sql import TwitterCollection, Aggregation, create_app
 
 log_level = os.getenv('LOGGING_LEVEL', 'DEBUG')
 logging.basicConfig(level=log_level, format=LOGGER_FORMAT, datefmt=LOGGER_DATE_FORMAT)
@@ -172,7 +172,7 @@ def run_single_aggregation(collection_id,
     :param initial_values:
     :return:
     """
-    from smfrcore.models import Tweet
+    from smfrcore.models.cassandra import Tweet
 
     if collection_id in running_aggregators:
         logger.warning('!!!!!! Previous aggregation for collection id %d is not finished yet !!!!!!' % collection_id)

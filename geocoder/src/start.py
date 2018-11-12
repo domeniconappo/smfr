@@ -4,7 +4,7 @@ import logging
 
 from flask_restful import Resource, Api, fields, marshal_with, marshal_with_field
 
-from smfrcore.models import create_app
+from smfrcore.models.sql import create_app
 from smfrcore.utils import DEFAULT_HANDLER
 
 from geocoder import Geocoder

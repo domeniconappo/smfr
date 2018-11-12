@@ -92,7 +92,7 @@ class RestServerConfiguration(metaclass=Singleton):
     Constructor accepts a connexion app object.
     """
     geonames_host = '127.0.0.1' if not IN_DOCKER else 'geonames'
-    kafka_bootstrap_server = '127.0.0.1:9092' if not IN_DOCKER else os.getenv('KAFKA_BOOTSTRAP_SERVER', 'kafka:9092')
+    kafka_bootstrap_servers = ['127.0.0.1:9090', '127.0.0.1:9092'] if not IN_DOCKER else os.getenv('KAFKA_BOOTSTRAP_SERVERS', 'kafka:9090,kafka:9092').split(',')
     mysql_host = '127.0.0.1' if not IN_DOCKER else os.getenv('MYSQL_HOST', 'mysql')
     __mysql_user = os.getenv('MYSQL_USER', 'root')
     __mysql_pass = os.getenv('MYSQL_PASSWORD', 'example')
@@ -118,12 +118,52 @@ class RestServerConfiguration(metaclass=Singleton):
     logger.setLevel(logger_level)
     logger.addHandler(DEFAULT_HANDLER)
 
-    if SERVER_BOOTSTRAP:
-        # Flask apps are setup when issuing CLI commands as well.
-        # This code is executed in case of launching REST Server
-        producer = KafkaProducer(bootstrap_servers=kafka_bootstrap_server, linger_ms=500, batch_size=1048576,
-                                 retries=5, compression_type='gzip',
-                                 buffer_memory=134217728)
+    def __init__(self, connexion_app=None):
+
+        if not connexion_app:
+            if RestServerConfiguration not in self.__class__.instances:
+                from start import app
+            # noinspection PyMethodFirstArgAssignment
+            self = self.__class__.instances[RestServerConfiguration]
+        else:
+            self.flask_app = self.set_flaskapp(connexion_app)
+            self.flask_app.config['JWT_SECRET_KEY'] = os.getenv('SECRET_KEY', 'super-secret')
+            self.jwt = JWTManager(self.flask_app)
+            self.flask_app.app_context().push()
+            self.producer = None
+            up = False
+            retries = 1
+            self.collectors = {}
+
+            while not up and retries <= 5:
+                try:
+                    from smfrcore.models.sql import sqldb
+                    from smfrcore.models.cassandra import cqldb
+                    sqldb.init_app(self.flask_app)
+                    cqldb.init_app(self.flask_app)
+                    self.db_mysql = sqldb
+                    self.db_cassandra = cqldb
+                    self.migrate = Migrate(self.flask_app, self.db_mysql)
+                    if SERVER_BOOTSTRAP and not self.producer:
+                        # Flask apps are setup when issuing CLI commands as well.
+                        # This code is executed in case of launching REST Server
+                        self.producer = KafkaProducer(
+                            bootstrap_servers=self.kafka_bootstrap_servers, linger_ms=500,
+                            batch_size=1048576, retries=5, compression_type='gzip',
+                            buffer_memory=134217728
+                        )
+                except (NoHostAvailable, OperationalError, NoBrokersAvailable, socket.gaierror):
+                    self.logger.error('Missing link with a db server.')
+                    self.logger.warning('C*/Mysql/Kafka/ES were not up. Wait 5 seconds before retrying')
+                    sleep(5)
+                    retries += 1
+                else:
+                    up = True
+                finally:
+                    if not up and retries >= 5:
+                        self.logger.error('Too many retries. Cannot boot as DB servers are not reachable! Exiting...')
+                        sys.exit(1)
+            self.log_configuration()
 
     @classmethod
     def default_keywords(cls):
@@ -152,7 +192,7 @@ class RestServerConfiguration(metaclass=Singleton):
         retries = 1
         while not up and retries <= 5:
             try:
-                from smfrcore.models import sqldb
+                from smfrcore.models.sql import sqldb
                 sqldb.init_app(app)
                 cls.db_mysql = sqldb
                 cls.migrate = Migrate(app, cls.db_mysql)
@@ -167,50 +207,6 @@ class RestServerConfiguration(metaclass=Singleton):
                 if not up and retries >= 5:
                     cls.logger.error('Missing link with MySQL. Exiting...')
                     sys.exit(1)
-
-    def __init__(self, connexion_app=None):
-
-        if not connexion_app:
-            if RestServerConfiguration not in self.__class__.instances:
-                from start import app
-            # noinspection PyMethodFirstArgAssignment
-            self = self.__class__.instances[RestServerConfiguration]
-        else:
-            self.flask_app = self.set_flaskapp(connexion_app)
-            self.flask_app.config['JWT_SECRET_KEY'] = os.getenv('SECRET_KEY', 'super-secret')
-            self.jwt = JWTManager(self.flask_app)
-            self.flask_app.app_context().push()
-            self.producer = None
-            up = False
-            retries = 1
-            self.collectors = {}
-
-            while not up and retries <= 5:
-                try:
-                    from smfrcore.models import sqldb, cqldb
-                    sqldb.init_app(self.flask_app)
-                    cqldb.init_app(self.flask_app)
-                    self.db_mysql = sqldb
-                    self.db_cassandra = cqldb
-                    self.migrate = Migrate(self.flask_app, self.db_mysql)
-                    if SERVER_BOOTSTRAP and not self.producer:
-                        # Flask apps are setup when issuing CLI commands as well.
-                        # This code is executed in case of launching REST Server
-                        self.producer = KafkaProducer(bootstrap_servers=self.kafka_bootstrap_server, linger_ms=500,
-                                                      batch_size=1048576, retries=5, compression_type='gzip',
-                                                      buffer_memory=134217728)
-                except (NoHostAvailable, OperationalError, NoBrokersAvailable, socket.gaierror):
-                    self.logger.error('Missing link with a db server.')
-                    self.logger.warning('C*/Mysql/Kafka/ES were not up. Wait 5 seconds before retrying')
-                    sleep(5)
-                    retries += 1
-                else:
-                    up = True
-                finally:
-                    if not up and retries >= 5:
-                        self.logger.error('Too many retries. Cannot boot as DB servers are not reachable! Exiting...')
-                        sys.exit(1)
-            self.log_configuration()
 
     def set_flaskapp(self, connexion_app):
         app = connexion_app.app
@@ -249,7 +245,7 @@ class RestServerConfiguration(metaclass=Singleton):
         )
 
         # do not remove the import below
-        from smfrcore.models import Tweet
+        from smfrcore.models.cassandra import Tweet
         self.db_cassandra.sync_db()
 
     def init_mysql(self):
@@ -271,8 +267,8 @@ class RestServerConfiguration(metaclass=Singleton):
         self.logger.info('SMFR Rest Server and Collector manager')
         self.logger.info('======= START LOGGING Configuration =======')
         self.logger.info('+++ Kafka')
-        self.logger.info(' - Topic: {}'.format(self.persister_kafka_topic))
-        self.logger.info(' - Bootstrap server: {}'.format(self.kafka_bootstrap_server))
+        self.logger.info(' - Persister Topic: {}'.format(self.persister_kafka_topic))
+        self.logger.info(' - Bootstrap servers: {}'.format(self.kafka_bootstrap_servers))
         self.logger.info('+++ Cassandra')
         self.logger.info(' - Host: {}'.format(self.flask_app.config['CASSANDRA_HOSTS']))
         self.logger.info(' - Keyspace: {}'.format(self.flask_app.config['CASSANDRA_KEYSPACE']))

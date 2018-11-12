@@ -2,7 +2,7 @@ import signal
 
 import schedule
 from flask_restful import Resource, fields, marshal_with_field, Api
-from smfrcore.models import TwitterCollection
+from smfrcore.models.sql import TwitterCollection
 from smfrcore.utils import logged_job
 
 from persister import Persister, logger
@@ -47,4 +47,3 @@ if __name__ in ('__main__', 'start'):
 
     api.add_resource(PersisterCounters, '/counters')
     schedule.every(30).minutes.do(get_active_collections_for_persister, (persister,)).tag('update-running-collections')
-    logger.info('----- Starting KAFKA consumer on topic: persister')

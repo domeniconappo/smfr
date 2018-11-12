@@ -1,6 +1,6 @@
 import ujson as json
 
-from smfrcore.models import User
+from smfrcore.models.sql import User
 
 from tests.api import ApiTest
 

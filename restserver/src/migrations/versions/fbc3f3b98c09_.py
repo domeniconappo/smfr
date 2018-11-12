@@ -15,7 +15,7 @@ from alembic import op
 import sqlalchemy as sa
 from sqlalchemy.dialects.mysql import LONGTEXT
 
-from smfrcore.models import Nuts2, Nuts3, TwitterCollection, User
+from smfrcore.models.sql import Nuts2, Nuts3, TwitterCollection, User
 
 # revision identifiers, used by Alembic.
 revision = 'fbc3f3b98c09'

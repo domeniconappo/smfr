@@ -5,7 +5,8 @@
 # import json
 import sys
 
-from smfrcore.models import TwitterCollection, create_app, Tweet
+from smfrcore.models.sql import TwitterCollection, create_app
+from smfrcore.models.cassandra import Tweet
 
 from tests.tweets_data import data as tweets
 

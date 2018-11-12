@@ -4,7 +4,7 @@ import os
 
 import schedule
 
-from smfrcore.models import TwitterCollection, create_app
+from smfrcore.models.sql import TwitterCollection, create_app
 from smfrcore.utils import logged_job, job_exceptions_catcher, run_continuously, DEFAULT_HANDLER
 
 from server.helpers import fetch_rra_helper, events_to_collections_payload
@@ -52,6 +52,7 @@ def schedule_rra_jobs():
         rra_fetch_scheduling = os.getenv('RRA_FETCH_SCHEDULING', '00:00,12:00').split(',')
         check_ondemand_runtime_scheduling = os.getenv('CHECK_ONDEMAND_RUNTIME_SCHEDULING', '00:00,12:00').split(',')
     else:
+
         hours = [datetime.time(i).strftime('%H') for i in range(24)]
         minutes = [str(i) if i > 9 else '0%s' % i for i in range(0, 60, 7)]
         alt_minutes = [str(i) if i > 9 else '0%s' % i for i in range(3, 60, 9)]
