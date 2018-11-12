@@ -1,7 +1,6 @@
 import logging
 import os
 import socket
-import sys
 import tarfile
 
 import ujson
@@ -9,19 +8,19 @@ import ujson
 # TODO replace by launching a subprocess
 # (note: it probably does not work out of the box in docker containers inside a VM...need to reconsider it)
 import threading
+import multiprocessing
 
 import time
 
 from cassandra import InvalidRequest
 from cassandra.cqlengine import ValidationError, CQLEngineException
-from kafka import KafkaProducer, KafkaConsumer
-from kafka.errors import NoBrokersAvailable, CommitFailedError, KafkaTimeoutError
+from kafka.errors import CommitFailedError, KafkaTimeoutError
 from mordecai import Geoparser
 from shapely.geometry import Point, Polygon
 
 from smfrcore.models.cassandra import Tweet
 from smfrcore.models.sql import Nuts2, create_app
-from smfrcore.utils import IN_DOCKER
+from smfrcore.utils import IN_DOCKER, make_kafka_consumer, make_kafka_producer
 
 
 logger = logging.getLogger('GEOCODER')
@@ -103,40 +102,14 @@ class Geocoder:
 
     _running = []
     stop_signals = []
-    _lock = threading.RLock()
+    _lock = multiprocessing.RLock()
     logger = logging.getLogger(__name__)
     geonames_host = 'geonames' if IN_DOCKER else '127.0.0.1'
-    kafka_bootstrap_servers = os.getenv('KAFKA_BOOTSTRAP_SERVERS', 'kafka:9090,kafka:9092') if IN_DOCKER else '127.0.0.1:9090,127.0.0.1:9092'
 
     flask_app = create_app()
 
-    # FIXME duplicated code (same as Annotator)
-    # TODO Need a class in shared_lib where to put common code for microservices like this
-    retries = 5
     persister_kafka_topic = os.getenv('PERSISTER_KAFKA_TOPIC', 'persister')
     geocoder_kafka_topic = os.getenv('GEOCODER_KAFKA_TOPIC', 'geocoder')
-
-    while retries >= 0:
-        try:
-            producer = KafkaProducer(bootstrap_servers=kafka_bootstrap_servers.split(','), retries=5,
-                                     compression_type='gzip', buffer_memory=134217728,
-                                     linger_ms=500, batch_size=1048576)
-            logger.info('[OK] KAFKA Producer')
-            consumer = KafkaConsumer(geocoder_kafka_topic,
-                                     group_id='GEOCODER',
-                                     check_crcs=False,
-                                     max_poll_records=100, max_poll_interval_ms=600000,
-                                     auto_offset_reset='earliest',
-                                     bootstrap_servers=kafka_bootstrap_servers.split(','),
-                                     session_timeout_ms=40000, heartbeat_interval_ms=15000)
-        except NoBrokersAvailable:
-            logger.warning('Waiting for Kafka to boot...retry')
-            time.sleep(5)
-            retries -= 1
-            if retries < 0:
-                sys.exit(1)
-        else:
-            break
 
     @classmethod
     def is_running_for(cls, collection_id):
@@ -165,8 +138,8 @@ class Geocoder:
         :param collection_id: MySQL id of collection as it's stored in virtual_twitter_collection table
         :type collection_id: int
         """
-        t = threading.Thread(target=cls.start, args=(collection_id,),
-                             name='Geocoder {}'.format(collection_id))
+        t = multiprocessing.Process(target=cls.start, args=(collection_id,),
+                                    name='Geocoder {}'.format(collection_id))
         t.start()
 
     @classmethod
@@ -194,7 +167,7 @@ class Geocoder:
 
         ttype = Tweet.ANNOTATED_TYPE
         dataset = Tweet.get_iterator(collection_id, ttype)
-
+        producer = make_kafka_producer()
         for i, tweet in enumerate(dataset, start=1):
             try:
                 if collection_id in cls.stop_signals:
@@ -204,7 +177,7 @@ class Geocoder:
                     break
 
                 message = Tweet.serializetuple(tweet)
-                cls.producer.send(cls.geocoder_kafka_topic, message)
+                producer.send(cls.geocoder_kafka_topic, message)
             except KafkaTimeoutError as e:
                 logger.error(e)
                 logger.error('Kafka has problems to allocate memory for the message: throttling')
@@ -220,7 +193,7 @@ class Geocoder:
         """
         Start Geocoder consumer in background (i.e. in a different thread)
         """
-        t = threading.Thread(target=cls.start_consumer, name='Geocoder Consumer')
+        t = multiprocessing.Process(target=cls.start_consumer, name='Geocoder Consumer')
         t.start()
 
     @classmethod
@@ -394,10 +367,12 @@ class Geocoder:
     @classmethod
     def start_consumer(cls):
         logger.info('+++++++++++++ Geocoder consumer starting')
+        producer = make_kafka_producer()
+        consumer = make_kafka_consumer(topic=cls.geocoder_kafka_topic)
         try:
             tagger = Geoparser(cls.geonames_host)
             with cls.flask_app.app_context():
-                for i, msg in enumerate(cls.consumer, start=1):
+                for i, msg in enumerate(consumer, start=1):
                     tweet = None
                     errors = 0
                     try:
@@ -418,7 +393,7 @@ class Geocoder:
                                 logger.debug('Send geocoded tweet to PERSISTER: %s', tweet.geo)
 
                             message = tweet.serialize()
-                            cls.producer.send(cls.persister_kafka_topic, message)
+                            producer.send(cls.persister_kafka_topic, message)
 
                             if not (i % 1000):
                                 logger.info('Geotagged so far %d', i)
@@ -429,7 +404,7 @@ class Geocoder:
                             errors += 1
                             if errors >= 500:
                                 logger.error('Too many errors...going to terminate geocoding')
-                                cls.consumer.close()
+                                consumer.close()
                                 break
                             continue
                     except (ValidationError, ValueError, TypeError, InvalidRequest) as e:
@@ -447,9 +422,9 @@ class Geocoder:
         except ValueError:
             # tipically an I/O operation on closed epoll object
             # as the consumer can be disconnected in another thread (see signal handling in start.py)
-            if cls.consumer._closed:
+            if consumer._closed:
                 logger.info('Geocoder consumer was disconnected during I/O operations. Exited.')
             else:
-                cls.consumer.close()
+                consumer.close()
         except KeyboardInterrupt:
-            cls.consumer.close()
+            consumer.close()

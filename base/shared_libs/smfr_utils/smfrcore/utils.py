@@ -11,6 +11,8 @@ from datetime import timedelta
 
 import schedule
 from flask.json import JSONEncoder
+from kafka import KafkaConsumer, KafkaProducer
+from kafka.errors import NoBrokersAvailable
 
 logger = logging.getLogger('SMFR utils')
 logger.setLevel(os.getenv('LOGGING_LEVEL', 'DEBUG'))
