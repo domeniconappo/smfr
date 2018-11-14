@@ -3,15 +3,14 @@ import http
 import logging
 from http.client import IncompleteRead
 import os
-import sys
 import socket
 import multiprocessing
 import time
+from queue import Empty
+
 import urllib3
 
 import requests
-from kafka import KafkaProducer
-from kafka.errors import NoBrokersAvailable
 from smfrcore.utils.kafka import make_kafka_producer
 from twython import TwythonStreamer
 
@@ -169,7 +168,11 @@ class BaseStreamer(TwythonStreamer):
     @property
     def errors(self):
         with self.lock:
-            return [e for e in iter(self._shared_errors.get_nowait, None)] if not self._shared_errors.empty() else []
+            try:
+                res = [e for e in iter(self._shared_errors.get_nowait, None)]
+            except Empty:
+                res = []
+            return res
 
     def track_error(self, http_error_code, message):
         message = message.decode('utf-8') if isinstance(message, bytes) else str(message)
