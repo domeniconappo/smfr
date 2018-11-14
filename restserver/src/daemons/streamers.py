@@ -115,6 +115,7 @@ class BaseStreamer(TwythonStreamer):
         t = multiprocessing.Process(target=self.connect, name=str(self), args=(collections,))
         t.daemon = True
         t.start()
+        t.join()
 
     def connect(self, collections):
 
@@ -122,14 +123,17 @@ class BaseStreamer(TwythonStreamer):
         self.producer = make_kafka_producer()
         with self.lock:
             if self.connected:
-                self.disconnect(deactivate_collections=False)
+                logger.warning('Trying to connect to an already connected stream. Ignoring...')
+                return
+                # self.disconnect(deactivate_collections=False)
 
         self.collections = collections
         self.query = self._build_query_for()
         filter_args = {k: ','.join(v).strip(',') for k, v in self.query.items() if k != 'languages' and v}
         logger.info('Streaming for collections: \n%s', '\n'.join(str(c) for c in collections))
         stay_active = True
-        self.connected = True
+        with self.lock:
+            self.connected = True
         while stay_active:
             try:
                 logger.info('Connecting to streamer %s', str(filter_args))
@@ -152,12 +156,12 @@ class BaseStreamer(TwythonStreamer):
                 self.track_error(500, str(e))
 
     def disconnect(self, deactivate_collections=True):
-        if self.producer:
-            self.producer.flush()
         logger.info('Disconnecting twitter streamer')
         with self.lock:
             super().disconnect()
             self.connected = False
+            if self.producer:
+                self.producer.flush()
         if deactivate_collections:
             logger.warning('Deactivating all collections!')
             app = create_app()

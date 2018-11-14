@@ -33,7 +33,7 @@ def add_args(parser):
     parser.add_argument('-o', '--output_file', help='Path to output json file',
                         metavar='output_file', default='exported_tweets.json')
     parser.add_argument('-n', '--maxnum', help='Number of tweets to export. Optional', type=int,
-                        metavar='output_file', default=None)
+                        metavar='maxnum', default=None)
     parser.add_argument('-f', '--format', help='Export format. It can be JSONL (jsonlines.org) or standard JSON',
                         type=str, choices=['json', 'jsonl'], metavar='Format', default='jsonl')
     parser.add_argument('-e', '--exportonlytweets', action='store_true', default=False,
