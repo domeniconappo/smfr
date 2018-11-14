@@ -112,10 +112,9 @@ class BaseStreamer(TwythonStreamer):
         return collection.is_using_pipeline
 
     def run_collections(self, collections):
-        t = multiprocessing.Process(target=self.connect, name=str(self), args=(collections,))
-        t.daemon = True
-        t.start()
-        t.join()
+        p = multiprocessing.Process(target=self.connect, name=str(self), args=(collections,))
+        p.daemon = True
+        p.start()
 
     def connect(self, collections):
 
