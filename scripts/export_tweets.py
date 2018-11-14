@@ -65,7 +65,7 @@ def write_jsonl(conf, tweets):
     with jsonlines.open(conf.output_file, mode='w') as writer:
         for i, t in enumerate(tweets, start=1):
             t['tweet'] = ujson.loads(t['tweet'])
-            writer.write(t if conf.exportonlytweets else t['tweet'])
+            writer.write(t if not conf.exportonlytweets else t['tweet'])
             if conf.maxnum and i >= conf.maxnum:
                 break
             if not (i % 500):
@@ -76,7 +76,7 @@ def write_json(conf, tweets):
     out = []
     for i, t in enumerate(tweets, start=1):
         t['tweet'] = ujson.loads(t['tweet'])
-        out.append(t if conf.exportonlytweets else t['tweet'])
+        out.append(t if not conf.exportonlytweets else t['tweet'])
         if conf.maxnum and i >= conf.maxnum:
             break
         if not (i % 500):

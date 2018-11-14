@@ -32,8 +32,8 @@ class BaseCollector(ABC):
         pass
 
     def stop(self, deactivate=True):
-        with self.streamer.lock:
-            self.streamer.disconnect(deactivate)
+        # with self.streamer.lock:
+        self.streamer.disconnect(deactivate)
 
     def restart(self):
         self.stop(deactivate=False)
@@ -54,10 +54,10 @@ class BackgroundCollector(BaseCollector):
     StreamerClass = BackgroundStreamer
 
     def start(self):
-        with self.streamer.lock:
-            if self.streamer.connected:
-                logger.info('Trying to start an already connected streamer %s', self.streamer)
-                return
+        # with self.streamer.lock:
+        if self.streamer.connected:
+            logger.info('Trying to start an already connected streamer %s', self.streamer)
+            return
         collection = TwitterCollection.get_active_background()
         if not collection:
             return
@@ -71,10 +71,10 @@ class OnDemandCollector(BaseCollector):
     StreamerClass = OnDemandStreamer
 
     def start(self):
-        with self.streamer.lock:
-            if self.streamer.connected:
-                logger.info('Trying to start an already connected streamer %s', self.streamer)
-                return
+        # with self.streamer.lock:
+        if self.streamer.connected:
+            logger.info('Trying to start an already connected streamer %s', self.streamer)
+            return
         collections = TwitterCollection.get_active_ondemand()
         if not collections:
             return
@@ -87,10 +87,10 @@ class ManualCollector(OnDemandCollector):
     StreamerClass = ManualStreamer
 
     def start(self):
-        with self.streamer.lock:
-            if self.streamer.connected:
-                logger.info('Trying to start an already connected streamer %s', self.streamer)
-                return
+        # with self.streamer.lock:
+        if self.streamer.connected:
+            logger.info('Trying to start an already connected streamer %s', self.streamer)
+            return
         collections = TwitterCollection.get_active_manual()
         if not collections:
             return

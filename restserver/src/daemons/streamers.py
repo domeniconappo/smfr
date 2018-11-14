@@ -36,7 +36,7 @@ class BaseStreamer(TwythonStreamer):
     max_errors_len = 50
 
     def __init__(self, **api_keys):
-        self.lock = multiprocessing.RLock()
+        # self.lock = multiprocessing.RLock()
         self.query = {}
         self.consumer_key = api_keys['consumer_key']
         self.consumer_secret = api_keys['consumer_secret']
@@ -120,19 +120,19 @@ class BaseStreamer(TwythonStreamer):
 
         # A Kafka Producer to send tweets to store to PERSISTER queue. Must be instantiated in same process
         self.producer = make_kafka_producer()
-        with self.lock:
-            if self.connected:
-                logger.warning('Trying to connect to an already connected stream. Ignoring...')
-                return
-                # self.disconnect(deactivate_collections=False)
+        # with self.lock:
+        if self.connected:
+            logger.warning('Trying to connect to an already connected stream. Ignoring...')
+            return
+            # self.disconnect(deactivate_collections=False)
 
         self.collections = collections
         self.query = self._build_query_for()
         filter_args = {k: ','.join(v).strip(',') for k, v in self.query.items() if k != 'languages' and v}
         logger.info('Streaming for collections: \n%s', '\n'.join(str(c) for c in collections))
         stay_active = True
-        with self.lock:
-            self.connected = True
+        # with self.lock:
+        self.connected = True
         while stay_active:
             try:
                 logger.info('Connecting to streamer %s', str(filter_args))
@@ -156,11 +156,11 @@ class BaseStreamer(TwythonStreamer):
 
     def disconnect(self, deactivate_collections=True):
         logger.info('Disconnecting twitter streamer')
-        with self.lock:
-            super().disconnect()
-            self.connected = False
-            if self.producer:
-                self.producer.flush()
+        # with self.lock:
+        super().disconnect()
+        self.connected = False
+        if self.producer:
+            self.producer.flush()
         if deactivate_collections:
             logger.warning('Deactivating all collections!')
             app = create_app()
@@ -170,23 +170,23 @@ class BaseStreamer(TwythonStreamer):
 
     @property
     def errors(self):
-        with self.lock:
-            try:
-                res = [e for e in iter(self._shared_errors.get_nowait, None)]
-            except Empty:
-                res = []
-            return res
+        # with self.lock:
+        try:
+            res = [e for e in iter(self._shared_errors.get_nowait, None)]
+        except Empty:
+            res = []
+        return res
 
     def track_error(self, http_error_code, message):
         message = message.decode('utf-8') if isinstance(message, bytes) else str(message)
-        with self.lock:
-            if self._shared_errors.full():
-                self._shared_errors = multiprocessing.Queue()
-            self._shared_errors.put('{code}: {date} - {error}'.format(
-                code=http_error_code,
-                date=datetime.datetime.now().strftime('%Y%m%d %H:%M'),
-                error=message.strip('\r\n')), block=False
-            )
+        # with self.lock:
+        if self._shared_errors.full():
+            self._shared_errors = multiprocessing.Queue()
+        self._shared_errors.put('{code}: {date} - {error}'.format(
+            code=http_error_code,
+            date=datetime.datetime.now().strftime('%Y%m%d %H:%M'),
+            error=message.strip('\r\n')), block=False
+        )
 
 
 class BackgroundStreamer(BaseStreamer):
