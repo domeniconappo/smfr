@@ -4,7 +4,7 @@ Module containing clients for Annotator and Geocoder microservices
 
 import requests
 
-from smfrcore.errors import SMFRRestException
+from smfrcore.utils.errors import SMFRRestException
 from server.config import RestServerConfiguration
 
 

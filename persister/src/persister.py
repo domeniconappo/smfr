@@ -12,7 +12,8 @@ from cassandra.cqlengine import ValidationError, CQLEngineException
 from kafka.errors import CommitFailedError, ConsumerTimeout
 
 from smfrcore.models.sql import TwitterCollection, create_app
-from smfrcore.utils import IN_DOCKER, NULL_HANDLER, DEFAULT_HANDLER, make_kafka_consumer, make_kafka_producer
+from smfrcore.utils import IN_DOCKER, NULL_HANDLER, DEFAULT_HANDLER
+from smfrcore.utils.kafka import make_kafka_consumer, make_kafka_producer
 from smfrcore.client.api_client import AnnotatorClient
 
 logging.getLogger('kafka').setLevel(logging.WARNING)

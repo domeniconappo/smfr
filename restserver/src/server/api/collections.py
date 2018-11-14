@@ -6,19 +6,18 @@ import time
 import datetime
 
 import ujson as json
-from flask import abort
-from flask_jwt_extended import jwt_required, get_jwt_identity
+# from flask import abort
+# from flask_jwt_extended import jwt_required, get_jwt_identity
+from sqlalchemy.exc import OperationalError
 
 from smfrcore.models.sql import TwitterCollection, User, Aggregation
 from smfrcore.models.cassandra import Tweet, TweetTuple
 from smfrcore.client.marshmallow import Collection as CollectionSchema, Aggregation as AggregationSchema
 from smfrcore.utils import DEFAULT_HANDLER
-from sqlalchemy.exc import OperationalError
-
-from smfrcore.errors import SMFRRestException
+from smfrcore.utils.errors import SMFRRestException
 
 from server.api.clients import AnnotatorClient, GeocoderClient
-from server.api.decorators import check_identity, check_role
+# from server.api.decorators import check_identity, check_role
 from server.config import RestServerConfiguration
 from server.helpers import (add_collection_helper, add_collection_from_rra_event,
                             fetch_rra_helper, events_to_collections_payload)

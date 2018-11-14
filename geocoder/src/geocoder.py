@@ -20,7 +20,8 @@ from shapely.geometry import Point, Polygon
 
 from smfrcore.models.cassandra import Tweet
 from smfrcore.models.sql import Nuts2, create_app
-from smfrcore.utils import IN_DOCKER, make_kafka_consumer, make_kafka_producer
+from smfrcore.utils import IN_DOCKER
+from smfrcore.utils.kafka import make_kafka_consumer, make_kafka_producer
 
 
 logger = logging.getLogger('GEOCODER')

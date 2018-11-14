@@ -12,6 +12,7 @@ import urllib3
 import requests
 from kafka import KafkaProducer
 from kafka.errors import NoBrokersAvailable
+from smfrcore.utils.kafka import make_kafka_producer
 from twython import TwythonStreamer
 
 from smfrcore.models.cassandra import Tweet
@@ -116,30 +117,10 @@ class BaseStreamer(TwythonStreamer):
         t.daemon = True
         t.start()
 
-    def make_kafka_connections(self):
-        retries = 5
-        while retries >= 0:
-            try:
-
-                producer = KafkaProducer(bootstrap_servers=RestServerConfiguration.kafka_bootstrap_servers,
-                                         compression_type='gzip',
-                                         request_timeout_ms=50000,
-                                         buffer_memory=134217728,
-                                         linger_ms=500,
-                                         batch_size=1048576)
-            except NoBrokersAvailable:
-                logger.warning('Waiting for Kafka to boot...')
-                time.sleep(5)
-                retries -= 1
-                if retries < 0:
-                    sys.exit(1)
-            else:
-                return producer
-
     def connect(self, collections):
 
         # A Kafka Producer to send tweets to store to PERSISTER queue. Must be instantiated in same process
-        self.producer = self.make_kafka_connections()
+        self.producer = make_kafka_producer()
         with self.lock:
             if self.connected:
                 self.disconnect(deactivate_collections=False)
@@ -149,6 +130,7 @@ class BaseStreamer(TwythonStreamer):
         filter_args = {k: ','.join(v).strip(',') for k, v in self.query.items() if k != 'languages' and v}
         logger.info('Streaming for collections: \n%s', '\n'.join(str(c) for c in collections))
         stay_active = True
+        self.connected = True
         while stay_active:
             try:
                 logger.info('Connecting to streamer %s', str(filter_args))
@@ -171,8 +153,8 @@ class BaseStreamer(TwythonStreamer):
                 self.track_error(500, str(e))
 
     def disconnect(self, deactivate_collections=True):
-        self.producer.flush()
-        # with self._lock:
+        if self.producer:
+            self.producer.flush()
         logger.info('Disconnecting twitter streamer')
         with self.lock:
             super().disconnect()

@@ -13,7 +13,7 @@ from Levenshtein import ratio
 from smfrcore.models.sql import TwitterCollection, Aggregation, Nuts2, Product, create_app
 from smfrcore.utils import DEFAULT_HANDLER, IN_DOCKER, RGB
 from smfrcore.client.api_here import HereClient
-from smfrcore.text_utils import tweet_normalization_aggressive
+from smfrcore.utils.text import tweet_normalization_aggressive
 from sqlalchemy import or_
 
 logger = logging.getLogger(__name__)
@@ -116,7 +116,7 @@ class Products:
         red_th = heuristics[2]
         with cls.app.app_context():
             highlights = {}
-            for efas_id, counters in counters_by_efas_id:
+            for efas_id, counters in counters_by_efas_id.items():
                 if not (counters.get(cls.high_prob_range, 0) < gray_th or counters.get(cls.high_prob_range, 0) <= orange_th * counters.get(cls.low_prob_range, 0)) or orange_th * counters.get(cls.low_prob_range, 0) < counters.get(cls.high_prob_range, 0) <= red_th * counters.get(cls.low_prob_range, 0):
                     highlights[efas_id] = counters
             product = Product(aggregated=counters_by_efas_id, relevant_tweets=relevant_tweets_aggregated,

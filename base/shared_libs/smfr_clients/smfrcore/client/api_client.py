@@ -8,7 +8,7 @@ import logging
 import requests
 
 from smfrcore.client.conf import ServerConfiguration
-from smfrcore.errors import SMFRError
+from smfrcore.utils.errors import SMFRError
 from smfrcore.utils import LOGGER_FORMAT, LOGGER_DATE_FORMAT, smfr_json_encoder, IN_DOCKER
 
 from .marshmallow import OnDemandPayload, CollectionPayload

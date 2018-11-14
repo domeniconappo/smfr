@@ -8,7 +8,7 @@ from cassandra.cqlengine import ValidationError
 from kafka.errors import CommitFailedError, KafkaTimeoutError
 
 from smfrcore.models.cassandra import Tweet
-from smfrcore.utils import make_kafka_consumer, make_kafka_producer
+from smfrcore.utils.kafka import make_kafka_consumer, make_kafka_producer
 from smfrcore.ml.helpers import models, logger, available_languages
 from smfrcore.ml.annotator import Annotator
 
