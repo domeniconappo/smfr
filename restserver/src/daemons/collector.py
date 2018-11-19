@@ -1,5 +1,7 @@
+import multiprocessing
 from abc import ABC, abstractmethod
 import logging
+from time import sleep
 
 from smfrcore.models.sql import TwitterCollection
 from smfrcore.utils import DEFAULT_HANDLER
@@ -32,7 +34,6 @@ class BaseCollector(ABC):
         pass
 
     def stop(self, deactivate=True):
-        # with self.streamer.lock:
         self.streamer.disconnect(deactivate)
 
     def restart(self):
@@ -55,7 +56,11 @@ class BackgroundCollector(BaseCollector):
 
     def start(self):
         # with self.streamer.lock:
-        if self.streamer.connected:
+        if self.streamer.process and isinstance(self.streamer.process, multiprocessing.Process):
+            logger.info('Sending SIGTERM signal to streamer')
+            self.streamer.process.terminate()
+            sleep(30)
+        if self.streamer.is_connected.value == 1:
             logger.info('Trying to start an already connected streamer %s', self.streamer)
             return
         collection = TwitterCollection.get_active_background()
@@ -72,11 +77,16 @@ class OnDemandCollector(BaseCollector):
 
     def start(self):
         # with self.streamer.lock:
-        if self.streamer.connected:
+        if self.streamer.process and isinstance(self.streamer.process, multiprocessing.Process):
+            logger.info('Sending SIGTERM signal to streamer')
+            self.streamer.process.terminate()
+            self.streamer.process.join(3)
+            logger.debug('Sleeping 30 secs after terminate')
+            sleep(30)
+            self.streamer.process = None
+        if self.streamer.is_connected.value == 1:
             logger.info('Trying to start an already connected streamer %s', self.streamer)
             return
-        if self.streamer.process:
-            self.streamer.process.terminate()
         collections = TwitterCollection.get_active_ondemand()
         if not collections:
             return
@@ -90,7 +100,12 @@ class ManualCollector(OnDemandCollector):
 
     def start(self):
         # with self.streamer.lock:
-        if self.streamer.connected:
+        if self.streamer.process and isinstance(self.streamer.process, multiprocessing.Process):
+            logger.info('Sending SIGTERM signal to streamer')
+            self.streamer.process.terminate()
+            self.streamer.process.join(3)
+            sleep(30)
+        if self.streamer.is_connected.value == 1:
             logger.info('Trying to start an already connected streamer %s', self.streamer)
             return
         collections = TwitterCollection.get_active_manual()

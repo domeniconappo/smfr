@@ -19,7 +19,7 @@ from mordecai import Geoparser
 from shapely.geometry import Point, Polygon
 
 from smfrcore.models.cassandra import Tweet
-from smfrcore.models.sql import Nuts2, create_app
+from smfrcore.models.sql import Nuts2, create_app, sqldb
 from smfrcore.utils import IN_DOCKER
 from smfrcore.utils.kafka import make_kafka_consumer, make_kafka_producer
 from sqlalchemy.exc import StatementError, InvalidRequestError
@@ -364,19 +364,19 @@ class Geocoder:
 
     @classmethod
     def start_consumer(cls):
-        logger.info('+++++++++++++ Geocoder consumer starting')
         producer = make_kafka_producer()
         consumer = make_kafka_consumer(topic=cls.geocoder_kafka_topic)
         errors = 0
         try:
             tagger = Geoparser(cls.geonames_host)
             with cls.flask_app.app_context():
+                logger.info('[OK] +++++++++++++ Geocoder consumer starting')
                 for i, msg in enumerate(consumer, start=1):
                     tweet = None
                     try:
                         msg = msg.value.decode('utf-8')
                         tweet = Tweet.from_json(msg)
-                        sqldb.session.begin()
+                        sqldb.session.begin(subtransactions=True)
                         try:
                             # COMMENT OUT CODE BELOW: we will geolocate everything for the moment
                             # flood_prob = t.annotations.get('flood_probability', ('', 0.0))[1]

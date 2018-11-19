@@ -22,7 +22,7 @@ def get():
         item = {
             'trigger_type': ttype,
             'errors': c.streamer.errors,
-            'status': 'connected' if c.streamer.connected else 'disconnected',
+            'status': 'connected' if c.streamer.is_connected.value == 1 else 'disconnected',
             'collections': [co.id for co in c.streamer.collections],
         }
         res['collectors'].append(item)
