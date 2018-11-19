@@ -22,7 +22,8 @@ from smfrcore.models.cassandra import Tweet
 from smfrcore.models.sql import Nuts2, create_app
 from smfrcore.utils import IN_DOCKER
 from smfrcore.utils.kafka import make_kafka_consumer, make_kafka_producer
-
+from sqlalchemy.exc import StatementError, InvalidRequestError
+from urllib3.exceptions import ProtocolError
 
 logger = logging.getLogger('GEOCODER')
 logger.setLevel(os.getenv('LOGGING_LEVEL', 'DEBUG'))
@@ -208,21 +209,17 @@ class Geocoder:
         # try to geoparse
         mentions_list = []
         res = []
-        retries = 0
-        es_up = False
-        while not es_up and retries <= 10:
+        retries = 10
+        while not (res or retries <= 0):
             try:
                 res = tagger.geoparse(tweet.full_text)
-            except socket.timeout:
-                logger.warning('ES not responding...throttling a bit')
-                time.sleep(5)
-                retries += 1
-            else:
-                es_up = True
-        # FIXME: hard coded minimum country confidence from mordecai
+            except (ConnectionResetError, ProtocolError, socket.timeout):
+                logger.warning('ES gazzetter is not responding...throttling 15 secs')
+                time.sleep(15)
+                retries -= 1
 
         for result in res:
-            if result.get('country_conf', 0) < 0.5 or 'lat' not in result.get('geo', {}):
+            if 'lat' not in result.get('geo', {}):
                 continue
             mentions_list.append((float(result['geo']['lat']),
                                   float(result['geo']['lon']),
@@ -370,15 +367,16 @@ class Geocoder:
         logger.info('+++++++++++++ Geocoder consumer starting')
         producer = make_kafka_producer()
         consumer = make_kafka_consumer(topic=cls.geocoder_kafka_topic)
+        errors = 0
         try:
             tagger = Geoparser(cls.geonames_host)
             with cls.flask_app.app_context():
                 for i, msg in enumerate(consumer, start=1):
                     tweet = None
-                    errors = 0
                     try:
                         msg = msg.value.decode('utf-8')
                         tweet = Tweet.from_json(msg)
+                        sqldb.session.begin()
                         try:
                             # COMMENT OUT CODE BELOW: we will geolocate everything for the moment
                             # flood_prob = t.annotations.get('flood_probability', ('', 0.0))[1]
@@ -386,6 +384,7 @@ class Geocoder:
                             #     continue
 
                             coordinates, nuts2, nuts_source, country_code, place, geonameid = cls.find_nuts_heuristic(tweet, tagger)
+                            sqldb.session.commit()
                             if not coordinates:
                                 continue
 
@@ -398,6 +397,8 @@ class Geocoder:
 
                             if not (i % 1000):
                                 logger.info('Geotagged so far %d', i)
+                        except (StatementError, InvalidRequestError):
+                            sqldb.session.rollback()
 
                         except Exception as e:
                             logger.error(type(e))

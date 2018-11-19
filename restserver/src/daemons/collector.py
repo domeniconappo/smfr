@@ -15,7 +15,7 @@ logger.propagate = False
 
 
 class BaseCollector(ABC):
-    twitter_keys_iden = None
+    twitter_keys_iden = ''
     type = None
     StreamerClass = None
 
@@ -75,6 +75,8 @@ class OnDemandCollector(BaseCollector):
         if self.streamer.connected:
             logger.info('Trying to start an already connected streamer %s', self.streamer)
             return
+        if self.streamer.process:
+            self.streamer.process.terminate()
         collections = TwitterCollection.get_active_ondemand()
         if not collections:
             return

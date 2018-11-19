@@ -46,6 +46,7 @@ class BaseStreamer(TwythonStreamer):
         self._shared_errors = multiprocessing.Queue(maxsize=self.max_errors_len)
 
         self.producer = None
+        self.process = None
 
         self.collections = []
         self.collection = None
@@ -115,6 +116,7 @@ class BaseStreamer(TwythonStreamer):
         p = multiprocessing.Process(target=self.connect, name=str(self), args=(collections,))
         p.daemon = True
         p.start()
+        self.process = p
 
     def connect(self, collections):
 
@@ -159,6 +161,8 @@ class BaseStreamer(TwythonStreamer):
         # with self.lock:
         super().disconnect()
         self.connected = False
+        if self.process:
+            self.process.terminate()
         if self.producer:
             self.producer.flush()
         if deactivate_collections:
