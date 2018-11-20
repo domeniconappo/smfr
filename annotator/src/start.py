@@ -3,9 +3,10 @@ import logging
 from flask import Flask
 from flask_restful import Resource, Api, marshal_with, fields, marshal_with_field
 
-from annotatorcontainer import AnnotatorContainer, DEVELOPMENT
-# from helpers import models, models_path, logger
 from smfrcore.ml.helpers import models, models_path, logger, available_languages
+
+from annotatorcontainer import AnnotatorContainer, DEVELOPMENT
+
 
 app = Flask(__name__)
 api = Api(app)

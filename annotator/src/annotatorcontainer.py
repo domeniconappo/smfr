@@ -1,13 +1,16 @@
 import os
 import logging
 import multiprocessing
+import threading
 import time
 
+import schedule
 from cassandra import InvalidRequest
 from cassandra.cqlengine import ValidationError
 from kafka.errors import CommitFailedError, KafkaTimeoutError
 
 from smfrcore.models.cassandra import Tweet
+from smfrcore.utils import run_continuously
 from smfrcore.utils.kafka import make_kafka_consumer, make_kafka_producer
 from smfrcore.ml.helpers import models, logger, available_languages
 from smfrcore.ml.annotator import Annotator
@@ -131,80 +134,88 @@ class AnnotatorContainer:
         p.start()
 
     @classmethod
+    def consume_buffer(cls, buffer, lang, lock, producer):
+        import tensorflow as tf
+        session_conf = tf.ConfigProto(intra_op_parallelism_threads=1, inter_op_parallelism_threads=1)
+        session = tf.Session(graph=tf.get_default_graph(), config=session_conf)
+        with session.as_default():
+            model, tokenizer = Annotator.load_annotation_model(lang)
+            tweets = Annotator.annotate(model, buffer, tokenizer)
+
+        cls.shared_counter[lang] += len(buffer)
+        with lock:
+            buffer.clear()
+        for tweet in tweets:
+            message = tweet.serialize()
+
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.debug('Sending annotated tweet to PERSISTER: %s', tweet.annotations)
+
+            # persist the annotated tweet
+            sent_to_persister = False
+            while not sent_to_persister:
+                try:
+                    producer.send(cls.persister_kafka_topic, message)
+                except KafkaTimeoutError as e:
+                    # try to mitigate kafka timeout error
+                    # KafkaTimeoutError: Failed to allocate memory
+                    # within the configured max blocking time
+                    logger.error(e)
+                    time.sleep(3)
+                except Exception as e:
+                    logger.error(type(e))
+                    logger.error(e)
+                    logger.error(message)
+                else:
+                    sent_to_persister = True
+
+        cls.shared_counter['waiting-{}'.format(lang)] = 0
+
+    @classmethod
     def start_consumer(cls, lang='en'):
         """
         Main method that iterate over messages coming from Kafka queue,
         build a Tweet object and send it to next in pipeline.
         """
-        import tensorflow as tf
         producer, consumer = make_kafka_producer(), make_kafka_consumer(topic='{}-{}'.format(cls.annotator_kafka_topic, lang))
 
-        session_conf = tf.ConfigProto(intra_op_parallelism_threads=1, inter_op_parallelism_threads=1)
-        session = tf.Session(graph=tf.get_default_graph(), config=session_conf)
+        buffer_to_annotate = []
+        lock = threading.RLock()
+        schedule.every(3).minutes.do(
+            cls.consume_buffer,
+            *(buffer_to_annotate, lang, lock, producer)
+        ).tag('annotate-buffer')
+        run_continuously(interval=3)
 
-        with session.as_default():
-            model, tokenizer = Annotator.load_annotation_model(lang)
+        try:
+            cls.shared_counter[lang] = 0
+            cls.shared_counter['waiting-{}'.format(lang)] = 0
 
-            try:
-                cls.shared_counter[lang] = 0
-                cls.shared_counter['waiting-{}'.format(lang)] = 0
-                buffer_to_annotate = []
-
-                for i, msg in enumerate(consumer, start=1):
-                    tweet = None
-                    try:
-                        msg = msg.value.decode('utf-8')
-                        tweet = Tweet.from_json(msg)
+            for i, msg in enumerate(consumer, start=1):
+                tweet = None
+                try:
+                    msg = msg.value.decode('utf-8')
+                    tweet = Tweet.from_json(msg)
+                    with lock:
                         buffer_to_annotate.append(tweet)
-                        cls.shared_counter['waiting-{}'.format(lang)] += 1
+                    cls.shared_counter['waiting-{}'.format(lang)] += 1
 
-                        if len(buffer_to_annotate) >= 100:
-                            tweets = Annotator.annotate(model, buffer_to_annotate, tokenizer)
-                            cls.shared_counter[lang] += len(buffer_to_annotate)
+                except (ValidationError, ValueError, TypeError, InvalidRequest) as e:
+                    logger.error(e)
+                    logger.error('Poison message for Cassandra: %s', tweet if tweet else msg)
+                except Exception as e:
+                    logger.error(type(e))
+                    logger.error(e)
+                    logger.error(msg)
 
-                            for tweet in tweets:
-                                message = tweet.serialize()
-
-                                if logger.isEnabledFor(logging.DEBUG):
-                                    logger.debug('Sending annotated tweet to PERSISTER: %s', tweet.annotations)
-
-                                # persist the annotated tweet
-                                sent_to_persister = False
-                                while not sent_to_persister:
-                                    try:
-                                        producer.send(cls.persister_kafka_topic, message)
-                                    except KafkaTimeoutError as e:
-                                        # try to mitigate kafka timeout error
-                                        # KafkaTimeoutError: Failed to allocate memory
-                                        # within the configured max blocking time
-                                        logger.error(e)
-                                        time.sleep(2)
-                                    except Exception as e:
-                                        logger.error(type(e))
-                                        logger.error(e)
-                                        logger.error(msg)
-                                    else:
-                                        sent_to_persister = True
-
-                            buffer_to_annotate.clear()
-                            cls.shared_counter['waiting-{}'.format(lang)] = 0
-
-                    except (ValidationError, ValueError, TypeError, InvalidRequest) as e:
-                        logger.error(e)
-                        logger.error('Poison message for Cassandra: %s', tweet if tweet else msg)
-                    except Exception as e:
-                        logger.error(type(e))
-                        logger.error(e)
-                        logger.error(msg)
-
-            except CommitFailedError:
-                logger.error('Annotator consumer was disconnected during I/O operations. Exited.')
-            except ValueError:
-                # tipically an I/O operation on closed epoll object
-                # as the consumer can be disconnected in another thread (see signal handling in start.py)
-                if consumer._closed:
-                    logger.info('Annotator consumer was disconnected during I/O operations. Exited.')
-                else:
-                    consumer.close()
-            except KeyboardInterrupt:
+        except CommitFailedError:
+            logger.error('Annotator consumer was disconnected during I/O operations. Exited.')
+        except ValueError:
+            # tipically an I/O operation on closed epoll object
+            # as the consumer can be disconnected in another thread (see signal handling in start.py)
+            if consumer._closed:
+                logger.info('Annotator consumer was disconnected during I/O operations. Exited.')
+            else:
                 consumer.close()
+        except KeyboardInterrupt:
+            consumer.close()

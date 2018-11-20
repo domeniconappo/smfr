@@ -118,7 +118,8 @@ class BaseStreamer(TwythonStreamer):
         return collection.is_using_pipeline
 
     def run_collections(self, collections):
-        p = multiprocessing.Process(target=self.connect, name=str(self), args=(collections,))
+        self._collections = self.mp_manager.list(collections)
+        p = multiprocessing.Process(target=self.connect, name=str(self), args=(self._collections,))
         p.daemon = True
         p.start()
         self.process = p
@@ -130,16 +131,15 @@ class BaseStreamer(TwythonStreamer):
 
     def connect(self, collections):
         signal.signal(signal.SIGTERM, self.handle_termination)
-        # A Kafka Producer to send tweets to store to PERSISTER queue. Must be instantiated in same process
+
         # with self.lock:
 
         if self.is_connected.value == 1:
             logger.warning('Trying to connect to an already connected stream. Ignoring...')
             return
-            # self.disconnect(deactivate_collections=False)
 
         self.producer = make_kafka_producer()
-        self._collections = collections
+
         self.query = self._build_query_for()
         filter_args = {k: ','.join(v).strip(',') for k, v in self.query.items() if k != 'languages' and v}
         logger.info('Streaming for collections: \n%s', '\n'.join(str(c) for c in collections))
