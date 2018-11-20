@@ -1,3 +1,4 @@
+import copy
 import os
 import logging
 import multiprocessing
@@ -135,16 +136,36 @@ class AnnotatorContainer:
 
     @classmethod
     def consume_buffer(cls, buffer, lang, lock, producer):
+        """
+        Actual method, executed as a scheduled thread, that performs annotation on a buffer of collected tweets
+        :param buffer: list of tweets objects
+        :param lang: the lang defining the current annotator process
+        :param lock: a lock to safely modify the buffer (it can be modified by the main kafka consumer thread)
+        :param producer: a Kafka producer client
+        """
         import tensorflow as tf
         session_conf = tf.ConfigProto(intra_op_parallelism_threads=1, inter_op_parallelism_threads=1)
         session = tf.Session(graph=tf.get_default_graph(), config=session_conf)
-        with session.as_default():
-            model, tokenizer = Annotator.load_annotation_model(lang)
-            tweets = Annotator.annotate(model, buffer, tokenizer)
-
-        cls.shared_counter[lang] += len(buffer)
         with lock:
+            tweets_to_annotate = copy.deepcopy(buffer)
             buffer.clear()
+
+        with session.as_default():
+            logger.info('Loading model: %s', lang)
+            try:
+                model, tokenizer = Annotator.load_annotation_model(lang)
+                tweets = Annotator.annotate(model, tweets_to_annotate, tokenizer)
+            except Exception as e:
+                logger.error(lang)
+                logger.error(type(e))
+                logger.error(e)
+                with lock:
+                    # restore entire buffer in case of an error in annotation
+                    buffer += tweets_to_annotate
+                    return
+
+        cls.shared_counter[lang] += len(tweets_to_annotate)
+
         for tweet in tweets:
             message = tweet.serialize()
 
@@ -175,17 +196,20 @@ class AnnotatorContainer:
     def start_consumer(cls, lang='en'):
         """
         Main method that iterate over messages coming from Kafka queue,
-        build a Tweet object and send it to next in pipeline.
+        build a Tweet object to annotate (and save it in a buffer) and send it to next in pipeline (geocoder)
         """
         producer, consumer = make_kafka_producer(), make_kafka_consumer(topic='{}-{}'.format(cls.annotator_kafka_topic, lang))
-
         buffer_to_annotate = []
         lock = threading.RLock()
-        schedule.every(3).minutes.do(
+
+        # put some interleaving to avoid starting threads at same time and start randomly between 1 and 5 minutes
+        interval = sum(ord(c) for c in lang)
+        schedule.every().to(5).minutes.do(
             cls.consume_buffer,
             *(buffer_to_annotate, lang, lock, producer)
         ).tag('annotate-buffer')
-        run_continuously(interval=3)
+
+        run_continuously(interval=interval)
 
         try:
             cls.shared_counter[lang] = 0
@@ -219,3 +243,5 @@ class AnnotatorContainer:
                 consumer.close()
         except KeyboardInterrupt:
             consumer.close()
+        finally:
+            cls.consume_buffer(buffer_to_annotate, lang, lock, producer)

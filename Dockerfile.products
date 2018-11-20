@@ -20,6 +20,8 @@ RUN pip3.6 install /smfr_libs/utils/ \
  && pip3.6 install /smfr_libs/clients/ \
  && chmod -R a+x /scripts/ && rm -R /root/.cache && chmod -R a+w /products/
 
+ENV GDAL_DATA=/usr/local/lib/python3.6/site-packages/fiona/gdal_data
+
 COPY ./products/config/. /config/
 COPY ./products/src/. /products/
 

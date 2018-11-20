@@ -1,3 +1,7 @@
+"""
+Module for functions to be executed as scheduled jobs
+"""
+
 import datetime
 import logging
 import os

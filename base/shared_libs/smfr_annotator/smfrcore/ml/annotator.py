@@ -7,13 +7,18 @@ from keras_preprocessing.sequence import pad_sequences
 from smfrcore.utils.text import create_text_for_cnn
 from smfrcore.models.cassandra import Tweet
 
-from .helpers import models_path, models, logger
+from .helpers import models_path, models
 
 
 class Annotator:
 
     @classmethod
     def load_annotation_model(cls, lang):
+        """
+        Load model and tokenizer for language lang
+        :param lang: two characters language code (e.g. 'en')
+        :return: Tuple (model, tokenizer)
+        """
         tokenizer_path = os.path.join(models_path, models[lang] + '.tokenizer')
         tokenizer = sklearn.externals.joblib.load(tokenizer_path)
         tokenizer.oov_token = None
