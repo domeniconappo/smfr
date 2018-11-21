@@ -393,7 +393,25 @@ class Geocoder:
 
                             cls.set_geo_fields(coordinates, nuts2, nuts_source, country_code, place, geonameid, tweet)
                             message = tweet.serialize()
-                            producer.send(cls.persister_kafka_topic, message)
+
+                            # persist the geotagged tweet
+                            sent_to_persister = False
+                            while not sent_to_persister:
+                                try:
+                                    producer.send(cls.persister_kafka_topic, message)
+                                except KafkaTimeoutError as e:
+                                    # try to mitigate kafka timeout error
+                                    # KafkaTimeoutError: Failed to allocate memory
+                                    # within the configured max blocking time
+                                    logger.error(e)
+                                    time.sleep(3)
+                                except Exception as e:
+                                    logger.error(type(e))
+                                    logger.error(e)
+                                    logger.error(message)
+                                else:
+                                    sent_to_persister = True
+
                             with cls._lock:
                                 cls._counters[tweet.lang] += 1
 
@@ -402,7 +420,8 @@ class Geocoder:
 
                             if not (i % 1000):
                                 logger.info('Geotagged so far %d', i)
-                        except (StatementError, InvalidRequestError):
+                        except (StatementError, InvalidRequestError) as e:
+                            logger.error(e)
                             continue
                         except Exception as e:
                             logger.error(type(e))

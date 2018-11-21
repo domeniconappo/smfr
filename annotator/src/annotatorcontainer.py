@@ -170,9 +170,6 @@ class AnnotatorContainer:
         for tweet in tweets:
             message = tweet.serialize()
 
-            if logger.isEnabledFor(logging.DEBUG):
-                logger.debug('Sending annotated tweet to PERSISTER: %s', tweet.annotations)
-
             # persist the annotated tweet
             sent_to_persister = False
             while not sent_to_persister:
@@ -190,6 +187,9 @@ class AnnotatorContainer:
                     logger.error(message)
                 else:
                     sent_to_persister = True
+
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.debug('Sent annotated tweet to PERSISTER: %s', tweet.annotations)
 
         cls.shared_counter['waiting-{}'.format(lang)] = 0
 
