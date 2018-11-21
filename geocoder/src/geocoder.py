@@ -392,11 +392,13 @@ class Geocoder:
                                 continue
 
                             cls.set_geo_fields(coordinates, nuts2, nuts_source, country_code, place, geonameid, tweet)
-                            message = tweet.serialize()
+                            logger.info('Successfully geocoded tweet: %s', tweet.geo)
 
                             # persist the geotagged tweet
+                            message = tweet.serialize()
                             sent_to_persister = False
-                            while not sent_to_persister:
+                            retries = 5
+                            while not sent_to_persister and retries >= 0:
                                 try:
                                     producer.send(cls.persister_kafka_topic, message)
                                 except KafkaTimeoutError as e:
@@ -405,10 +407,12 @@ class Geocoder:
                                     # within the configured max blocking time
                                     logger.error(e)
                                     time.sleep(3)
+                                    retries -= 1
                                 except Exception as e:
                                     logger.error(type(e))
                                     logger.error(e)
                                     logger.error(message)
+                                    retries -= 1
                                 else:
                                     sent_to_persister = True
 

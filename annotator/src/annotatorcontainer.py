@@ -136,20 +136,23 @@ class AnnotatorContainer:
         p.start()
 
     @classmethod
-    def consume_buffer(cls, buffer, lang, lock, producer):
+    def consume_buffer(cls, buffer, lang, lock):
         """
         Actual method, executed as a scheduled thread, that performs annotation on a buffer of collected tweets
         :param buffer: list of tweets objects
         :param lang: the lang defining the current annotator process
         :param lock: a lock to safely modify the buffer (it can be modified by the main kafka consumer thread)
-        :param producer: a Kafka producer client
         """
-        import tensorflow as tf
-        session_conf = tf.ConfigProto(intra_op_parallelism_threads=1, inter_op_parallelism_threads=1)
-        session = tf.Session(graph=tf.get_default_graph(), config=session_conf)
         with lock:
             tweets_to_annotate = copy.deepcopy(buffer)
             buffer.clear()
+
+        if not tweets_to_annotate:
+            return
+
+        import tensorflow as tf
+        session_conf = tf.ConfigProto(intra_op_parallelism_threads=1, inter_op_parallelism_threads=1)
+        session = tf.Session(graph=tf.get_default_graph(), config=session_conf)
 
         with session.as_default():
             logger.info('Annotating buffer for: %s', lang)
@@ -165,6 +168,7 @@ class AnnotatorContainer:
                     buffer += tweets_to_annotate
                     return
 
+        producer = make_kafka_producer()
         for tweet in tweets:
             message = tweet.serialize()
 
@@ -197,7 +201,7 @@ class AnnotatorContainer:
         Main method that iterate over messages coming from Kafka queue,
         build a Tweet object to annotate (and save it in a buffer) and send it to next in pipeline (geocoder)
         """
-        producer, consumer = make_kafka_producer(), make_kafka_consumer(topic='{}-{}'.format(cls.annotator_kafka_topic, lang))
+        consumer = make_kafka_consumer(topic='{}-{}'.format(cls.annotator_kafka_topic, lang))
         buffer_to_annotate = []
         lock = threading.RLock()
 
@@ -205,7 +209,7 @@ class AnnotatorContainer:
         interval = sum(ord(c) for c in lang)
         schedule.every().to(5).minutes.do(
             cls.consume_buffer,
-            *(buffer_to_annotate, lang, lock, producer)
+            *(buffer_to_annotate, lang, lock)
         ).tag('annotate-buffer')
 
         run_continuously(interval=interval)
