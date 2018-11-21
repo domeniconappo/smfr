@@ -17,7 +17,7 @@ def get():
     :return:
     """
     config = RestServerConfiguration()
-    res = {'collectors': [], 'counters': None}
+    res = {'collectors': []}
     for ttype, c in config.collectors.items():
         item = {
             'trigger_type': ttype,

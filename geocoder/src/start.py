@@ -68,5 +68,6 @@ class GeotaggerCounters(Resource):
 if __name__ == 'start':
     api.add_resource(GeocoderApi, '/<int:collection_id>/<string:action>')
     api.add_resource(RunningGeotaggersApi, '/running')
+    api.add_resource(GeotaggerCounters, '/counters')
     logger.info('[OK] Geocoder Microservice ready for incoming requests')
     Geocoder.consumer_in_background()
