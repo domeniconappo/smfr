@@ -12,7 +12,7 @@ from kafka.errors import CommitFailedError, KafkaTimeoutError
 
 from smfrcore.models.cassandra import Tweet
 from smfrcore.utils import run_continuously
-from smfrcore.utils.kafka import make_kafka_consumer, make_kafka_producer
+from smfrcore.utils.kafka import make_kafka_consumer, make_kafka_producer, send_to_persister
 from smfrcore.ml.helpers import models, logger, available_languages
 from smfrcore.ml.annotator import Annotator
 
@@ -30,7 +30,6 @@ class AnnotatorContainer:
     _manager = multiprocessing.Manager()
     shared_counter = _manager.dict()
 
-    persister_kafka_topic = os.getenv('PERSISTER_KAFKA_TOPIC', 'persister')
     annotator_kafka_topic = os.getenv('ANNOTATOR_KAFKA_TOPIC', 'annotator')
 
     @classmethod
@@ -115,6 +114,7 @@ class AnnotatorContainer:
         """
         p = multiprocessing.Process(target=cls.start, args=(collection_id,),
                                     name='Annotator collection {}'.format(collection_id))
+        p.daemon = True
         p.start()
 
     @classmethod
@@ -168,31 +168,12 @@ class AnnotatorContainer:
                     buffer += tweets_to_annotate
                     return
 
-        logger.info('Instantiate producer for geocoder topic....')
+        logger.info('Instantiate producer for geocoder topic for %s messages', lang)
         producer = make_kafka_producer()
         for tweet in tweets:
-            message = tweet.serialize()
-
             # persist the annotated tweet
-            sent_to_persister = False
-            retries = 5
-            while not sent_to_persister and retries >= 0:
-                try:
-                    producer.send(cls.persister_kafka_topic, message)
-                except KafkaTimeoutError as e:
-                    # try to mitigate kafka timeout error
-                    # KafkaTimeoutError: Failed to allocate memory
-                    # within the configured max blocking time
-                    logger.error(e)
-                    time.sleep(3)
-                    retries -= 1
-                except Exception as e:
-                    logger.error(type(e))
-                    logger.error(e)
-                    logger.error(message)
-                    retries -= 1
-                else:
-                    sent_to_persister = True
+            send_to_persister(producer, tweet)
+
             if logger.isEnabledFor(logging.DEBUG):
                 logger.debug('Sent annotated tweet to PERSISTER: %s', tweet.annotations)
 

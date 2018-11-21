@@ -9,8 +9,6 @@ import multiprocessing
 
 import time
 
-from cassandra import InvalidRequest
-from cassandra.cqlengine import ValidationError, CQLEngineException
 from kafka.errors import CommitFailedError, KafkaTimeoutError
 from mordecai import Geoparser
 from shapely.geometry import Point, Polygon
@@ -18,11 +16,11 @@ from shapely.geometry import Point, Polygon
 from smfrcore.models.cassandra import Tweet
 from smfrcore.models.sql import Nuts2, create_app
 from smfrcore.utils import IN_DOCKER, DefaultDictSyncManager
-from smfrcore.utils.kafka import make_kafka_consumer, make_kafka_producer
+from smfrcore.utils.kafka import make_kafka_consumer, make_kafka_producer, send_to_persister
 from sqlalchemy.exc import StatementError, InvalidRequestError
 from urllib3.exceptions import ProtocolError
 
-logger = logging.getLogger('GEOCODER')
+logger = logging.getLogger(__name__)
 logger.setLevel(os.getenv('LOGGING_LEVEL', 'DEBUG'))
 
 
@@ -110,7 +108,6 @@ class Geocoder:
 
     flask_app = create_app()
 
-    persister_kafka_topic = os.getenv('PERSISTER_KAFKA_TOPIC', 'persister')
     geocoder_kafka_topic = os.getenv('GEOCODER_KAFKA_TOPIC', 'geocoder')
 
     @classmethod
@@ -369,82 +366,51 @@ class Geocoder:
 
     @classmethod
     def start_consumer(cls):
-        producer = make_kafka_producer()
-        consumer = make_kafka_consumer(topic=cls.geocoder_kafka_topic)
-        errors = 0
         try:
+            producer = make_kafka_producer()
+            consumer = make_kafka_consumer(topic=cls.geocoder_kafka_topic)
+            cls.flask_app.app_context().push()
+            errors = 0
             tagger = Geoparser(cls.geonames_host)
-            with cls.flask_app.app_context():
-                logger.info('[OK] +++++++++++++ Geocoder consumer starting')
-                for i, msg in enumerate(consumer, start=1):
-                    tweet = None
-                    try:
-                        msg = msg.value.decode('utf-8')
-                        tweet = Tweet.from_json(msg)
-                        try:
-                            # COMMENT OUT CODE BELOW: we will geolocate everything for the moment
-                            # flood_prob = t.annotations.get('flood_probability', ('', 0.0))[1]
-                            # if flood_prob <= cls.min_flood_prob:
-                            #     continue
+            logger.info('[OK] +++++++++++++ Geocoder consumer starting')
+            for i, msg in enumerate(consumer, start=1):
+                logger.debug('Processing message %d', i)
+                msg = msg.value.decode('utf-8')
+                tweet = Tweet.from_json(msg)
+                try:
+                    # COMMENT OUT CODE BELOW: we will geolocate everything for the moment
+                    # flood_prob = t.annotations.get('flood_probability', ('', 0.0))[1]
+                    # if flood_prob <= cls.min_flood_prob:
+                    #     continue
+                    coordinates, nuts2, nuts_source, country_code, place, geonameid = cls.find_nuts_heuristic(tweet, tagger)
+                    if not coordinates:
+                        continue
 
-                            coordinates, nuts2, nuts_source, country_code, place, geonameid = cls.find_nuts_heuristic(tweet, tagger)
-                            if not coordinates:
-                                continue
+                    cls.set_geo_fields(coordinates, nuts2, nuts_source, country_code, place, geonameid, tweet)
+                    logger.info('Successfully geocoded tweet: %s', tweet.geo)
 
-                            cls.set_geo_fields(coordinates, nuts2, nuts_source, country_code, place, geonameid, tweet)
-                            logger.info('Successfully geocoded tweet: %s', tweet.geo)
+                    # persist the geotagged tweet
+                    send_to_persister(producer, tweet)
+                    cls._counters[tweet.lang] += 1
 
-                            # persist the geotagged tweet
-                            message = tweet.serialize()
-                            sent_to_persister = False
-                            retries = 5
-                            while not sent_to_persister and retries >= 0:
-                                try:
-                                    producer.send(cls.persister_kafka_topic, message)
-                                except KafkaTimeoutError as e:
-                                    # try to mitigate kafka timeout error
-                                    # KafkaTimeoutError: Failed to allocate memory
-                                    # within the configured max blocking time
-                                    logger.error(e)
-                                    time.sleep(3)
-                                    retries -= 1
-                                except Exception as e:
-                                    logger.error(type(e))
-                                    logger.error(e)
-                                    logger.error(message)
-                                    retries -= 1
-                                else:
-                                    sent_to_persister = True
+                    if logger.isEnabledFor(logging.INFO):
+                        logger.info('Sent geocoded tweet to PERSISTER: %s', tweet.geo)
 
-                            cls._counters[tweet.lang] += 1
-
-                            if logger.isEnabledFor(logging.INFO):
-                                logger.info('Sent geocoded tweet to PERSISTER: %s', tweet.geo)
-
-                            if not (i % 1000):
-                                logger.info('Geotagged so far %d', i)
-                        except (StatementError, InvalidRequestError) as e:
-                            logger.error(e)
-                            continue
-                        except Exception as e:
-                            logger.error(type(e))
-                            logger.error('An error occured during geotagging: %s', e)
-                            errors += 1
-                            if errors >= 500:
-                                logger.error('Too many errors...going to terminate geocoding')
-                                consumer.close(30)
-                                producer.cllose(30)
-                                break
-                            continue
-                    except (ValidationError, ValueError, TypeError, InvalidRequest) as e:
-                        logger.error(e)
-                        logger.error('Poison message for Cassandra: %s', tweet or msg)
-                    except CQLEngineException as e:
-                        logger.error(e)
-                    except Exception as e:
-                        logger.error(type(e))
-                        logger.error(e)
-                        logger.error(msg)
+                    if not (i % 1000):
+                        logger.info('Geotagged so far %d', i)
+                except (StatementError, InvalidRequestError) as e:
+                    logger.error(e)
+                    continue
+                except Exception as e:
+                    logger.error(type(e))
+                    logger.error('An error occured during geotagging: %s', e)
+                    errors += 1
+                    if errors >= 500:
+                        logger.error('Too many errors...going to terminate geocoding')
+                        consumer.close(30)
+                        producer.cllose(30)
+                        break
+                    continue
 
         except CommitFailedError:
             logger.error('Geocoder consumer was disconnected during I/O operations. Exited.')
@@ -458,5 +424,6 @@ class Geocoder:
         except KeyboardInterrupt:
             consumer.close()
 
+        logger.warning('Geocoder Consumer disconnected.')
         if not producer._closed:
             producer.close(30)
