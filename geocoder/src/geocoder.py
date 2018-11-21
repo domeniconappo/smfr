@@ -432,7 +432,8 @@ class Geocoder:
                             errors += 1
                             if errors >= 500:
                                 logger.error('Too many errors...going to terminate geocoding')
-                                consumer.close()
+                                consumer.close(30)
+                                producer.cllose(30)
                                 break
                             continue
                     except (ValidationError, ValueError, TypeError, InvalidRequest) as e:
@@ -456,3 +457,6 @@ class Geocoder:
                 consumer.close()
         except KeyboardInterrupt:
             consumer.close()
+
+        if not producer._closed:
+            producer.close(30)

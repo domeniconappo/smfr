@@ -168,13 +168,15 @@ class AnnotatorContainer:
                     buffer += tweets_to_annotate
                     return
 
+        logger.info('Instantiate producer for geocoder topic....')
         producer = make_kafka_producer()
         for tweet in tweets:
             message = tweet.serialize()
 
             # persist the annotated tweet
             sent_to_persister = False
-            while not sent_to_persister:
+            retries = 5
+            while not sent_to_persister and retries >= 0:
                 try:
                     producer.send(cls.persister_kafka_topic, message)
                 except KafkaTimeoutError as e:
@@ -183,10 +185,12 @@ class AnnotatorContainer:
                     # within the configured max blocking time
                     logger.error(e)
                     time.sleep(3)
+                    retries -= 1
                 except Exception as e:
                     logger.error(type(e))
                     logger.error(e)
                     logger.error(message)
+                    retries -= 1
                 else:
                     sent_to_persister = True
             if logger.isEnabledFor(logging.DEBUG):
@@ -194,6 +198,8 @@ class AnnotatorContainer:
 
         cls.shared_counter[lang] += len(tweets_to_annotate)
         cls.shared_counter['buffered-{}'.format(lang)] = 0
+        if not producer._closed:
+            producer.close(30)
 
     @classmethod
     def start_consumer(cls, lang='en'):
@@ -246,5 +252,3 @@ class AnnotatorContainer:
                 consumer.close()
         except KeyboardInterrupt:
             consumer.close()
-        finally:
-            cls.consume_buffer(buffer_to_annotate, lang, lock, producer)

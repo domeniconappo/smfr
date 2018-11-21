@@ -150,6 +150,11 @@ class Persister:
                 self.stop()
                 self.active = False
 
+        if not consumer._closed:
+            consumer.close(30)
+        if not producer._closed:
+            producer.close(30)
+
     def send_to_pipeline(self, producer, tweet):
         if not tweet.use_pipeline:
             return
