@@ -152,7 +152,7 @@ class AnnotatorContainer:
             buffer.clear()
 
         with session.as_default():
-            logger.info('Loading model: %s', lang)
+            logger.info('Annotating buffer for: %s', lang)
             try:
                 model, tokenizer = Annotator.load_annotation_model(lang)
                 tweets = Annotator.annotate(model, tweets_to_annotate, tokenizer)
@@ -164,8 +164,6 @@ class AnnotatorContainer:
                     # restore entire buffer in case of an error in annotation
                     buffer += tweets_to_annotate
                     return
-
-        cls.shared_counter[lang] += len(tweets_to_annotate)
 
         for tweet in tweets:
             message = tweet.serialize()
@@ -187,11 +185,11 @@ class AnnotatorContainer:
                     logger.error(message)
                 else:
                     sent_to_persister = True
-
             if logger.isEnabledFor(logging.DEBUG):
                 logger.debug('Sent annotated tweet to PERSISTER: %s', tweet.annotations)
 
-        cls.shared_counter['waiting-{}'.format(lang)] = 0
+        cls.shared_counter[lang] += len(tweets_to_annotate)
+        cls.shared_counter['buffered-{}'.format(lang)] = 0
 
     @classmethod
     def start_consumer(cls, lang='en'):
@@ -214,7 +212,7 @@ class AnnotatorContainer:
 
         try:
             cls.shared_counter[lang] = 0
-            cls.shared_counter['waiting-{}'.format(lang)] = 0
+            cls.shared_counter['buffered-{}'.format(lang)] = 0
 
             for i, msg in enumerate(consumer, start=1):
                 tweet = None
@@ -223,7 +221,7 @@ class AnnotatorContainer:
                     tweet = Tweet.from_json(msg)
                     with lock:
                         buffer_to_annotate.append(tweet)
-                    cls.shared_counter['waiting-{}'.format(lang)] += 1
+                    cls.shared_counter['buffered-{}'.format(lang)] += 1
 
                 except (ValidationError, ValueError, TypeError, InvalidRequest) as e:
                     logger.error(e)

@@ -457,7 +457,7 @@ services:
       - cassandrasmfr
     deploy:
       placement:
-        constraints: [ node.labels.medium == true ]
+        constraints: [ node.labels.huge == true ]
       restart_policy:
         condition: on-failure
         max_attempts: 3

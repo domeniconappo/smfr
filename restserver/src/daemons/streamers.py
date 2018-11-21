@@ -242,6 +242,8 @@ class OnDemandStreamer(BaseStreamer):
 
         if 'text' in data:
             lang = safe_langdetect(tweet_normalization_aggressive(data['text']))
+            if not lang:
+                return
             data['lang'] = lang
             tweet = Tweet.from_tweet(Tweet.NO_COLLECTION_ID, data, ttype=Tweet.COLLECTED_TYPE)
             message = tweet.serialize()

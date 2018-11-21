@@ -412,11 +412,10 @@ class Geocoder:
                                 else:
                                     sent_to_persister = True
 
-                            with cls._lock:
-                                cls._counters[tweet.lang] += 1
+                            cls._counters[tweet.lang] += 1
 
-                            if logger.isEnabledFor(logging.DEBUG):
-                                logger.debug('Sent geocoded tweet to PERSISTER: %s', tweet.geo)
+                            if logger.isEnabledFor(logging.INFO):
+                                logger.info('Sent geocoded tweet to PERSISTER: %s', tweet.geo)
 
                             if not (i % 1000):
                                 logger.info('Geotagged so far %d', i)
