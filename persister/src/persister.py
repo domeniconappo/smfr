@@ -4,15 +4,13 @@ import logging
 from logging.handlers import RotatingFileHandler
 import time
 import multiprocessing
-from multiprocessing.managers import BaseManager, DictProxy
-from collections import defaultdict
 
 from cassandra import InvalidRequest
 from cassandra.cqlengine import ValidationError, CQLEngineException
 from kafka.errors import CommitFailedError, ConsumerTimeout
 
 from smfrcore.models.sql import TwitterCollection, create_app
-from smfrcore.utils import IN_DOCKER, NULL_HANDLER, DEFAULT_HANDLER
+from smfrcore.utils import IN_DOCKER, NULL_HANDLER, DEFAULT_HANDLER, DefaultDictSyncManager
 from smfrcore.utils.kafka import make_kafka_consumer, make_kafka_producer
 from smfrcore.client.api_client import AnnotatorClient
 
@@ -38,14 +36,6 @@ if IN_DOCKER:
     hdlr = RotatingFileHandler(filelog_path, maxBytes=10485760, backupCount=2)
     hdlr.setLevel(logging.ERROR)
     file_logger.addHandler(hdlr)
-
-
-class DefaultDictSyncManager(BaseManager):
-    pass
-
-
-# multiprocessing.Manager does not include defaultdict: we need to use a customized Manager
-DefaultDictSyncManager.register('defaultdict', defaultdict, DictProxy)
 
 
 class Persister:
@@ -114,21 +104,18 @@ class Persister:
                         tweet = Tweet.from_json(msg)
                         if tweet.collectionid == Tweet.NO_COLLECTION_ID:
                             # reconcile with running collections
-                            start = time.time()
                             collection = self.reconcile_tweet_with_collection(tweet)
                             if not collection:
                                 if logger.isEnabledFor(logging.DEBUG):
                                     logger.debug('No collection for tweet %s', tweet.tweetid)
-                                # we log it to file as data for improving reconciliation in the future
-                                logger.debug('Saving to file unreconciled tweet %s', tweet.tweetid)
                                 file_logger.error('%s', msg)
                                 continue  # continue the consumer for loop
                             tweet.collectionid = collection.id
                         tweet.save()
+
                         if logger.isEnabledFor(logging.DEBUG):
                             logger.debug('Saved tweet: %s - collection %d', tweet.tweetid, tweet.collectionid)
-                        if logger.isEnabledFor(logging.INFO) and not (i % 5000):
-                            logger.info('Scanned/Saved since last restart \nTOTAL: %d \n%s', i, str(self.shared_counter))
+                        logger.info('Scanned/Saved since last restart \nTOTAL: %d \n%s', i, str(self.shared_counter))
 
                         with self._lock:
                             self.shared_counter[tweet.ttype] += 1

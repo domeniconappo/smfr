@@ -5,9 +5,6 @@ import tarfile
 
 import ujson
 
-# TODO replace by launching a subprocess
-# (note: it probably does not work out of the box in docker containers inside a VM...need to reconsider it)
-import threading
 import multiprocessing
 
 import time
@@ -19,8 +16,8 @@ from mordecai import Geoparser
 from shapely.geometry import Point, Polygon
 
 from smfrcore.models.cassandra import Tweet
-from smfrcore.models.sql import Nuts2, create_app, sqldb
-from smfrcore.utils import IN_DOCKER
+from smfrcore.models.sql import Nuts2, create_app
+from smfrcore.utils import IN_DOCKER, DefaultDictSyncManager
 from smfrcore.utils.kafka import make_kafka_consumer, make_kafka_producer
 from sqlalchemy.exc import StatementError, InvalidRequestError
 from urllib3.exceptions import ProtocolError
@@ -105,6 +102,9 @@ class Geocoder:
     _running = []
     stop_signals = []
     _lock = multiprocessing.RLock()
+    _manager = DefaultDictSyncManager()
+    _manager.start()
+    _counters = _manager.defaultdict(int)
     logger = logging.getLogger(__name__)
     geonames_host = 'geonames' if IN_DOCKER else '127.0.0.1'
 
@@ -185,7 +185,7 @@ class Geocoder:
                 logger.error('Kafka has problems to allocate memory for the message: throttling')
                 time.sleep(10)
 
-            # remove from `_running` list
+        # remove from `_running` list
         with cls._lock:
             cls._running.remove(collection_id)
         logger.info('<<<<<<<<<<<<< Geocoding tweets selection terminated for collection: %s', collection_id)
@@ -195,8 +195,9 @@ class Geocoder:
         """
         Start Geocoder consumer in background (i.e. in a different thread)
         """
-        t = multiprocessing.Process(target=cls.start_consumer, name='Geocoder Consumer')
-        t.start()
+        p = multiprocessing.Process(target=cls.start_consumer, name='Geocoder Consumer')
+        p.daemon = True
+        p.start()
 
     @classmethod
     def geoparse_tweet(cls, tweet, tagger):
@@ -363,6 +364,10 @@ class Geocoder:
         }
 
     @classmethod
+    def counters(cls):
+        return dict(cls._counters)
+
+    @classmethod
     def start_consumer(cls):
         producer = make_kafka_producer()
         consumer = make_kafka_consumer(topic=cls.geocoder_kafka_topic)
@@ -376,7 +381,6 @@ class Geocoder:
                     try:
                         msg = msg.value.decode('utf-8')
                         tweet = Tweet.from_json(msg)
-                        sqldb.session.begin(subtransactions=True)
                         try:
                             # COMMENT OUT CODE BELOW: we will geolocate everything for the moment
                             # flood_prob = t.annotations.get('flood_probability', ('', 0.0))[1]
@@ -384,22 +388,22 @@ class Geocoder:
                             #     continue
 
                             coordinates, nuts2, nuts_source, country_code, place, geonameid = cls.find_nuts_heuristic(tweet, tagger)
-                            sqldb.session.commit()
                             if not coordinates:
                                 continue
 
                             cls.set_geo_fields(coordinates, nuts2, nuts_source, country_code, place, geonameid, tweet)
-                            if logger.isEnabledFor(logging.DEBUG):
-                                logger.debug('Send geocoded tweet to PERSISTER: %s', tweet.geo)
-
                             message = tweet.serialize()
                             producer.send(cls.persister_kafka_topic, message)
+                            with cls._lock:
+                                cls._counters[tweet.lang] += 1
+
+                            if logger.isEnabledFor(logging.DEBUG):
+                                logger.debug('Sent geocoded tweet to PERSISTER: %s', tweet.geo)
 
                             if not (i % 1000):
                                 logger.info('Geotagged so far %d', i)
                         except (StatementError, InvalidRequestError):
-                            sqldb.session.rollback()
-
+                            continue
                         except Exception as e:
                             logger.error(type(e))
                             logger.error('An error occured during geotagging: %s', e)

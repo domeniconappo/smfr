@@ -12,7 +12,7 @@ import numpy as np
 import ujson as json
 from cassandra.cluster import Cluster, default_lbp_factory
 from cassandra.cqlengine.connection import Connection, DEFAULT_CONNECTION, _connections
-from cassandra.query import named_tuple_factory
+from cassandra.query import named_tuple_factory, PreparedStatement
 from cassandra.auth import PlainTextAuthProvider
 from cassandra.util import OrderedMapSerializedKey
 from flask_cqlalchemy import CQLAlchemy
@@ -215,8 +215,7 @@ class Tweet(cqldb.Model):
         if out_format not in ('obj', 'json', 'dict', 'tuple'):
             raise ValueError('out_format is not valid')
 
-        if not hasattr(cls, 'stmt'):
-            cls.generate_prepared_statements()
+        cls.generate_prepared_statements()
 
         if last_tweetid:
             results = cls.session.execute(cls.stmt_with_last_tweetid,
@@ -231,8 +230,7 @@ class Tweet(cqldb.Model):
 
     @classmethod
     def get_tweet(cls, collection_id, ttype, tweetid):
-        if not hasattr(cls, 'stmt'):
-            cls.generate_prepared_statements()
+        cls.generate_prepared_statements()
         results = list(cls.session.execute(cls.stmt_single, parameters=(collection_id, ttype, tweetid), timeout=None))
         return cls.to_obj(results[0]) if results and len(results) == 1 else None
 
@@ -241,18 +239,22 @@ class Tweet(cqldb.Model):
         """
         Generate prepared CQL statements for existing tables
         """
-        cls.samples_stmt = cls.session.prepare(
-            'SELECT * FROM {}.tweet WHERE collectionid=? AND ttype=? ORDER BY tweetid DESC LIMIT ?'.format(cls.__keyspace__)
-        )
-        cls.stmt = cls.session.prepare(
-            'SELECT * FROM {}.tweet WHERE collectionid=? AND ttype=? ORDER BY tweetid DESC'.format(cls.__keyspace__)
-        )
-        cls.stmt_with_last_tweetid = cls.session.prepare(
-            'SELECT * FROM {}.tweet WHERE collectionid=? AND ttype=? AND tweet_id>?'.format(cls.__keyspace__)
-        )
-        cls.stmt_single = cls.session.prepare(
-            'SELECT * FROM {}.tweet WHERE collectionid=? AND ttype=? and tweetid=?'.format(cls.__keyspace__)
-        )
+        if not hasattr(cls, 'samples_stmt') or not isinstance(cls.samples_stmt, PreparedStatement):
+            cls.samples_stmt = cls.session.prepare(
+                'SELECT * FROM {}.tweet WHERE collectionid=? AND ttype=? ORDER BY tweetid DESC LIMIT ?'.format(cls.__keyspace__)
+            )
+        if not hasattr(cls, 'stmt') or not isinstance(cls.stmt, PreparedStatement):
+            cls.stmt = cls.session.prepare(
+                'SELECT * FROM {}.tweet WHERE collectionid=? AND ttype=? ORDER BY tweetid DESC'.format(cls.__keyspace__)
+            )
+        if not hasattr(cls, 'stmt_with_last_tweetid') or not isinstance(cls.stmt_with_last_tweetid, PreparedStatement):
+            cls.stmt_with_last_tweetid = cls.session.prepare(
+                'SELECT * FROM {}.tweet WHERE collectionid=? AND ttype=? AND tweet_id>?'.format(cls.__keyspace__)
+            )
+        if not hasattr(cls, 'stmt_single') or not isinstance(cls.stmt_single, PreparedStatement):
+            cls.stmt_single = cls.session.prepare(
+                'SELECT * FROM {}.tweet WHERE collectionid=? AND ttype=? and tweetid=?'.format(cls.__keyspace__)
+            )
 
     @classmethod
     def make_table_object(cls, numrow, tweet_tuple):
@@ -287,8 +289,7 @@ class Tweet(cqldb.Model):
 
     @classmethod
     def get_samples(cls, collection_id, ttype, size=10):
-        if not hasattr(cls, 'stmt'):
-            cls.generate_prepared_statements()
+        cls.generate_prepared_statements()
         rows = cls.session.execute(cls.samples_stmt, parameters=[collection_id, ttype, size])
         return rows
 

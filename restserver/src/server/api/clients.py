@@ -142,6 +142,14 @@ class GeocoderClient(MicroserviceClient):
         return res.json(), res.status_code
 
     @classmethod
+    def counters(cls):
+        url = '{}/counters'.format(cls.base_uri)
+        res = requests.get(url)
+        cls._check_response(res, res.status_code)
+        result = res.json()
+        return result, res.status_code
+
+    @classmethod
     def stop(cls, collection_id):
         """
 

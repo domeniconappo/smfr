@@ -131,7 +131,8 @@ class AnnotatorContainer:
         Start Annotator consumer in background (i.e. in a different thread)
         :param lang: str two characters string denoting a language (e.g. 'en')
         """
-        p = multiprocessing.Process(target=cls.start_consumer, args=(lang,), name='Annotator Consumer {}'.format(lang))
+        p = multiprocessing.Process(target=cls.start_consumer, args=(lang,), name='Annotator-{}'.format(lang))
+        p.daemon = True
         p.start()
 
     @classmethod

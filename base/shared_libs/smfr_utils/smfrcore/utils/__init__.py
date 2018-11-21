@@ -3,9 +3,11 @@ Core Utils module
 """
 import logging
 from logging import StreamHandler
+from collections import defaultdict
 import functools
 import time
 import threading
+from multiprocessing.managers import DictProxy, BaseManager
 import os
 from datetime import timedelta
 
@@ -92,5 +94,13 @@ def run_continuously(interval=1):
     continuous_thread = ScheduleThread()
     continuous_thread.start()
     return cease_continuous_run
+
+
+class DefaultDictSyncManager(BaseManager):
+    pass
+
+
+# multiprocessing.Manager does not include defaultdict: we need to use a customized Manager
+DefaultDictSyncManager.register('defaultdict', defaultdict, DictProxy)
 
 

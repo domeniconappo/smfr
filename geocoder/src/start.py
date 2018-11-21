@@ -55,6 +55,16 @@ class RunningGeotaggersApi(Resource):
         return Geocoder.running(), 200
 
 
+class GeotaggerCounters(Resource):
+    """
+    API for `/counters` endpoint
+    """
+
+    @marshal_with_field(fields.Raw)
+    def get(self):
+        return Geocoder.counters(), 200
+
+
 if __name__ == 'start':
     api.add_resource(GeocoderApi, '/<int:collection_id>/<string:action>')
     api.add_resource(RunningGeotaggersApi, '/running')
