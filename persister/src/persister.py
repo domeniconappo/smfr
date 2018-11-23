@@ -1,4 +1,3 @@
-from collections import namedtuple
 import os
 import logging
 from logging.handlers import RotatingFileHandler
@@ -43,25 +42,20 @@ class Persister:
         Persister component to save Tweet messages in Cassandra.
         It listens to the Kafka queue, build a Tweet object from messages and save it in Cassandra.
         """
-    auto_offset_reset = 'earliest'
-    group_id = 'PERSISTER'
-    PersisterConfiguration = namedtuple('PersisterConfiguration', ['persister_kafka_topic', 'kafka_bootstrap_servers',
-                                                                   'annotator_kafka_topic', 'geocoder_kafka_topic'])
-    config = PersisterConfiguration(
-        persister_kafka_topic=os.getenv('PERSISTER_KAFKA_TOPIC', 'persister'),
-        kafka_bootstrap_servers=os.getenv('KAFKA_BOOTSTRAP_SERVERS', 'kafka:9090,kafka:9092') if IN_DOCKER else '127.0.0.1:9090,127.0.0.1:9092',
-        annotator_kafka_topic=os.getenv('ANNOTATOR_KAFKA_TOPIC', 'annotator'),
-        geocoder_kafka_topic=os.getenv('GEOCODER_KAFKA_TOPIC', 'geocoder'),
-    )
     _lock = multiprocessing.RLock()
-    app = create_app()
     _manager = DefaultDictSyncManager()
     _manager.start()
     shared_counter = _manager.defaultdict(int)
+    persister_kafka_topic = os.getenv('PERSISTER_KAFKA_TOPIC', 'persister')
+    kafka_bootstrap_servers = os.getenv('KAFKA_BOOTSTRAP_SERVERS', 'kafka:9090,kafka:9092') if IN_DOCKER else '127.0.0.1:9090,127.0.0.1:9092'
+    annotator_kafka_topic = os.getenv('ANNOTATOR_KAFKA_TOPIC', 'annotator')
+    geocoder_kafka_topic = os.getenv('GEOCODER_KAFKA_TOPIC', 'geocoder')
+
+    app = create_app()
 
     def __init__(self):
-        self.topic = self.config.persister_kafka_topic
-        self.bootstrap_servers = self.config.kafka_bootstrap_servers.split(',')
+        self.topic = self.persister_kafka_topic
+        self.bootstrap_servers = self.kafka_bootstrap_servers.split(',')
         self.language_models = AnnotatorClient.available_languages()
         self.background_process = None
         self.active = True
@@ -115,7 +109,6 @@ class Persister:
 
                         if logger.isEnabledFor(logging.DEBUG):
                             logger.debug('Saved tweet: %s - collection %d', tweet.tweetid, tweet.collectionid)
-                        logger.info('Scanned/Saved since last restart \nTOTAL: %d \n%s', i, str(self.shared_counter))
 
                         with self._lock:
                             self.shared_counter[tweet.ttype] += 1
@@ -161,13 +154,16 @@ class Persister:
         topic = None
         from smfrcore.models.cassandra import Tweet
         if tweet.ttype == Tweet.COLLECTED_TYPE and tweet.lang in self.language_models:
-            # tweet will go to the next in pipeline: annotator queue
-            topic = '{}-{}'.format(self.config.annotator_kafka_topic, tweet.lang)
+            # annotated tweet will go to the next in pipeline: annotator queue
+            topic = '{}-{}'.format(self.annotator_kafka_topic, tweet.lang)
         elif tweet.ttype == Tweet.ANNOTATED_TYPE:
-            # tweet will go to the next in pipeline: geocoder queue
-            topic = self.config.geocoder_kafka_topic
+            # annotated tweet will go to the next in pipeline: geocoder queue
+            topic = self.geocoder_kafka_topic
+
         if not topic:
+            logger.warning('No topic were determined for: %s %s %s', tweet.ttype, tweet.tweetid, tweet.lang)
             return
+        logger.info('Sending to pipeline %s', topic)
         message = tweet.serialize()
         producer.send(topic, message)
         if logger.isEnabledFor(logging.DEBUG):
@@ -184,8 +180,7 @@ class Persister:
         logger.info('Persister connection closed!')
 
     def __str__(self):
-        return 'Persister ({}): {}@{}:{}'.format(id(self), self.topic, self.bootstrap_servers, self.group_id)
+        return 'Persister ({}): {}@{}'.format(id(self), self.topic, self.bootstrap_servers)
 
     def counters(self):
-        with self._lock:
-            return dict(self.shared_counter)
+        return dict(self.shared_counter)

@@ -168,7 +168,7 @@ class AnnotatorContainer:
                     buffer += tweets_to_annotate
                     return
 
-        logger.info('Instantiate producer for geocoder topic for %s messages', lang)
+        logger.info('Instantiate producer to persister for annotated %s messages', lang)
         producer = make_kafka_producer()
         for tweet in tweets:
             # persist the annotated tweet
