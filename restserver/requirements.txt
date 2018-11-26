@@ -1,7 +1,7 @@
 pytz
 mysqlclient
 ujson
-kafka-python==1.4.2
+kafka-python==1.4.4
 arrow
 PyJWT
 schedule

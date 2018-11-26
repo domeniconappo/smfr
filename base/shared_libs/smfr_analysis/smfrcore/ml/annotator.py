@@ -27,6 +27,12 @@ class Annotator:
         return model, tokenizer
 
     @classmethod
+    def annotate_tweet(cls, tweet, flood_probability):
+        tweet.annotations = {'flood_probability': ('yes', flood_probability)}
+        tweet.ttype = Tweet.ANNOTATED_TYPE
+        return tweet
+
+    @classmethod
     def annotate(cls, model, tweets, tokenizer):
         """
         Annotate the tweet t using model and tokenizer
@@ -40,11 +46,6 @@ class Annotator:
         sequences = tokenizer.texts_to_sequences(texts)
         data = pad_sequences(sequences, maxlen=model.layers[0].input_shape[1])
         predictions_list = model.predict(data)
-        res = []
         predictions = predictions_list[:, 1]
-        for i, t in enumerate(tweets):
-            flood_probability = 1. * predictions[i]
-            t.annotations = {'flood_probability': ('yes', flood_probability)}
-            t.ttype = Tweet.ANNOTATED_TYPE
-            res.append(t)
+        res = [cls.annotate_tweet(t, 1. * predictions[i]) for i, t in enumerate(tweets)]
         return res

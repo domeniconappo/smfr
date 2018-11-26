@@ -5,7 +5,7 @@ from .base import sqldb, SMFRModel, create_app
 
 from .users import User
 from .collections import TwitterCollection, Aggregation
-from .nuts import (Nuts2, Nuts3)
+from .nuts import Nuts2, Nuts3, Nuts2Finder
 from .products import Product
 
 logger = logging.getLogger('SQL')

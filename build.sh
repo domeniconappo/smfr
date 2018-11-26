@@ -8,8 +8,11 @@ second_command=${2:-1}
 SERVICES="web restserver geocoder annotator persister aggregator cassandrasmfr mysql products"
 logged=0
 
-
-export image_tag=`cat VERSION | grep "VERSION" | cut -d'=' -f2`
+echo
+export image_tag=`cat ./VERSION`
+echo =================================================== Building SMFR ${image_tag}
+echo
+echo
 
 SMFR_DATADIR=$(getProperty "SMFR_DATADIR")
 GIT_REPO_MODELS=$(getProperty "GIT_REPO_MODELS")
@@ -27,7 +30,6 @@ if [[ ! -d ${SMFR_DATADIR} ]]; then
     mkdir -p ${SMFR_DATADIR}
 fi
 
-# building with docker-compose
 python3 scripts/compose4build.py ${image_tag}
 
 # build base image
@@ -49,10 +51,12 @@ fi
 echo
 echo
 
-cp base/shared_libs/VERSION base/shared_libs/smfr_models/
-cp base/shared_libs/VERSION base/shared_libs/smfr_clients/
-cp base/shared_libs/VERSION base/shared_libs/smfr_utils/
-cp base/shared_libs/VERSION base/shared_libs/smfr_annotator/
+# Set VERSION for shared libraries
+
+cp VERSION base/shared_libs/smfr_models/
+cp VERSION base/shared_libs/smfr_clients/
+cp VERSION base/shared_libs/smfr_utils/
+cp VERSION base/shared_libs/smfr_analysis/
 
 if [[ -n "`echo ${SERVICES} | xargs -n1 echo | grep ${command}`" ]]; then
     echo  ++++++++++++++++++++ Building ${command} service +++++++++++++++++++++++++++++++

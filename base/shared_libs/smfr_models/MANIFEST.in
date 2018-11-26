@@ -1,2 +1,3 @@
 include VERSION
 include README.md
+include smfrcore/models/data/countries.json.tar.gz

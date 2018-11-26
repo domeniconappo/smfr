@@ -1,5 +1,11 @@
+import os
+import tarfile
+import pkg_resources
+
+import ujson
 from sqlalchemy import Index, Column, Integer, String, Float
 from sqlalchemy_utils import JSONType
+from shapely.geometry import Point, Polygon
 
 from .base import SMFRModel, LongJSONType
 
@@ -136,3 +142,74 @@ class Nuts3(SMFRModel):
                    longitude=properties['LON'],
                    names=names_by_lang,
                    properties=additional_props)
+
+
+class Nuts2Finder:
+
+    """
+    Helper class with Nuts2 methods for finding Nuts2 and countries
+    Warning: the method does not return NUTS2 code (e.g. IT6) but the NUTS2 id as it stored in EFAS NUTS2 table
+    (that is: the efas_id)
+    """
+    current_package_dir, _ = os.path.split(__file__)
+    data_path = os.path.join(current_package_dir, '../data', 'countries.json.tar.gz')
+    with tarfile.open(data_path, 'r:gz') as tar:
+        archive = tar.getmembers()[0]
+        init_f = tar.extractfile(archive)
+        countries = ujson.load(init_f)
+
+    @classmethod
+    def _is_in_poly(cls, point, geo):
+        poly = Polygon(geo)
+        return point.within(poly)
+
+    @classmethod
+    def find_nuts2_by_point(cls, lat, lon):
+        """
+        Check if a point (lat, lon) is in a NUTS2 region and returns its id. None otherwise.
+        :param lat: Latitude of a point
+        :rtype lat: float
+        :param lon: Longitute of a point
+        :rtype lon: float
+        :return: Nuts2 object
+
+        """
+        if lat is None or lon is None:
+            return None
+
+        lat, lon = float(lat), float(lon)
+        point = Point(lon, lat)
+        nuts2_candidates = Nuts2.get_nuts2(lat, lon)
+
+        for nuts2 in nuts2_candidates:
+            geometry = nuts2.geometry[0]
+            try:
+                if cls._is_in_poly(point, geometry):
+                    return nuts2
+            except ValueError:
+                for subgeometry in geometry:
+                    if cls._is_in_poly(point, subgeometry):
+                        return nuts2
+
+        return None
+
+    @classmethod
+    def find_country(cls, code):
+        """
+        Return country name based on country code
+        :param code: Country code ISO3
+        :return: tuple<str, bool> (country name, is european)
+        """
+        res = cls.countries.get(code)
+        if res:
+            return res['name'], res.get('continent') == 'EU'
+        nuts2 = Nuts2.by_country_code(code)
+        # get the first item with country field populated
+        for nut in nuts2:
+            if nut.country:
+                return nut.country, True
+        return '', False
+
+    @classmethod
+    def find_nuts2_by_name(cls, user_location):
+        return Nuts2.query.filter_by(efas_name=user_location).first()

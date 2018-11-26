@@ -6,7 +6,7 @@ import multiprocessing
 
 from cassandra import InvalidRequest
 from cassandra.cqlengine import ValidationError, CQLEngineException
-from kafka.errors import CommitFailedError, ConsumerTimeout
+from kafka.errors import CommitFailedError, KafkaTimeoutError
 
 from smfrcore.models.sql import TwitterCollection, create_app
 from smfrcore.utils import IN_DOCKER, NULL_HANDLER, DEFAULT_HANDLER, DefaultDictSyncManager
@@ -88,6 +88,7 @@ class Persister:
         logger.info('Starting %s...Reset counters and making kafka connections', str(self))
         producer = make_kafka_producer()
         consumer = make_kafka_consumer(topic=self.topic)
+
         while self.active:
             try:
                 logger.info('===> Entering in consumer loop...')
@@ -127,7 +128,7 @@ class Persister:
                         logger.error(type(e))
                         logger.error(e)
                         continue
-            except ConsumerTimeout:
+            except KafkaTimeoutError:
                 logger.warning('Consumer Timeout...sleep 5 seconds')
                 time.sleep(5)
             except CommitFailedError:
@@ -142,7 +143,6 @@ class Persister:
             except KeyboardInterrupt:
                 self.stop()
                 self.active = False
-
         if not consumer._closed:
             consumer.close(30)
         if not producer._closed:
@@ -163,7 +163,6 @@ class Persister:
         if not topic:
             logger.warning('No topic were determined for: %s %s %s', tweet.ttype, tweet.tweetid, tweet.lang)
             return
-        logger.info('Sending to pipeline %s', topic)
         message = tweet.serialize()
         producer.send(topic, message)
         if logger.isEnabledFor(logging.DEBUG):

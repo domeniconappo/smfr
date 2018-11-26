@@ -1,6 +1,6 @@
-numpy==1.14.5
+numpy>=1.15.0
 mordecai==2.0.1
-kafka-python==1.4.2
+kafka-python==1.4.4
 ujson
 mysqlclient
 flask
@@ -11,7 +11,7 @@ shapely
 fiona
 gunicorn
 arrow
-keras==2.2.2
-tensorflow==1.10.0
+keras==2.2.4
+tensorflow==1.12.0
 PyYAML
 PyJWT

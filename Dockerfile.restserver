@@ -8,7 +8,8 @@ ARG download_folder
 
 ENV LANG=C.UTF-8
 
-RUN apt-get update && apt-get install -y mariadb-client \
+RUN apt-get update \
+ # && apt-get install -y mariadb-client \
  && mkdir -p /scripts && mkdir -p /restserver && mkdir -p /restserver/smfrcore && mkdir -p /requirements \
  && mkdir -p /configuration && mkdir -p /smfr/uploads/ && mkdir -p ~/.ssh/ && mkdir -p ${download_folder}
 

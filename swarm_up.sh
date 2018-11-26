@@ -2,7 +2,7 @@
 
 source functions.sh
 
-export image_tag=`cat VERSION | grep "VERSION" | cut -d'=' -f2`
+export image_tag=`cat ./VERSION`
 
 echo
 echo

@@ -1,13 +1,13 @@
 import os
 import logging
-
+import signal
 
 from flask_restful import Resource, Api, fields, marshal_with, marshal_with_field
 
 from smfrcore.models.sql import create_app
 from smfrcore.utils import DEFAULT_HANDLER
 
-from geocoder import Geocoder
+from geocodercontainer import GeocoderContainer
 
 
 app = create_app()
@@ -36,11 +36,11 @@ class GeocoderApi(Resource):
             return {'error': {'description': 'Unknown operation {}'.format(action)}}, 400
 
         if action == 'start':
-            if Geocoder.is_running_for(collection_id):
+            if GeocoderContainer.is_running_for(collection_id):
                 return {'error': {'description': 'Geocoder already running for {}'.format(collection_id)}}, 400
-            Geocoder.launch_in_background(collection_id)
+            GeocoderContainer.launch_in_background(collection_id)
         elif action == 'stop':
-            Geocoder.stop(collection_id)
+            GeocoderContainer.stop(collection_id)
 
         return {'result': 'success', 'action_performed': action}, 201
 
@@ -52,7 +52,7 @@ class RunningGeotaggersApi(Resource):
 
     @marshal_with_field(fields.List(fields.Integer))
     def get(self):
-        return Geocoder.running(), 200
+        return GeocoderContainer.running(), 200
 
 
 class GeotaggerCounters(Resource):
@@ -62,7 +62,7 @@ class GeotaggerCounters(Resource):
 
     @marshal_with_field(fields.Raw)
     def get(self):
-        return Geocoder.counters(), 200
+        return GeocoderContainer.counters(), 200
 
 
 if __name__ == 'start':
@@ -70,4 +70,17 @@ if __name__ == 'start':
     api.add_resource(RunningGeotaggersApi, '/running')
     api.add_resource(GeotaggerCounters, '/counters')
     logger.info('[OK] Geocoder Microservice ready for incoming requests')
-    Geocoder.consumer_in_background()
+    process = GeocoderContainer.consumer_in_background()
+
+    def stop_geocoder(signum, _):
+        logger.debug("Received %d", signum)
+        logger.debug("Stopping any running producer/consumer...")
+
+        if process:
+            logger.info("Stopping consumer %s", str(GeocoderContainer))
+            process.terminate()
+
+    signal.signal(signal.SIGINT, stop_geocoder)
+    signal.signal(signal.SIGTERM, stop_geocoder)
+    signal.signal(signal.SIGQUIT, stop_geocoder)
+    logger.debug('Registered %d %d and %d', signal.SIGINT, signal.SIGTERM, signal.SIGQUIT)

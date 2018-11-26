@@ -18,7 +18,7 @@ from cassandra.util import OrderedMapSerializedKey
 from flask_cqlalchemy import CQLAlchemy
 
 from smfrcore.utils import IN_DOCKER, DEFAULT_HANDLER, FALSE_VALUES
-from smfrcore.models.sql import TwitterCollection, create_app
+from smfrcore.models.sql import TwitterCollection, Nuts2Finder, create_app
 from smfrcore.models.utils import get_cassandra_hosts
 
 
@@ -527,6 +527,26 @@ class Tweet(cqldb.Model):
     @property
     def user_location(self):
         return self.user_location_from_raw_tweet(self.original_tweet_as_dict)
+
+    def set_geo(self, latlong, nuts2, nuts_source, country_code, place, geonameid):
+        self.ttype = self.GEOTAGGED_TYPE
+        self.latlong = latlong
+        self.nuts2 = str(nuts2.efas_id) if nuts2 else None
+        self.nuts2source = nuts_source
+        country, is_european = Nuts2Finder.find_country(country_code)
+        self.geo = {
+            'nuts_efas_id': str(nuts2.efas_id) if nuts2 else '',
+            'nuts_id': nuts2.nuts_id if nuts2 and nuts2.nuts_id is not None else '',
+            'nuts_source': nuts_source or '',
+            'latitude': str(latlong[0]),
+            'longitude': str(latlong[1]),
+            'country': country if not nuts2 or not nuts2.country else nuts2.country,
+            'is_european': str(is_european),  # Map<Text, Text> fields must have text values (bool are not allowed)
+            'country_code': country_code,
+            'efas_name': nuts2.efas_name if nuts2 and nuts2.efas_name else '',
+            'place': place,
+            'geonameid': geonameid,
+        }
 
 
 TweetTuple = namedtuple('TweetTuple', Tweet.fields())

@@ -1,17 +1,13 @@
-import copy
 import os
 import logging
 import multiprocessing
-import threading
 import time
 
-import schedule
 from cassandra import InvalidRequest
 from cassandra.cqlengine import ValidationError
 from kafka.errors import CommitFailedError, KafkaTimeoutError
 
 from smfrcore.models.cassandra import Tweet
-from smfrcore.utils import run_continuously
 from smfrcore.utils.kafka import make_kafka_consumer, make_kafka_producer, send_to_persister
 from smfrcore.ml.helpers import models, logger, available_languages
 from smfrcore.ml.annotator import Annotator
@@ -136,100 +132,56 @@ class AnnotatorContainer:
         p.start()
 
     @classmethod
-    def consume_buffer(cls, buffer, lang, lock):
-        """
-        Actual method, executed as a scheduled thread, that performs annotation on a buffer of collected tweets
-        :param buffer: list of tweets objects
-        :param lang: the lang defining the current annotator process
-        :param lock: a lock to safely modify the buffer (it can be modified by the main kafka consumer thread)
-        """
-        with lock:
-            tweets_to_annotate = copy.deepcopy(buffer)
-            buffer.clear()
-
-        if not tweets_to_annotate:
-            return
-
-        import tensorflow as tf
-        session_conf = tf.ConfigProto(intra_op_parallelism_threads=1, inter_op_parallelism_threads=1)
-        session = tf.Session(graph=tf.get_default_graph(), config=session_conf)
-
-        with session.as_default():
-            logger.info('Annotating buffer for: %s', lang)
-            try:
-                model, tokenizer = Annotator.load_annotation_model(lang)
-                tweets = Annotator.annotate(model, tweets_to_annotate, tokenizer)
-            except Exception as e:
-                logger.error(lang)
-                logger.error(type(e))
-                logger.error(e)
-                with lock:
-                    # restore entire buffer in case of an error in annotation
-                    buffer += tweets_to_annotate
-                    return
-
-        logger.info('Instantiate producer to persister for annotated %s messages', lang)
-        producer = make_kafka_producer()
-        for tweet in tweets:
-            # persist the annotated tweet
-            send_to_persister(producer, tweet)
-
-            if logger.isEnabledFor(logging.DEBUG):
-                logger.debug('Sent annotated tweet to PERSISTER: %s', tweet.annotations)
-
-        cls.shared_counter[lang] += len(tweets_to_annotate)
-        cls.shared_counter['buffered-{}'.format(lang)] = 0
-        if not producer._closed:
-            producer.close(30)
-
-    @classmethod
     def start_consumer(cls, lang='en'):
         """
         Main method that iterate over messages coming from Kafka queue,
         build a Tweet object to annotate (and save it in a buffer) and send it to next in pipeline (geocoder)
         """
         consumer = make_kafka_consumer(topic='{}-{}'.format(cls.annotator_kafka_topic, lang))
-        buffer_to_annotate = []
-        lock = threading.RLock()
+        producer = make_kafka_producer()
+        import tensorflow as tf
+        session_conf = tf.ConfigProto(intra_op_parallelism_threads=1, inter_op_parallelism_threads=1)
+        session = tf.Session(graph=tf.get_default_graph(), config=session_conf)
+        with session.as_default():
+            model, tokenizer = Annotator.load_annotation_model(lang)
 
-        # put some interleaving to avoid starting threads at same time and start randomly between 1 and 5 minutes
-        interval = sum(ord(c) for c in lang)
-        schedule.every().to(5).minutes.do(
-            cls.consume_buffer,
-            *(buffer_to_annotate, lang, lock)
-        ).tag('annotate-buffer')
+            try:
+                cls.shared_counter[lang] = 0
 
-        run_continuously(interval=interval)
+                for i, msg in enumerate(consumer, start=1):
+                    tweet = None
+                    try:
+                        # TODO now we fetch and annotate one tweet at the time.
+                        #  We should use KafkaConsumer.poll(num_records) and send more tweets
+                        #  to Annotator.annotate method
+                        msg = msg.value.decode('utf-8')
+                        tweet = Tweet.from_json(msg)
+                        annotated_tweets = Annotator.annotate(model, [tweet], tokenizer)
+                        for tweet in annotated_tweets:
+                            send_to_persister(producer, tweet)
+                        cls.shared_counter[lang] += 1
+                        if logger.isEnabledFor(logging.DEBUG):
+                            logger.debug('Sent annotated tweet to PERSISTER: %s', tweet.annotations)
 
-        try:
-            cls.shared_counter[lang] = 0
-            cls.shared_counter['buffered-{}'.format(lang)] = 0
+                    except (ValidationError, ValueError, TypeError, InvalidRequest) as e:
+                        logger.error(e)
+                        logger.error('Poison message for Cassandra: %s', tweet or msg)
+                    except Exception as e:
+                        logger.error(type(e))
+                        logger.error(e)
+                        logger.error(msg)
 
-            for i, msg in enumerate(consumer, start=1):
-                tweet = None
-                try:
-                    msg = msg.value.decode('utf-8')
-                    tweet = Tweet.from_json(msg)
-                    with lock:
-                        buffer_to_annotate.append(tweet)
-                    cls.shared_counter['buffered-{}'.format(lang)] += 1
-
-                except (ValidationError, ValueError, TypeError, InvalidRequest) as e:
-                    logger.error(e)
-                    logger.error('Poison message for Cassandra: %s', tweet if tweet else msg)
-                except Exception as e:
-                    logger.error(type(e))
-                    logger.error(e)
-                    logger.error(msg)
-
-        except CommitFailedError:
-            logger.error('Annotator consumer was disconnected during I/O operations. Exited.')
-        except ValueError:
-            # tipically an I/O operation on closed epoll object
-            # as the consumer can be disconnected in another thread (see signal handling in start.py)
-            if consumer._closed:
-                logger.info('Annotator consumer was disconnected during I/O operations. Exited.')
-            else:
+            except CommitFailedError:
+                logger.error('Annotator consumer was disconnected during I/O operations. Exited.')
+            except ValueError:
+                # tipically an I/O operation on closed epoll object
+                # as the consumer can be disconnected in another thread (see signal handling in start.py)
+                if consumer._closed:
+                    logger.info('Annotator consumer was disconnected during I/O operations. Exited.')
+                else:
+                    consumer.close()
+            except KeyboardInterrupt:
                 consumer.close()
-        except KeyboardInterrupt:
-            consumer.close()
+
+        if not producer._closed:
+            producer.close(30)
