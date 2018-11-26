@@ -146,16 +146,12 @@ class GeocoderContainer:
                         logger.debug('No coordinates for %s...skipping', tweet.tweetid)
                         continue
                     tweet.set_geo(coordinates, nuts2, nuts_source, country_code, place, geonameid)
-                    logger.info('Successfully geocoded tweet: %s', tweet.geo)
 
                     # persist the geotagged tweet
                     send_to_persister(producer, tweet)
                     cls._counters[tweet.lang] += 1
 
-                    if logger.isEnabledFor(logging.INFO):
-                        logger.info('Sent geocoded tweet to PERSISTER: %s', tweet.geo)
-
-                    if not (i % 1000):
+                    if not (i % 1000) and logger.isEnabledFor(logging.INFO):
                         logger.info('Geotagged so far %d', i)
                 except (StatementError, InvalidRequestError) as e:
                     logger.error(e)

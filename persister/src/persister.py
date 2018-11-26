@@ -149,10 +149,10 @@ class Persister:
             producer.close(30)
 
     def send_to_pipeline(self, producer, tweet):
-        if not tweet.use_pipeline:
+        from smfrcore.models.cassandra import Tweet
+        if not tweet.use_pipeline or tweet.ttype == Tweet.GEOTAGGED_TYPE:
             return
         topic = None
-        from smfrcore.models.cassandra import Tweet
         if tweet.ttype == Tweet.COLLECTED_TYPE and tweet.lang in self.language_models:
             # annotated tweet will go to the next in pipeline: annotator queue
             topic = '{}-{}'.format(self.annotator_kafka_topic, tweet.lang)
