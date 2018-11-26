@@ -4,6 +4,7 @@ import socket
 from urllib3.exceptions import ProtocolError
 import logging
 
+from elasticsearch.exceptions import TransportError
 from mordecai import Geoparser
 
 from smfrcore.models.sql import Nuts2Finder
@@ -19,7 +20,20 @@ geonames_host = 'geonames' if IN_DOCKER else '127.0.0.1'
 
 class Geocoder:
     def __init__(self):
-        self.tagger = Geoparser(geonames_host)
+        ok = False
+        retries = 10
+        while not ok:
+            try:
+                self.tagger = Geoparser(geonames_host)
+            except (TransportError, ConnectionError) as e:
+                logger.error(e)
+                logger.warning('ES Geonames is not responding...waiting for bootstrap')
+                time.sleep(5)
+                retries -= 1
+                if retries < 0:
+                    raise ConnectionError
+            else:
+                ok = True
 
     def geoparse_tweet(self, tweet):
         """
@@ -36,7 +50,7 @@ class Geocoder:
                 res = self.tagger.geoparse(tweet.full_text)
             except (ConnectionResetError, ProtocolError, socket.timeout) as e:
                 logger.error(e)
-                logger.warning('ES gazzetter is not responding...throttling 15 secs')
+                logger.warning('ES gazetter is not responding...throttling 15 secs')
                 time.sleep(15)
                 retries -= 1
             except Exception as e:

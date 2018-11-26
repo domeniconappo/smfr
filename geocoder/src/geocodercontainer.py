@@ -134,11 +134,8 @@ class GeocoderContainer:
             geocoder = Geocoder()
             logger.info('[OK] +++++++++++++ Geocoder consumer starting')
             for i, msg in enumerate(consumer, start=1):
-                logger.debug('Processing message %d', i)
                 msg = msg.value.decode('utf-8')
-                logger.debug('Decoded message %d', i)
                 tweet = Tweet.from_json(msg)
-                logger.debug('Built tweet message %s', tweet.tweetid)
                 try:
                     # COMMENT OUT CODE BELOW: we will geolocate everything for the moment
                     # flood_prob = t.annotations.get('flood_probability', ('', 0.0))[1]
@@ -173,7 +170,8 @@ class GeocoderContainer:
                         producer.close(30)
                         break
                     continue
-
+        except ConnectionError:
+            logger.error('ES Gazetter is not responding. Exited.')
         except CommitFailedError:
             logger.error('Geocoder consumer was disconnected during I/O operations. Exited.')
         except ValueError:
@@ -189,3 +187,5 @@ class GeocoderContainer:
         logger.warning('Geocoder Consumer disconnected.')
         if not producer._closed:
             producer.close(30)
+        if not consumer._closed:
+            consumer.close(30)
