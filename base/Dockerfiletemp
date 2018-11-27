@@ -4,10 +4,10 @@ MAINTAINER Domenico Nappo <domenico.nappo@ext.ec.europa.eu>
 ARG http_proxy
 ARG https_proxy
 
-RUN apt-get update && apt-get install -y software-properties-common apt-file apt-utils
+RUN apt-get update && apt-get install -y --no-install-recommends software-properties-common apt-file apt-utils
 RUN apt-file update
 
-RUN apt-get install -y liblapack-dev liblapack-pic liblapack3 liblapack-test  \
+RUN apt-get install -y --no-install-recommends liblapack-dev liblapack-pic liblapack3 liblapack-test  \
     liblapacke liblapacke-dev hdf5-tools libhdf5-serial-dev gfortran g++ wget \
     libssl-dev openssl libev4 libev-dev
 RUN pip3.6 install -U pip && pip3.6 install lz4 cassandra-driver "kafka-python==1.4.4" "numpy>=1.15.0" cython "keras==2.2.4" "tensorflow==1.12.0"
