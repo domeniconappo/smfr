@@ -36,7 +36,7 @@ class Products:
     high_prob_range = os.getenv('HIGH_PROB_RANGE', '90-100')
     low_prob_range = os.getenv('LOW_PROB_RANGE', '0-10')
 
-    # this variable reflects the following heuristic:
+    # this variable reflects the following heuristic (e.g. considering default 10:5:9):
     # GREEN - less than 10 high relevant tweets
     # ORANGE - num of high rel > 5 * num low rel
     # RED - num of high rel > 9 * num low rel
@@ -78,7 +78,6 @@ class Products:
             counters = defaultdict(int)
             relevant_tweets_aggregated = defaultdict(list)
 
-            # TODO it's a mapreduce procedure...it can be parallelized somehow ?
             for aggregation in aggregations:
 
                 for key, value in aggregation.values.items():
@@ -86,18 +85,17 @@ class Products:
                         continue
                     counters[key] += value
 
-                relevant_tweets = aggregation.relevant_tweets
-                for key, tweets in relevant_tweets.items():
+                for key, tweets in aggregation.relevant_tweets.items():
                     if not cls.is_efas_id(key) or not tweets:
                         continue
                     relevant_tweets_aggregated[key] += tweets
 
         relevant_tweets_output = {}
         for efas_id, tweets in relevant_tweets_aggregated.items():
-            deduplicated_tweets = TweetsDeduplicator.deduplicate(relevant_tweets_aggregated[efas_id])[:cls.max_relevant_tweets]
+            deduplicated_tweets = TweetsDeduplicator.deduplicate(tweets)[:cls.max_relevant_tweets]
             if not deduplicated_tweets:
                 continue
-            relevant_tweets_output[efas_id] = TweetsDeduplicator.deduplicate(relevant_tweets_aggregated[efas_id])[:cls.max_relevant_tweets]
+            relevant_tweets_output[efas_id] = deduplicated_tweets
 
         counters_by_efas_id = defaultdict(defaultdict)
         for key, value in counters.items():
@@ -261,6 +259,8 @@ class TweetsDeduplicator:
                 tweet['_centrality'] = 0.0
 
         # Sort by multiplicity and probability of being relevant
-        tweets_sorted = sorted(tweets_unique, key=lambda x: x['label_predicted'] * x['_multiplicity'] * x['_centrality'], reverse=True)
+        tweets_sorted = sorted(tweets_unique,
+                               key=lambda x: x['label_predicted'] * x['_multiplicity'] * x['_centrality'],
+                               reverse=True)
 
         return tweets_sorted
