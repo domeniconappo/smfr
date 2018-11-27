@@ -20,7 +20,7 @@ class GeocoderContainer:
     Class implementing the Geocoder component
     """
 
-    _running = []
+    _running = []  # TODO: must be a process safe list i.e. SyncManager.list()
     stop_signals = []
     _lock = multiprocessing.RLock()
     _manager = DefaultDictSyncManager()
@@ -54,7 +54,7 @@ class GeocoderContainer:
         return cls._running
 
     @classmethod
-    def launch_in_background(cls, collection_id):
+    def iterator_in_background(cls, collection_id):
         """
         Start a new process with main geocoding method `start` as target method
         :param collection_id: MySQL id of collection as it's stored in virtual_twitter_collection table
@@ -130,7 +130,6 @@ class GeocoderContainer:
         consumer = make_kafka_consumer(topic=cls.geocoder_kafka_topic)
         try:
             flask_app.app_context().push()
-            errors = 0
             geocoder = Geocoder()
             logger.info('[OK] +++++++++++++ Geocoder consumer starting')
             for i, msg in enumerate(consumer, start=1):
@@ -142,29 +141,20 @@ class GeocoderContainer:
                     # if flood_prob <= cls.min_flood_prob:
                     #     continue
                     coordinates, nuts2, nuts_source, country_code, place, geonameid = geocoder.find_nuts_heuristic(tweet)
-                    if not coordinates:
-                        logger.debug('No coordinates for %s...skipping', tweet.tweetid)
+                    if not (coordinates and cls.coords_in_collection_bbox(coordinates, tweet)):
+                        logger.debug('No coordinates or out of bbox for %s...skipping', tweet.tweetid)
                         continue
-                    tweet.set_geo(coordinates, nuts2, nuts_source, country_code, place, geonameid)
 
+                    tweet.set_geo(coordinates, nuts2, nuts_source, country_code, place, geonameid)
                     # persist the geotagged tweet
                     send_to_persister(producer, tweet)
                     cls._counters[tweet.lang] += 1
 
                     if not (i % 1000) and logger.isEnabledFor(logging.INFO):
                         logger.info('Geotagged so far %d', i)
-                except (StatementError, InvalidRequestError) as e:
-                    logger.error(e)
-                    continue
-                except Exception as e:
+                except (StatementError, InvalidRequestError, Exception) as e:
                     logger.error(type(e))
                     logger.error('An error occured during geotagging: %s', e)
-                    errors += 1
-                    if errors >= 500:
-                        logger.error('Too many errors...going to terminate geocoding')
-                        consumer.close(30)
-                        producer.close(30)
-                        break
                     continue
         except ConnectionError:
             logger.error('ES Gazetter is not responding. Exited.')
@@ -185,3 +175,13 @@ class GeocoderContainer:
             producer.close(30)
         if not consumer._closed:
             consumer.close(30)
+
+    @classmethod
+    def coords_in_collection_bbox(cls, coordinates, tweet):
+        if not tweet.is_ondemand:
+            return True
+        lat, lon = coordinates
+        bbox = tweet.collection_bbox
+        if not bbox:
+            return True
+        return bbox['max_lat'] <= lat <= bbox['min_lat'] and bbox['max_lon'] <= lon <= bbox['min_lon']

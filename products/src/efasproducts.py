@@ -65,7 +65,6 @@ class Products:
     @classmethod
     def produce(cls):
         # create products for on-demand active colletions or recently stopped collections
-        collection_ids = []
         with cls.app.app_context():
             collections = TwitterCollection.query.filter(
                 TwitterCollection.trigger == TwitterCollection.TRIGGER_ONDEMAND).filter(
@@ -74,24 +73,31 @@ class Products:
                     TwitterCollection.stopped_at >= datetime.now() - timedelta(days=2)
                 )
             )
-            aggregations = Aggregation.query.filter(Aggregation.collection_id.in_([c.id for c in collections])).all()
+            collection_ids = [c.id for c in collections]
+            aggregations = Aggregation.query.filter(Aggregation.collection_id.in_(collection_ids)).all()
             counters = defaultdict(int)
             relevant_tweets_aggregated = defaultdict(list)
-            collection_ids = [c.id for c in collections]
-            # TODO it's a mapreduce procedure...it can be parallelized somehow
+
+            # TODO it's a mapreduce procedure...it can be parallelized somehow ?
             for aggregation in aggregations:
 
-                values = aggregation.values
-                for key, value in values.items():
-                    if not cls.is_efas_id_counter(key):
+                for key, value in aggregation.values.items():
+                    if not cls.is_efas_id_counter(key) or not value:
                         continue
                     counters[key] += value
 
                 relevant_tweets = aggregation.relevant_tweets
-                for key in relevant_tweets.keys():
-                    if not cls.is_efas_id(key):
+                for key, tweets in relevant_tweets.items():
+                    if not cls.is_efas_id(key) or not tweets:
                         continue
-                    relevant_tweets_aggregated[key] += relevant_tweets[key]
+                    relevant_tweets_aggregated[key] += tweets
+
+        relevant_tweets_output = {}
+        for efas_id, tweets in relevant_tweets_aggregated.items():
+            deduplicated_tweets = TweetsDeduplicator.deduplicate(relevant_tweets_aggregated[efas_id])[:cls.max_relevant_tweets]
+            if not deduplicated_tweets:
+                continue
+            relevant_tweets_output[efas_id] = TweetsDeduplicator.deduplicate(relevant_tweets_aggregated[efas_id])[:cls.max_relevant_tweets]
 
         counters_by_efas_id = defaultdict(defaultdict)
         for key, value in counters.items():
@@ -101,12 +107,10 @@ class Products:
             efas_id = tokens[0]
             probs_interval = tokens[-1]
             counters_by_efas_id[efas_id][probs_interval] = value
+        counters_by_efas_id_output = {k: v for k, v in counters_by_efas_id.items() if v}
 
-        for efas_id in relevant_tweets_aggregated:
-            relevant_tweets_aggregated[efas_id] = TweetsDeduplicator.deduplicate(relevant_tweets_aggregated[efas_id])[:cls.max_relevant_tweets]
-
-        cls.write_geojson(counters_by_efas_id, relevant_tweets_aggregated)
-        cls.write_to_sql(counters_by_efas_id, relevant_tweets_aggregated, collection_ids)
+        cls.write_geojson(counters_by_efas_id_output, relevant_tweets_output)
+        cls.write_to_sql(counters_by_efas_id_output, relevant_tweets_output, collection_ids)
 
     @classmethod
     def write_to_sql(cls, counters_by_efas_id, relevant_tweets_aggregated, collection_ids):
@@ -201,6 +205,8 @@ class TweetsDeduplicator:
 
     @classmethod
     def deduplicate(cls, tweets):
+        if not tweets:
+            return []
         ids = []
         deduplicated = []
         for t in tweets:

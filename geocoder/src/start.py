@@ -38,7 +38,7 @@ class GeocoderApi(Resource):
         if action == 'start':
             if GeocoderContainer.is_running_for(collection_id):
                 return {'error': {'description': 'Geocoder already running for {}'.format(collection_id)}}, 400
-            GeocoderContainer.launch_in_background(collection_id)
+            GeocoderContainer.iterator_in_background(collection_id)
         elif action == 'stop':
             GeocoderContainer.stop(collection_id)
 
