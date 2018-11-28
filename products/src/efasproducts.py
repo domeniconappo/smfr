@@ -135,6 +135,8 @@ class Products:
                     out_data = []
                     for feat in source:
                         efas_id = feat['id']
+                        if efas_id not in counters_by_efas_id:
+                            continue
                         risk_color = cls.determine_color(counters_by_efas_id[efas_id])
                         if risk_color == RGB['gray'] and not relevant_tweets_aggregated[efas_id]:
                             continue

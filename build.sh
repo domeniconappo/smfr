@@ -60,10 +60,10 @@ cp VERSION base/shared_libs/smfr_analysis/
 
 if [[ -n "`echo ${SERVICES} | xargs -n1 echo | grep ${command}`" ]]; then
     echo  ++++++++++++++++++++ Building ${command} service +++++++++++++++++++++++++++++++
-    docker-compose build ${command}
+    docker-compose --verbose build ${command}
 else
     echo !!! Building all services !!!
-    docker-compose build
+    docker-compose --verbose build
 fi
 
 # push images
