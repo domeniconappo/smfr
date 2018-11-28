@@ -1,0 +1,13 @@
+annotator/models
+data/
+downloads/
+geocoder/config
+persister/logs
+products/output
+restserver/logs
+scripts/
+uploads/
+Dockerfile.*.ready
+nuts.db
+.git/
+

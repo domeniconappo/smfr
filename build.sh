@@ -52,7 +52,6 @@ echo
 echo
 
 # Set VERSION for shared libraries
-
 cp VERSION base/shared_libs/smfr_models/
 cp VERSION base/shared_libs/smfr_clients/
 cp VERSION base/shared_libs/smfr_utils/
@@ -60,10 +59,10 @@ cp VERSION base/shared_libs/smfr_analysis/
 
 if [[ -n "`echo ${SERVICES} | xargs -n1 echo | grep ${command}`" ]]; then
     echo  ++++++++++++++++++++ Building ${command} service +++++++++++++++++++++++++++++++
-    docker-compose --verbose build ${command}
+    docker-compose build ${command}
 else
     echo !!! Building all services !!!
-    docker-compose --verbose build
+    docker-compose build
 fi
 
 # push images
