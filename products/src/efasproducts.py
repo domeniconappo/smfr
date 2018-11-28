@@ -111,7 +111,7 @@ class Products:
         counters_by_efas_id_output = {k: v for k, v in counters_by_efas_id.items() if v}
 
         cls.write_heatmap_geojson(counters_by_efas_id_output)
-        cls.write_incident_geojson(counters_by_efas_id_output)
+        cls.write_incidents_geojson(counters_by_efas_id_output)
         cls.write_relevant_tweets_geojson(relevant_tweets_output)
         cls.write_to_sql(counters_by_efas_id_output, relevant_tweets_output, collection_ids)
 
@@ -265,34 +265,34 @@ class Products:
                 geojson.dump(FeatureCollection(out_data), sink, sort_keys=True, indent=2)
         logger.info('>>>>>> Wrote %s', geojson_output_filename)
 
-    @classmethod
-    def write_geojson(cls, counters_by_efas_id, relevant_tweets_aggregated):
-        geojson_output_filename = cls.output_filename_tpl.format(datetime.now().strftime('%Y%m%d%H%M'))
-        logger.info('<<<<<< Writing %s', geojson_output_filename)
-        with cls.app.app_context():
-            with fiona.open(cls.template) as source:
-                with open(geojson_output_filename, 'w') as sink:
-                    out_data = []
-                    for feat in source:
-                        efas_id = feat['id']
-                        if efas_id not in counters_by_efas_id:
-                            continue
-                        risk_color = cls.determine_color(counters_by_efas_id[efas_id])
-                        if risk_color == RGB['gray'] and not relevant_tweets_aggregated.get(efas_id):
-                            continue
-                        geom = Geometry(
-                            coordinates=feat['geometry']['coordinates'],
-                            type=feat['geometry']['type'],
-                        )
-                        out_data.append(Feature(geometry=geom, properties={
-                            'efas_id': efas_id,
-                            'risk_color': cls.determine_color(counters_by_efas_id[efas_id]),
-                            'counters': counters_by_efas_id[efas_id],
-                            'relevant_tweets': relevant_tweets_aggregated[efas_id],
-                            'incidents': cls.get_incidents(efas_id),
-                        }))
-                    geojson.dump(FeatureCollection(out_data), sink, sort_keys=True, indent=2)
-        logger.info('>>>>>> Wrote %s', geojson_output_filename)
+    # @classmethod
+    # def write_geojson(cls, counters_by_efas_id, relevant_tweets_aggregated):
+    #     geojson_output_filename = cls.output_filename_tpl.format(datetime.now().strftime('%Y%m%d%H%M'))
+    #     logger.info('<<<<<< Writing %s', geojson_output_filename)
+    #     with cls.app.app_context():
+    #         with fiona.open(cls.template) as source:
+    #             with open(geojson_output_filename, 'w') as sink:
+    #                 out_data = []
+    #                 for feat in source:
+    #                     efas_id = feat['id']
+    #                     if efas_id not in counters_by_efas_id:
+    #                         continue
+    #                     risk_color = cls.determine_color(counters_by_efas_id[efas_id])
+    #                     if risk_color == RGB['gray'] and not relevant_tweets_aggregated.get(efas_id):
+    #                         continue
+    #                     geom = Geometry(
+    #                         coordinates=feat['geometry']['coordinates'],
+    #                         type=feat['geometry']['type'],
+    #                     )
+    #                     out_data.append(Feature(geometry=geom, properties={
+    #                         'efas_id': efas_id,
+    #                         'risk_color': cls.determine_color(counters_by_efas_id[efas_id]),
+    #                         'counters': counters_by_efas_id[efas_id],
+    #                         'relevant_tweets': relevant_tweets_aggregated[efas_id],
+    #                         'incidents': cls.get_incidents(efas_id),
+    #                     }))
+    #                 geojson.dump(FeatureCollection(out_data), sink, sort_keys=True, indent=2)
+    #     logger.info('>>>>>> Wrote %s', geojson_output_filename)
 
 
 class TweetsDeduplicator:

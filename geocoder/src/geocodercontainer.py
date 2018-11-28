@@ -2,6 +2,7 @@ import logging
 import os
 import multiprocessing
 import time
+from collections import Counter
 
 from kafka.errors import CommitFailedError, KafkaTimeoutError
 
@@ -141,8 +142,13 @@ class GeocoderContainer:
                     # if flood_prob <= cls.min_flood_prob:
                     #     continue
                     coordinates, nuts2, nuts_source, country_code, place, geonameid = geocoder.find_nuts_heuristic(tweet)
-                    if not (coordinates and cls.coords_in_collection_bbox(coordinates, tweet)):
-                        logger.debug('No coordinates or out of bbox for %s...skipping', tweet.tweetid)
+                    if not coordinates:
+                        cls._counters['cannot_geocode'] += 1
+                        logger.debug('No coordinates for %s...skipping', tweet.tweetid)
+                        continue
+                    if not cls.coords_in_collection_bbox(coordinates, tweet):
+                        cls._counters['out_bbox'] += 1
+                        logger.debug('Out of bbox for %s...skipping', tweet.tweetid)
                         continue
 
                     tweet.set_geo(coordinates, nuts2, nuts_source, country_code, place, geonameid)
