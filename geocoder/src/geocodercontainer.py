@@ -186,8 +186,8 @@ class GeocoderContainer:
     def coords_in_collection_bbox(cls, coordinates, tweet):
         if not tweet.is_ondemand:
             return True
-        lat, lon = coordinates
         bbox = tweet.collection_bbox
         if not bbox:
             return True
-        return bbox['max_lat'] <= lat <= bbox['min_lat'] and bbox['max_lon'] <= lon <= bbox['min_lon']
+        lat, lon = coordinates
+        return bbox['max_lat'] >= lat >= bbox['min_lat'] and bbox['max_lon'] >= lon >= bbox['min_lon']
