@@ -128,7 +128,7 @@ class Products:
     @classmethod
     def write_geojson(cls, counters_by_efas_id, relevant_tweets_aggregated):
         geojson_output_filename = cls.output_filename_tpl.format(datetime.now().strftime('%Y%m%d%H%M'))
-        logger.info('<<<<<< Producing %s', geojson_output_filename)
+        logger.info('<<<<<< Writing %s', geojson_output_filename)
         with cls.app.app_context():
             with fiona.open(cls.template) as source:
                 with open(geojson_output_filename, 'w') as sink:
@@ -138,7 +138,7 @@ class Products:
                         if efas_id not in counters_by_efas_id:
                             continue
                         risk_color = cls.determine_color(counters_by_efas_id[efas_id])
-                        if risk_color == RGB['gray'] and not relevant_tweets_aggregated[efas_id]:
+                        if risk_color == RGB['gray'] and not relevant_tweets_aggregated.get(efas_id):
                             continue
                         geom = Geometry(
                             coordinates=feat['geometry']['coordinates'],
@@ -152,7 +152,7 @@ class Products:
                             'incidents': cls.get_incidents(efas_id),
                         }))
                     geojson.dump(FeatureCollection(out_data), sink, sort_keys=True, indent=2)
-                    logger.info('>>>>>> Wrote %s', geojson_output_filename)
+        logger.info('>>>>>> Wrote %s', geojson_output_filename)
 
     @classmethod
     def is_efas_id_counter(cls, key):
