@@ -154,17 +154,20 @@ class Persister:
             return
         topic = None
         if tweet.ttype == Tweet.COLLECTED_TYPE and tweet.lang in self.language_models:
-            # annotated tweet will go to the next in pipeline: annotator queue
+            # collected tweet will go to the next in pipeline: annotator queue
             topic = '{}-{}'.format(self.annotator_kafka_topic, tweet.lang)
         elif tweet.ttype == Tweet.ANNOTATED_TYPE:
             # annotated tweet will go to the next in pipeline: geocoder queue
             topic = self.geocoder_kafka_topic
+            logger.info('sent to geocoder pipeline')
 
         if not topic:
-            logger.warning('No topic were determined for: %s %s %s', tweet.ttype, tweet.tweetid, tweet.lang)
+            logger.debug('No topic were determined for: %s %s %s', tweet.ttype, tweet.tweetid, tweet.lang)
             return
+
         message = tweet.serialize()
         producer.send(topic, message)
+
         if logger.isEnabledFor(logging.DEBUG):
             logger.debug('Sent to pipeline: %s %s', topic, tweet.tweetid)
 
