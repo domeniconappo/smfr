@@ -161,6 +161,23 @@ class Products:
 
     @classmethod
     def get_incidents(cls, efas_id):
+        """
+
+        :param efas_id:
+        :return: list of items
+        An item is a dictionary:
+        {
+            'traffic_item_id': item['TRAFFIC_ITEM_ID'],
+            'start_date': item['START_TIME'],
+            'end_date': item['END_TIME'],
+            'lat': item['GEOLOC']['ORIGIN']['LATITUDE'],
+            'lon': item['GEOLOC']['ORIGIN']['LONGITUDE'],
+            'text': 'Flooding incident: from {} to {}. Severity: {}'.format(
+                item['START_TIME'], item['END_TIME'], item['CRITICALITY'].get('DESCRIPTION', 'minor'))
+            ,
+            'risk_color': self._risk_color(item['CRITICALITY'])
+        }
+        """
         bbox = Nuts2.efas_id_bbox(efas_id)
         if not bbox:
             return []
@@ -213,13 +230,13 @@ class Products:
                             continue
                         for inc in incidents:
                             geom = Geometry(
-                                coordinates=feat['geometry']['coordinates'],
+                                coordinates=[inc['lat'], inc['lon']],
                                 type='Point',
                             )
                             out_data.append(Feature(geometry=geom, properties={
                                 'efas_id': efas_id,
-                                'counters': counters_by_efas_id[efas_id],
-                                'incidents': cls.get_incidents(efas_id),
+                                'text': inc['text'],
+                                'risk_color': inc['risk_color'],
                             }))
                     geojson.dump(FeatureCollection(out_data), sink, sort_keys=True, indent=2)
         logger.info('>>>>>> Wrote %s', geojson_output_filename)
