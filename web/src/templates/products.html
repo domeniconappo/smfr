@@ -90,6 +90,7 @@
         });
 
         {% if geojson %}
+            var features = {{ geojson | tojson }};
             var geojsonmap = L.geoJSON(features, {
                  onEachFeature: onEachFeature,
                  style: function(feature) {
@@ -106,8 +107,6 @@
                  }
             }).addTo(map);
 
-            var features = {{ geojson | tojson }};
-
             function onEachFeature(feature, layer) {
                 var marker;
                 var text;
@@ -118,9 +117,6 @@
                     case 'heatmap': {
                         counters = feature.properties.counters;
                         text = '<br />' + feature.properties.efas_id + '<br />' + counters;
-                        {#marker = L.marker([lat, lon]);#}
-                        {#marker.bindPopup(text);#}
-                        {#markers.addLayer(marker);#}
                         geojsonmap.eachLayer(function (layer) {
                             layer.bindPopup(text);
                         });
@@ -163,8 +159,6 @@
             }
 
             map.addLayer(markers);
-            {#map.fitBounds(geojsonmap.getBounds());#}
-
         {% endif %}
 
     });
