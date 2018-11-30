@@ -171,8 +171,7 @@ class BaseStreamer(TwythonStreamer):
     def disconnect(self, deactivate_collections=True):
         logger.info('Disconnecting twitter streamer')
         if self.process and isinstance(self.process, multiprocessing.Process):
-            self.process.terminate()
-            self.process.join(3)
+            self.process.terminate()  # this will call handle_termination method because it sends SIGTERM signal
             logger.debug('Sleeping 30 secs')
             time.sleep(30)
 

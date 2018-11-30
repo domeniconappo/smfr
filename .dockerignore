@@ -11,3 +11,5 @@ Dockerfile.*.ready
 nuts.db
 .mypy_cache/
 .git/
+*.py[cod]
+__pycache__/

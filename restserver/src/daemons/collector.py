@@ -80,7 +80,6 @@ class OnDemandCollector(BaseCollector):
         if self.streamer.process and isinstance(self.streamer.process, multiprocessing.Process):
             logger.info('Sending SIGTERM signal to streamer')
             self.streamer.process.terminate()
-            self.streamer.process.join(3)
             logger.debug('Sleeping 30 secs after terminate')
             sleep(30)
             self.streamer.process = None
@@ -103,7 +102,6 @@ class ManualCollector(OnDemandCollector):
         if self.streamer.process and isinstance(self.streamer.process, multiprocessing.Process):
             logger.info('Sending SIGTERM signal to streamer')
             self.streamer.process.terminate()
-            self.streamer.process.join(3)
             sleep(30)
         if self.streamer.is_connected.value == 1:
             logger.info('Trying to start an already connected streamer %s', self.streamer)
