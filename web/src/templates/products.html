@@ -25,7 +25,7 @@
         {%  if files %}
           {% for f in files %}
                 <tr>
-                    <td><a href="/products?date={{ f.date }}">{{ f.name }}</a></td>
+                    <td><a href="/products?date={{ f.date }}&type={{ f.type }}">{{ f.name }}</a></td>
                     <td>{{ f.date }}</td>
                 </tr>
           {% endfor %}
@@ -51,7 +51,7 @@
         <div class="row"><div class="col-lg-12">
             <div class="panel panel-default panel-table">
             <div class="panel-heading">
-                <h3 class="panel-title">Geojson content</h3>
+                <h3 class="panel-title">Geojson debug panel</h3>
             </div>
             <div class="panel-body">
                 {{ geojson | tojson  }}
@@ -90,58 +90,81 @@
         });
 
         {% if geojson %}
+            var geojsonmap = L.geoJSON(features, {
+                 onEachFeature: onEachFeature,
+                 style: function(feature) {
+                     if (feature.properties.type === 'heatmap') {
+                         switch (feature.properties.risk_color) {
+                             case '225 225 225':
+                                 return {color: "#575757", weight: 3, opacity: 0.9, fillColor: "#ababab"};
+                             case '255 0 0':
+                                 return {color: "#b40000", weight: 5, opacity: 0.9, fillColor: "#ff646e"};
+                             case '255 128 0':
+                                 return {color: "#b8711b", weight: 4, opacity: 0.9, fillColor: "#d0af2a"};
+                         }
+                     }
+                 }
+            }).addTo(map);
 
             var features = {{ geojson | tojson }};
 
             function onEachFeature(feature, layer) {
-                if (feature.properties && feature.properties.relevant_tweets) {
-                    $.each(feature.properties.relevant_tweets, function(index, tweet) {
-                         var tweet_lat = tweet['geo']['latitude'];
-                         var tweet_lon = tweet['geo']['longitude'];
-                         var text;
-                         if (tweet['full_text'] !== undefined) {
-                             text = tweet['full_text'];
-                         } else {
-                             text = tweet['tweet']['text'];
-                         }
-                         var tweet_text = tweet['created_at'] + '<br />' + text + '<br />' + tweet['label_predicted'];
-                         var marker = L.marker([tweet_lat, tweet_lon]);
-                         marker.bindPopup(tweet_text);
-                         markers.addLayer(marker);
-                    });
-                }
+                var marker;
+                var text;
+                var counters;
+                var lat;
+                var lon;
+                switch (feature.properties.type) {
+                    case 'heatmap': {
+                        counters = feature.properties.counters;
+                        text = '<br />' + feature.properties.efas_id + '<br />' + counters;
+                        {#marker = L.marker([lat, lon]);#}
+                        {#marker.bindPopup(text);#}
+                        {#markers.addLayer(marker);#}
+                        geojsonmap.eachLayer(function (layer) {
+                            layer.bindPopup(text);
+                        });
+                    }
+                    break;
+                    case 'tweet': {
+                        var tweet = feature.properties.tweet;
+                        lat = tweet['geo']['latitude'];
+                        lon = tweet['geo']['longitude'];
+                        if (tweet['full_text'] !== undefined) {
+                            text = tweet['full_text'];
+                        } else {
+                            text = tweet['tweet']['text'];
+                        }
+                     var tweet_text = tweet['created_at'] + '<br />' + text + '<br />' + tweet['label_predicted'];
+                     marker = L.marker([lat, lon]);
+                     marker.bindPopup(tweet_text);
+                     markers.addLayer(marker);
+                    }
+                    break;
+                    case 'incident': {
+                        var incidentMarker = L.ExtraMarkers.icon({
+                            icon: 'fa-car-crash',
+                            markerColor: 'red',
+                            shape: 'square',
+                            prefix: 'fas'
+                        });
+                        var incident = feature.properties.incident;
+                        var incident_lat = incident['lat'];
+                        var incident_lon = incident['lon'];
+                        text = incident['text'];
+                        marker = L.marker([incident_lat, incident_lon], {icon: incidentMarker});
+                        marker.bindPopup(text);
+                        markers.addLayer(marker);
 
-                if (feature.properties && feature.properties.incidents) {
-                    var incidentMarker = L.ExtraMarkers.icon({
-                        icon: 'fa-car-crash',
-                        markerColor: 'red',
-                        shape: 'square',
-                        prefix: 'fas'
-                    });
-                    $.each(feature.properties.incidents, function(index, incident) {
-                         var incident_lat = incident['lat'];
-                         var incident_lon = incident['lon'];
-                         var incident_text = incident['text'];
-                         var marker = L.marker([incident_lat, incident_lon], {icon: incidentMarker});
-                         marker.bindPopup(incident_text);
-                         markers.addLayer(marker);
-                    });
+                    }
+                    break;
                 }
 
             }
 
-            L.geoJSON(features, {
-                 onEachFeature: onEachFeature,
-                 style: function(feature) {
-                    switch (feature.properties.risk_color) {
-                        case '225 225 225': return {color: "#575757", weight: 3, opacity: 0.9, fillColor: "#ababab"};
-                        case '255 0 0': return {color: "#b40000", weight: 5, opacity: 0.9, fillColor: "#ff646e"};
-                        case '255 128 0': return {color: "#b8711b", weight: 4, opacity: 0.9, fillColor: "#d0af2a"};
-                    }
-                 }
-            }).addTo(map);
-
             map.addLayer(markers);
+            {#map.fitBounds(geojsonmap.getBounds());#}
+
         {% endif %}
 
     });

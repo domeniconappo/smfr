@@ -230,8 +230,9 @@ def show_products():
     geojson = None
     res = []
     requested_date = request.args.get('date')
+    requested_type = request.args.get('type')
     if requested_date:
-        filename = 'SMFR_products_{}.geojson'.format(requested_date)
+        filename = 'SMFR_{}_{}.geojson'.format(requested_type, requested_date)
         geojson_path = os.path.join(PRODUCTS_FOLDER, filename)
         with open(geojson_path) as fh:
             geojson = json.load(fh)
@@ -240,8 +241,9 @@ def show_products():
     files = sorted(files, reverse=True)[:31]
     for f in files:
         filename = os.path.basename(f)
-        date = filename.split('_')[2].rstrip('.geojson')
-        res.append({'name': filename, 'date': date})
+        tokens = filename.split('_')
+        date = tokens[2].rstrip('.geojson')
+        res.append({'name': filename, 'date': date, 'type': tokens[1]})
     return render_template('products.html', files=res, geojson=geojson, development=ServerConfiguration.development), 200
 
 

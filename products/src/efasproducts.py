@@ -34,7 +34,7 @@ class Products:
     output_filename_tpl = os.path.join(output_folder, 'SMFR_products_{}.geojson')
     output_heatmap_filename_tpl = os.path.join(output_folder, 'SMFR_heatmap_{}.geojson')
     output_incidents_filename_tpl = os.path.join(output_folder, 'SMFR_incidents_{}.geojson')
-    output_relevant_tweets_filename_tpl = os.path.join(output_folder, 'SMFR_relevant_tweets_{}.geojson')
+    output_relevant_tweets_filename_tpl = os.path.join(output_folder, 'SMFR_tweets_{}.geojson')
     out_crs = dict(type='EPSG', properties=dict(code=4326, coordinate_order=[1, 0]))
     high_prob_range = os.getenv('HIGH_PROB_RANGE', '90-100')
     low_prob_range = os.getenv('LOW_PROB_RANGE', '0-10')
@@ -209,6 +209,7 @@ class Products:
                             'efas_id': efas_id,
                             'risk_color': cls.determine_color(counters_by_efas_id[efas_id]),
                             'counters': counters_by_efas_id[efas_id],
+                            'type': 'heatmap',
                         }))
                     geojson.dump(FeatureCollection(out_data), sink, sort_keys=True, indent=2)
         logger.info('>>>>>> Wrote %s', geojson_output_filename)
@@ -235,8 +236,8 @@ class Products:
                             )
                             out_data.append(Feature(geometry=geom, properties={
                                 'efas_id': efas_id,
-                                'text': inc['text'],
-                                'risk_color': inc['risk_color'],
+                                'incident': inc,
+                                'type': 'incident',
                             }))
                     geojson.dump(FeatureCollection(out_data), sink, sort_keys=True, indent=2)
         logger.info('>>>>>> Wrote %s', geojson_output_filename)
@@ -259,8 +260,8 @@ class Products:
                         )
                         out_data.append(Feature(geometry=geom, properties={
                             'efas_id': efas_id,
-                            'full_text': tweet['full_text'],
-                            'created_at': tweet['created_at'],
+                            'tweet': tweet,
+                            'type': 'tweet',
                         }))
                 geojson.dump(FeatureCollection(out_data), sink, sort_keys=True, indent=2)
         logger.info('>>>>>> Wrote %s', geojson_output_filename)
