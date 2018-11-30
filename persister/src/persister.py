@@ -101,8 +101,7 @@ class Persister:
                             # reconcile with running collections
                             collection = self.reconcile_tweet_with_collection(tweet)
                             if not collection:
-                                if logger.isEnabledFor(logging.DEBUG):
-                                    logger.debug('No collection for tweet %s', tweet.tweetid)
+                                self.shared_counter['not-reconciled'] += 1
                                 file_logger.error('%s', msg)
                                 continue  # continue the consumer for loop
                             tweet.collectionid = collection.id
