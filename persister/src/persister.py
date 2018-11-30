@@ -159,9 +159,8 @@ class Persister:
         elif tweet.ttype == Tweet.ANNOTATED_TYPE:
             # annotated tweet will go to the next in pipeline: geocoder queue
             topic = self.geocoder_kafka_topic
-            logger.info('sent to geocoder pipeline')
 
-        if not topic:
+        if not topic and logger.isEnabledFor(logging.DEBUG):
             logger.debug('No topic were determined for: %s %s %s', tweet.ttype, tweet.tweetid, tweet.lang)
             return
 
