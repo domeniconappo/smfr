@@ -228,21 +228,34 @@ def stopgeolocalize_collection(collection_id):
 @app.route('/products', methods=('GET',))
 def show_products():
     geojson = None
-    res = []
+    res = {'heatmaps': [], 'tweets': [], 'incidents': []}
     requested_date = request.args.get('date')
+    requested_type = request.args.get('type')
     if requested_date:
-        filename = 'SMFR_products_{}.geojson'.format(requested_date)
-        geojson_path = os.path.join(PRODUCTS_FOLDER, filename)
+        filename = 'SMFR_{}_{}.geojson'.format(requested_type, requested_date)
+        geojson_path = os.path.join(PRODUCTS_FOLDER, requested_type, filename)
         with open(geojson_path) as fh:
             geojson = json.load(fh)
 
-    files = glob.glob(PRODUCTS_FOLDER + '/*.geojson')
-    files = sorted(files, reverse=True)[:31]
-    for f in files:
-        filename = os.path.basename(f)
-        date = filename.split('_')[2].rstrip('.geojson')
-        res.append({'name': filename, 'date': date})
-    return render_template('products.html', files=res, geojson=geojson, development=ServerConfiguration.development), 200
+    files_hm = glob.glob(PRODUCTS_FOLDER + '/heatmaps/*.geojson')
+    files_tw = glob.glob(PRODUCTS_FOLDER + '/tweets/*.geojson')
+    files_in = glob.glob(PRODUCTS_FOLDER + '/incidents/*.geojson')
+
+    files_hm = sorted(files_hm, reverse=True)[:10]
+    files_tw = sorted(files_tw, reverse=True)[:10]
+    files_in = sorted(files_in, reverse=True)[:10]
+    for f_hm, f_tw, f_in in zip(files_hm, files_tw, files_in):
+        filename_hm = os.path.basename(f_hm)
+        filename_tw = os.path.basename(f_tw)
+        filename_in = os.path.basename(f_in)
+        tokens = filename_hm.split('_')
+        date = tokens[2].rstrip('.geojson')
+        res['heatmaps'].append({'name': filename_hm, 'date': date, 'type': 'heatmaps'})
+        res['tweets'].append({'name': filename_tw, 'date': date, 'type': 'tweets'})
+        res['incidents'].append({'name': filename_in, 'date': date, 'type': 'incidents'})
+    return render_template('products.html',
+                           files=zip(res['heatmaps'], res['tweets'], res['incidents']),
+                           geojson=geojson, development=ServerConfiguration.development), 200
 
 
 @app.errorhandler(404)

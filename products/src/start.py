@@ -7,6 +7,7 @@ from efasproducts import Products, logger
 
 
 if __name__ == '__main__':
+    Products.makedirs()
     scheduling_interval = int(os.getenv('PRODUCTS_SCHEDULING_MINUTES', 360))
     logger.info('Configuration: running Products every %d minutes', scheduling_interval)
     Products.log_config()

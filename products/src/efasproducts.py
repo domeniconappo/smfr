@@ -32,6 +32,9 @@ class Products:
 
     template = os.path.join(config_folder, 'maptemplate.shp')
     output_filename_tpl = os.path.join(output_folder, 'SMFR_products_{}.geojson')
+    output_heatmap_filename_tpl = os.path.join(output_folder, 'heatmaps/SMFR_heatmaps_{}.geojson')
+    output_incidents_filename_tpl = os.path.join(output_folder, 'incidents/SMFR_incidents_{}.geojson')
+    output_relevant_tweets_filename_tpl = os.path.join(output_folder, 'tweets/SMFR_tweets_{}.geojson')
     out_crs = dict(type='EPSG', properties=dict(code=4326, coordinate_order=[1, 0]))
     high_prob_range = os.getenv('HIGH_PROB_RANGE', '90-100')
     low_prob_range = os.getenv('LOW_PROB_RANGE', '0-10')
@@ -107,7 +110,9 @@ class Products:
             counters_by_efas_id[efas_id][probs_interval] = value
         counters_by_efas_id_output = {k: v for k, v in counters_by_efas_id.items() if v}
 
-        cls.write_geojson(counters_by_efas_id_output, relevant_tweets_output)
+        cls.write_heatmap_geojson(counters_by_efas_id_output)
+        cls.write_incidents_geojson(counters_by_efas_id_output)
+        cls.write_relevant_tweets_geojson(relevant_tweets_output)
         cls.write_to_sql(counters_by_efas_id_output, relevant_tweets_output, collection_ids)
 
     @classmethod
@@ -124,35 +129,6 @@ class Products:
             product = Product(aggregated=counters_by_efas_id, relevant_tweets=relevant_tweets_aggregated,
                               highlights=highlights, collection_ids=collection_ids)
             product.save()
-
-    @classmethod
-    def write_geojson(cls, counters_by_efas_id, relevant_tweets_aggregated):
-        geojson_output_filename = cls.output_filename_tpl.format(datetime.now().strftime('%Y%m%d%H%M'))
-        logger.info('<<<<<< Writing %s', geojson_output_filename)
-        with cls.app.app_context():
-            with fiona.open(cls.template) as source:
-                with open(geojson_output_filename, 'w') as sink:
-                    out_data = []
-                    for feat in source:
-                        efas_id = feat['id']
-                        if efas_id not in counters_by_efas_id:
-                            continue
-                        risk_color = cls.determine_color(counters_by_efas_id[efas_id])
-                        if risk_color == RGB['gray'] and not relevant_tweets_aggregated.get(efas_id):
-                            continue
-                        geom = Geometry(
-                            coordinates=feat['geometry']['coordinates'],
-                            type=feat['geometry']['type'],
-                        )
-                        out_data.append(Feature(geometry=geom, properties={
-                            'efas_id': efas_id,
-                            'risk_color': cls.determine_color(counters_by_efas_id[efas_id]),
-                            'counters': counters_by_efas_id[efas_id],
-                            'relevant_tweets': relevant_tweets_aggregated[efas_id],
-                            'incidents': cls.get_incidents(efas_id),
-                        }))
-                    geojson.dump(FeatureCollection(out_data), sink, sort_keys=True, indent=2)
-        logger.info('>>>>>> Wrote %s', geojson_output_filename)
 
     @classmethod
     def is_efas_id_counter(cls, key):
@@ -185,9 +161,116 @@ class Products:
 
     @classmethod
     def get_incidents(cls, efas_id):
+        """
+
+        :param efas_id:
+        :return: list of items
+        An item is a dictionary:
+        {
+            'traffic_item_id': item['TRAFFIC_ITEM_ID'],
+            'start_date': item['START_TIME'],
+            'end_date': item['END_TIME'],
+            'lat': item['GEOLOC']['ORIGIN']['LATITUDE'],
+            'lon': item['GEOLOC']['ORIGIN']['LONGITUDE'],
+            'text': 'Flooding incident: from {} to {}. Severity: {}'.format(
+                item['START_TIME'], item['END_TIME'], item['CRITICALITY'].get('DESCRIPTION', 'minor'))
+            ,
+            'risk_color': self._risk_color(item['CRITICALITY'])
+        }
+        """
         bbox = Nuts2.efas_id_bbox(efas_id)
-        bbox_for_here = '{max_lat},{min_lon};{min_lat},{max_lon}'.format(max_lat=bbox['max_lat'], min_lon=bbox['min_lon'], min_lat=bbox['min_lat'], max_lon=bbox['max_lon'])
+        if not bbox:
+            return []
+        bbox_for_here = '{max_lat},{min_lon};{min_lat},{max_lon}'.format(
+            max_lat=bbox['max_lat'], min_lon=bbox['min_lon'], min_lat=bbox['min_lat'], max_lon=bbox['max_lon']
+        )
         return cls.here_client.get_by_bbox(bbox_for_here)
+
+    @classmethod
+    def write_heatmap_geojson(cls, counters_by_efas_id):
+        geojson_output_filename = cls.output_heatmap_filename_tpl.format(datetime.now().strftime('%Y%m%d%H'))
+        logger.info('<<<<<< Writing %s', geojson_output_filename)
+        with cls.app.app_context():
+            with fiona.open(cls.template) as source:
+                with open(geojson_output_filename, 'w') as sink:
+                    out_data = []
+                    for feat in source:
+                        efas_id = feat['id']
+                        if efas_id not in counters_by_efas_id:
+                            continue
+                        risk_color = cls.determine_color(counters_by_efas_id[efas_id])
+                        if risk_color == RGB['gray']:
+                            continue
+                        geom = Geometry(
+                            coordinates=feat['geometry']['coordinates'],
+                            type=feat['geometry']['type'],
+                        )
+                        out_data.append(Feature(geometry=geom, properties={
+                            'efas_id': efas_id,
+                            'risk_color': cls.determine_color(counters_by_efas_id[efas_id]),
+                            'counters': counters_by_efas_id[efas_id],
+                            'type': 'heatmap',
+                        }))
+                    geojson.dump(FeatureCollection(out_data), sink, sort_keys=True, indent=2)
+        logger.info('>>>>>> Wrote %s', geojson_output_filename)
+
+    @classmethod
+    def write_incidents_geojson(cls, counters_by_efas_id):
+        geojson_output_filename = cls.output_incidents_filename_tpl.format(datetime.now().strftime('%Y%m%d%H'))
+        logger.info('<<<<<< Writing %s', geojson_output_filename)
+        with cls.app.app_context():
+            with fiona.open(cls.template) as source:
+                with open(geojson_output_filename, 'w') as sink:
+                    out_data = []
+                    for feat in source:
+                        efas_id = feat['id']
+                        if efas_id not in counters_by_efas_id:
+                            continue
+                        incidents = cls.get_incidents(efas_id)
+                        if not incidents:
+                            continue
+                        for inc in incidents:
+                            geom = Geometry(
+                                coordinates=[inc['lat'], inc['lon']],
+                                type='Point',
+                            )
+                            out_data.append(Feature(geometry=geom, properties={
+                                'efas_id': efas_id,
+                                'incident': inc,
+                                'type': 'incident',
+                            }))
+                    geojson.dump(FeatureCollection(out_data), sink, sort_keys=True, indent=2)
+        logger.info('>>>>>> Wrote %s', geojson_output_filename)
+
+    @classmethod
+    def write_relevant_tweets_geojson(cls, relevant_tweets):
+        geojson_output_filename = cls.output_relevant_tweets_filename_tpl.format(datetime.now().strftime('%Y%m%d%H'))
+        logger.info('<<<<<< Writing %s', geojson_output_filename)
+        with fiona.open(cls.template) as source:
+            with open(geojson_output_filename, 'w') as sink:
+                out_data = []
+                for feat in source:
+                    efas_id = feat['id']
+                    if efas_id not in relevant_tweets:
+                        continue
+                    for tweet in relevant_tweets[efas_id]:
+                        geom = Geometry(
+                            coordinates=tweet['latlong'],
+                            type='Point',
+                        )
+                        out_data.append(Feature(geometry=geom, properties={
+                            'efas_id': efas_id,
+                            'tweet': tweet,
+                            'type': 'tweet',
+                        }))
+                geojson.dump(FeatureCollection(out_data), sink, sort_keys=True, indent=2)
+        logger.info('>>>>>> Wrote %s', geojson_output_filename)
+
+    @classmethod
+    def makedirs(cls):
+        for d in ('heatmaps', 'tweets', 'incidents'):
+            maked = os.path.join(cls.output_folder, d)
+            os.makedirs(maked, exist_ok=True)
 
 
 class TweetsDeduplicator:
@@ -259,10 +342,8 @@ class TweetsDeduplicator:
                 tweet['_centrality'] = centrality[tweet['tweetid']]
             else:
                 tweet['_centrality'] = 0.0
+            tweet['representativeness'] = tweet['label_predicted'] * tweet['_multiplicity'] * tweet['_centrality']
 
         # Sort by multiplicity and probability of being relevant
-        tweets_sorted = sorted(tweets_unique,
-                               key=lambda x: x['label_predicted'] * x['_multiplicity'] * x['_centrality'],
-                               reverse=True)
-
+        tweets_sorted = sorted(tweets_unique, key=lambda x: x['representativeness'], reverse=True)
         return tweets_sorted

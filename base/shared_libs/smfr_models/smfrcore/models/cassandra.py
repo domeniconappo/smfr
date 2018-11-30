@@ -137,30 +137,24 @@ class Tweet(cqldb.Model):
 
     @property
     def use_pipeline(self):
-        if self.collectionid in self.cache_collections:
-            return self.cache_collections[self.collectionid].is_using_pipeline
-        with flask_app.app_context():
-            collection = TwitterCollection.query.get(self.collectionid)
-        self.cache_collections[self.collectionid] = collection
-        return collection.is_using_pipeline
+        return self.collection.is_using_pipeline
 
     @property
     def is_ondemand(self):
-        if self.collectionid in self.cache_collections:
-            return self.cache_collections[self.collectionid].is_ondemand
-        with flask_app.app_context():
-            collection = TwitterCollection.query.get(self.collectionid)
-        self.cache_collections[self.collectionid] = collection
-        return collection.is_ondemand
+        return self.collection.is_ondemand
 
     @property
     def collection_bbox(self):
+        return self.collection.locations
+
+    @property
+    def collection(self):
         if self.collectionid in self.cache_collections:
-            return self.cache_collections[self.collectionid].locations
+            return self.cache_collections[self.collectionid]
         with flask_app.app_context():
             collection = TwitterCollection.query.get(self.collectionid)
         self.cache_collections[self.collectionid] = collection
-        return collection.locations
+        return collection
 
     @classmethod
     def to_obj(cls, row):
