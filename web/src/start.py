@@ -44,3 +44,4 @@ def jsonfilter(value):
 
 app.jinja_env.filters['json'] = jsonfilter
 app.jinja_env.filters['datetimeformat'] = datetimeformat
+app.jinja_env.filters['zip'] = zip

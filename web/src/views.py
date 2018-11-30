@@ -254,7 +254,7 @@ def show_products():
         res['tweets'].append({'name': filename_tw, 'date': date, 'type': 'tweets'})
         res['incidents'].append({'name': filename_in, 'date': date, 'type': 'incidents'})
     return render_template('products.html',
-                           files=res,
+                           files=zip(res['heatmaps'], res['tweets'], res['incidents']),
                            geojson=geojson, development=ServerConfiguration.development), 200
 
 

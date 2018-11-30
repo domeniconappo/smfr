@@ -32,7 +32,7 @@ class Products:
 
     template = os.path.join(config_folder, 'maptemplate.shp')
     output_filename_tpl = os.path.join(output_folder, 'SMFR_products_{}.geojson')
-    output_heatmap_filename_tpl = os.path.join(output_folder, 'heatmaps/SMFR_heatmap_{}.geojson')
+    output_heatmap_filename_tpl = os.path.join(output_folder, 'heatmaps/SMFR_heatmaps_{}.geojson')
     output_incidents_filename_tpl = os.path.join(output_folder, 'incidents/SMFR_incidents_{}.geojson')
     output_relevant_tweets_filename_tpl = os.path.join(output_folder, 'tweets/SMFR_tweets_{}.geojson')
     out_crs = dict(type='EPSG', properties=dict(code=4326, coordinate_order=[1, 0]))
@@ -342,10 +342,8 @@ class TweetsDeduplicator:
                 tweet['_centrality'] = centrality[tweet['tweetid']]
             else:
                 tweet['_centrality'] = 0.0
+            tweet['representativeness'] = tweet['label_predicted'] * tweet['_multiplicity'] * tweet['_centrality']
 
         # Sort by multiplicity and probability of being relevant
-        tweets_sorted = sorted(tweets_unique,
-                               key=lambda x: x['label_predicted'] * x['_multiplicity'] * x['_centrality'],
-                               reverse=True)
-
+        tweets_sorted = sorted(tweets_unique, key=lambda x: x['representativeness'], reverse=True)
         return tweets_sorted
