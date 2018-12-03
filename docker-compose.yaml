@@ -114,7 +114,8 @@ services:
     restart: always
     # From host, connect to DB with `docker exec -it cassandrasmfr cqlsh`
     volumes:
-    - '${SMFR_DATADIR}/cassandra:/var/lib/cassandra:rw'
+#    - '${SMFR_DATADIR}/cassandra:/var/lib/cassandra:rw'
+    - 'vlm-cassandra:/var/lib/cassandra:rw'
     container_name: cassandrasmfr
     networks:
     - back-tier
@@ -346,7 +347,8 @@ services:
     ports:
       - '3306:3306'
     volumes:
-      - '${SMFR_DATADIR}/mysql:/var/lib/mysql:rw'
+#      - '${SMFR_DATADIR}/mysql:/var/lib/mysql:rw'
+      - 'vlm-mysql:/var/lib/mysql:rw'
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_PASSWORD}
       MYSQL_DATABASE: ${MYSQL_DBNAME}
@@ -595,8 +597,8 @@ services:
 
 volumes:
   geonames_index:
-  volume-cassandra-1:
-  volume-cassandra-2:
+  vlm-cassandra:
+  vlm-mysql:
 
 networks:
   front-tier:

@@ -51,7 +51,7 @@ class MostRelevantTweets:
 
     def is_relevant(self, item):
         flood_prob = item['annotations']['flood_probability']['yes']
-        return flood_prob >= self.min_relevant_probability and (item['geo']['nuts_efas_id'] or item['geo']['is_european'] not in FALSE_VALUES)
+        return flood_prob >= self.min_relevant_probability and (item['geo']['nuts_efas_id'] or (item['geo']['is_european'] not in FALSE_VALUES))
 
     def push_if_relevant(self, item):
         """
@@ -108,19 +108,14 @@ def aggregate(running_conf=None):
 def find_collections_to_aggregate(running_conf):
     if running_conf.running:
         collections_to_aggregate = TwitterCollection.get_active()
-        collections_to_aggregate = TwitterCollection.query.filter(
-            or_(
-                TwitterCollection.status == 'active',
-                TwitterCollection.stopped_at >= datetime.now() - timedelta(days=2)
-            )
-        )
     elif running_conf.all:
         collections_to_aggregate = TwitterCollection.query.all()
     elif running_conf.background:
-        collections_to_aggregate = TwitterCollection.query.filter_by(trigger='background')
+        collections_to_aggregate = TwitterCollection.get_active_background()
     elif running_conf.collections:
         collections_to_aggregate = TwitterCollection.query.filter(
-            TwitterCollection.id.in_(running_conf.collections)).all()
+            TwitterCollection.id.in_(running_conf.collections)
+        ).all()
     else:
         raise ValueError('Aggregator must be started with a parameter: '
                          '[-c id1,...,idN | -r (running)| -a (all) | -b (background)]')
