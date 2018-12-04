@@ -7,7 +7,6 @@ import os
 import socket
 import multiprocessing
 import time
-from queue import Empty
 
 import urllib3
 
