@@ -9,10 +9,10 @@ echo "============== pip install for ${lib}"
 echo
 echo
 if [[ ${lib} == "all" ]]; then
-    cp base/shared_libs/VERSION base/shared_libs/smfr_models/
-    cp base/shared_libs/VERSION base/shared_libs/smfr_clients/
-    cp base/shared_libs/VERSION base/shared_libs/smfr_utils/
-    cp base/shared_libs/VERSION base/shared_libs/smfr_analysis/
+    cp VERSION base/shared_libs/smfr_models/
+    cp VERSION base/shared_libs/smfr_clients/
+    cp VERSION base/shared_libs/smfr_utils/
+    cp VERSION base/shared_libs/smfr_analysis/
     pip install base/shared_libs/smfr_models/
     pip install base/shared_libs/smfr_clients/
     pip install base/shared_libs/smfr_utils/

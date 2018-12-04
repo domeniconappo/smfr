@@ -1,5 +1,6 @@
 import os
 import socket
+from ftplib import FTP
 
 import paramiko
 
@@ -75,3 +76,21 @@ class FTPEfas:
 
     def close(self):
         self.t.close()
+
+
+class FTPClient:
+    def __init__(self, host, user, passwd, folder=None):
+        self.folder = '/home/{}'.format(user) if not folder else folder
+        self.host = host
+        self.user = user
+        self.password = passwd
+        self._session = FTP(self.host)
+        self._session.login(self.user, self.password)
+
+    def send(self, path_to_file):
+        with open(path_to_file, 'r') as f:
+            self._session.storlines('STOR %s' % path_to_file, f)
+
+    def close(self):
+        self._session.quit()
+

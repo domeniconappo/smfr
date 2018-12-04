@@ -14,7 +14,6 @@ echo =================================================== Building SMFR ${image_t
 echo
 echo
 
-SMFR_DATADIR=$(getProperty "SMFR_DATADIR")
 GIT_REPO_MODELS=$(getProperty "GIT_REPO_MODELS")
 DOCKER_ID_USER=$(getProperty "DOCKER_ID_USER")
 DOCKER_ID_PASSWORD=$(getProperty "DOCKER_ID_PASSWORD")
@@ -26,9 +25,6 @@ if [[ -n "${DOCKER_ID_USER}" ]] && [[ ${DOCKER_REGISTRY} != "index.docker.io" ]]
     docker login -u ${DOCKER_ID_USER} -p ${DOCKER_ID_PASSWORD} ${DOCKER_REGISTRY}
     logged=1
 fi
-if [[ ! -d ${SMFR_DATADIR} ]]; then
-    mkdir -p ${SMFR_DATADIR}
-fi
 
 python3 scripts/compose4build.py ${image_tag}
 
@@ -39,8 +35,8 @@ docker tag smfr_base:${image_tag} ${SMFR_IMAGE}:${image_tag}
 echo
 echo
 
-# push base image
-if [[ -n "${DOCKER_ID_USER}" ]] && [[ ${command} == "push" ]]; then
+# push base image always
+if [[ -n "${DOCKER_ID_USER}" ]]; then
     if  [[ ${logged} == 0 ]]; then
         docker login -u ${DOCKER_ID_USER} -p ${DOCKER_ID_PASSWORD} ${DOCKER_REGISTRY}
     fi

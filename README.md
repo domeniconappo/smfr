@@ -32,8 +32,6 @@ Final product of SMFR is a event-related map reporting relevant tweets.
 - Enter into SMFR folder and copy _.env.tpl_ file to _.env_.
   - `$ cp .env.tpl .env`
 - Edit the file `.env` and change defaults according your needs:
-    - `SMFR_DATADIR=/DATA/smfr/data`
-      -   The server folder where MySQL and Cassandra data folders will be mapped to.
     - `CASSANDRA_KEYSPACE=smfr_persistent`
       -   Cassandra keyspace name
     - `PERSISTER_KAFKA_TOPIC=persister`

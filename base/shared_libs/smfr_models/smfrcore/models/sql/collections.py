@@ -55,7 +55,7 @@ class TwitterCollection(SMFRModel):
     user_id = Column(Integer, ForeignKey('users.id'))
     user = sqldb.relationship('User', backref=sqldb.backref('collections', uselist=True))
 
-    cache = TTLCache(50, 60 * 60 * 6)  # 6 hours caching
+    cache = TTLCache(500, 60 * 60 * 6)  # max size 500, 6 hours caching
 
     cache_keys = {
         'on-demand': 'active-on-demand',

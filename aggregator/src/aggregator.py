@@ -2,15 +2,13 @@ import os
 import logging
 import functools
 from collections import Counter, defaultdict, Iterable
-from datetime import timedelta, datetime
+from datetime import datetime
 from multiprocessing import cpu_count
 from multiprocessing.pool import ThreadPool
 
 import cassandra
-from sqlalchemy import or_
 
 from smfrcore.utils import LOGGER_FORMAT, LOGGER_DATE_FORMAT, logged_job, job_exceptions_catcher, FALSE_VALUES
-
 from smfrcore.models.sql import TwitterCollection, Aggregation, create_app
 
 log_level = os.getenv('LOGGING_LEVEL', 'DEBUG')
@@ -227,7 +225,7 @@ def run_single_aggregation(collection_id,
         running_aggregators.remove(collection_id)
         return 1
     except Exception as e:
-        logger.error('An error occurred: %s %s', type(e), e)
+        logger.error('ERROR during aggregation collection %d: error: %s %s', collection_id, type(e), e)
         running_aggregators.remove(collection_id)
         return 1
 

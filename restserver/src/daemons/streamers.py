@@ -219,7 +219,7 @@ class BackgroundStreamer(BaseStreamer):
     def on_success(self, data):
 
         if 'text' in data:
-            lang = safe_langdetect(tweet_normalization_aggressive(data['text']))
+            lang = safe_langdetect(data['text'])
 
             if lang == 'en' or lang in self.collection.languages:
                 data['lang'] = lang

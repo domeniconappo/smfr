@@ -13,6 +13,7 @@ from Levenshtein import ratio
 from smfrcore.models.sql import TwitterCollection, Aggregation, Nuts2, Product, create_app
 from smfrcore.utils import DEFAULT_HANDLER, IN_DOCKER, RGB
 from smfrcore.client.api_here import HereClient
+from smfrcore.client.ftp import FTPClient
 from smfrcore.utils.text import tweet_normalization_aggressive
 from sqlalchemy import or_
 
@@ -45,6 +46,13 @@ class Products:
     # RED - num of high rel > 9 * num low rel
     alert_heuristic = os.getenv('THRESHOLDS', '10:5:9')
     max_relevant_tweets = int(os.getenv('NUM_RELEVANT_TWEETS_PRODUCTS', 5))
+
+    # FTP client for KAJO server
+    server = os.getenv('KAJO_FTP_SERVER', '207.180.226.197')
+    user = os.getenv('KAJO_FTP_USER', 'jrc')
+    password = os.getenv('KAJO_FTP_PASSWORD')
+    folder = os.getenv('KAJO_FTP_FOLDER')
+    ftp_client = FTPClient(server, user, password, folder)
 
     # here api
     here_client = HereClient()
@@ -110,9 +118,11 @@ class Products:
             counters_by_efas_id[efas_id][probs_interval] = value
         counters_by_efas_id_output = {k: v for k, v in counters_by_efas_id.items() if v}
 
-        cls.write_heatmap_geojson(counters_by_efas_id_output)
+        heatmap_file = cls.write_heatmap_geojson(counters_by_efas_id_output)
+        relevant_tweets_file = cls.write_relevant_tweets_geojson(relevant_tweets_output)
+        cls.ftp_client.send(heatmap_file)
+        cls.ftp_client.send(relevant_tweets_file)
         cls.write_incidents_geojson(counters_by_efas_id_output)
-        cls.write_relevant_tweets_geojson(relevant_tweets_output)
         cls.write_to_sql(counters_by_efas_id_output, relevant_tweets_output, collection_ids)
 
     @classmethod
@@ -213,6 +223,7 @@ class Products:
                         }))
                     geojson.dump(FeatureCollection(out_data), sink, sort_keys=True, indent=2)
         logger.info('>>>>>> Wrote %s', geojson_output_filename)
+        return geojson_output_filename
 
     @classmethod
     def write_incidents_geojson(cls, counters_by_efas_id):
@@ -241,6 +252,7 @@ class Products:
                             }))
                     geojson.dump(FeatureCollection(out_data), sink, sort_keys=True, indent=2)
         logger.info('>>>>>> Wrote %s', geojson_output_filename)
+        return geojson_output_filename
 
     @classmethod
     def write_relevant_tweets_geojson(cls, relevant_tweets):
@@ -265,6 +277,7 @@ class Products:
                         }))
                 geojson.dump(FeatureCollection(out_data), sink, sort_keys=True, indent=2)
         logger.info('>>>>>> Wrote %s', geojson_output_filename)
+        return geojson_output_filename
 
     @classmethod
     def makedirs(cls):
