@@ -23,7 +23,7 @@ from scripts.utils import ParserHelpOnError, CustomJSONEncoder
 
 
 def add_args(parser):
-    parser.add_argument('-c', '--collection_id', help='collection id', type=int,
+    parser.add_argument('-c', '--collection_id', help='collection id', type=int, action='append',
                         metavar='collection_id', required=True)
     parser.add_argument('-t', '--ttype', help='Which type of stored tweets to export',
                         choices=["annotated", "collected", "geotagged"],
