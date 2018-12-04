@@ -1,7 +1,7 @@
 import os
 import logging
 import functools
-from collections import Counter, defaultdict
+from collections import Counter, defaultdict, Iterable
 from datetime import timedelta, datetime
 from multiprocessing import cpu_count
 from multiprocessing.pool import ThreadPool
@@ -79,9 +79,11 @@ def aggregate(running_conf=None):
 
         collections = find_collections_to_aggregate(running_conf)
 
-        if not list(collections):
+        if not collections:
             logger.info('No collections to aggregate with configuration: %s', pretty_running_conf(running_conf))
             return
+        if not isinstance(collections, Iterable):
+            collections = [collections]
 
         aggregations_args = []
         for coll in collections:

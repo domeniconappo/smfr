@@ -112,7 +112,6 @@ services:
       dockerfile: cassandrasmfr/Dockerfile
     image: ${DOCKER_REGISTRY}/${CASSANDRA_IMAGE}:${image_tag}
     restart: always
-    # From host, connect to DB with `docker exec -it cassandrasmfr cqlsh`
     volumes:
     - vlm-cassandra:/var/lib/cassandra:rw
     container_name: cassandrasmfr
@@ -128,7 +127,6 @@ services:
     - ALL
     privileged: true
     environment:
-      # CASSANDRA_CLUSTER_NAME: SMFR (need to rename cluster_name in system.local table first) !!!
       MAX_HEAP_SIZE: 16G
       HEAP_NEWSIZE: 800M
       JVM_OPTS: -Xms16g -Xmx16g -Dcom.sun.management.jmxremote.authenticate=true -Dcom.sun.management.jmxremote.password.file=/etc/cassandra/jmxremote.password -Dcom.sun.management.jmxremote.access.file=/etc/cassandra/jmxremote.access
@@ -137,7 +135,6 @@ services:
       CASSANDRA_RPC_ADDRESS: 0.0.0.0
       CASSANDRA_BROADCAST_ADDRESS: cassandrasmfr
       CASSANDRA_NUM_TOKENS: 256
-      #      CASSANDRA_NUM_TOKENS: 8
       LOCAL_JMX: "no"
     deploy:
       restart_policy:
@@ -146,69 +143,6 @@ services:
         window: 60s
       placement:
         constraints: [ node.labels.large == true ]
-
-  #  cassandra-node-1:
-  #    image: ${DOCKER_REGISTRY}/${CASSANDRA_IMAGE}:${image_tag}
-  #    command: /bin/bash -c "echo 'Waiting for seed node' && sleep 60 && /docker-entrypoint.sh cassandra -f"
-  #    environment:
-  #      CASSANDRA_SEEDS: cassandrasmfr
-  #      CASSANDRA_BROADCAST_ADDRESS: cassandra-node-1
-  #      MAX_HEAP_SIZE: 16G
-  #      HEAP_NEWSIZE: 2048M
-  #      JVM_OPTS: -Xms8g -Xmx16g -Dcom.sun.management.jmxremote.authenticate=true -Dcom.sun.management.jmxremote.password.file=/etc/cassandra/jmxremote.password -Dcom.sun.management.jmxremote.access.file=/etc/cassandra/jmxremote.access
-  #      CASSANDRA_START_RPC: "true"
-  #      CASSANDRA_LISTEN_ADDRESS: auto
-  #      CASSANDRA_RPC_ADDRESS: 0.0.0.0
-  #      CASSANDRA_NUM_TOKENS: 16
-  #      LOCAL_JMX: "no"
-  #    ports:
-  #      - '7000:7000'
-  #    networks:
-  #      - back-tier
-  #    volumes:
-  #      - volume-cassandra-1:/var/lib/cassandra
-  #    depends_on:
-  #      - cassandrasmfr
-  #    deploy:
-  #      restart_policy:
-  #        condition: on-failure
-  #        max_attempts: 3
-  #        window: 60s
-  #      placement:
-  #        constraints: [ node.labels.huge == true ]
-  #
-  #    # you cannot have multiple nodes join the cluster at the same time when
-  #    # cassandra.consistent.rangemovement is true so we further delay it to give it time to stabilize
-  #    cassandra-node-2:
-  #      image: ${DOCKER_REGISTRY}/${CASSANDRA_IMAGE}:${image_tag}
-  #      command: /bin/bash -c "echo 'Waiting for seed node' && sleep 90 && /docker-entrypoint.sh cassandra -f"
-  #      environment:
-  #        CASSANDRA_SEEDS: cassandrasmfr
-  #        CASSANDRA_BROADCAST_ADDRESS: cassandra-node-2
-  #        CASSANDRA_NUM_TOKENS: 2
-  #        MAX_HEAP_SIZE: 4G
-  #        HEAP_NEWSIZE: 1024M
-  #        JVM_OPTS: -Xms2g -Xmx4g -Dcom.sun.management.jmxremote.authenticate=true -Dcom.sun.management.jmxremote.password.file=/etc/cassandra/jmxremote.password -Dcom.sun.management.jmxremote.access.file=/etc/cassandra/jmxremote.access
-  #        CASSANDRA_START_RPC: "true"
-  #        CASSANDRA_LISTEN_ADDRESS: auto
-  #        CASSANDRA_RPC_ADDRESS: 0.0.0.0
-  #        LOCAL_JMX: "no"
-  #      ports:
-  #        - '7000:7000'
-  #      networks:
-  #        - back-tier
-  #      volumes:
-  #        - volume-cassandra-2:/var/lib/cassandra
-  #      depends_on:
-  #        - cassandrasmfr
-  #        - cassandra-node-1
-  #      deploy:
-  #        restart_policy:
-  #          condition: on-failure
-  #          max_attempts: 3
-  #          window: 90s
-  #        placement:
-  #          constraints: [ node.labels.medium == true ]
 
   geocoder:
     restart: always
@@ -304,15 +238,8 @@ services:
       KAFKA_INTER_BROKER_LISTENER_NAME: INSIDE
       KAFKA_LISTENERS: INSIDE://:9090,OUTSIDE://:9092
       KAFKA_ADVERTISED_LISTENERS: INSIDE://:9090,OUTSIDE://${DOCKER_HOST_IP}:9092
-
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-#      KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'true'  # true by default anyway
       KAFKA_CREATE_TOPICS: '${PERSISTER_KAFKA_TOPIC}:1:1,${ALL_ANNOTATOR_KAFKA_TOPICS},${GEOCODER_KAFKA_TOPIC}:1:1'
-#      KAFKA_MAX_BLOCK_MS: 90000
-#      KAFKA_REQUEST_TIMEOUT_MS: 300000
-#      KAFKA_MAX_POLL_RECORDS: 100
-#      KAFKA_MAX_POLL_INTERVAL_MS: 600000
-#      KAFKA_MESSAGE_MAX_BYTES: 4000048
       KAFKA_HEAP_OPTS: -Xmx8912m -Xms8912m
     ports:
       - target: 9092
@@ -341,8 +268,6 @@ services:
     image: ${DOCKER_REGISTRY}/${MYSQL_IMAGE}:${image_tag}
     restart: always
     container_name: mysql
-    # From host, connect to DB with `mysql -h 127.0.0.1 -p` (if you have mysql client installed)
-    # or using docker exec: `docker exec -it mysql mysql -h 127.0.0.1 -p'
     ports:
       - '3306:3306'
     volumes:
