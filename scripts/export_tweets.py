@@ -50,7 +50,10 @@ def main():
     # force output file extension to be coherent with the output format
     conf.output_file = '{}.{}'.format(os.path.splitext(conf.output_file)[0], conf.format)
 
-    tweets = itertools.chain(Tweet.get_iterator(collection_id, conf.ttype, conf.lang, out_format='json') for collection_id in conf.collection_ids)
+    tweets = itertools.chain(
+        *(Tweet.get_iterator(collection_id, conf.ttype, conf.lang, out_format='json')
+          for collection_id in conf.collection_ids)
+    )
     write_method = getattr(sys.modules[__name__], 'write_{}'.format(conf.format))
     write_method(conf, tweets)
     if conf.gzip:
