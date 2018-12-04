@@ -6,7 +6,6 @@ import paramiko
 
 
 class FTPEfas:
-    host_keys = paramiko.util.load_host_keys(os.path.expanduser('~/.ssh/known_hosts'))
     user = os.getenv('FTP_USER')
     pwd = os.getenv('FTP_PASS')
     host = os.getenv('FTP_HOST')
@@ -15,7 +14,7 @@ class FTPEfas:
     filename_template = os.getenv('RRA_ONDEMAND_FILENAME')
 
     def __init__(self):
-
+        self.host_keys = paramiko.util.load_host_keys(os.path.expanduser('~/.ssh/known_hosts'))
         if self.host not in self.host_keys:
             raise ValueError('SFTP is not known. Run ssh-keyscan -t rsa {} >> ~/.ssh/known_hosts'.format(self.host))
 
