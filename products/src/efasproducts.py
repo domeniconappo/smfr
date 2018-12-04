@@ -122,6 +122,7 @@ class Products:
         relevant_tweets_file = cls.write_relevant_tweets_geojson(relevant_tweets_output)
         cls.ftp_client.send(heatmap_file)
         cls.ftp_client.send(relevant_tweets_file)
+        cls.ftp_client.close()
         cls.write_incidents_geojson(counters_by_efas_id_output)
         cls.write_to_sql(counters_by_efas_id_output, relevant_tweets_output, collection_ids)
 

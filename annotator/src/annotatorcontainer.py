@@ -57,19 +57,18 @@ class AnnotatorContainer:
         logger.info('>>>>>>>>>>>> Forcing Annotation for collection: %s', collection_id)
         with cls._lock:
             cls._running.append(collection_id)
-        ttype = 'geotagged'
-        dataset = Tweet.get_iterator(collection_id, ttype)
+        dataset = Tweet.get_iterator(collection_id, 'geotagged')
 
         for i, tweet in enumerate(dataset, start=1):
             try:
+                lang = tweet.lang
+                if not (i % 1000):
+                    logger.info('Scanned so far %d', i)
                 if collection_id in cls._stop_signals:
                     logger.info('Stopping annotation %s', collection_id)
                     with cls._lock:
                         cls._stop_signals.remove(collection_id)
                     break
-                lang = tweet.lang
-                if not (i % 1000):
-                    logger.info('%s: Scan so far %d', lang.capitalize(), i)
 
                 if lang not in available_languages or (DEVELOPMENT and lang != 'en'):
                     logger.debug('Skipping tweet %s - language %s', tweet.tweetid, lang)
@@ -77,18 +76,20 @@ class AnnotatorContainer:
 
                 message = Tweet.serializetuple(tweet)
                 topic = '{}-{}'.format(cls.annotator_kafka_topic, lang)
+
                 if logger.isEnabledFor(logging.DEBUG):
                     logger.debug('Sending tweet to ANNOTATOR %s %s', lang, tweet.tweetid, )
                 producer.send(topic, message)
+
             except KafkaTimeoutError as e:
                 logger.error(e)
-                logger.error('Kafka has problems to allocate memory for the message: throttling')
+                logger.error('Maybe Kafka has problems to allocate memory for the message: throttling 10 secs')
                 time.sleep(10)
 
         # remove from `_running` list
         with cls._lock:
             cls._running.remove(collection_id)
-        logger.info('<<<<<<<<<<<<< Annotation tweets selection terminated for collection: %s', collection_id)
+        logger.info('<<<<<<<<<<<<< Annotation of geotagged tweets terminated for collection: %s', collection_id)
 
     @classmethod
     def stop(cls, collection_id):
