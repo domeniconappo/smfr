@@ -7,7 +7,7 @@ Usage:
     python scripts/export_tweets.py -c 0 -t geotagged -n 1000
 
 """
-
+import itertools
 import os
 import sys
 import ujson as json
@@ -23,8 +23,9 @@ from scripts.utils import ParserHelpOnError, CustomJSONEncoder
 
 
 def add_args(parser):
-    parser.add_argument('-c', '--collection_id', help='collection id', type=int, action='append',
-                        metavar='collection_id', required=True)
+    parser.add_argument('-c', '--collection_ids', help='A collection id. Multiple collection ids can be passed',
+                        type=int, action='append',
+                        metavar='collection_ids', required=True)
     parser.add_argument('-t', '--ttype', help='Which type of stored tweets to export',
                         choices=["annotated", "collected", "geotagged"],
                         metavar='ttype', required=True)
@@ -48,7 +49,8 @@ def main():
     conf = parser.parse_args()
     # force output file extension to be coherent with the output format
     conf.output_file = '{}.{}'.format(os.path.splitext(conf.output_file)[0], conf.format)
-    tweets = Tweet.get_iterator(conf.collection_id, conf.ttype, conf.lang, out_format='json')
+
+    tweets = itertools.chain(Tweet.get_iterator(collection_id, conf.ttype, conf.lang, out_format='json') for collection_id in conf.collection_ids)
     write_method = getattr(sys.modules[__name__], 'write_{}'.format(conf.format))
     write_method(conf, tweets)
     if conf.gzip:
