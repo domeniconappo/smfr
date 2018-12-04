@@ -77,7 +77,7 @@ class FTPEfas:
         self.t.close()
 
 
-class FTPClient:
+class SFTPClient:
     def __init__(self, host, user, passwd, folder=None):
         self.folder = '/home/{}'.format(user) if not folder else folder
         self.host = host

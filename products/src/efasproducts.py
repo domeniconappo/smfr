@@ -13,7 +13,7 @@ from Levenshtein import ratio
 from smfrcore.models.sql import TwitterCollection, Aggregation, Nuts2, Product, create_app
 from smfrcore.utils import DEFAULT_HANDLER, IN_DOCKER, RGB
 from smfrcore.client.api_here import HereClient
-from smfrcore.client.ftp import FTPClient
+# from smfrcore.client.ftp import FTPClient
 from smfrcore.utils.text import tweet_normalization_aggressive
 from sqlalchemy import or_
 
@@ -52,7 +52,7 @@ class Products:
     user = os.getenv('KAJO_FTP_USER', 'jrc')
     password = os.getenv('KAJO_FTP_PASSWORD')
     folder = os.getenv('KAJO_FTP_FOLDER')
-    ftp_client = FTPClient(server, user, password, folder)
+    # ftp_client = FTPClient(server, user, password, folder)
 
     # here api
     here_client = HereClient()
@@ -120,9 +120,9 @@ class Products:
 
         heatmap_file = cls.write_heatmap_geojson(counters_by_efas_id_output)
         relevant_tweets_file = cls.write_relevant_tweets_geojson(relevant_tweets_output)
-        cls.ftp_client.send(heatmap_file)
-        cls.ftp_client.send(relevant_tweets_file)
-        cls.ftp_client.close()
+        # cls.ftp_client.send(heatmap_file)
+        # cls.ftp_client.send(relevant_tweets_file)
+        # cls.ftp_client.close()
         cls.write_incidents_geojson(counters_by_efas_id_output)
         cls.write_to_sql(counters_by_efas_id_output, relevant_tweets_output, collection_ids)
 
