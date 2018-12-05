@@ -71,16 +71,30 @@ class FTPEfas:
 
 
 class SFTPClient:
+    proxy_cmd = None
+    proxy_host = None
+    proxy_port = None
+    proxy = os.getenv('http_proxy', None)
+    if proxy:
+        #  e.g. ProxyCommand /usr/local/bin/corkscrew 10.168.209.72 8012 %h %p
+        proxy = proxy.lstrip('http://').rstrip('/')
+        proxy_host, proxy_port = proxy.split(':')
+        proxy_cmd_str = '/usr/local/bin/corkscrew {} {} {} {}'
+
     def __init__(self, host, user, passwd, folder=None):
         self.remote_path = '/home/{}'.format(user) if not folder else folder
         self.host = host
         self.user = user
         self.password = passwd
+        if self.proxy_host:
+            self.proxy_cmd = paramiko.proxy.ProxyCommand(self.proxy_cmd_str.format(
+                self.proxy_host, self.proxy_port, host, 22
+            ))
 
         # Connect SSH client accepting all host keys.
         self._ssh = paramiko.SSHClient()
         self._ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-        self._ssh.connect(host, 22, self.user, self.password)
+        self._ssh.connect(host, 22, self.user, self.password, sock=self.proxy_cmd)
 
         # Using the SSH client, create a SFTP client.
         sftp = self._ssh.open_sftp()
