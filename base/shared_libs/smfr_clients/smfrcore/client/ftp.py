@@ -76,26 +76,23 @@ class SFTPClient:
         self.host = host
         self.user = user
         self.password = passwd
-        self.host_keys = paramiko.util.load_host_keys(os.path.expanduser('~/.ssh/known_hosts'))
-        print(self.host_keys)
-        if self.host not in self.host_keys:
-            raise ValueError(
-                'SFTP is not known. Run ssh-keyscan -t rsa {} >> {}'.format(
-                    self.host, os.path.expanduser('~/.ssh/known_hosts')
-                )
-            )
 
-        self.hostkeytype = self.host_keys[self.host].keys()[0]
-        self.hostkey = self.host_keys[self.host][self.hostkeytype]
-        self.t = paramiko.Transport((self.host, 22))
-        self.t.connect(self.hostkey, self.user, self.password, gss_host=socket.getfqdn(self.host))
-        self.client = paramiko.SFTPClient()
-        self.connection = paramiko.SFTPClient.from_transport(self.t)
+        # Connect SSH client accepting all host keys.
+        self._ssh = paramiko.SSHClient()
+        self._ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+        self._ssh.connect(host, 22, self.user, self.password)
+
+        # Using the SSH client, create a SFTP client.
+        sftp = self._ssh.open_sftp()
+        # Keep a reference to the SSH client in the SFTP client as to prevent the former from
+        # being garbage collected and the connection from being closed.
+        sftp.sshclient = self._ssh
+        self.connection = sftp
 
     def send(self, path_to_file):
         remote_path_file = os.path.join(self.remote_path, os.path.basename(path_to_file))
         self.connection.put(path_to_file, remote_path_file)
 
     def close(self):
-        self.t.close()
-
+        self.connection.close()
+        self._ssh.close()
