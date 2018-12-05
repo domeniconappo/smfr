@@ -18,7 +18,7 @@ if [[ ${lib} == "all" ]]; then
     pip install base/shared_libs/smfr_utils/
     pip install base/shared_libs/smfr_analysis/
 elif [[ -n "`echo ${LIBS} | xargs -n1 echo | grep ${lib}`" ]]; then
-    cp base/shared_libs/VERSION base/shared_libs/smfr_${lib}/
+    cp VERSION base/shared_libs/smfr_${lib}/
     pip install base/shared_libs/smfr_${lib}/
 else
     echo Unknown python SMFR package: ${lib}

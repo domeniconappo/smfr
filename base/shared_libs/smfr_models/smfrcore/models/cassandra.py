@@ -40,26 +40,28 @@ cluster_kwargs = {'compression': True, 'load_balancing_policy': default_lbp_fact
 
 
 _hosts = get_cassandra_hosts()
-cassandra_cluster = Cluster(_hosts, port=_port, **cluster_kwargs) if IN_DOCKER else Cluster(**cluster_kwargs)
-cassandra_session = cassandra_cluster.connect()
-cassandra_session.default_timeout = None
-cassandra_session.default_fetch_size = os.getenv('CASSANDRA_FETCH_SIZE', 1000)
-
-cassandra_default_connection = Connection.from_session(DEFAULT_CONNECTION, session=cassandra_session)
-_connections[DEFAULT_CONNECTION] = cassandra_default_connection
-
-
 flask_app = create_app()
+
+
+def new_cassandra_session():
+    cassandra_cluster = Cluster(_hosts, port=_port, **cluster_kwargs) if IN_DOCKER else Cluster(**cluster_kwargs)
+    cassandra_session = cassandra_cluster.connect()
+    cassandra_session.default_timeout = None
+    cassandra_session.default_fetch_size = os.getenv('CASSANDRA_FETCH_SIZE', 1000)
+    cassandra_session.row_factory = named_tuple_factory
+    cassandra_default_connection = Connection.from_session(DEFAULT_CONNECTION, session=cassandra_session)
+    _connections[DEFAULT_CONNECTION] = cassandra_default_connection
+    return cassandra_session
 
 
 class Tweet(cqldb.Model):
     """
     Object representing the `tweet` column family in Cassandra
     """
+    session = None
     __keyspace__ = _keyspace
 
-    session = cassandra_session
-    session.row_factory = named_tuple_factory
+    # session = None
     ANNOTATED_TYPE = 'annotated'
     COLLECTED_TYPE = 'collected'
     GEOTAGGED_TYPE = 'geotagged'
@@ -214,9 +216,10 @@ class Tweet(cqldb.Model):
         return res
 
     @classmethod
-    def get_iterator(cls, collection_id, ttype, lang=None, out_format='tuple', last_tweetid=None):
+    def get_iterator(cls, collection_id, ttype, lang=None, out_format='tuple', last_tweetid=None, forked_process=False):
         """
 
+        :param forked_process:
         :param collection_id:
         :param ttype: 'annotated', 'collected' OR 'geotagged'
         :param lang: two chars lang code (e.g. en)
@@ -227,14 +230,15 @@ class Tweet(cqldb.Model):
         if out_format not in ('obj', 'json', 'dict', 'tuple'):
             raise ValueError('out_format is not valid')
 
-        cls.generate_prepared_statements()
+        cls.generate_prepared_statements(forked_process)
 
         if last_tweetid:
             results = cls.session.execute(cls.stmt_with_last_tweetid,
                                           parameters=(collection_id, ttype, int(last_tweetid)),
                                           timeout=None)
         else:
-            results = cls.session.execute(cls.stmt, parameters=(collection_id, ttype),
+            results = cls.session.execute(cls.stmt,
+                                          parameters=(collection_id, ttype),
                                           timeout=None)
 
         lang = lang.lower() if lang else None
@@ -247,10 +251,13 @@ class Tweet(cqldb.Model):
         return cls.to_obj(results[0]) if results and len(results) == 1 else None
 
     @classmethod
-    def generate_prepared_statements(cls):
+    def generate_prepared_statements(cls, forked_process=False):
         """
         Generate prepared CQL statements for existing tables
         """
+        if forked_process:
+            cls.session = new_cassandra_session()
+
         if not hasattr(cls, 'samples_stmt') or not isinstance(cls.samples_stmt, PreparedStatement):
             cls.samples_stmt = cls.session.prepare(
                 'SELECT * FROM {}.tweet WHERE collectionid=? AND ttype=? ORDER BY tweetid DESC LIMIT ?'.format(cls.__keyspace__)

@@ -347,6 +347,7 @@ services:
       args:
         http_proxy: ${http_proxy}
         https_proxy: ${https_proxy}
+        ftp_host: ${KAJO_FTP_SERVER}
     working_dir: /products
     volumes:
       - ./products/src:/products
@@ -373,6 +374,10 @@ services:
       CASSANDRA_PASSWORD: ${CASSANDRA_PASSWORD}
       CASSANDRA_USE_CLUSTER: ${CASSANDRA_USE_CLUSTER}
       CASSANDRA_NODES: ${CASSANDRA_NODES}
+      KAJO_FTP_SERVER: ${KAJO_FTP_SERVER}
+      KAJO_FTP_USER: ${KAJO_FTP_USER}
+      KAJO_FTP_PASSWORD: ${KAJO_FTP_PASSWORD}
+      KAJO_FTP_FOLDER: ${KAJO_FTP_FOLDER}
       http_proxy: ${http_proxy}
       https_proxy: ${https_proxy}
     networks:

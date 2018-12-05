@@ -13,8 +13,6 @@ RUN mkdir -p /scripts && mkdir -p /restserver && mkdir -p /restserver/smfrcore &
 
 COPY ./restserver/requirements.txt /requirements
 
-# Clean up APT
-#RUN apt-get autoremove -y && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 ENV PATH=/usr/local/mysql/bin/:$PATH
 
 RUN ssh-keyscan -t rsa ${ftp_host} >> ~/.ssh/known_hosts

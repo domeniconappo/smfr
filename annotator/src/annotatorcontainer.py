@@ -7,10 +7,10 @@ from cassandra import InvalidRequest
 from cassandra.cqlengine import ValidationError
 from kafka.errors import CommitFailedError, KafkaTimeoutError
 
-from smfrcore.models.cassandra import Tweet
 from smfrcore.utils.kafka import make_kafka_consumer, make_kafka_producer, send_to_persister
 from smfrcore.ml.helpers import models, logger, available_languages
 from smfrcore.ml.annotator import Annotator
+from smfrcore.models.cassandra import Tweet
 
 
 DEVELOPMENT = bool(int(os.getenv('DEVELOPMENT', 0)))
@@ -57,7 +57,7 @@ class AnnotatorContainer:
         logger.info('>>>>>>>>>>>> Forcing Annotation for collection: %s', collection_id)
         with cls._lock:
             cls._running.append(collection_id)
-        dataset = Tweet.get_iterator(collection_id, 'geotagged')
+        dataset = Tweet.get_iterator(collection_id, 'geotagged', forked_process=True)
 
         for i, tweet in enumerate(dataset, start=1):
             try:
@@ -148,7 +148,6 @@ class AnnotatorContainer:
 
             try:
                 cls.shared_counter[lang] = 0
-
                 for i, msg in enumerate(consumer, start=1):
                     tweet = None
                     try:

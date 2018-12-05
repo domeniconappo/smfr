@@ -11,7 +11,7 @@ ujson
 scrypt
 PassLib
 pynacl
-
+paramiko
 schedule
 cachetools
 python-Levenshtein

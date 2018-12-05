@@ -98,7 +98,7 @@ class GeocoderContainer:
         with cls._lock:
             cls._running.append(collection_id)
 
-        dataset = Tweet.get_iterator(collection_id, Tweet.ANNOTATED_TYPE)
+        dataset = Tweet.get_iterator(collection_id, Tweet.ANNOTATED_TYPE, forked_process=True)
         producer = make_kafka_producer()
         for i, tweet in enumerate(dataset, start=1):
             try:
