@@ -51,16 +51,10 @@ class FTPEfas:
 
     @classmethod
     def date_from_filename(cls, filename):
-        # filename is CostPopEstYYYYMMDDHH.json or stats_fullYYYYMMDDHH.csv or YYYYMMDDHHSM_meanLT_tmp.json
         name, _ = os.path.splitext(filename)
         return name[:10] if name[:10].isdigit() else name[-10:]
 
     def _fetch(self, force=False, dated=None):
-        """
-
-        :param force:
-        :return:
-        """
         dated = dated or 'latest'  # 'latest' or 'YYYYMMDDHH'
         if not self.filename:
             self.filename = self._get_filename(dated)
@@ -83,13 +77,19 @@ class SFTPClient:
         self.user = user
         self.password = passwd
         self.host_keys = paramiko.util.load_host_keys(os.path.expanduser('~/.ssh/known_hosts'))
+        print(self.host_keys)
         if self.host not in self.host_keys:
-            raise ValueError('SFTP is not known. Run ssh-keyscan -t rsa {} >> ~/.ssh/known_hosts'.format(self.host))
+            raise ValueError(
+                'SFTP is not known. Run ssh-keyscan -t rsa {} >> {}'.format(
+                    self.host, os.path.expanduser('~/.ssh/known_hosts')
+                )
+            )
 
         self.hostkeytype = self.host_keys[self.host].keys()[0]
         self.hostkey = self.host_keys[self.host][self.hostkeytype]
         self.t = paramiko.Transport((self.host, 22))
         self.t.connect(self.hostkey, self.user, self.password, gss_host=socket.getfqdn(self.host))
+        self.client = paramiko.SFTPClient()
         self.connection = paramiko.SFTPClient.from_transport(self.t)
 
     def send(self, path_to_file):

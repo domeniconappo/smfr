@@ -347,7 +347,7 @@ services:
       args:
         http_proxy: ${http_proxy}
         https_proxy: ${https_proxy}
-        ftp_host: ${KAJO_FTP_SERVER}
+        sftp_host: ${KAJO_FTP_SERVER}
     working_dir: /products
     volumes:
       - ./products/src:/products

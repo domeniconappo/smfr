@@ -3,12 +3,16 @@ MAINTAINER Domenico Nappo <domenico.nappo@ext.ec.europa.eu>
 
 ARG http_proxy
 ARG https_proxy
-ARG ftp_host
+ARG sftp_host
 ENV LANG=C.UTF-8
+ENV http_proxy=${http_proxy}
+ENV https_proxy=${https_proxy}
 
 RUN mkdir -p ~/.ssh/ && mkdir -p /products && mkdir -p /products/smfrcore && mkdir -p /config && mkdir -p /output && mkdir -p /scripts \
-    && mkdir -p /requirements && ssh-keyscan -t rsa ${ftp_host} >> ~/.ssh/known_hosts
+    && mkdir -p /requirements
+RUN echo "Host *\nSendEnv LC_* LANG\nProxyCommand /usr/local/bin/corkscrew ${http_proxy} %h %p"
 
+RUN ssh-keyscan -t rsa ${sftp_host} >> ~/.ssh/known_hosts
 COPY base/shared_libs/scripts/wait_for_it.sh /scripts/
 COPY base/shared_libs/smfr_utils/. /smfr_libs/utils/
 COPY base/shared_libs/smfr_models/. /smfr_libs/models/
