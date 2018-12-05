@@ -34,16 +34,13 @@ _keyspace = os.getenv('CASSANDRA_KEYSPACE', 'smfr_persistent')
 _port = os.getenv('CASSANDRA_PORT', 9042)
 _cassandra_user = os.getenv('CASSANDRA_USER')
 _cassandra_password = os.getenv('CASSANDRA_PASSWORD')
-
-cluster_kwargs = {'compression': True, 'load_balancing_policy': default_lbp_factory(),
-                  'auth_provider': PlainTextAuthProvider(username=_cassandra_user, password=_cassandra_password)}
-
-
 _hosts = get_cassandra_hosts()
 flask_app = create_app()
 
 
 def new_cassandra_session():
+    cluster_kwargs = {'compression': True, 'load_balancing_policy': default_lbp_factory(),
+                      'auth_provider': PlainTextAuthProvider(username=_cassandra_user, password=_cassandra_password)}
     cassandra_cluster = Cluster(_hosts, port=_port, **cluster_kwargs) if IN_DOCKER else Cluster(**cluster_kwargs)
     cassandra_session = cassandra_cluster.connect()
     cassandra_session.default_timeout = None
@@ -58,7 +55,7 @@ class Tweet(cqldb.Model):
     """
     Object representing the `tweet` column family in Cassandra
     """
-    session = None
+    session = new_cassandra_session()
     __keyspace__ = _keyspace
 
     # session = None
@@ -223,7 +220,7 @@ class Tweet(cqldb.Model):
         :param collection_id:
         :param ttype: 'annotated', 'collected' OR 'geotagged'
         :param lang: two chars lang code (e.g. en)
-        :param out_format: can be 'obj', 'json' or 'dict'
+        :param out_format: can be 'obj', 'json', 'tuple' or 'dict'
         :param last_tweetid:
         :return: smfrcore.models.cassandra.Tweet object, dictionary or JSON encoded, according out_format param
         """
@@ -231,6 +228,7 @@ class Tweet(cqldb.Model):
             raise ValueError('out_format is not valid')
 
         cls.generate_prepared_statements(forked_process)
+        cls.session.row_factory = named_tuple_factory
 
         if last_tweetid:
             results = cls.session.execute(cls.stmt_with_last_tweetid,
@@ -247,6 +245,7 @@ class Tweet(cqldb.Model):
     @classmethod
     def get_tweet(cls, collection_id, ttype, tweetid):
         cls.generate_prepared_statements()
+        cls.session.row_factory = named_tuple_factory
         results = list(cls.session.execute(cls.stmt_single, parameters=(collection_id, ttype, tweetid), timeout=None))
         return cls.to_obj(results[0]) if results and len(results) == 1 else None
 
@@ -255,8 +254,9 @@ class Tweet(cqldb.Model):
         """
         Generate prepared CQL statements for existing tables
         """
-        if forked_process:
+        if forked_process or not hasattr(cls, 'session') or not cls.session:
             cls.session = new_cassandra_session()
+            cls.session.row_factory = named_tuple_factory
 
         if not hasattr(cls, 'samples_stmt') or not isinstance(cls.samples_stmt, PreparedStatement):
             cls.samples_stmt = cls.session.prepare(
@@ -309,6 +309,7 @@ class Tweet(cqldb.Model):
     @classmethod
     def get_samples(cls, collection_id, ttype, size=10):
         cls.generate_prepared_statements()
+        cls.session.row_factory = named_tuple_factory
         rows = cls.session.execute(cls.samples_stmt, parameters=[collection_id, ttype, size])
         return rows
 
