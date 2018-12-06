@@ -58,6 +58,7 @@ class TwitterCollection(SMFRModel):
     cache = TTLCache(500, 60 * 60 * 6)  # max size 500, 6 hours caching
 
     cache_keys = {
+        'all-on-demand': 'all-on-demand',
         'on-demand': 'active-on-demand',
         'background': 'background-collection',
         'collection': 'id-{}',
@@ -272,6 +273,16 @@ class TwitterCollection(SMFRModel):
         return res
 
     @classmethod
+    def get_ondemand(cls):
+        key = cls.cache_keys['all-on-demand']
+        res = cls.cache.get(key)
+        if not res:
+            res = cls.query.filter_by(
+                trigger=cls.TRIGGER_ONDEMAND).order_by(cls.started_at.desc(), cls.runtime.desc()).all()
+            cls.cache[key] = res
+        return res
+
+    @classmethod
     def get_active_manual(cls):
         key = cls.cache_keys['manual']
         res = cls.cache.get(key)
@@ -349,6 +360,7 @@ class TwitterCollection(SMFRModel):
                 elif obj.is_ondemand:
                     # update ondemand active
                     _update_cached_list(cls.cache_keys['on-demand'])
+                    _update_cached_list(cls.cache_keys['all-on-demand'])
 
         elif action == 'delete':
             cls.cache[collection_key] = None
@@ -363,6 +375,7 @@ class TwitterCollection(SMFRModel):
                             cls.cache[cls.cache_keys['background']] = None
                         elif obj.is_ondemand:
                             cls.cache[cls.cache_keys['on-demand']].remove(obj)
+                            cls.cache[cls.cache_keys['all-on-demand']].remove(obj)
             except ValueError:
                 pass
         elif action == 'deactivate':

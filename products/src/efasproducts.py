@@ -77,13 +77,7 @@ class Products:
     def produce(cls):
         # create products for on-demand active colletions or recently stopped collections
         with cls.app.app_context():
-            collections = TwitterCollection.query.filter(
-                TwitterCollection.trigger == TwitterCollection.TRIGGER_ONDEMAND).filter(
-                or_(
-                    TwitterCollection.status == 'active',
-                    TwitterCollection.stopped_at >= datetime.now() - timedelta(days=2)
-                )
-            )
+            collections = TwitterCollection.get_active_ondemand()
             collection_ids = [c.id for c in collections]
             aggregations = Aggregation.query.filter(Aggregation.collection_id.in_(collection_ids)).all()
             counters = defaultdict(int)
@@ -246,7 +240,7 @@ class Products:
                             continue
                         for inc in incidents:
                             geom = Geometry(
-                                coordinates=[inc['lat'], inc['lon']],
+                                coordinates=[inc['lon'], inc['lat']],
                                 type='Point',
                             )
                             out_data.append(Feature(geometry=geom, properties={
@@ -271,7 +265,7 @@ class Products:
                         continue
                     for tweet in relevant_tweets[efas_id]:
                         geom = Geometry(
-                            coordinates=tweet['latlong'],
+                            coordinates=[tweet['latlong'][1], tweet['latlong'][0]],
                             type='Point',
                         )
                         out_data.append(Feature(geometry=geom, properties={

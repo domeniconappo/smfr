@@ -79,7 +79,7 @@ class SFTPClient:
         #  e.g. ProxyCommand /usr/local/bin/corkscrew 10.168.209.72 8012 %h %p
         proxy = proxy.lstrip('http://').rstrip('/')
         proxy_host, proxy_port = proxy.split(':')
-        proxy_cmd_str = '/usr/local/bin/corkscrew {} {} {} {}'
+        proxy_cmd_str = 'corkscrew {} {} {} {}'
 
     def __init__(self, host, user, passwd, folder=None):
         self.remote_path = '/home/{}'.format(user) if not folder else folder
@@ -91,7 +91,6 @@ class SFTPClient:
                 self.proxy_host, self.proxy_port, host, 22
             ))
 
-        # Connect SSH client accepting all host keys.
         self._ssh = paramiko.SSHClient()
         self._ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
         self._ssh.connect(host, 22, self.user, self.password, sock=self.proxy_cmd)
