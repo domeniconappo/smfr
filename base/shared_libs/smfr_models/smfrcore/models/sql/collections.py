@@ -71,7 +71,7 @@ class TwitterCollection(SMFRModel):
     for key in cache_keys:
         if key in ('collection', 'background'):
             continue
-        cache[key] = []
+        cache[cache_keys[key]] = []
     cache['background'] = None
 
     def __str__(self):
@@ -366,38 +366,38 @@ class TwitterCollection(SMFRModel):
             cls.cache[collection_key] = None
             try:
                 if obj.is_active_or_recent:
-                    cls.cache[cls.cache_keys['active']].remove(obj)
+                    cls.cache.get(cls.cache_keys['active'], []).remove(obj)
                     if obj.is_active:
-                        cls.cache[cls.cache_keys['running']].remove(obj)
+                        cls.cache.get(cls.cache_keys['running'], []).remove(obj)
                         if obj.is_manual:
-                            cls.cache[cls.cache_keys['manual']].remove(obj)
+                            cls.cache.get(cls.cache_keys['manual'], []).remove(obj)
                         elif obj.is_background:
                             cls.cache[cls.cache_keys['background']] = None
                         elif obj.is_ondemand:
-                            cls.cache[cls.cache_keys['on-demand']].remove(obj)
-                            cls.cache[cls.cache_keys['all-on-demand']].remove(obj)
+                            cls.cache.get(cls.cache_keys['on-demand'], []).remove(obj)
+                            cls.cache.get(cls.cache_keys['all-on-demand'], []).remove(obj)
             except ValueError:
                 pass
         elif action == 'deactivate':
             try:
-                cls.cache[cls.cache_keys['running']].remove(obj)
+                cls.cache.get(cls.cache_keys['running'], []).remove(obj)
                 if obj.is_manual:
-                    cls.cache[cls.cache_keys['manual']].remove(obj)
+                    cls.cache.get(cls.cache_keys['manual'], []).remove(obj)
                 elif obj.is_background:
                     cls.cache[cls.cache_keys['background']] = None
                 elif obj.is_ondemand:
-                    cls.cache[cls.cache_keys['on-demand']].remove(obj)
+                    cls.cache.get(cls.cache_keys['on-demand'], []).remove(obj)
             except ValueError:
                 pass
         elif action == 'activate':
-            cls.cache[cls.cache_keys['active']].append(obj)
-            cls.cache[cls.cache_keys['running']].append(obj)
+            cls.cache.get(cls.cache_keys['active'], []).append(obj)
+            cls.cache.get(cls.cache_keys['running'], []).append(obj)
             if obj.is_manual:
-                cls.cache[cls.cache_keys['manual']].append(obj)
+                cls.cache.get(cls.cache_keys['manual'], []).append(obj)
             elif obj.is_background:
                 cls.cache[cls.cache_keys['background']] = obj
             elif obj.is_ondemand:
-                cls.cache[cls.cache_keys['on-demand']].append(obj)
+                cls.cache.get(cls.cache_keys['on-demand'], []).append(obj)
 
     @classmethod
     def update_status_by_runtime(cls):
@@ -565,6 +565,14 @@ class Aggregation(SMFRModel):
     def data(self):
         # TODO rearrange values dictionary for cleaner output...
         return self.values
+
+    @property
+    def aggregated_tweets(self):
+        return self.relevant_tweets
+
+    @classmethod
+    def get_by_collection(cls, collection_id):
+        return cls.query.filter_by(collection_id=collection_id).first()
 
     def __str__(self):
         return 'Aggregation ID: {} (collection: {})'.format(self.id, self.collection_id)
