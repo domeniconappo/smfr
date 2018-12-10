@@ -1,6 +1,5 @@
 import os
 import tarfile
-import pkg_resources
 
 import ujson
 from sqlalchemy import Index, Column, Integer, String, Float
@@ -8,6 +7,11 @@ from sqlalchemy_utils import JSONType
 from shapely.geometry import Point, Polygon
 
 from .base import SMFRModel, LongJSONType
+
+
+def load_nuts():
+    rows = Nuts2.query.all()
+    return {r.id: r for r in rows}
 
 
 class Nuts2(SMFRModel):
@@ -34,13 +38,15 @@ class Nuts2(SMFRModel):
     min_lat = Column(Float)
     max_lat = Column(Float)
 
+    _preloaded = load_nuts()
+
     @classmethod
     def get_by_efas_id(cls, efas_id):
-        return cls.query.filter_by(efas_id=efas_id).first()
+        return cls._preloaded.get(efas_id) or cls.query.filter_by(efas_id=efas_id).first()
 
     @classmethod
     def efas_id_bbox(cls, efas_id):
-        nuts2 = cls.query.filter_by(efas_id=efas_id).first()
+        nuts2 = cls._preloaded.get(efas_id) or cls.query.filter_by(efas_id=efas_id).first()
         return nuts2.bbox
 
     @property

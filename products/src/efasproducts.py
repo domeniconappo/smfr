@@ -269,8 +269,8 @@ class Products:
                     efas_id = feat['id']
                     if efas_id not in relevant_tweets:
                         continue
-                    properties = feat['properties']
-                    efas_name = properties['EFAS_name']
+                    efas_nuts2 = Nuts2.get_by_efas_id(efas_id)
+                    efas_name = efas_nuts2.efas_name
                     for tweet in relevant_tweets[efas_id]:
                         geom = Geometry(
                             coordinates=[tweet['latlong'][1], tweet['latlong'][0]],
