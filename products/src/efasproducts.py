@@ -55,7 +55,6 @@ class Products:
 
     # here api
     here_client = HereClient()
-    nuts2 = {}
     app = create_app()
 
     @classmethod
@@ -77,7 +76,7 @@ class Products:
     def produce(cls, efas_cycle='12'):
         # create products for on-demand active collections or recently stopped collections
         with cls.app.app_context():
-            cls.nuts2 = Nuts2.load_nuts()
+            nuts2 = Nuts2.load_nuts()
             collections = TwitterCollection.get_active_ondemand()
             collection_ids = [c.id for c in collections]
             aggregations = Aggregation.query.filter(Aggregation.collection_id.in_(collection_ids)).all()
@@ -115,9 +114,9 @@ class Products:
             counters_by_efas_id[efas_id]['collection_id'] = collection_id
         counters_by_efas_id_output = {k: v for k, v in counters_by_efas_id.items() if v}
 
-        heatmap_file = cls.write_heatmap_geojson(counters_by_efas_id_output, efas_cycle)
-        relevant_tweets_file = cls.write_relevant_tweets_geojson(relevant_tweets_output, efas_cycle)
-        cls.write_incidents_geojson(counters_by_efas_id_output, efas_cycle)
+        heatmap_file = cls.write_heatmap_geojson(counters_by_efas_id_output, efas_cycle, nuts2)
+        relevant_tweets_file = cls.write_relevant_tweets_geojson(relevant_tweets_output, efas_cycle, nuts2)
+        cls.write_incidents_geojson(counters_by_efas_id_output, efas_cycle, nuts2)
         cls.write_to_sql(counters_by_efas_id_output, relevant_tweets_output, collection_ids)
         if not DEVELOPMENT:
             ftp_client = SFTPClient(server, user, password, folder)
@@ -127,51 +126,7 @@ class Products:
             logger.info('[OK] Pushed files %s to SFTP %s', [heatmap_file, relevant_tweets_file], server)
 
     @classmethod
-    def write_to_sql(cls, counters_by_efas_id, relevant_tweets_aggregated, collection_ids):
-        heuristics = list(map(int, cls.alert_heuristic.split(':')))
-        gray_th = heuristics[0]
-        orange_th = heuristics[1]
-        red_th = heuristics[2]
-        with cls.app.app_context():
-            highlights = {}
-            for efas_id, counters in counters_by_efas_id.items():
-                if not (counters.get(cls.high_prob_range, 0) < gray_th or counters.get(cls.high_prob_range, 0) <= orange_th * counters.get(cls.low_prob_range, 0)) or orange_th * counters.get(cls.low_prob_range, 0) < counters.get(cls.high_prob_range, 0) <= red_th * counters.get(cls.low_prob_range, 0):
-                    highlights[efas_id] = counters
-            product = Product(aggregated=counters_by_efas_id, relevant_tweets=relevant_tweets_aggregated,
-                              highlights=highlights, collection_ids=collection_ids)
-            product.save()
-
-    @classmethod
-    def is_efas_id_counter(cls, key):
-        # good key is like "1301_UKF2_num_tweets_0-10"
-        # format: <efasid>_<nutsid>_num_tweets_<minprob>-<maxprob>
-        tokens = key.split('_')
-        return cls.is_efas_id(tokens[0])
-
-    @classmethod
-    def determine_color(cls, counters):
-        heuristics = list(map(int, cls.alert_heuristic.split(':')))
-        gray_th = heuristics[0]
-        orange_th = heuristics[1]
-        red_th = heuristics[2]
-        color = 'gray'
-        if counters.get(cls.high_prob_range, 0) >= gray_th:
-            if orange_th * counters.get(cls.low_prob_range, 0) < counters.get(cls.high_prob_range, 0) <= red_th * counters.get(cls.low_prob_range, 0):
-                color = 'orange'
-            elif counters.get(cls.high_prob_range, 0) > red_th * counters.get(cls.low_prob_range, 0):
-                color = 'red'
-        return RGB[color]
-
-    @classmethod
-    def is_efas_id(cls, key):
-        try:
-            int(key)
-            return True
-        except ValueError:
-            return False
-
-    @classmethod
-    def get_incidents(cls, efas_id):
+    def get_incidents(cls, efas_id, nuts2):
         """
 
         :param efas_id:
@@ -189,7 +144,7 @@ class Products:
             'risk_color': self._risk_color(item['CRITICALITY'])
         }
         """
-        nut = cls.nuts2.get(efas_id)
+        nut = nuts2.get(efas_id)
         bbox = nut.bbox if nut else None
         if not bbox:
             return []
@@ -199,7 +154,7 @@ class Products:
         return cls.here_client.get_by_bbox(bbox_for_here)
 
     @classmethod
-    def write_heatmap_geojson(cls, counters_by_efas_id, efas_cycle):
+    def write_heatmap_geojson(cls, counters_by_efas_id, efas_cycle, nuts2):
         geojson_output_filename = cls.output_heatmap_filename_tpl.format('{}{}'.format(datetime.now().strftime('%Y%m%d'), efas_cycle))
         logger.info('<<<<<< Writing %s', geojson_output_filename)
         with cls.app.app_context():
@@ -212,7 +167,7 @@ class Products:
                             continue
                         collection_id = counters_by_efas_id[efas_id]['collection_id']
                         collection = TwitterCollection.get_collection(collection_id)
-                        efas_nuts2 = cls.nuts2.get(efas_id)
+                        efas_nuts2 = nuts2.get(efas_id)
                         efas_name = efas_nuts2.efas_name
                         risk_color = cls.determine_color(counters_by_efas_id[efas_id])
                         geom = Geometry(
@@ -233,7 +188,7 @@ class Products:
         return geojson_output_filename
 
     @classmethod
-    def write_incidents_geojson(cls, counters_by_efas_id, efas_cycle):
+    def write_incidents_geojson(cls, counters_by_efas_id, efas_cycle, nuts2):
         geojson_output_filename = cls.output_incidents_filename_tpl.format('{}{}'.format(datetime.now().strftime('%Y%m%d'), efas_cycle))
         logger.info('<<<<<< Writing %s', geojson_output_filename)
         with cls.app.app_context():
@@ -244,7 +199,7 @@ class Products:
                         efas_id = feat['id']
                         if efas_id not in counters_by_efas_id:
                             continue
-                        incidents = cls.get_incidents(efas_id)
+                        incidents = cls.get_incidents(efas_id, nuts2)
                         if not incidents:
                             continue
                         for inc in incidents:
@@ -262,7 +217,7 @@ class Products:
         return geojson_output_filename
 
     @classmethod
-    def write_relevant_tweets_geojson(cls, relevant_tweets, efas_cycle):
+    def write_relevant_tweets_geojson(cls, relevant_tweets, efas_cycle, nuts2):
         geojson_output_filename = cls.output_relevant_tweets_filename_tpl.format('{}{}'.format(datetime.now().strftime('%Y%m%d'), efas_cycle))
         logger.info('<<<<<< Writing %s', geojson_output_filename)
         with fiona.open(cls.template) as source:
@@ -272,7 +227,7 @@ class Products:
                     efas_id = feat['id']
                     if efas_id not in relevant_tweets:
                         continue
-                    efas_nuts2 = cls.nuts2.get(efas_id)
+                    efas_nuts2 = nuts2.get(efas_id)
                     efas_name = efas_nuts2.efas_name
                     for tweet in relevant_tweets[efas_id]:
                         geom = Geometry(
@@ -303,6 +258,55 @@ class Products:
         for d in ('heatmaps', 'tweets', 'incidents'):
             maked = os.path.join(cls.output_folder, d)
             os.makedirs(maked, exist_ok=True)
+
+    @classmethod
+    def write_to_sql(cls, counters_by_efas_id, relevant_tweets_aggregated, collection_ids):
+        heuristics = list(map(int, cls.alert_heuristic.split(':')))
+        gray_th = heuristics[0]
+        orange_th = heuristics[1]
+        red_th = heuristics[2]
+        with cls.app.app_context():
+            highlights = {}
+            for efas_id, counters in counters_by_efas_id.items():
+                if not (counters.get(cls.high_prob_range, 0) < gray_th or counters.get(cls.high_prob_range,
+                                                                                       0) <= orange_th * counters.get(
+                        cls.low_prob_range, 0)) or orange_th * counters.get(cls.low_prob_range, 0) < counters.get(
+                        cls.high_prob_range, 0) <= red_th * counters.get(cls.low_prob_range, 0):
+                    highlights[efas_id] = counters
+            product = Product(aggregated=counters_by_efas_id, relevant_tweets=relevant_tweets_aggregated,
+                              highlights=highlights, collection_ids=collection_ids)
+            product.save()
+
+    @classmethod
+    def is_efas_id_counter(cls, key):
+        # good key is like "1301_UKF2_num_tweets_0-10"
+        # format: <efasid>_<nutsid>_num_tweets_<minprob>-<maxprob>
+        tokens = key.split('_')
+        return cls.is_efas_id(tokens[0])
+
+    @classmethod
+    def determine_color(cls, counters):
+        heuristics = list(map(int, cls.alert_heuristic.split(':')))
+        gray_th = heuristics[0]
+        orange_th = heuristics[1]
+        red_th = heuristics[2]
+        color = 'gray'
+        if counters.get(cls.high_prob_range, 0) >= gray_th:
+            if orange_th * counters.get(cls.low_prob_range, 0) < counters.get(cls.high_prob_range,
+                                                                              0) <= red_th * counters.get(
+                    cls.low_prob_range, 0):
+                color = 'orange'
+            elif counters.get(cls.high_prob_range, 0) > red_th * counters.get(cls.low_prob_range, 0):
+                color = 'red'
+        return RGB[color]
+
+    @classmethod
+    def is_efas_id(cls, key):
+        try:
+            int(key)
+            return True
+        except ValueError:
+            return False
 
 
 class TweetsDeduplicator:
