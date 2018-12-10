@@ -117,14 +117,14 @@ class Products:
 
         heatmap_file = cls.write_heatmap_geojson(counters_by_efas_id_output, efas_cycle, nuts2)
         relevant_tweets_file = cls.write_relevant_tweets_geojson(relevant_tweets_output, efas_cycle, nuts2)
-        cls.write_incidents_geojson(counters_by_efas_id_output, efas_cycle, nuts2)
-        cls.write_to_sql(counters_by_efas_id_output, relevant_tweets_output, collection_ids)
         if not DEVELOPMENT:
             ftp_client = SFTPClient(server, user, password, folder)
             ftp_client.send(heatmap_file)
             ftp_client.send(relevant_tweets_file)
             ftp_client.close()
             logger.info('[OK] Pushed files %s to SFTP %s', [heatmap_file, relevant_tweets_file], server)
+        cls.write_incidents_geojson(counters_by_efas_id_output, efas_cycle, nuts2)
+        cls.write_to_sql(counters_by_efas_id_output, relevant_tweets_output, collection_ids)
 
     @classmethod
     def get_incidents(cls, efas_id, nuts2):
@@ -175,6 +175,8 @@ class Products:
                             coordinates=feat['geometry']['coordinates'],
                             type=feat['geometry']['type'],
                         )
+                        counters_by_efas_id[efas_id]['collection_id'] = None
+                        del counters_by_efas_id[efas_id]['collection_id']
                         out_data.append(Feature(geometry=geom, properties={
                             'collection_id': collection_id,
                             'efas_trigger': collection.forecast_id,
@@ -241,7 +243,7 @@ class Products:
                                 'tweet_id': tweet['tweetid'],
                                 'creation_time': tweet['created_at'],
                                 'collection_id': tweet['collectionid'],
-                                'efas_trigger': collection.efas_id,
+                                'efas_trigger': collection.forecast_id,
                                 'efas_id': efas_id,
                                 'efas_name': efas_name,
                                 'prediction': tweet['label_predicted'],
