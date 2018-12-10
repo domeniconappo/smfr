@@ -55,6 +55,7 @@ class Products:
 
     # here api
     here_client = HereClient()
+    nuts2 = {}
     app = create_app()
 
     @classmethod
@@ -76,6 +77,7 @@ class Products:
     def produce(cls, efas_cycle='12'):
         # create products for on-demand active collections or recently stopped collections
         with cls.app.app_context():
+            cls.nuts2 = Nuts2.load_nuts()
             collections = TwitterCollection.get_active_ondemand()
             collection_ids = [c.id for c in collections]
             aggregations = Aggregation.query.filter(Aggregation.collection_id.in_(collection_ids)).all()
@@ -115,14 +117,14 @@ class Products:
 
         heatmap_file = cls.write_heatmap_geojson(counters_by_efas_id_output, efas_cycle)
         relevant_tweets_file = cls.write_relevant_tweets_geojson(relevant_tweets_output, efas_cycle)
+        cls.write_incidents_geojson(counters_by_efas_id_output, efas_cycle)
+        cls.write_to_sql(counters_by_efas_id_output, relevant_tweets_output, collection_ids)
         if not DEVELOPMENT:
             ftp_client = SFTPClient(server, user, password, folder)
             ftp_client.send(heatmap_file)
             ftp_client.send(relevant_tweets_file)
             ftp_client.close()
             logger.info('[OK] Pushed files %s to SFTP %s', [heatmap_file, relevant_tweets_file], server)
-        cls.write_incidents_geojson(counters_by_efas_id_output)
-        cls.write_to_sql(counters_by_efas_id_output, relevant_tweets_output, collection_ids)
 
     @classmethod
     def write_to_sql(cls, counters_by_efas_id, relevant_tweets_aggregated, collection_ids):
@@ -152,12 +154,12 @@ class Products:
         gray_th = heuristics[0]
         orange_th = heuristics[1]
         red_th = heuristics[2]
-        if counters.get(cls.high_prob_range, 0) < gray_th or counters.get(cls.high_prob_range, 0) <= orange_th * counters.get(cls.low_prob_range, 0):
-            color = 'gray'
-        elif orange_th * counters.get(cls.low_prob_range, 0) < counters.get(cls.high_prob_range, 0) <= red_th * counters.get(cls.low_prob_range, 0):
-            color = 'orange'
-        else:
-            color = 'red'
+        color = 'gray'
+        if counters.get(cls.high_prob_range, 0) >= gray_th:
+            if orange_th * counters.get(cls.low_prob_range, 0) < counters.get(cls.high_prob_range, 0) <= red_th * counters.get(cls.low_prob_range, 0):
+                color = 'orange'
+            elif counters.get(cls.high_prob_range, 0) > red_th * counters.get(cls.low_prob_range, 0):
+                color = 'red'
         return RGB[color]
 
     @classmethod
@@ -187,7 +189,8 @@ class Products:
             'risk_color': self._risk_color(item['CRITICALITY'])
         }
         """
-        bbox = Nuts2.efas_id_bbox(efas_id)
+        nut = cls.nuts2.get(efas_id)
+        bbox = nut.bbox if nut else None
         if not bbox:
             return []
         bbox_for_here = '{max_lat},{min_lon};{min_lat},{max_lon}'.format(
@@ -209,8 +212,8 @@ class Products:
                             continue
                         collection_id = counters_by_efas_id[efas_id]['collection_id']
                         collection = TwitterCollection.get_collection(collection_id)
-                        properties = feat['properties']
-                        efas_name = properties['EFAS_name']
+                        efas_nuts2 = cls.nuts2.get(efas_id)
+                        efas_name = efas_nuts2.efas_name
                         risk_color = cls.determine_color(counters_by_efas_id[efas_id])
                         geom = Geometry(
                             coordinates=feat['geometry']['coordinates'],
@@ -269,7 +272,7 @@ class Products:
                     efas_id = feat['id']
                     if efas_id not in relevant_tweets:
                         continue
-                    efas_nuts2 = Nuts2.get_by_efas_id(efas_id)
+                    efas_nuts2 = cls.nuts2.get(efas_id)
                     efas_name = efas_nuts2.efas_name
                     for tweet in relevant_tweets[efas_id]:
                         geom = Geometry(

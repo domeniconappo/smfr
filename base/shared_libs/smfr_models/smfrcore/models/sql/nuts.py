@@ -9,11 +9,6 @@ from shapely.geometry import Point, Polygon
 from .base import SMFRModel, LongJSONType
 
 
-def load_nuts():
-    rows = Nuts2.query.all()
-    return {r.id: r for r in rows}
-
-
 class Nuts2(SMFRModel):
     """
 
@@ -37,8 +32,13 @@ class Nuts2(SMFRModel):
     max_lon = Column(Float)
     min_lat = Column(Float)
     max_lat = Column(Float)
+    _preloaded = {}
 
-    _preloaded = load_nuts()
+    @classmethod
+    def load_nuts(cls):
+        rows = cls.query.all()
+        cls._preloaded = {r.id: r for r in rows}
+        return cls._preloaded
 
     @classmethod
     def get_by_efas_id(cls, efas_id):
