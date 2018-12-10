@@ -77,6 +77,7 @@ class Products:
         # create products for on-demand active collections or recently stopped collections
         with cls.app.app_context():
             nuts2 = Nuts2.load_nuts()
+            logger.debug(nuts2.keys())
             collections = TwitterCollection.get_active_ondemand()
             collection_ids = [c.id for c in collections]
             aggregations = Aggregation.query.filter(Aggregation.collection_id.in_(collection_ids)).all()
@@ -144,7 +145,7 @@ class Products:
             'risk_color': self._risk_color(item['CRITICALITY'])
         }
         """
-        nut = nuts2.get(efas_id)
+        nut = nuts2.get(efas_id) or Nuts2.get_by_efas_id(efas_id)
         bbox = nut.bbox if nut else None
         if not bbox:
             return []
@@ -167,7 +168,7 @@ class Products:
                             continue
                         collection_id = counters_by_efas_id[efas_id]['collection_id']
                         collection = TwitterCollection.get_collection(collection_id)
-                        efas_nuts2 = nuts2.get(efas_id)
+                        efas_nuts2 = nuts2.get(efas_id) or Nuts2.get_by_efas_id(efas_id)
                         efas_name = efas_nuts2.efas_name
                         risk_color = cls.determine_color(counters_by_efas_id[efas_id])
                         geom = Geometry(
@@ -227,7 +228,7 @@ class Products:
                     efas_id = feat['id']
                     if efas_id not in relevant_tweets:
                         continue
-                    efas_nuts2 = nuts2.get(efas_id)
+                    efas_nuts2 = nuts2.get(efas_id) or Nuts2.get_by_efas_id(efas_id)
                     efas_name = efas_nuts2.efas_name
                     for tweet in relevant_tweets[efas_id]:
                         geom = Geometry(
