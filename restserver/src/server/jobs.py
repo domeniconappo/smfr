@@ -57,8 +57,8 @@ def schedule_rra_jobs():
         check_ondemand_runtime_scheduling = os.getenv('CHECK_ONDEMAND_RUNTIME_SCHEDULING', '00,12').split(',')
     else:
         hours = [datetime.time(i).strftime('%H') for i in range(24)]
-        minutes = [str(i) if i > 9 else '0%s' % i for i in range(0, 60, 7)]
-        alt_minutes = [str(i) if i > 9 else '0%s' % i for i in range(3, 60, 9)]
+        minutes = [str(i) if i > 9 else '0%s' % i for i in range(0, 60, 13)]
+        alt_minutes = [str(i) if i > 9 else '0%s' % i for i in range(3, 60, 17)]
 
         rra_fetch_scheduling = ['%s:%s' % (hour, minute) for hour in hours for minute in minutes]
         check_ondemand_runtime_scheduling = ['%s:%s' % (hour, minute) for hour in hours for minute in alt_minutes]
