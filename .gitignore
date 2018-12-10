@@ -141,5 +141,6 @@ celerybeat-schedule
 /cassandrasmfr/Dockerfile
 /geonames/Dockerfile
 /mysql/Dockerfile
+/backupper/Dockerfile
 docker-compose.override.yml
  

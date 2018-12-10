@@ -243,7 +243,7 @@ class TwitterCollection(SMFRModel):
         if not res:
             res = cls.query.filter(
                 or_(
-                    TwitterCollection.status == 'active',
+                    TwitterCollection.status == cls.ACTIVE_STATUS,
                     TwitterCollection.stopped_at >= datetime.datetime.now() - datetime.timedelta(days=2)
                 )
             ).order_by(cls.status, cls.started_at.desc(), cls.runtime.desc()).all()
@@ -266,9 +266,13 @@ class TwitterCollection(SMFRModel):
         key = cls.cache_keys['on-demand']
         res = cls.cache.get(key)
         if not res:
-            res = cls.query.filter_by(
-                trigger=cls.TRIGGER_ONDEMAND, status=cls.ACTIVE_STATUS
-            ).order_by(cls.started_at.desc(), cls.runtime.desc()).all()
+            res = cls.query.filter(
+                cls.trigger == cls.TRIGGER_ONDEMAND,
+                or_(
+                    cls.status == cls.ACTIVE_STATUS,
+                    cls.stopped_at >= datetime.datetime.now() - datetime.timedelta(days=2)
+                )
+            ).order_by(cls.status, cls.started_at.desc(), cls.runtime.desc()).all()
             cls.cache[key] = res
         return res
 

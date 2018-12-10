@@ -19,6 +19,7 @@ DOCKER_ID_USER=$(getProperty "DOCKER_ID_USER")
 DOCKER_ID_PASSWORD=$(getProperty "DOCKER_ID_PASSWORD")
 DOCKER_REGISTRY=$(getProperty "DOCKER_REGISTRY")
 SMFR_IMAGE=$(getProperty "SMFR_IMAGE")
+BACKUPPER_IMAGE=$(getProperty "BACKUPPER_IMAGE")
 
 if [[ -n "${DOCKER_ID_USER}" ]] && [[ ${DOCKER_REGISTRY} != "index.docker.io" ]]; then
     echo Pulling from a private registry: ${DOCKER_REGISTRY} - need to login
@@ -29,9 +30,12 @@ fi
 python3 scripts/compose4build.py ${image_tag}
 
 # build base image
-docker build --build-arg http_proxy=${http_proxy} --build-arg https_proxy=${http_proxy} -t smfr_base:${image_tag} base/.
-docker tag smfr_base:${image_tag} ${SMFR_IMAGE}:${image_tag}
+docker build --build-arg http_proxy=${http_proxy} --build-arg https_proxy=${http_proxy} -t ${SMFR_IMAGE}:${image_tag} base/.
+echo
+echo
 
+# build backup image
+docker build --build-arg http_proxy=${http_proxy} --build-arg https_proxy=${http_proxy} -t ${BACKUPPER_IMAGE} backupper/.
 echo
 echo
 
@@ -42,6 +46,8 @@ if [[ -n "${DOCKER_ID_USER}" ]]; then
     fi
     docker tag ${SMFR_IMAGE}:${image_tag} ${DOCKER_REGISTRY}/${SMFR_IMAGE}:${image_tag}
     docker push ${DOCKER_REGISTRY}/${SMFR_IMAGE}:${image_tag}
+    docker tag ${BACKUPPER_IMAGE} ${DOCKER_REGISTRY}/${BACKUPPER_IMAGE}
+    docker push ${DOCKER_REGISTRY}/${BACKUPPER_IMAGE}
 fi
 
 echo

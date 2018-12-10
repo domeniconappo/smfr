@@ -1,7 +1,7 @@
 import os
 import logging
 from collections import defaultdict
-from datetime import datetime, timedelta
+from datetime import datetime
 
 import ujson
 import geojson
@@ -15,7 +15,6 @@ from smfrcore.utils import DEFAULT_HANDLER, IN_DOCKER, RGB
 from smfrcore.client.api_here import HereClient
 from smfrcore.client.ftp import SFTPClient
 from smfrcore.utils.text import tweet_normalization_aggressive
-from sqlalchemy import or_
 
 logger = logging.getLogger(__name__)
 logger.setLevel(os.getenv('LOGGING_LEVEL', 'DEBUG'))
@@ -74,8 +73,8 @@ class Products:
         logger.info('=================================')
 
     @classmethod
-    def produce(cls):
-        # create products for on-demand active colletions or recently stopped collections
+    def produce(cls, efas_cycle='12'):
+        # create products for on-demand active collections or recently stopped collections
         with cls.app.app_context():
             collections = TwitterCollection.get_active_ondemand()
             collection_ids = [c.id for c in collections]
@@ -84,11 +83,11 @@ class Products:
             relevant_tweets_aggregated = defaultdict(list)
 
             for aggregation in aggregations:
-
+                collection_id = aggregation.collection_id
                 for key, value in aggregation.values.items():
                     if not cls.is_efas_id_counter(key) or not value:
                         continue
-                    counters[key] += value
+                    counters['{}@{}'.format(collection_id, key)] += value
 
                 for key, tweets in aggregation.relevant_tweets.items():
                     if not cls.is_efas_id(key) or not tweets:
@@ -104,16 +103,18 @@ class Products:
 
         counters_by_efas_id = defaultdict(defaultdict)
         for key, value in counters.items():
+            collection_id, key = key.split('@')
             # key format: <efasid>_<nutsid>_num_tweets_<minprob>-<maxprob>
             # key is like "1301_UKF2_num_tweets_0-10" or "1301_num_tweets_0-10" (in case nuts_id is not present)
             tokens = key.split('_')
             efas_id = tokens[0]
             probs_interval = tokens[-1]
             counters_by_efas_id[efas_id][probs_interval] = value
+            counters_by_efas_id[efas_id]['collection_id'] = collection_id
         counters_by_efas_id_output = {k: v for k, v in counters_by_efas_id.items() if v}
 
-        heatmap_file = cls.write_heatmap_geojson(counters_by_efas_id_output)
-        relevant_tweets_file = cls.write_relevant_tweets_geojson(relevant_tweets_output)
+        heatmap_file = cls.write_heatmap_geojson(counters_by_efas_id_output, efas_cycle)
+        relevant_tweets_file = cls.write_relevant_tweets_geojson(relevant_tweets_output, efas_cycle)
         if not DEVELOPMENT:
             ftp_client = SFTPClient(server, user, password, folder)
             ftp_client.send(heatmap_file)
@@ -195,8 +196,8 @@ class Products:
         return cls.here_client.get_by_bbox(bbox_for_here)
 
     @classmethod
-    def write_heatmap_geojson(cls, counters_by_efas_id):
-        geojson_output_filename = cls.output_heatmap_filename_tpl.format(datetime.now().strftime('%Y%m%d%H'))
+    def write_heatmap_geojson(cls, counters_by_efas_id, efas_cycle):
+        geojson_output_filename = cls.output_heatmap_filename_tpl.format('{}{}'.format(datetime.now().strftime('%Y%m%d'), efas_cycle))
         logger.info('<<<<<< Writing %s', geojson_output_filename)
         with cls.app.app_context():
             with fiona.open(cls.template) as source:
@@ -206,16 +207,21 @@ class Products:
                         efas_id = feat['id']
                         if efas_id not in counters_by_efas_id:
                             continue
+                        collection_id = counters_by_efas_id[efas_id]['collection_id']
+                        collection = TwitterCollection.get_collection(collection_id)
+                        properties = feat['properties']
+                        efas_name = properties['EFAS_name']
                         risk_color = cls.determine_color(counters_by_efas_id[efas_id])
-                        if risk_color == RGB['gray']:
-                            continue
                         geom = Geometry(
                             coordinates=feat['geometry']['coordinates'],
                             type=feat['geometry']['type'],
                         )
                         out_data.append(Feature(geometry=geom, properties={
+                            'collection_id': collection_id,
+                            'efas_trigger': collection.forecast_id,
                             'efas_id': efas_id,
-                            'risk_color': cls.determine_color(counters_by_efas_id[efas_id]),
+                            'efas_name': efas_name,
+                            'risk_color': risk_color,
                             'counters': counters_by_efas_id[efas_id],
                             'type': 'heatmap',
                         }))
@@ -224,8 +230,8 @@ class Products:
         return geojson_output_filename
 
     @classmethod
-    def write_incidents_geojson(cls, counters_by_efas_id):
-        geojson_output_filename = cls.output_incidents_filename_tpl.format(datetime.now().strftime('%Y%m%d%H'))
+    def write_incidents_geojson(cls, counters_by_efas_id, efas_cycle):
+        geojson_output_filename = cls.output_incidents_filename_tpl.format('{}{}'.format(datetime.now().strftime('%Y%m%d'), efas_cycle))
         logger.info('<<<<<< Writing %s', geojson_output_filename)
         with cls.app.app_context():
             with fiona.open(cls.template) as source:
@@ -253,8 +259,8 @@ class Products:
         return geojson_output_filename
 
     @classmethod
-    def write_relevant_tweets_geojson(cls, relevant_tweets):
-        geojson_output_filename = cls.output_relevant_tweets_filename_tpl.format(datetime.now().strftime('%Y%m%d%H'))
+    def write_relevant_tweets_geojson(cls, relevant_tweets, efas_cycle):
+        geojson_output_filename = cls.output_relevant_tweets_filename_tpl.format('{}{}'.format(datetime.now().strftime('%Y%m%d'), efas_cycle))
         logger.info('<<<<<< Writing %s', geojson_output_filename)
         with fiona.open(cls.template) as source:
             with open(geojson_output_filename, 'w') as sink:
@@ -263,14 +269,26 @@ class Products:
                     efas_id = feat['id']
                     if efas_id not in relevant_tweets:
                         continue
+                    properties = feat['properties']
+                    efas_name = properties['EFAS_name']
                     for tweet in relevant_tweets[efas_id]:
                         geom = Geometry(
                             coordinates=[tweet['latlong'][1], tweet['latlong'][0]],
                             type='Point',
                         )
                         out_data.append(Feature(geometry=geom, properties={
+                            'tweet_id': tweet['tweetid'],
+                            'creation_time': tweet['created_at'],
+                            'collection_id': tweet.collectionid,
+                            'efas_trigger': tweet.collection.efas_id,
                             'efas_id': efas_id,
-                            'tweet': tweet,
+                            'efas_name': efas_name,
+                            'prediction': tweet['label_predicted'],
+                            'centrality': tweet['_centrality'],
+                            'multiplicity': tweet['_multiplicity'],
+                            'reprindex': tweet['representativeness'],
+                            'text': tweet.get('_normalized_text') or tweet.get('full_text') or tweet['tweet'].get('text', ''),
+                            'tweet': tweet['tweet'],
                             'type': 'tweet',
                         }))
                 geojson.dump(FeatureCollection(out_data), sink, sort_keys=True, indent=2)
