@@ -221,36 +221,38 @@ class Products:
     def write_relevant_tweets_geojson(cls, relevant_tweets, efas_cycle, nuts2):
         geojson_output_filename = cls.output_relevant_tweets_filename_tpl.format('{}{}'.format(datetime.now().strftime('%Y%m%d'), efas_cycle))
         logger.info('<<<<<< Writing %s', geojson_output_filename)
-        with fiona.open(cls.template) as source:
-            with open(geojson_output_filename, 'w') as sink:
-                out_data = []
-                for feat in source:
-                    efas_id = feat['id']
-                    if efas_id not in relevant_tweets:
-                        continue
-                    efas_nuts2 = nuts2.get(efas_id) or Nuts2.get_by_efas_id(efas_id)
-                    efas_name = efas_nuts2.efas_name
-                    for tweet in relevant_tweets[efas_id]:
-                        geom = Geometry(
-                            coordinates=[tweet['latlong'][1], tweet['latlong'][0]],
-                            type='Point',
-                        )
-                        out_data.append(Feature(geometry=geom, properties={
-                            'tweet_id': tweet['tweetid'],
-                            'creation_time': tweet['created_at'],
-                            'collection_id': tweet.collectionid,
-                            'efas_trigger': tweet.collection.efas_id,
-                            'efas_id': efas_id,
-                            'efas_name': efas_name,
-                            'prediction': tweet['label_predicted'],
-                            'centrality': tweet['_centrality'],
-                            'multiplicity': tweet['_multiplicity'],
-                            'reprindex': tweet['representativeness'],
-                            'text': tweet.get('_normalized_text') or tweet.get('full_text') or tweet['tweet'].get('text', ''),
-                            'tweet': tweet['tweet'],
-                            'type': 'tweet',
-                        }))
-                geojson.dump(FeatureCollection(out_data), sink, sort_keys=True, indent=2)
+        with cls.app.app_context():
+            with fiona.open(cls.template) as source:
+                with open(geojson_output_filename, 'w') as sink:
+                    out_data = []
+                    for feat in source:
+                        efas_id = feat['id']
+                        if efas_id not in relevant_tweets:
+                            continue
+                        efas_nuts2 = nuts2.get(efas_id) or Nuts2.get_by_efas_id(efas_id)
+                        efas_name = efas_nuts2.efas_name
+                        for tweet in relevant_tweets[efas_id]:
+                            geom = Geometry(
+                                coordinates=[tweet['latlong'][1], tweet['latlong'][0]],
+                                type='Point',
+                            )
+                            collection = TwitterCollection.get_collection(tweet['collectionid'])
+                            out_data.append(Feature(geometry=geom, properties={
+                                'tweet_id': tweet['tweetid'],
+                                'creation_time': tweet['created_at'],
+                                'collection_id': tweet['collectionid'],
+                                'efas_trigger': collection.efas_id,
+                                'efas_id': efas_id,
+                                'efas_name': efas_name,
+                                'prediction': tweet['label_predicted'],
+                                'centrality': tweet['_centrality'],
+                                'multiplicity': tweet['_multiplicity'],
+                                'reprindex': tweet['representativeness'],
+                                'text': tweet.get('_normalized_text') or tweet.get('full_text') or tweet['tweet'].get('text', ''),
+                                'tweet': tweet['tweet'],
+                                'type': 'tweet',
+                            }))
+                    geojson.dump(FeatureCollection(out_data), sink, sort_keys=True, indent=2)
         logger.info('>>>>>> Wrote %s', geojson_output_filename)
         return geojson_output_filename
 
