@@ -123,14 +123,18 @@ class Products:
 
         heatmap_file = cls.write_heatmap_geojson(counters_by_efas_id, efas_cycle, nuts2)
         relevant_tweets_file = cls.write_relevant_tweets_geojson(relevant_tweets_output, efas_cycle, nuts2)
+        cls.push_products_to_sftp(heatmap_file, relevant_tweets_file)
+        cls.write_incidents_geojson(counters_by_efas_id, efas_cycle, nuts2)
+        cls.write_to_sql(counters_by_efas_id, relevant_tweets_output, collection_ids)
+
+    @classmethod
+    def push_products_to_sftp(cls, heatmap_file, relevant_tweets_file):
         if not DEVELOPMENT:
             ftp_client = SFTPClient(server, user, password, folder)
             ftp_client.send(heatmap_file)
             ftp_client.send(relevant_tweets_file)
             ftp_client.close()
             logger.info('[OK] Pushed files %s to SFTP %s', [heatmap_file, relevant_tweets_file], server)
-        cls.write_incidents_geojson(counters_by_efas_id, efas_cycle, nuts2)
-        cls.write_to_sql(counters_by_efas_id, relevant_tweets_output, collection_ids)
 
     @classmethod
     def get_incidents(cls, efas_id, nuts2):

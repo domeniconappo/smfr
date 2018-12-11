@@ -11,7 +11,6 @@ if __name__ == '__main__':
     scheduling_interval = os.getenv('PRODUCTS_SCHEDULING_HOURS', '00,12').split(',')
     logger.info('Configuration: running Products: hours %s', scheduling_interval)
     Products.log_config()
-    Products.produce()
     for hour in scheduling_interval:
         schedule.every().day.at('{}:23'.format(hour)).do(Products.produce, *(hour,)).tag('products-{}'.format(hour))
 
