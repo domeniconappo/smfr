@@ -51,7 +51,7 @@ def update_ondemand_collections_status(restart_ondemand=True):
 
 
 def schedule_rra_jobs():
-    check_jobs_interval = int(os.getenv('CHECK_JOBS_INTERVAL_SECONDS', 60 * 3))
+    check_jobs_interval = int(os.getenv('CHECK_JOBS_INTERVAL_SECONDS', 60 * 60))
     if not DEVELOPMENT:
         rra_fetch_scheduling = os.getenv('RRA_FETCH_SCHEDULING', '00,12').split(',')
         check_ondemand_runtime_scheduling = os.getenv('CHECK_ONDEMAND_RUNTIME_SCHEDULING', '00,12').split(',')

@@ -7,7 +7,7 @@ from arrow.parser import ParserError
 from cachetools import TTLCache
 from fuzzywuzzy import process, fuzz
 from sqlalchemy import Column, Integer, ForeignKey, TIMESTAMP, Boolean, BigInteger, orm, or_
-from sqlalchemy_utils import ChoiceType, ScalarListType, JSONType
+from sqlalchemy_utils import ChoiceType, ScalarListType, JSONType, Choice
 
 from .base import sqldb, SMFRModel, LongJSONType
 from .users import User
@@ -38,6 +38,9 @@ class TwitterCollection(SMFRModel):
         (ACTIVE_STATUS, 'Running'),
         (INACTIVE_STATUS, 'Stopped'),
     ]
+
+    ACTIVE_CHOICE = Choice(ACTIVE_STATUS, 'Running')
+    INACTIVE_CHOICE = Choice(INACTIVE_STATUS, 'Stopped')
 
     id = Column(Integer, primary_key=True, autoincrement=True, nullable=False)
     forecast_id = Column(Integer)
@@ -164,7 +167,7 @@ class TwitterCollection(SMFRModel):
             raise SystemError('You have to configure at least one admin user for SMFR system')
 
         obj = cls()
-        obj.status = data.get('status', cls.INACTIVE_STATUS)
+        obj.status = data.get('status', cls.INACTIVE_CHOICE)
         obj.trigger = data['trigger']
         obj.runtime = cls.convert_runtime(data.get('runtime'))
         obj.forecast_id = data.get('forecast_id')
@@ -178,7 +181,7 @@ class TwitterCollection(SMFRModel):
                 raise ValueError("You can't have more than one running background collection. "
                                  "First stop the active background collection.")
         elif obj.is_ondemand:
-            obj.status = cls.ACTIVE_STATUS  # force active status when creating/updating on demand collections
+            obj.status = cls.ACTIVE_CHOICE  # force active status when creating/updating on demand collections
             existing = cls.query.filter_by(efas_id=data['efas_id']).first()
             if not existing or not existing.started_at or (existing.stopped_at and existing.started_at and existing.stopped_at > existing.started_at):
                 # if a collection is started for EFAS_ID for the first time or if it was properly stopped...
@@ -305,13 +308,13 @@ class TwitterCollection(SMFRModel):
         return res
 
     def deactivate(self):
-        self.status = self.INACTIVE_STATUS
+        self.status = self.INACTIVE_CHOICE
         self.stopped_at = datetime.datetime.utcnow()
         self.save()
         self._update_caches(self, action='deactivate')
 
     def activate(self):
-        self.status = self.ACTIVE_STATUS
+        self.status = self.ACTIVE_CHOICE
         self.started_at = datetime.datetime.utcnow()
         self.save()
         self._update_caches(self, action='activate')
@@ -411,8 +414,9 @@ class TwitterCollection(SMFRModel):
         """
         updated = False
         collections = cls.query.filter(cls.runtime.isnot(None), cls.status == cls.ACTIVE_STATUS)
+        now = datetime.datetime.utcnow()
         for c in collections:
-            if c.runtime < datetime.datetime.now():
+            if c.runtime < now:
                 cls.deactivate(c)
                 updated = True
         return updated
@@ -544,7 +548,7 @@ class TwitterCollection(SMFRModel):
 
     @property
     def is_active_or_recent(self):
-        return self.status == self.ACTIVE_STATUS or self.stopped_at >= (datetime.datetime.now() - datetime.timedelta(days=2))
+        return self.status == self.ACTIVE_STATUS or (self.stopped_at and self.stopped_at >= (datetime.datetime.utcnow() - datetime.timedelta(days=2)))
 
 
 class Aggregation(SMFRModel):

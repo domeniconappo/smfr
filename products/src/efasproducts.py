@@ -53,6 +53,12 @@ class Products:
     alert_heuristic = os.getenv('THRESHOLDS', '10:5:9')
     max_relevant_tweets = int(os.getenv('NUM_RELEVANT_TWEETS_PRODUCTS', 5))
 
+    flood_indexes = {
+        'gray': 'low',
+        'orange': 'medium',
+        'red': 'high',
+    }
+
     # here api
     here_client = HereClient()
     app = create_app()
@@ -113,9 +119,9 @@ class Products:
             probs_interval = tokens[-1]
             counters_by_efas_id[efas_id][probs_interval] = value
             counters_by_efas_id[efas_id]['collection_id'] = collection_id
-        counters_by_efas_id_output = {k: v for k, v in counters_by_efas_id.items() if v}
+        # counters_by_efas_id_output = {k: v for k, v in counters_by_efas_id.items()}
 
-        heatmap_file = cls.write_heatmap_geojson(counters_by_efas_id_output, efas_cycle, nuts2)
+        heatmap_file = cls.write_heatmap_geojson(counters_by_efas_id, efas_cycle, nuts2)
         relevant_tweets_file = cls.write_relevant_tweets_geojson(relevant_tweets_output, efas_cycle, nuts2)
         if not DEVELOPMENT:
             ftp_client = SFTPClient(server, user, password, folder)
@@ -123,8 +129,8 @@ class Products:
             ftp_client.send(relevant_tweets_file)
             ftp_client.close()
             logger.info('[OK] Pushed files %s to SFTP %s', [heatmap_file, relevant_tweets_file], server)
-        cls.write_incidents_geojson(counters_by_efas_id_output, efas_cycle, nuts2)
-        cls.write_to_sql(counters_by_efas_id_output, relevant_tweets_output, collection_ids)
+        cls.write_incidents_geojson(counters_by_efas_id, efas_cycle, nuts2)
+        cls.write_to_sql(counters_by_efas_id, relevant_tweets_output, collection_ids)
 
     @classmethod
     def get_incidents(cls, efas_id, nuts2):
@@ -171,6 +177,7 @@ class Products:
                         efas_nuts2 = nuts2.get(efas_id) or Nuts2.get_by_efas_id(efas_id)
                         efas_name = efas_nuts2.efas_name
                         risk_color = cls.determine_color(counters_by_efas_id[efas_id])
+                        flood_index = cls.flood_indexes[risk_color]
                         geom = Geometry(
                             coordinates=feat['geometry']['coordinates'],
                             type=feat['geometry']['type'],
@@ -183,6 +190,7 @@ class Products:
                             'efas_id': efas_id,
                             'efas_name': efas_name,
                             'risk_color': risk_color,
+                            'smfr_flood_index': flood_index,
                             'counters': counters_by_efas_id[efas_id],
                             'type': 'heatmap',
                         }))
@@ -251,7 +259,6 @@ class Products:
                                 'multiplicity': tweet['_multiplicity'],
                                 'reprindex': tweet['representativeness'],
                                 'text': tweet.get('_normalized_text') or tweet.get('full_text') or tweet['tweet'].get('text', ''),
-                                'tweet': tweet['tweet'],
                                 'type': 'tweet',
                             }))
                     geojson.dump(FeatureCollection(out_data), sink, sort_keys=True, indent=2)
