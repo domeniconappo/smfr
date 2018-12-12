@@ -180,8 +180,8 @@ class Products:
                         collection = TwitterCollection.get_collection(collection_id)
                         efas_nuts2 = nuts2.get(efas_id) or Nuts2.get_by_efas_id(efas_id)
                         efas_name = efas_nuts2.efas_name
-                        risk_color = cls.determine_color(counters_by_efas_id[efas_id])
-                        flood_index = cls.flood_indexes[risk_color]
+                        color_str, risk_color = cls.determine_color(counters_by_efas_id[efas_id])
+                        flood_index = cls.flood_indexes[color_str]
                         geom = Geometry(
                             coordinates=feat['geometry']['coordinates'],
                             type=feat['geometry']['type'],
@@ -314,7 +314,7 @@ class Products:
                 color = 'orange'
             elif counters.get(cls.high_prob_range, 0) > red_th * counters.get(cls.low_prob_range, 0):
                 color = 'red'
-        return RGB[color]
+        return color, RGB[color]
 
     @classmethod
     def is_efas_id(cls, key):
