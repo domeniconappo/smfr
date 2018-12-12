@@ -21,6 +21,8 @@ from scripts.utils import ParserHelpOnError
 
 
 def add_args(parser):
+    parser.add_argument('-r', '--remove', help='Explicitly remove one collection',
+                        type=int, metavar='remove', required=False)
     parser.add_argument('-e', '--exclude', help='Collection ids to not remove',
                         type=int, action='append',
                         metavar='exclude', required=False)
@@ -45,27 +47,36 @@ def do():
 
     add_args(parser)
     conf = parser.parse_args()
-    collections = TwitterCollection.get_ondemand()
-    collections = {c.id: c for c in collections}
-    ids = collections.keys()
-    max_id = max(ids)
-    for cid in range(max_id + 1):
-        if cid not in ids:
-            c = TwitterCollection.get_collection(cid)
-            if c is not None and not c.is_ondemand:
-                print('Skipping {}. Not ON DEMAND...'.format(cid))
-                continue
-            print('>>>> Removing tweets {}'.format(cid))
-            remove_tweets(cid)
-        elif conf.drop and cid not in conf.exclude:
-            print('DROP and {} not in exclude list'.format(cid))
-            print('>>>> Removing tweets/aggregation/collection of {}'.format(cid))
-            remove_tweets(cid)
-            collection_to_drop = collections[cid]
-            aggregation_to_drop = Aggregation.get_by_collection(cid)
-            aggregation_to_drop.delete()
-            collection_to_drop.delete()
-            print('>>>> Deleteted collection/aggregation {}'.format(cid))
+    if conf.remove:
+        cid = int(conf.remove)
+        c = TwitterCollection.get_collection(cid)
+        remove_tweets(cid)
+        aggregation_to_drop = Aggregation.get_by_collection(cid)
+        aggregation_to_drop.delete()
+        c.delete()
+        print('>>>> Deleteted collection/aggregation {}'.format(cid))
+    else:
+        collections = TwitterCollection.get_ondemand()
+        collections = {c.id: c for c in collections}
+        ids = collections.keys()
+        max_id = max(ids)
+        for cid in range(max_id + 1):
+            if cid not in ids:
+                c = TwitterCollection.get_collection(cid)
+                if c is not None and not c.is_ondemand:
+                    print('Skipping {}. Not ON DEMAND...'.format(cid))
+                    continue
+                print('>>>> Removing tweets {}'.format(cid))
+                remove_tweets(cid)
+            elif conf.drop and cid not in conf.exclude:
+                print('DROP and {} not in exclude list'.format(cid))
+                print('>>>> Removing tweets/aggregation/collection of {}'.format(cid))
+                remove_tweets(cid)
+                collection_to_drop = collections[cid]
+                aggregation_to_drop = Aggregation.get_by_collection(cid)
+                aggregation_to_drop.delete()
+                collection_to_drop.delete()
+                print('>>>> Deleteted collection/aggregation {}'.format(cid))
 
 
 if __name__ == '__main__':

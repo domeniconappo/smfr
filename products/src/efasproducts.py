@@ -85,22 +85,27 @@ class Products:
             nuts2 = Nuts2.load_nuts()
             logger.debug(nuts2.keys())
             collections = TwitterCollection.get_active_ondemand()
-            collection_ids = [c.id for c in collections]
+            collections = {c.id: c for c in collections}
+
+            collection_ids = collections.keys()
             aggregations = Aggregation.query.filter(Aggregation.collection_id.in_(collection_ids)).all()
             counters = defaultdict(int)
             relevant_tweets_aggregated = defaultdict(list)
 
             for aggregation in aggregations:
                 collection_id = aggregation.collection_id
+                efas_id = collections[collection_id].efas_id
+
                 for key, value in aggregation.values.items():
-                    if not cls.is_efas_id_counter(key) or not value:
+                    if not cls.is_efas_id_counter(key, efas_id):
                         continue
-                    counters['{}@{}'.format(collection_id, key)] += value
+                    counters[key] = value
 
                 for key, tweets in aggregation.relevant_tweets.items():
-                    if not cls.is_efas_id(key) or not tweets:
+                    if not (cls.is_efas_id(key) and int(key) == efas_id and len(tweets)):
                         continue
-                    relevant_tweets_aggregated[key] += tweets
+                    relevant_tweets_aggregated[key] = tweets
+                    break
 
         relevant_tweets_output = {}
         for efas_id, tweets in relevant_tweets_aggregated.items():
@@ -111,17 +116,14 @@ class Products:
 
         counters_by_efas_id = defaultdict(defaultdict)
         for key, value in counters.items():
-            collection_id, key = key.split('@')
             # key format: <efasid>_<nutsid>_num_tweets_<minprob>-<maxprob>
             # key is like "1301_UKF2_num_tweets_0-10" or "1301_num_tweets_0-10" (in case nuts_id is not present)
             tokens = key.split('_')
             efas_id = tokens[0]
             probs_interval = tokens[-1]
             counters_by_efas_id[efas_id][probs_interval] = value
-            counters_by_efas_id[efas_id]['collection_id'] = collection_id
-        # counters_by_efas_id_output = {k: v for k, v in counters_by_efas_id.items()}
 
-        heatmap_file = cls.write_heatmap_geojson(counters_by_efas_id, efas_cycle, nuts2)
+        heatmap_file = cls.write_heatmap_geojson(counters_by_efas_id, efas_cycle, nuts2, collections)
         relevant_tweets_file = cls.write_relevant_tweets_geojson(relevant_tweets_output, efas_cycle, nuts2)
         cls.push_products_to_sftp(heatmap_file, relevant_tweets_file)
         cls.write_incidents_geojson(counters_by_efas_id, efas_cycle, nuts2)
@@ -140,6 +142,7 @@ class Products:
     def get_incidents(cls, efas_id, nuts2):
         """
 
+        :param nuts2:
         :param efas_id:
         :return: list of items
         An item is a dictionary:
@@ -165,10 +168,11 @@ class Products:
         return cls.here_client.get_by_bbox(bbox_for_here)
 
     @classmethod
-    def write_heatmap_geojson(cls, counters_by_efas_id, efas_cycle, nuts2):
+    def write_heatmap_geojson(cls, counters_by_efas_id, efas_cycle, nuts2, collections):
         geojson_output_filename = cls.output_heatmap_filename_tpl.format('{}{}'.format(datetime.now().strftime('%Y%m%d'), efas_cycle))
         logger.info('<<<<<< Writing %s', geojson_output_filename)
         with cls.app.app_context():
+            collection_ids_by_efas_id = {c.efas_id: c.id for c in collections}
             with fiona.open(cls.template) as source:
                 with open(geojson_output_filename, 'w') as sink:
                     out_data = []
@@ -176,8 +180,8 @@ class Products:
                         efas_id = feat['id']
                         if efas_id not in counters_by_efas_id:
                             continue
-                        collection_id = counters_by_efas_id[efas_id]['collection_id']
-                        collection = TwitterCollection.get_collection(collection_id)
+                        collection_id = collection_ids_by_efas_id[efas_id]
+                        collection = collections[collection_id]
                         efas_nuts2 = nuts2.get(efas_id) or Nuts2.get_by_efas_id(efas_id)
                         efas_name = efas_nuts2.efas_name
                         color_str, risk_color = cls.determine_color(counters_by_efas_id[efas_id])
@@ -232,7 +236,7 @@ class Products:
         return geojson_output_filename
 
     @classmethod
-    def write_relevant_tweets_geojson(cls, relevant_tweets, efas_cycle, nuts2):
+    def write_relevant_tweets_geojson(cls, relevant_tweets, efas_cycle, nuts2, collections):
         geojson_output_filename = cls.output_relevant_tweets_filename_tpl.format('{}{}'.format(datetime.now().strftime('%Y%m%d'), efas_cycle))
         logger.info('<<<<<< Writing %s', geojson_output_filename)
         with cls.app.app_context():
@@ -246,11 +250,13 @@ class Products:
                         efas_nuts2 = nuts2.get(efas_id) or Nuts2.get_by_efas_id(efas_id)
                         efas_name = efas_nuts2.efas_name
                         for tweet in relevant_tweets[efas_id]:
+                            collection = collections.get(tweet['collectionid'])
+                            if not collection:
+                                continue
                             geom = Geometry(
                                 coordinates=[tweet['latlong'][1], tweet['latlong'][0]],
                                 type='Point',
                             )
-                            collection = TwitterCollection.get_collection(tweet['collectionid'])
                             out_data.append(Feature(geometry=geom, properties={
                                 'tweet_id': tweet['tweetid'],
                                 'creation_time': tweet['created_at'],
@@ -294,11 +300,11 @@ class Products:
             product.save()
 
     @classmethod
-    def is_efas_id_counter(cls, key):
+    def is_efas_id_counter(cls, key, efas_id):
         # good key is like "1301_UKF2_num_tweets_0-10"
         # format: <efasid>_<nutsid>_num_tweets_<minprob>-<maxprob>
         tokens = key.split('_')
-        return cls.is_efas_id(tokens[0])
+        return cls.is_efas_id(tokens[0]) and int(key) == efas_id
 
     @classmethod
     def determine_color(cls, counters):
