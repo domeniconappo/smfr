@@ -60,16 +60,16 @@ def schedule_rra_jobs():
         minutes = [str(i) if i > 9 else '0%s' % i for i in range(0, 60, 13)]
         alt_minutes = [str(i) if i > 9 else '0%s' % i for i in range(3, 60, 17)]
 
-        rra_fetch_scheduling = ['%s:%s' % (hour, minute) for hour in hours for minute in minutes]
-        check_ondemand_runtime_scheduling = ['%s:%s' % (hour, minute) for hour in hours for minute in alt_minutes]
+        rra_fetch_scheduling = [(hour, minute) for hour in hours for minute in minutes]
+        check_ondemand_runtime_scheduling = [(hour, minute) for hour in hours for minute in alt_minutes]
 
     kwargs = {'since': 'latest'}
     logger.info('====== Scheduling "Fetch RRA" jobs at {} of every day ======'.format(rra_fetch_scheduling))
-    for hour in rra_fetch_scheduling:
+    for hour, minute in rra_fetch_scheduling:
         schedule.every().day.at('{}:05'.format(hour)).do(add_rra_events, **kwargs).tag('add-rra-events')
 
     logger.info('====== Scheduling "Updating On Demand collections" jobs at {} of every day ======'.format(check_ondemand_runtime_scheduling))
-    for hour in check_ondemand_runtime_scheduling:
+    for hour, minute in check_ondemand_runtime_scheduling:
         schedule.every().day.at('{}:20'.format(hour)).do(update_ondemand_collections_status).tag('update-collection-status')
 
     run_continuously(interval=check_jobs_interval)
