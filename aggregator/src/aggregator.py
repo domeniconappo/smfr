@@ -145,7 +145,7 @@ def inc_annotated_counter(counter, probability, place_id=None):
 def run_single_aggregation(collection_id,
                            last_tweetid_collected, last_tweetid_annotated, last_tweetid_geotagged,
                            timestamp_start, timestamp_end,
-                           initial_values, initial_relevant_tweets):
+                           initial_values, initial_relevant_tweets, aggregation=None):
     """
     Calculating stats with attributes:
     - NUTS2
@@ -173,78 +173,81 @@ def run_single_aggregation(collection_id,
         logger.warning('!!!!!! Previous aggregation for collection id %d is not finished yet !!!!!!' % collection_id)
         return 0
 
-    relevant_tweets = MostRelevantTweets(initial=initial_relevant_tweets)
-
-    max_collected_tweetid = 0
-    max_annotated_tweetid = 0
-    max_geotagged_tweetid = 0
-
-    last_timestamp_start = timestamp_start or datetime(2100, 12, 30)
-    last_timestamp_end = timestamp_end or datetime(1970, 1, 1)
-
-    last_tweetid_collected = int(last_tweetid_collected) if last_tweetid_collected else 0
-    last_tweetid_annotated = int(last_tweetid_annotated) if last_tweetid_annotated else 0
-    last_tweetid_geotagged = int(last_tweetid_geotagged) if last_tweetid_geotagged else 0
-
-    # init counter
-    counter = Counter(initial_values)
-
-    logger.info(' >>>>>>>>>>>> Starting aggregation for collection id %d' % collection_id)
-
-    running_aggregators.add(collection_id)
-
-    try:
-        collected_tweets = Tweet.get_iterator(collection_id, 'collected', last_tweetid=last_tweetid_collected)
-        for t in collected_tweets:
-            max_collected_tweetid = max(max_collected_tweetid, t.tweet_id)
-            last_timestamp_start = min(last_timestamp_start, t.created_at)
-            last_timestamp_end = max(last_timestamp_end, t.created_at)
-            counter['collected'] += 1
-            counter['{}_collected'.format(t.lang)] += 1
-
-        annotated_tweets = Tweet.get_iterator(collection_id, 'annotated', last_tweetid=last_tweetid_annotated)
-        for t in annotated_tweets:
-            max_annotated_tweetid = max(max_annotated_tweetid, t.tweet_id)
-            counter['annotated'] += 1
-            counter['{}_annotated'.format(t.lang)] += 1
-            inc_annotated_counter(counter, flood_probability(t))
-
-        geotagged_tweets = Tweet.get_iterator(collection_id, 'geotagged', last_tweetid=last_tweetid_geotagged)
-        for t in geotagged_tweets:
-            max_geotagged_tweetid = max(max_geotagged_tweetid, t.tweet_id)
-            counter['geotagged'] += 1
-            counter['{}_geotagged'.format(t.lang)] += 1
-            geoloc_id = t.geo['nuts_efas_id'] or 'G%s' % (t.geo['geonameid'] or '-')
-            nuts_id = t.geo['nuts_id']
-            geo_identifier = '%s_%s' % (geoloc_id, nuts_id) if nuts_id else geoloc_id
-            inc_annotated_counter(counter, flood_probability(t), place_id=geo_identifier)
-            relevant_tweets.push_if_relevant(Tweet.to_json(t))
-
-    except cassandra.ReadFailure as e:
-        logger.error('Cassandra Read failure: %s', e)
-        running_aggregators.remove(collection_id)
-        return 1
-    except Exception as e:
-        logger.error('ERROR during aggregation collection %d: error: %s %s', collection_id, type(e), e)
-        running_aggregators.remove(collection_id)
-        return 1
-
     with flask_app.app_context():
-        aggregation = Aggregation.query.filter_by(collection_id=collection_id).first()
-        aggregation.last_tweetid_collected = max_collected_tweetid if max_collected_tweetid else last_tweetid_collected
-        aggregation.last_tweetid_annotated = max_annotated_tweetid if max_annotated_tweetid else last_tweetid_annotated
-        aggregation.last_tweetid_geotagged = max_geotagged_tweetid if max_geotagged_tweetid else last_tweetid_geotagged
-        # if timestamp_start/end were none, last_timestamp_start contains an
-        # invalid timestamp for MySQL (timestamp in the future) so we store a NULL value
-        aggregation.timestamp_start = last_timestamp_start if last_timestamp_start != datetime(2100, 12, 30) else None
-        aggregation.timestamp_end = last_timestamp_end if last_timestamp_end != datetime(1970, 1, 1) else None
-        aggregation.values = dict(counter)
-        aggregation.relevant_tweets = relevant_tweets.values
-        aggregation.save()
-        running_aggregators.remove(collection_id)
+        if not aggregation:
+            aggregation = Aggregation.query.filter_by(collection_id=collection_id).first()
 
-    logger.info(' <<<<<<<<<<< Aggregation terminated for collection %d', collection_id)
-    return 0
+        relevant_tweets = MostRelevantTweets(initial=initial_relevant_tweets)
+
+        max_collected_tweetid = 0
+        max_annotated_tweetid = 0
+        max_geotagged_tweetid = 0
+
+        last_timestamp_start = timestamp_start or datetime(2100, 12, 30)
+        last_timestamp_end = timestamp_end or datetime(1970, 1, 1)
+
+        last_tweetid_collected = int(last_tweetid_collected) if last_tweetid_collected else 0
+        last_tweetid_annotated = int(last_tweetid_annotated) if last_tweetid_annotated else 0
+        last_tweetid_geotagged = int(last_tweetid_geotagged) if last_tweetid_geotagged else 0
+
+        # init counter
+        counter = Counter(initial_values)
+
+        logger.info(' >>>>>>>>>>>> Starting aggregation for collection id %d' % collection_id)
+
+        running_aggregators.add(collection_id)
+
+        try:
+            collected_tweets = Tweet.get_iterator(collection_id, 'collected', last_tweetid=last_tweetid_collected)
+            for t in collected_tweets:
+                max_collected_tweetid = max(max_collected_tweetid, t.tweet_id)
+                last_timestamp_start = min(last_timestamp_start, t.created_at)
+                last_timestamp_end = max(last_timestamp_end, t.created_at)
+                counter['collected'] += 1
+                counter['{}_collected'.format(t.lang)] += 1
+            aggregation.last_tweetid_collected = max_collected_tweetid if max_collected_tweetid else last_tweetid_collected
+            aggregation.timestamp_start = last_timestamp_start if last_timestamp_start != datetime(2100, 12, 30) else None
+            aggregation.timestamp_end = last_timestamp_end if last_timestamp_end != datetime(1970, 1, 1) else None
+            aggregation.values = dict(counter)
+            aggregation.save()
+
+            annotated_tweets = Tweet.get_iterator(collection_id, 'annotated', last_tweetid=last_tweetid_annotated)
+            for t in annotated_tweets:
+                max_annotated_tweetid = max(max_annotated_tweetid, t.tweet_id)
+                counter['annotated'] += 1
+                counter['{}_annotated'.format(t.lang)] += 1
+                inc_annotated_counter(counter, flood_probability(t))
+            aggregation.last_tweetid_annotated = max_annotated_tweetid if max_annotated_tweetid else last_tweetid_annotated
+            aggregation.values = dict(counter)
+            aggregation.save()
+
+            geotagged_tweets = Tweet.get_iterator(collection_id, 'geotagged', last_tweetid=last_tweetid_geotagged)
+            for t in geotagged_tweets:
+                max_geotagged_tweetid = max(max_geotagged_tweetid, t.tweet_id)
+                counter['geotagged'] += 1
+                counter['{}_geotagged'.format(t.lang)] += 1
+                geoloc_id = t.geo['nuts_efas_id'] or 'G%s' % (t.geo['geonameid'] or '-')
+                nuts_id = t.geo['nuts_id']
+                geo_identifier = '%s_%s' % (geoloc_id, nuts_id) if nuts_id else geoloc_id
+                inc_annotated_counter(counter, flood_probability(t), place_id=geo_identifier)
+                relevant_tweets.push_if_relevant(Tweet.to_json(t))
+            aggregation.last_tweetid_geotagged = max_geotagged_tweetid if max_geotagged_tweetid else last_tweetid_geotagged
+            aggregation.relevant_tweets = relevant_tweets.values
+            aggregation.values = dict(counter)
+            aggregation.save()
+
+        except cassandra.ReadFailure as e:
+            logger.error('Cassandra Read failure: %s', e)
+            running_aggregators.remove(collection_id)
+            return 1
+        except Exception as e:
+            logger.error('ERROR during aggregation collection %d: error: %s %s', collection_id, type(e), e)
+            running_aggregators.remove(collection_id)
+            return 1
+
+        running_aggregators.remove(collection_id)
+        logger.info(' <<<<<<<<<<< Aggregation terminated for collection %d', collection_id)
+        return 0
 
 
 def pretty_running_conf(conf):
