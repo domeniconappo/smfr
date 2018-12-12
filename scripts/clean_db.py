@@ -52,7 +52,8 @@ def do():
         c = TwitterCollection.get_collection(cid)
         remove_tweets(cid)
         aggregation_to_drop = Aggregation.get_by_collection(cid)
-        aggregation_to_drop.delete()
+        if aggregation_to_drop:
+            aggregation_to_drop.delete()
         c.delete()
         print('>>>> Deleteted collection/aggregation {}'.format(cid))
     else:
@@ -74,7 +75,8 @@ def do():
                 remove_tweets(cid)
                 collection_to_drop = collections[cid]
                 aggregation_to_drop = Aggregation.get_by_collection(cid)
-                aggregation_to_drop.delete()
+                if aggregation_to_drop:
+                    aggregation_to_drop.delete()
                 collection_to_drop.delete()
                 print('>>>> Deleteted collection/aggregation {}'.format(cid))
 
