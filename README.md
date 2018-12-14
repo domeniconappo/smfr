@@ -17,10 +17,9 @@ Current version is based on:
 When a potential catastrofic flood event is recorded in EFAS, SMFR is notified and will start to:
 
   - Collect tweets with Twitter Stream API
-  - An operator will access to the web interface to manually start annotation.
-  - When annotation is completed, an operator will manually start geocoding.
+  - A pipeline is implemented to collect, annotate and geocode tweets in sequence.
 
-Final product of SMFR is a event-related map reporting relevant tweets.
+Final product of SMFR is an event-related map reporting relevant tweets and affected areas.
 
 
 ## Installation and Configuration
@@ -31,44 +30,34 @@ Final product of SMFR is a event-related map reporting relevant tweets.
 - Get the source code: `$ git clone https://github.com/domeniconappo/SMFR.git`
 - Enter into SMFR folder and copy _.env.tpl_ file to _.env_.
   - `$ cp .env.tpl .env`
-- Edit the file `.env` and change defaults according your needs:
-    - `CASSANDRA_KEYSPACE=smfr_persistent`
-      -   Cassandra keyspace name
-    - `PERSISTER_KAFKA_TOPIC=persister`
-      - The KAFKA topic name
-    - `MIN_FLOOD_PROBABILITY=0.59`
-      - minimum flood probability for which the text is considered "positive"
-    - `LOGGING_LEVEL=DEBUG`
-      - Logging level. In production this should be WARNING or ERROR
-    - `GIT_REPO_MODELS=https://user:pass@bitbucket.org/lorinivalerio/smfr_models_data.git`
-      - You have to include Bitbucket credentials of a user with read permissions to the SMFR models repository
-    - `DOCKER_ID_USER=efas`
-      - Docker swarm node ids to set up for swarm deploy. Check [Developer Notes](DEVELOPER_NOTES.md) for more info.
+- Edit the file `.env` and change defaults according your needs
+(see later in this document details about configuration parameters and variables).
 - Copy all yaml.tpl files to have extension yaml and edit them according your configuration
   (e.g. admin_collector.yaml which contains Twitter client keys and secrets)
 - Execute `./build.sh` if you need to rebuild images. This step can take several minutes and will also push updates to Docker registry in case the DOCKER_ID_USER is set and it's got rights to push.
-    - __Note__: It's not possible to build images with `docker-compose build` command
-     as there are some variables substitution to perform (e.g. current branch name giving the image tag).
+
 In this case, you must login to Docker Hub (just issue `$ docker login` before to build).
-- Execute `$ ./singlenode_up.sh` for local testing or `$ ./swarm_up.sh` script if you deploy to a Docker Swarm cluster
+- Execute `$ ./singlenode_up.sh` for local testing or solution deployment on a single server,
+`$ ./swarm_up.sh` script if you deploy to a Docker Swarm cluster.
 
 - You will see all services starting:
     - cassandrasmfr
     - mysql
-    - phpmyadmin
     - kafka
     - geonames (Gazzetter)
     - persister
     - annotator
     - geocoder
+    - aggregator
+    - products
     - restserver
     - web
 
-- Wait a couple of minutes for services to get "warm" and connect to each other.
-- Connect to the web interface by pointing your browser to http://localhost:8888
-- REST Server API responds to http://localhost:5555/1.0 calls.
-- Swagger UI is available at http://localhost:5555/1.0/ui
-- Elasticsearch geonames instance at http://localhost:9200
+- Wait a minute for services to get "warm" and connect to each other.
+- Connect to the web interface by pointing your browser to http://<server>:8888
+- REST Server API responds to http://<server>:5555/1.0 calls.
+- Swagger UI is available at http://<server>:5555/1.0/ui
+- Elasticsearch geonames instance at http://<server>:9200
 
 ### Init and manage Databases
 
@@ -107,7 +96,7 @@ The script will:
 
 - start MySQL container only
 - install models package in a virtualenv
-- execute flask alembic commands
+- execute flask alembic commands for migrations
 - shutdown MySQL container
 
 The last command `flask db upgrade` that performs the actual schema migration,
@@ -138,18 +127,18 @@ From host, use cqlsh on docker container to connect to DB:
 `docker exec -it cassandrasmfr cqlsh -u $CASSANDRA_USER -p $CASSANDRA_PASSWORD`
 
 
-### Troubleshooting
+## Troubleshooting
 
 This sections tries to address all kind of issues you can have at system level when you run SMFR suite.
 
-#### MySQL is slow
+### MySQL is slow
 
 MySQL seems to have some problems with ext4 filesystem.
 If you are in Ubuntu and MySQL operations are extremely slow, this can depend on filesystem settings.
 Follow this article to fix: http://phpforus.com/how-to-make-mysql-run-fast-with-ext4-on-ubuntu/_**
 
 
-#### Issues with Geonames Elasticsearch and/or Cassandra
+### Issues with Geonames Elasticsearch and/or Cassandra
 If you see an error/warning about vm.max_map_count variable in Elasticsearch logs of Geonames docker image, or in Cassandra docker image, the `vm.map_max_count` setting should be set permanently in /etc/sysctl.conf of the host machine:
 
 ```bash
@@ -157,14 +146,14 @@ $ grep vm.max_map_count /etc/sysctl.conf
 vm.max_map_count=1048575
 ```
 
-#### Cassandra tombstones
+### Cassandra tombstones
 Null values produce cell tombstones. Cassandray will abort queries if tombstones threshold is reached.
 To avoid it: set gc_grace_seconds to 0 for tweet table:
 ```
 alter table smfr_persistent.tweet with gc_grace_seconds = 0;
 ```
 
-#### Free some disk space from unused 'dockers'
+### Free some disk space from unused 'dockers'
 
 ```bash
 docker images --no-trunc | grep '<none>' | awk '{ print $3 }' | xargs -r docker rmi
@@ -195,11 +184,3 @@ find '/var/lib/docker/volumes/' -mindepth 1 -maxdepth 1 -type d | grep -vFf <(
 ## Interfaces
 
 Connect to http://localhost:8888/ for SMFR web interface.
-
-In addition to SMFR web interface, you can use the CLI to manage SMFR services:
-
-```bash
-$ docker exec restserver flask  # to see list of available commands
-$ docker exec restserver flask list_collections
-$ docker exec restserver flask ...
-```
