@@ -124,7 +124,7 @@ class Products:
             counters_by_efas_id[efas_id][probs_interval] = value
 
         heatmap_file = cls.write_heatmap_geojson(counters_by_efas_id, efas_cycle, nuts2, collections)
-        relevant_tweets_file = cls.write_relevant_tweets_geojson(relevant_tweets_output, efas_cycle, nuts2)
+        relevant_tweets_file = cls.write_relevant_tweets_geojson(relevant_tweets_output, efas_cycle, nuts2, collections)
         cls.push_products_to_sftp(heatmap_file, relevant_tweets_file)
         cls.write_incidents_geojson(counters_by_efas_id, efas_cycle, nuts2)
         cls.write_to_sql(counters_by_efas_id, relevant_tweets_output, collection_ids)
@@ -172,7 +172,7 @@ class Products:
         geojson_output_filename = cls.output_heatmap_filename_tpl.format('{}{}'.format(datetime.now().strftime('%Y%m%d'), efas_cycle))
         logger.info('<<<<<< Writing %s', geojson_output_filename)
         with cls.app.app_context():
-            collection_ids_by_efas_id = {c.efas_id: c.id for c in collections}
+            collection_ids_by_efas_id = {c.efas_id: c.id for c in collections.values()}
             with fiona.open(cls.template) as source:
                 with open(geojson_output_filename, 'w') as sink:
                     out_data = []

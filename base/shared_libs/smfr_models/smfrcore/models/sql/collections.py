@@ -409,7 +409,7 @@ class TwitterCollection(SMFRModel):
         }
 
         update_cache_methods[action]()
-        
+
     @classmethod
     def update_status_by_runtime(cls):
         """
