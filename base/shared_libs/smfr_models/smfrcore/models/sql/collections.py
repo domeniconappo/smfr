@@ -245,11 +245,8 @@ class TwitterCollection(SMFRModel):
         res = cls.cache.get(key)
         if not res:
             res = cls.query.filter(
-                or_(
                     TwitterCollection.status == cls.ACTIVE_STATUS,
-                    TwitterCollection.stopped_at >= datetime.datetime.now() - datetime.timedelta(days=2)
-                )
-            ).order_by(cls.status, cls.started_at.desc(), cls.runtime.desc()).all()
+            ).order_by(cls.started_at.desc(), cls.runtime.desc()).all()
             cls.cache[key] = res
         return res
 
