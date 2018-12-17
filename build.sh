@@ -35,19 +35,20 @@ echo
 echo
 
 # build backup image
-docker build --build-arg http_proxy=${http_proxy} --build-arg https_proxy=${http_proxy} -t ${BACKUPPER_IMAGE} backupper/.
+docker build --build-arg http_proxy=${http_proxy} --build-arg https_proxy=${http_proxy} -t ${BACKUPPER_IMAGE}:latest backupper/.
 echo
 echo
 
-# push base image always
+# push core images always
 if [[ -n "${DOCKER_ID_USER}" ]]; then
     if  [[ ${logged} == 0 ]]; then
         docker login -u ${DOCKER_ID_USER} -p ${DOCKER_ID_PASSWORD} ${DOCKER_REGISTRY}
     fi
     docker tag ${SMFR_IMAGE}:${image_tag} ${DOCKER_REGISTRY}/${SMFR_IMAGE}:${image_tag}
     docker push ${DOCKER_REGISTRY}/${SMFR_IMAGE}:${image_tag}
-    docker tag ${BACKUPPER_IMAGE} ${DOCKER_REGISTRY}/${BACKUPPER_IMAGE}
-    docker push ${DOCKER_REGISTRY}/${BACKUPPER_IMAGE}
+
+    docker tag ${BACKUPPER_IMAGE}:latest ${DOCKER_REGISTRY}/${BACKUPPER_IMAGE}:latest
+    docker push ${DOCKER_REGISTRY}/${BACKUPPER_IMAGE}:latest
 fi
 
 echo
