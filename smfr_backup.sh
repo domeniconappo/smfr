@@ -18,15 +18,8 @@ sleep 20
 
 echo "--------- Start Backups"
 echo "--------- MySQL"
-docker run -e LOCAL_USER_ID=`id -u ${USER}` -v ${prefix}_vlm-mysql:/volume -v /tmp:/backup --rm ${DOCKER_REGISTRY}/${BACKUPPER_IMAGE} backup mysql
+docker run -e LOCAL_USER_ID=`id -u ${USER}` -v ${prefix}_vlm-mysql:/volume -v /tmp:/backup --rm ${DOCKER_REGISTRY}/${BACKUPPER_IMAGE} /volume-backup.sh backup mysql
 echo "[OK] MySQL"
 echo "--------- CASSANDRA"
-docker run -e LOCAL_USER_ID=`id -u ${USER}` -v ${prefix}_vlm-cassandra:/volume -v /tmp:/backup --rm ${DOCKER_REGISTRY}/${BACKUPPER_IMAGE} backup cassandra
+docker run -e LOCAL_USER_ID=`id -u ${USER}` -v ${prefix}_vlm-cassandra:/volume -v /tmp:/backup --rm ${DOCKER_REGISTRY}/${BACKUPPER_IMAGE} /volume-backup.sh backup cassandra
 echo "[OK] CASSANDRA"
-sleep 20
-
-if [[ ${mode} == "compose" ]]; then
-./singlenode_up.sh
-elif [[ ${mode} == "swarm" ]]; then
-./swarm_up.sh
-fi

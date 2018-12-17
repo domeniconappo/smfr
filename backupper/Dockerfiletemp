@@ -36,6 +36,8 @@ RUN	export GNUPGHOME="$(mktemp -d)"; \
 RUN mkdir -p /backup && mkdir -p /volume
 COPY entrypoint.sh /
 COPY volume-backup.sh /
+RUN chmod a+x /volume-backup.sh
+RUN chmod a+x /entrypoint.sh
 
 ENTRYPOINT [ "/bin/sh", "/entrypoint.sh" ]
 CMD [ "/bin/sh", "/volume-backup.sh" ]

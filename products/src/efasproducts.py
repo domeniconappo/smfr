@@ -304,7 +304,7 @@ class Products:
         # good key is like "1301_UKF2_num_tweets_0-10"
         # format: <efasid>_<nutsid>_num_tweets_<minprob>-<maxprob>
         tokens = key.split('_')
-        return cls.is_efas_id(tokens[0]) and int(key) == efas_id
+        return cls.is_efas_id(tokens[0]) and int(tokens[0]) == efas_id
 
     @classmethod
     def determine_color(cls, counters):
