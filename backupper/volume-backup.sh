@@ -11,6 +11,7 @@ backup() {
     fi
     export GZIP=-1
     tar -czf ${ARCHIVE_PATH} -C /volume ./
+    chmod a+r ${ARCHIVE_PATH}
 }
 
 restore() {

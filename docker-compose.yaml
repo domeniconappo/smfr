@@ -42,13 +42,13 @@ services:
     depends_on:
     - mysql
     - cassandrasmfr
-    deploy:
-      placement:
-        constraints: [ node.labels.large == true ]
-      restart_policy:
-        condition: on-failure
-        max_attempts: 3
-        window: 120s
+#    deploy:
+#      placement:
+#        constraints: [ node.labels.large == true ]
+#      restart_policy:
+#        condition: on-failure
+#        max_attempts: 3
+#        window: 120s
 
   annotator:
     restart: always
@@ -98,13 +98,13 @@ services:
       - kafka
       - cassandrasmfr
       - persister
-    deploy:
-      restart_policy:
-        condition: on-failure
-        max_attempts: 3
-        window: 120s
-      placement:
-        constraints: [ node.labels.huge == true ]
+#    deploy:
+#      restart_policy:
+#        condition: on-failure
+#        max_attempts: 3
+#        window: 120s
+#      placement:
+#        constraints: [ node.labels.huge == true ]
 
   cassandrasmfr:
     build:
@@ -136,13 +136,13 @@ services:
       CASSANDRA_BROADCAST_ADDRESS: cassandrasmfr
       CASSANDRA_NUM_TOKENS: 256
       LOCAL_JMX: "no"
-    deploy:
-      restart_policy:
-        condition: on-failure
-        max_attempts: 3
-        window: 60s
-      placement:
-        constraints: [ node.labels.large == true ]
+#    deploy:
+#      restart_policy:
+#        condition: on-failure
+#        max_attempts: 3
+#        window: 60s
+#      placement:
+#        constraints: [ node.labels.large == true ]
 
   geocoder:
     restart: always
@@ -188,13 +188,13 @@ services:
     - cassandrasmfr
     - geonames
     - persister
-    deploy:
-      restart_policy:
-        condition: on-failure
-        max_attempts: 3
-        window: 120s
-      placement:
-        constraints: [ node.labels.medium == true ]
+#    deploy:
+#      restart_policy:
+#        condition: on-failure
+#        max_attempts: 3
+#        window: 120s
+#      placement:
+#        constraints: [ node.labels.medium == true ]
 
   geonames:
     build:
@@ -217,13 +217,13 @@ services:
       discovery.type: 'single-node'
     volumes:
       - geonames_index:/usr/share/elasticsearch/data:rw
-    deploy:
-      restart_policy:
-        condition: on-failure
-        max_attempts: 3
-        window: 120s
-      placement:
-        constraints: [ node.labels.medium == true ]
+#    deploy:
+#      restart_policy:
+#        condition: on-failure
+#        max_attempts: 3
+#        window: 120s
+#      placement:
+#        constraints: [ node.labels.medium == true ]
 
   kafka:
     restart: always
@@ -252,14 +252,14 @@ services:
       - zookeeper
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-
-    deploy:
-      restart_policy:
-        condition: on-failure
-        max_attempts: 3
-        window: 120s
-      placement:
-        constraints: [ node.labels.huge == true ]
+#
+#    deploy:
+#      restart_policy:
+#        condition: on-failure
+#        max_attempts: 3
+#        window: 120s
+#      placement:
+#        constraints: [ node.labels.huge == true ]
 
   mysql:
     build:
@@ -278,13 +278,13 @@ services:
       MYSQL_ALLOW_EMPTY_PASSWORD: 'yes'
     networks:
       - back-tier
-    deploy:
-      restart_policy:
-        condition: on-failure
-        max_attempts: 3
-        window: 120s
-      placement:
-        constraints: [ node.labels.large == true ]
+#    deploy:
+#      restart_policy:
+#        condition: on-failure
+#        max_attempts: 3
+#        window: 120s
+#      placement:
+#        constraints: [ node.labels.large == true ]
 
   persister:
     restart: always
@@ -329,13 +329,13 @@ services:
     depends_on:
       - kafka
       - cassandrasmfr
-    deploy:
-      restart_policy:
-        condition: on-failure
-        max_attempts: 3
-        window: 120s
-      placement:
-        constraints: [ node.labels.large == true ]
+#    deploy:
+#      restart_policy:
+#        condition: on-failure
+#        max_attempts: 3
+#        window: 120s
+#      placement:
+#        constraints: [ node.labels.large == true ]
 
   products:
     restart: on-failure
@@ -386,13 +386,13 @@ services:
     depends_on:
       - mysql
       - cassandrasmfr
-    deploy:
-      placement:
-        constraints: [ node.labels.huge == true ]
-      restart_policy:
-        condition: on-failure
-        max_attempts: 3
-        window: 120s
+#    deploy:
+#      placement:
+#        constraints: [ node.labels.huge == true ]
+#      restart_policy:
+#        condition: on-failure
+#        max_attempts: 3
+#        window: 120s
 
   restserver:
     restart: always
@@ -462,13 +462,13 @@ services:
       - geocoder
       - persister
       - aggregator
-    deploy:
-      restart_policy:
-        condition: on-failure
-        max_attempts: 3
-        window: 120s
-      placement:
-        constraints: [ node.labels.large == true ]
+#    deploy:
+#      restart_policy:
+#        condition: on-failure
+#        max_attempts: 3
+#        window: 120s
+#      placement:
+#        constraints: [ node.labels.large == true ]
 
   web:
     restart: always
@@ -499,13 +499,13 @@ services:
       - products
     networks:
       - front-tier
-    deploy:
-      restart_policy:
-        condition: on-failure
-        max_attempts: 3
-        window: 120s
-      placement:
-        constraints: [ node.labels.small == true ]
+#    deploy:
+#      restart_policy:
+#        condition: on-failure
+#        max_attempts: 3
+#        window: 120s
+#      placement:
+#        constraints: [ node.labels.small == true ]
 
   zookeeper:
     restart: always
@@ -516,13 +516,13 @@ services:
       - '2181:2181'
     networks:
       - back-tier
-    deploy:
-      restart_policy:
-        condition: on-failure
-        max_attempts: 3
-        window: 120s
-      placement:
-        constraints: [ node.labels.huge == true ]
+#    deploy:
+#      restart_policy:
+#        condition: on-failure
+#        max_attempts: 3
+#        window: 120s
+#      placement:
+#        constraints: [ node.labels.huge == true ]
 
 volumes:
   geonames_index:

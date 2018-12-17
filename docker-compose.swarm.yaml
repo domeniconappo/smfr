@@ -1,0 +1,111 @@
+version: '3.4'
+
+services:
+
+  aggregator:
+    deploy:
+      placement:
+        constraints: [ node.labels.large == true ]
+      restart_policy:
+        condition: on-failure
+        max_attempts: 3
+        window: 120s
+
+  annotator:
+    deploy:
+      restart_policy:
+        condition: on-failure
+        max_attempts: 3
+        window: 120s
+      placement:
+        constraints: [ node.labels.huge == true ]
+
+  cassandrasmfr:
+    deploy:
+      restart_policy:
+        condition: on-failure
+        max_attempts: 3
+        window: 60s
+      placement:
+        constraints: [ node.labels.large == true ]
+
+  geocoder:
+    deploy:
+      restart_policy:
+        condition: on-failure
+        max_attempts: 3
+        window: 120s
+      placement:
+        constraints: [ node.labels.medium == true ]
+
+  geonames:
+    deploy:
+      restart_policy:
+        condition: on-failure
+        max_attempts: 3
+        window: 120s
+      placement:
+        constraints: [ node.labels.medium == true ]
+
+  kafka:
+    deploy:
+      restart_policy:
+        condition: on-failure
+        max_attempts: 3
+        window: 120s
+      placement:
+        constraints: [ node.labels.huge == true ]
+
+  mysql:
+    deploy:
+      restart_policy:
+        condition: on-failure
+        max_attempts: 3
+        window: 120s
+      placement:
+        constraints: [ node.labels.large == true ]
+
+  persister:
+    deploy:
+      restart_policy:
+        condition: on-failure
+        max_attempts: 3
+        window: 120s
+      placement:
+        constraints: [ node.labels.large == true ]
+
+  products:
+    deploy:
+      placement:
+        constraints: [ node.labels.huge == true ]
+      restart_policy:
+        condition: on-failure
+        max_attempts: 3
+        window: 120s
+
+  restserver:
+    deploy:
+      restart_policy:
+        condition: on-failure
+        max_attempts: 3
+        window: 120s
+      placement:
+        constraints: [ node.labels.large == true ]
+
+  web:
+    deploy:
+      restart_policy:
+        condition: on-failure
+        max_attempts: 3
+        window: 120s
+      placement:
+        constraints: [ node.labels.small == true ]
+
+  zookeeper:
+    deploy:
+      restart_policy:
+        condition: on-failure
+        max_attempts: 3
+        window: 120s
+      placement:
+        constraints: [ node.labels.huge == true ]

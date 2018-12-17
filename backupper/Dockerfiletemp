@@ -6,8 +6,10 @@ ARG https_proxy
 ENV http_proxy ${http_proxy}
 ENV https_proxy ${https_proxy}
 ENV LANG C.UTF-8
-ENV GOSU_VERSION 1.11
 
+# TODO Consider to remove GOSU tool installation commands, as we don't need it anymore
+
+ENV GOSU_VERSION 1.11
 RUN   apk update \
   &&   apk add ca-certificates wget \
   &&   update-ca-certificates
@@ -25,19 +27,16 @@ RUN	export GNUPGHOME="$(mktemp -d)"; \
 	command -v gpgconf && gpgconf --kill all || :; \
 	rm -rf "$GNUPGHOME" /usr/local/bin/gosu.asc; \
 	\
-# clean up fetch dependencies
 	apk del --no-network .gosu-deps; \
 	\
 	chmod +x /usr/local/bin/gosu; \
-# verify that the binary works
+
+    # verify that the binary works
 	gosu --version; \
 	gosu nobody true
 
-RUN mkdir -p /backup && mkdir -p /volume
-COPY entrypoint.sh /
+RUN mkdir -p /backup && mkdir -p /volume && chmod a+rw -R /backup
+
 COPY volume-backup.sh /
 RUN chmod a+x /volume-backup.sh
-RUN chmod a+x /entrypoint.sh
-
-ENTRYPOINT [ "/bin/sh", "/entrypoint.sh" ]
 CMD [ "/bin/sh", "/volume-backup.sh" ]

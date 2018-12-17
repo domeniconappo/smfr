@@ -15,7 +15,7 @@ DOCKER_ID_USER=$(getProperty "DOCKER_ID_USER")
 DOCKER_ID_PASSWORD=$(getProperty "DOCKER_ID_PASSWORD")
 DOCKER_REGISTRY=$(getProperty "DOCKER_REGISTRY")
 
-if [ -n "${DOCKER_ID_USER}" ] && [ ${DOCKER_REGISTRY} != "index.docker.io" ]; then
+if [[ -n "${DOCKER_ID_USER}" ]] && [[ ${DOCKER_REGISTRY} != "index.docker.io" ]]; then
     echo Pulling from a private registry: ${DOCKER_REGISTRY} - need to login
     docker login -u ${DOCKER_ID_USER} -p ${DOCKER_ID_PASSWORD} ${DOCKER_REGISTRY}
 fi
@@ -36,7 +36,7 @@ docker-compose config > docker-compose-parsed.yaml
 # cleaning volumes from docker compose configuration
 python3 scripts/compose4deploy.py -i docker-compose-parsed.yaml -o docker-compose-4deploy.yaml
 
-docker stack deploy --with-registry-auth -c ./docker-compose-4deploy.yaml SMFR
+docker stack deploy --with-registry-auth -c ./docker-compose-4deploy.yaml SMFR -c ./docker-compose.swarm.yaml
 
 # forcing updates of images
 

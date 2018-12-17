@@ -13,7 +13,9 @@ venv.bak/
 .idea
 # SMFR configs
 restserver/src/config/*.yaml
+restserver/src/config/*.yml
 web/src/config/*.yaml
+web/src/config/*.yml
 restserver/logs
 scripts/seeds/data/*.json
 jmxremote.password
@@ -27,6 +29,7 @@ products/output
 /downloads/*.json
 /downloads/*.csv
 docker-compose-*.yaml
+docker-compose-*.yml
 ignoreme*.*
 annotator/models
 
@@ -142,5 +145,5 @@ celerybeat-schedule
 /geonames/Dockerfile
 /mysql/Dockerfile
 /backupper/Dockerfile
+docker-compose.override.yaml
 docker-compose.override.yml
- 
