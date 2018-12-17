@@ -53,18 +53,18 @@
     </div>
 </div>
 
-    {% if development %}
         <div class="row"><div class="col-lg-12">
             <div class="panel panel-default panel-table">
             <div class="panel-heading">
                 <h3 class="panel-title">Geojson debug panel</h3>
             </div>
-            <div class="panel-body">
-                {{ geojson | tojson  }}
+            <div class="panel-body" id="product_content">
+{#                {% if geojson %}#}
+{#                    {{ geojson | tojson }}#}
+{#                {% endif %}#}
             </div>
         </div>
         </div></div>
-    {% endif %}
 {{ super() }}
 {% endblock app_content %}
 
@@ -96,17 +96,17 @@
         });
 
         {% if geojson %}
-            var features = {{ geojson | tojson }};
-            var geojsonmap = L.geoJSON(features, {
+            var content = {{ geojson | tojson }};
+            var geojsonmap = L.geoJSON(content, {
                  onEachFeature: onEachFeature,
                  style: function(feature) {
                      if (feature.properties.type === 'heatmap') {
-                         switch (feature.properties.risk_color) {
-                             case '225 225 225':
+                         switch (feature.properties.smfr_flood_index) {
+                             case 'low':
                                  return {color: "#575757", weight: 3, opacity: 0.9, fillColor: "#ababab"};
-                             case '255 0 0':
+                             case 'high':
                                  return {color: "#b40000", weight: 5, opacity: 0.9, fillColor: "#ff646e"};
-                             case '255 128 0':
+                             case 'medium':
                                  return {color: "#b8711b", weight: 4, opacity: 0.9, fillColor: "#d0af2a"};
                          }
                      }
@@ -157,14 +157,17 @@
                         marker = L.marker([incident_lat, incident_lon], {icon: incidentMarker});
                         marker.bindPopup(text);
                         markers.addLayer(marker);
-
                     }
                     break;
                 }
-
             }
-
             map.addLayer(markers);
+            // geojson output content syntax highlight
+            var outj = {{ geojson | safe }};
+
+            output('#product_content',
+                syntaxHighlight(JSON.stringify(outj))
+            );
         {% endif %}
 
     });

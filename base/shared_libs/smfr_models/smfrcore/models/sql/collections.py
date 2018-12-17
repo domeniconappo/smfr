@@ -245,7 +245,7 @@ class TwitterCollection(SMFRModel):
         res = cls.cache.get(key)
         if not res:
             res = cls.query.filter(
-                    TwitterCollection.status == cls.ACTIVE_STATUS,
+                    cls.status == cls.ACTIVE_STATUS,
             ).order_by(cls.started_at.desc(), cls.runtime.desc()).all()
             cls.cache[key] = res
         return res
@@ -330,6 +330,8 @@ class TwitterCollection(SMFRModel):
         :param action: 'create' or 'delete'
         """
 
+        collection_key = obj.cache_keys['collection'].format(obj.id)
+
         def _update_cached_list(cache_key):
             current_cached_collections = cls.cache.get(cache_key) or []
             updated_collections_cache = copy.deepcopy(current_cached_collections)
@@ -343,9 +345,24 @@ class TwitterCollection(SMFRModel):
                 updated_collections_cache.append(obj)
             cls.cache[cache_key] = updated_collections_cache
 
-        collection_key = obj.cache_keys['collection'].format(obj.id)
+        def _update_delete():
+            cls.cache[collection_key] = None
+            try:
+                if obj.is_active_or_recent:
+                    cls.cache.get(cls.cache_keys['active'], []).remove(obj)
+                    if obj.is_active:
+                        cls.cache.get(cls.cache_keys['running'], []).remove(obj)
+                        if obj.is_manual:
+                            cls.cache.get(cls.cache_keys['manual'], []).remove(obj)
+                        elif obj.is_background:
+                            cls.cache[cls.cache_keys['background']] = None
+                        elif obj.is_ondemand:
+                            cls.cache.get(cls.cache_keys['on-demand'], []).remove(obj)
+                            cls.cache.get(cls.cache_keys['all-on-demand'], []).remove(obj)
+            except ValueError:
+                pass
 
-        if action == 'create':
+        def _update_create():
             cls.cache[collection_key] = obj
             if obj.is_active:
                 _update_cached_list(cls.cache_keys['running'])
@@ -362,23 +379,7 @@ class TwitterCollection(SMFRModel):
                     _update_cached_list(cls.cache_keys['on-demand'])
                     _update_cached_list(cls.cache_keys['all-on-demand'])
 
-        elif action == 'delete':
-            cls.cache[collection_key] = None
-            try:
-                if obj.is_active_or_recent:
-                    cls.cache.get(cls.cache_keys['active'], []).remove(obj)
-                    if obj.is_active:
-                        cls.cache.get(cls.cache_keys['running'], []).remove(obj)
-                        if obj.is_manual:
-                            cls.cache.get(cls.cache_keys['manual'], []).remove(obj)
-                        elif obj.is_background:
-                            cls.cache[cls.cache_keys['background']] = None
-                        elif obj.is_ondemand:
-                            cls.cache.get(cls.cache_keys['on-demand'], []).remove(obj)
-                            cls.cache.get(cls.cache_keys['all-on-demand'], []).remove(obj)
-            except ValueError:
-                pass
-        elif action == 'deactivate':
+        def _update_deactivate():
             try:
                 cls.cache.get(cls.cache_keys['running'], []).remove(obj)
                 if obj.is_manual:
@@ -389,7 +390,8 @@ class TwitterCollection(SMFRModel):
                     cls.cache.get(cls.cache_keys['on-demand'], []).remove(obj)
             except ValueError:
                 pass
-        elif action == 'activate':
+
+        def _update_activate():
             cls.cache.get(cls.cache_keys['active'], []).append(obj)
             cls.cache.get(cls.cache_keys['running'], []).append(obj)
             if obj.is_manual:
@@ -399,6 +401,15 @@ class TwitterCollection(SMFRModel):
             elif obj.is_ondemand:
                 cls.cache.get(cls.cache_keys['on-demand'], []).append(obj)
 
+        update_cache_methods = {
+            'delete': _update_delete,
+            'create': _update_create,
+            'activate': _update_activate,
+            'deactivate': _update_deactivate
+        }
+
+        update_cache_methods[action]()
+        
     @classmethod
     def update_status_by_runtime(cls):
         """
