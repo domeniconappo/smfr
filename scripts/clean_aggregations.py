@@ -16,7 +16,7 @@ from scripts.utils import ParserHelpOnError
 def add_args(parser):
     parser.add_argument('-r', '--running',
                         help='Reset aggregations for running collections',
-                        default=False, action='store_true', metavar='running', required=False)
+                        default=False, action='store_true', required=False)
     parser.add_argument('-c', '--collection_id', help='Collection ids for which aggregations must be reset',
                         type=int, action='append',
                         metavar='collections', required=False)
@@ -45,6 +45,7 @@ def do():
 
     aggregations = Aggregation.query.filter(Aggregation.collection_id.in_(cids)).all()
     for agg in aggregations:
+        print('>>>> Reset aggregations for collection {}'.format(agg.collection_id))
         agg.values = {}
         agg.relevant_tweets = {}
         agg.last_tweetid_collected = None
