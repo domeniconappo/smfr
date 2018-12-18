@@ -51,8 +51,8 @@ class Products:
     # ORANGE - num of high rel > 5 * num low rel
     # RED - num of high rel > 9 * num low rel
     alert_heuristic = os.getenv('THRESHOLDS', '10:5:9')
-    max_relevant_tweets = int(os.getenv('NUM_RELEVANT_TWEETS_PRODUCTS', 5))
 
+    max_relevant_tweets = int(os.getenv('NUM_RELEVANT_TWEETS_PRODUCTS', 5))
     flood_indexes = {
         'gray': 'low',
         'orange': 'medium',
@@ -101,9 +101,10 @@ class Products:
                     counters[key] = value
 
                 for key, tweets in aggregation.relevant_tweets.items():
-                    if not (cls.is_efas_id(key) and int(key) == efas_id and len(tweets)):
+
+                    if not (cls.is_efas_id(key) and int(key) == efas_id and tweets):
                         continue
-                    relevant_tweets_aggregated[key] = tweets
+                    relevant_tweets_aggregated[int(key)] = tweets
                     break
 
         relevant_tweets_output = {}
@@ -201,7 +202,7 @@ class Products:
                             'counters': counters_by_efas_id[efas_id],
                             'type': 'heatmap',
                         }))
-                geojson.dump(FeatureCollection(out_data), sink, sort_keys=True, indent=2)
+                    geojson.dump(FeatureCollection(out_data), sink, sort_keys=True, indent=2)
         logger.info('>>>>>> Wrote %s', geojson_output_filename)
         return geojson_output_filename
 
@@ -214,7 +215,7 @@ class Products:
                 with open(geojson_output_filename, 'w') as sink:
                     out_data = []
                     for feat in source:
-                        efas_id = feat['id']
+                        efas_id = int(feat['id'])
                         if efas_id not in counters_by_efas_id:
                             continue
                         incidents = cls.get_incidents(efas_id, nuts2)
@@ -243,7 +244,7 @@ class Products:
                 with open(geojson_output_filename, 'w') as sink:
                     out_data = []
                     for feat in source:
-                        efas_id = feat['id']
+                        efas_id = int(feat['id'])
                         if efas_id not in relevant_tweets:
                             continue
                         efas_nuts2 = nuts2.get(efas_id) or Nuts2.get_by_efas_id(efas_id)
