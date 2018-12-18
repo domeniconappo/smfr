@@ -59,9 +59,6 @@
                 <h3 class="panel-title">Geojson debug panel</h3>
             </div>
             <div class="panel-body" id="product_content">
-{#                {% if geojson %}#}
-{#                    {{ geojson | tojson }}#}
-{#                {% endif %}#}
             </div>
         </div>
         </div></div>
@@ -77,7 +74,48 @@
     <script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster.js"></script>
     <script src="/static/js/leaflet.extra-markers.min.js"></script>
     <script>
-    $(document).ready(function() {
+        function makeTableFromDict(counters) {
+
+            var table = document.createElement("table");
+            table.style.border = "solid #CCCCCC";
+            //Add a header
+            var header = document.createElement("tr");
+
+            var idHeaderCell = document.createElement("th");
+            var nameHeaderCell = document.createElement("th");
+            var relevanceHeaderCell = document.createElement("th");
+
+            header.appendChild(idHeaderCell);
+            header.appendChild(nameHeaderCell);
+            header.appendChild(relevanceHeaderCell);
+
+            table.appendChild(header);
+
+            //Add the rest of the data to the table
+            $.each(counters, function(k, v) {
+                var tr = document.createElement("tr");
+
+                var idCell = document.createElement("td");
+                var nameCell = document.createElement("td");
+                var relevanceCell = document.createElement("td");
+                idCell.appendChild(document.createTextNode(" - "));
+                nameCell.appendChild(document.createTextNode(k));
+                relevanceCell.appendChild(document.createTextNode(v));
+
+                tr.appendChild(idCell);
+                tr.appendChild(nameCell);
+                tr.appendChild(relevanceCell);
+                tr.style.background = "#EEEEEE";
+                tr.style.border = "solid #EEEEEE";
+
+                table.appendChild(tr);
+                }
+            );
+            return table.outerHTML;
+
+        }
+
+        $(document).ready(function() {
 
         var clat = 55.0;
         var clon = 15.0;
@@ -89,16 +127,19 @@
                 'Imagery © <a href="https://www.mapbox.com/">Mapbox</a>',
             id: 'mapbox.streets'
         }).addTo(map);
-        var markers = L.markerClusterGroup({
-            spiderfyOnMaxZoom: true,
-            showCoverageOnHover: true,
-            zoomToBoundsOnClick: true
-        });
+
 
         {% if geojson %}
+            var cluster_markers = L.markerClusterGroup({
+                spiderfyOnMaxZoom: true,
+                showCoverageOnHover: true,
+                zoomToBoundsOnClick: true,
+                chunkedLoading: true
+            });
             var content = {{ geojson | tojson }};
             var geojsonmap = L.geoJSON(content, {
-                 onEachFeature: onEachFeature,
+                 onEachFeature: onEachFeatureProd,
+
                  style: function(feature) {
                      if (feature.properties.type === 'heatmap') {
                          switch (feature.properties.smfr_flood_index) {
@@ -111,30 +152,24 @@
                          }
                      }
                  }
-            }).addTo(map);
+            });
+            cluster_markers.addLayer(geojsonmap);
+            map.addLayer(cluster_markers);
 
-            function onEachFeature(feature, layer) {
+            function onEachFeatureProd(feature, layer) {
                 var marker;
                 var text;
                 var counters;
-                var lat;
-                var lon;
                 switch (feature.properties.type) {
                     case 'heatmap': {
-                        counters = feature.properties.counters;
-                        text = '<br />' + feature.properties.efas_id + '<br />' + counters;
-                        geojsonmap.eachLayer(function (layer) {
-                            layer.bindPopup(text);
-                        });
+                        {#counters = JSON.stringify(feature.properties.counters);#}
+                        text = '<br /><h4>EFAS Region ' + feature.properties.efas_id + '</h4><br />' + makeTableFromDict(feature.properties.counters);
+                        layer.bindPopup(text);
                     }
                     break;
                     case 'tweet': {
-                        lat = feature.properties.tweet_lat;
-                        lon = feature.properties.tweet_lon;
-                        var tweet_text = feature.properties.creation_time + '<br />' + feature.properties.text + '<br />' + feature.properties.prediction;
-                        marker = L.marker([lat, lon]);
-                        marker.bindPopup(tweet_text);
-                        markers.addLayer(marker);
+                        text = feature.properties.creation_time + '<br />' + feature.properties.text + '<br />' + feature.properties.prediction;
+                        layer.bindPopup(text);
                     }
                     break;
                     case 'incident': {
@@ -150,13 +185,11 @@
                         text = incident['text'];
                         marker = L.marker([incident_lat, incident_lon], {icon: incidentMarker});
                         marker.bindPopup(text);
-                        markers.addLayer(marker);
+                        cluster_markers.addLayer(marker);
                     }
                     break;
                 }
-        }
-
-            map.addLayer(markers);
+            }
 
             // geojson output content syntax highlight
             var outj = {{ geojson | safe }};
