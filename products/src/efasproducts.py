@@ -204,35 +204,6 @@ class Products:
         return geojson_output_filename
 
     @classmethod
-    def write_incidents_geojson(cls, counters_by_efas_id, efas_cycle, nuts2):
-        geojson_output_filename = cls.output_incidents_filename_tpl.format('{}{}'.format(datetime.now().strftime('%Y%m%d'), efas_cycle))
-        logger.info('<<<<<< Writing %s', geojson_output_filename)
-        with cls.app.app_context():
-            with fiona.open(cls.template) as source:
-                with open(geojson_output_filename, 'w') as sink:
-                    out_data = []
-                    for feat in source:
-                        efas_id = int(feat['id'])
-                        if efas_id not in counters_by_efas_id:
-                            continue
-                        incidents = cls.get_incidents(efas_id, nuts2)
-                        if not incidents:
-                            continue
-                        for inc in incidents:
-                            geom = Geometry(
-                                coordinates=[inc['lon'], inc['lat']],
-                                type='Point',
-                            )
-                            out_data.append(Feature(geometry=geom, properties={
-                                'efas_id': efas_id,
-                                'incident': inc,
-                                'type': 'incident',
-                            }))
-                    geojson.dump(FeatureCollection(out_data), sink, sort_keys=True, indent=2)
-        logger.info('>>>>>> Wrote %s', geojson_output_filename)
-        return geojson_output_filename
-
-    @classmethod
     def write_relevant_tweets_geojson(cls, relevant_tweets, efas_cycle, nuts2, collections):
         geojson_output_filename = cls.output_relevant_tweets_filename_tpl.format('{}{}'.format(datetime.now().strftime('%Y%m%d'), efas_cycle))
         logger.info('<<<<<< Writing %s', geojson_output_filename)
@@ -256,8 +227,6 @@ class Products:
                             )
                             out_data.append(Feature(geometry=geom, properties={
                                 'tweet_id': tweet['tweetid'],
-                                'tweet_lat': tweet['latlong'][0],
-                                'tweet_lon': tweet['latlong'][1],
                                 'creation_time': tweet['created_at'],
                                 'collection_id': tweet['collectionid'],
                                 'efas_trigger': collection.forecast_id,
@@ -269,6 +238,36 @@ class Products:
                                 'reprindex': tweet['representativeness'],
                                 'text': tweet.get('_normalized_text') or tweet.get('full_text') or tweet['tweet'].get('text', ''),
                                 'type': 'tweet',
+                            }))
+                    geojson.dump(FeatureCollection(out_data), sink, sort_keys=True, indent=2)
+        logger.info('>>>>>> Wrote %s', geojson_output_filename)
+        return geojson_output_filename
+
+    @classmethod
+    def write_incidents_geojson(cls, counters_by_efas_id, efas_cycle, nuts2):
+        geojson_output_filename = cls.output_incidents_filename_tpl.format(
+            '{}{}'.format(datetime.now().strftime('%Y%m%d'), efas_cycle))
+        logger.info('<<<<<< Writing %s', geojson_output_filename)
+        with cls.app.app_context():
+            with fiona.open(cls.template) as source:
+                with open(geojson_output_filename, 'w') as sink:
+                    out_data = []
+                    for feat in source:
+                        efas_id = int(feat['id'])
+                        if efas_id not in counters_by_efas_id:
+                            continue
+                        incidents = cls.get_incidents(efas_id, nuts2)
+                        if not incidents:
+                            continue
+                        for inc in incidents:
+                            geom = Geometry(
+                                coordinates=[inc['lon'], inc['lat']],
+                                type='Point',
+                            )
+                            out_data.append(Feature(geometry=geom, properties={
+                                'efas_id': efas_id,
+                                'incident': inc,
+                                'type': 'incident',
                             }))
                     geojson.dump(FeatureCollection(out_data), sink, sort_keys=True, indent=2)
         logger.info('>>>>>> Wrote %s', geojson_output_filename)
@@ -404,4 +403,3 @@ class TweetsDeduplicator:
         # Sort by multiplicity and probability of being relevant
         tweets_sorted = sorted(tweets_unique, key=lambda x: x['representativeness'], reverse=True)
         return tweets_sorted
-

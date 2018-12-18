@@ -147,26 +147,20 @@ def inc_annotated_counter(counter, probability, place_id=None):
 def run_single_aggregation(collection_id,
                            last_tweetid_collected, last_tweetid_annotated, last_tweetid_geotagged,
                            timestamp_start, timestamp_end,
-                           initial_values, initial_relevant_tweets, aggregation=None):
+                           initial_values, initial_relevant_tweets,
+                           aggregation=None):
     """
-    Calculating stats with attributes:
-    - NUTS2
-    - timestamp_start
-    - timestamp_end
-    - num_tweets_00-20
-    - num_tweets_20-40
-    - num_tweets_40-60
-    - num_tweets_60-80
-    - num_tweets_80-100
-    - NUTS2ID_num_tweets_60-80 etc.
-    :param initial_relevant_tweets:
+    Calculate stats for a collection
+
     :param collection_id:
     :param last_tweetid_collected:
     :param last_tweetid_annotated:
     :param last_tweetid_geotagged:
     :param timestamp_end:
     :param timestamp_start:
-    :param initial_values:
+    :param initial_values: counters dictionary from last execution
+    :param initial_relevant_tweets: relevant tweets from last execution
+    :param aggregation: Aggregation object
     :return:
     """
     from smfrcore.models.cassandra import Tweet
