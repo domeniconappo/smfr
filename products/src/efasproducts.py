@@ -83,7 +83,6 @@ class Products:
         # create products for on-demand active collections or recently stopped collections
         with cls.app.app_context():
             nuts2 = Nuts2.load_nuts()
-            logger.debug(nuts2.keys())
             collections = TwitterCollection.get_active_ondemand()
             collections = {c.id: c for c in collections}
 
@@ -202,7 +201,7 @@ class Products:
                             'counters': counters_by_efas_id[efas_id],
                             'type': 'heatmap',
                         }))
-                    geojson.dump(FeatureCollection(out_data), sink, sort_keys=True, indent=2)
+                geojson.dump(FeatureCollection(out_data), sink, sort_keys=True, indent=2)
         logger.info('>>>>>> Wrote %s', geojson_output_filename)
         return geojson_output_filename
 
