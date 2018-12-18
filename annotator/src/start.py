@@ -4,8 +4,8 @@ from flask import Flask
 from flask_restful import Resource, Api, marshal_with, fields, marshal_with_field
 
 from smfrcore.ml.helpers import models, models_path, logger, available_languages
-
-from annotatorcontainer import AnnotatorContainer, DEVELOPMENT
+from smfrcore.utils import IS_DEVELOPMENT
+from annotatorcontainer import AnnotatorContainer
 
 
 app = Flask(__name__)
@@ -86,6 +86,6 @@ if __name__ == 'start':
     for language in available_languages:
         # if running docker compose on a single server/development,
         # we just bootstrap Annotator EN to avoid eating the whole memory
-        if (DEVELOPMENT and language == 'en') or not DEVELOPMENT:
+        if (IS_DEVELOPMENT and language == 'en') or not IS_DEVELOPMENT:
             logger.info('----- Starting KAFKA consumer on topic: annotator_%s', language)
             AnnotatorContainer.consumer_in_background(language)

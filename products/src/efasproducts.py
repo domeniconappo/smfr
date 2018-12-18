@@ -11,7 +11,7 @@ import fiona
 from Levenshtein import ratio
 
 from smfrcore.models.sql import TwitterCollection, Aggregation, Nuts2, Product, create_app
-from smfrcore.utils import DEFAULT_HANDLER, IN_DOCKER, RGB
+from smfrcore.utils import DEFAULT_HANDLER, IN_DOCKER, RGB, IS_DEVELOPMENT
 from smfrcore.client.api_here import HereClient
 from smfrcore.client.ftp import SFTPClient
 from smfrcore.utils.text import tweet_normalization_aggressive
@@ -27,7 +27,6 @@ server = os.getenv('KAJO_FTP_SERVER', '207.180.226.197')
 user = os.getenv('KAJO_FTP_USER', 'jrc')
 password = os.getenv('KAJO_FTP_PASSWORD')
 folder = os.getenv('KAJO_FTP_FOLDER')
-DEVELOPMENT = bool(int(os.getenv('DEVELOPMENT', 0)))
 
 
 class Products:
@@ -131,7 +130,7 @@ class Products:
 
     @classmethod
     def push_products_to_sftp(cls, heatmap_file, relevant_tweets_file):
-        if not DEVELOPMENT:
+        if not IS_DEVELOPMENT:
             ftp_client = SFTPClient(server, user, password, folder)
             ftp_client.send(heatmap_file)
             ftp_client.send(relevant_tweets_file)
@@ -190,8 +189,6 @@ class Products:
                             coordinates=feat['geometry']['coordinates'],
                             type=feat['geometry']['type'],
                         )
-                        counters_by_efas_id[efas_id]['collection_id'] = None
-                        del counters_by_efas_id[efas_id]['collection_id']
                         out_data.append(Feature(geometry=geom, properties={
                             'collection_id': collection_id,
                             'efas_trigger': collection.forecast_id,
@@ -259,6 +256,8 @@ class Products:
                             )
                             out_data.append(Feature(geometry=geom, properties={
                                 'tweet_id': tweet['tweetid'],
+                                'tweet_lat': tweet['latlong'][0],
+                                'tweet_lon': tweet['latlong'][1],
                                 'creation_time': tweet['created_at'],
                                 'collection_id': tweet['collectionid'],
                                 'efas_trigger': collection.forecast_id,
@@ -405,3 +404,4 @@ class TweetsDeduplicator:
         # Sort by multiplicity and probability of being relevant
         tweets_sorted = sorted(tweets_unique, key=lambda x: x['representativeness'], reverse=True)
         return tweets_sorted
+

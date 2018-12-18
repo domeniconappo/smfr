@@ -129,18 +129,12 @@
                     }
                     break;
                     case 'tweet': {
-                        var tweet = feature.properties.tweet;
-                        lat = tweet['geo']['latitude'];
-                        lon = tweet['geo']['longitude'];
-                        if (tweet['full_text'] !== undefined) {
-                            text = tweet['full_text'];
-                        } else {
-                            text = tweet['tweet']['text'];
-                        }
-                     var tweet_text = tweet['created_at'] + '<br />' + text + '<br />' + tweet['label_predicted'];
-                     marker = L.marker([lat, lon]);
-                     marker.bindPopup(tweet_text);
-                     markers.addLayer(marker);
+                        lat = feature.properties.tweet_lat;
+                        lon = feature.properties.tweet_lon;
+                        var tweet_text = feature.properties.creation_time + '<br />' + feature.properties.text + '<br />' + feature.properties.prediction;
+                        marker = L.marker([lat, lon]);
+                        marker.bindPopup(tweet_text);
+                        markers.addLayer(marker);
                     }
                     break;
                     case 'incident': {
@@ -160,11 +154,12 @@
                     }
                     break;
                 }
-            }
+        }
+
             map.addLayer(markers);
+
             // geojson output content syntax highlight
             var outj = {{ geojson | safe }};
-
             output('#product_content',
                 syntaxHighlight(JSON.stringify(outj))
             );

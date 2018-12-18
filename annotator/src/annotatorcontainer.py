@@ -7,13 +7,11 @@ from cassandra import InvalidRequest
 from cassandra.cqlengine import ValidationError
 from kafka.errors import CommitFailedError, KafkaTimeoutError
 
+from smfrcore.utils import IS_DEVELOPMENT
 from smfrcore.utils.kafka import make_kafka_consumer, make_kafka_producer, send_to_persister
 from smfrcore.ml.helpers import models, logger, available_languages
 from smfrcore.ml.annotator import Annotator
 from smfrcore.models.cassandra import Tweet
-
-
-DEVELOPMENT = bool(int(os.getenv('DEVELOPMENT', 0)))
 
 
 class AnnotatorContainer:
@@ -70,7 +68,7 @@ class AnnotatorContainer:
                         cls._stop_signals.remove(collection_id)
                     break
 
-                if lang not in available_languages or (DEVELOPMENT and lang != 'en'):
+                if lang not in available_languages or (IS_DEVELOPMENT and lang != 'en'):
                     logger.debug('Skipping tweet %s - language %s', tweet.tweetid, lang)
                     continue
 
@@ -116,7 +114,7 @@ class AnnotatorContainer:
 
     @classmethod
     def available_models(cls):
-        return {'models': models} if not DEVELOPMENT else {'models': {'en': models['en']}}
+        return {'models': models} if not IS_DEVELOPMENT else {'models': {'en': models['en']}}
 
     @classmethod
     def counters(cls):

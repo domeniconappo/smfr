@@ -1,6 +1,6 @@
 import os
 
-from smfrcore.utils import IN_DOCKER
+from smfrcore.utils import IN_DOCKER, IS_DEVELOPMENT
 
 
 class ServerConfiguration:
@@ -9,4 +9,4 @@ class ServerConfiguration:
     restserver_host = 'localhost' if not IN_DOCKER else 'restserver'
     restserver_basepath = os.getenv('RESTSERVER_BASEPATH', '/1.0')
     restserver_baseurl = 'http://{}:{}{}'.format(restserver_host, restserver_port, restserver_basepath)
-    development = os.getenv('DEVELOPMENT', '0') in ('1', 'yes', 'Yes', 'True', 'true')
+    development =IS_DEVELOPMENT

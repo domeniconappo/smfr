@@ -16,6 +16,7 @@ from flask.json import JSONEncoder
 
 logger = logging.getLogger('SMFR utils')
 logger.setLevel(os.getenv('LOGGING_LEVEL', 'DEBUG'))
+IS_DEVELOPMENT = os.getenv('DEVELOPMENT', '0') in ('1', 'yes', 'YES', 'Yes')
 
 FALSE_VALUES = (False, 0, None, 'False', 'false', 'NO', 'no', 'No', '0', 'FALSE', 'null', 'None', 'NULL', 'NONE')
 

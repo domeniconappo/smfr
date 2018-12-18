@@ -136,8 +136,10 @@ def inc_annotated_counter(counter, probability, place_id=None):
     """
     key = functools.partial('num_tweets_{}-{}'.format) if place_id is None else functools.partial('{}_num_tweets_{}-{}'.format)
     for range_a, range_b in flood_propability_ranges:
+        counter_key = key(range_a, range_b) if place_id is None else key(place_id, range_a, range_b)
+        if counter_key not in counter:
+            counter[counter_key] = 0
         if range_a < probability <= range_b:
-            counter_key = key(range_a, range_b) if place_id is None else key(place_id, range_a, range_b)
             counter[counter_key] += 1
             break
 
