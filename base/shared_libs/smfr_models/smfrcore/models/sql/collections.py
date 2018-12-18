@@ -6,7 +6,7 @@ import arrow
 from arrow.parser import ParserError
 from cachetools import TTLCache
 from fuzzywuzzy import process, fuzz
-from sqlalchemy import Column, Integer, ForeignKey, TIMESTAMP, Boolean, BigInteger, orm, or_
+from sqlalchemy import Column, Integer, ForeignKey, TIMESTAMP, Boolean, BigInteger, orm
 from sqlalchemy_utils import ChoiceType, ScalarListType, JSONType, Choice
 
 from .base import sqldb, SMFRModel, LongJSONType
@@ -299,6 +299,10 @@ class TwitterCollection(SMFRModel):
             res = cls.query.get(collection_id)
             cls.cache[key] = res
         return res
+
+    @classmethod
+    def get_collections(cls, collection_ids):
+        return cls.query.filter(cls.id.in_(collection_ids)).all()
 
     def deactivate(self):
         self.status = self.INACTIVE_CHOICE

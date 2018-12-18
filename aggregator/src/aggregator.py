@@ -113,9 +113,7 @@ def find_collections_to_aggregate(running_conf):
     elif running_conf.background:
         collections_to_aggregate = TwitterCollection.get_active_background()
     elif running_conf.collections:
-        collections_to_aggregate = TwitterCollection.query.filter(
-            TwitterCollection.id.in_(running_conf.collections)
-        ).all()
+        collections_to_aggregate = TwitterCollection.get_collections(running_conf.collections)
     else:
         raise ValueError('Aggregator must be started with a parameter: '
                          '[-c id1,...,idN | -r (running)| -a (all) | -b (background)]')
