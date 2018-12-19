@@ -202,6 +202,7 @@ class Products:
                             'risk_color': risk_color,
                             'smfr_flood_index': flood_index,
                             'counters': counters_by_efas_id[efas_id],
+                            'representative_tweets': [],
                             'type': 'heatmap',
                         }))
                     geojson.dump(FeatureCollection(out_data), sink, sort_keys=True, indent=2)
@@ -313,8 +314,8 @@ class Products:
     def apply_heuristic(cls, counters):
         """
         # GRAY   - Less than 10 high relevant tweets
-        # ORANGE - #highrel > 1/9 * #midrel
-        # RED    - 1/9 * #midrel > #highrel > 1/5 * #midrel
+        # ORANGE - 1/5 * #midrel > #highrel > 1/9 * #midrel
+        # RED    - #highrel > 1/5 * #midrel
         """
         heuristics = list(map(int, cls.alert_heuristic.split(':')))
         gray_th = heuristics[0]  # 10

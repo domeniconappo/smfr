@@ -78,31 +78,25 @@
 
             var table = document.createElement("table");
             table.style.border = "solid #CCCCCC";
+
             //Add a header
             var header = document.createElement("tr");
-
-            var idHeaderCell = document.createElement("th");
             var nameHeaderCell = document.createElement("th");
             var relevanceHeaderCell = document.createElement("th");
-
-            header.appendChild(idHeaderCell);
+            nameHeaderCell.appendChild(document.createTextNode(" - Range - "));
+            relevanceHeaderCell.appendChild(document.createTextNode(" - Count - "));
             header.appendChild(nameHeaderCell);
             header.appendChild(relevanceHeaderCell);
-
             table.appendChild(header);
 
             //Add the rest of the data to the table
             $.each(counters, function(k, v) {
                 var tr = document.createElement("tr");
-
-                var idCell = document.createElement("td");
                 var nameCell = document.createElement("td");
                 var relevanceCell = document.createElement("td");
-                idCell.appendChild(document.createTextNode(" - "));
-                nameCell.appendChild(document.createTextNode(k));
-                relevanceCell.appendChild(document.createTextNode(v));
+                nameCell.appendChild(document.createTextNode('  ' + k + '  '));
+                relevanceCell.appendChild(document.createTextNode('   ' + v + '   '));
 
-                tr.appendChild(idCell);
                 tr.appendChild(nameCell);
                 tr.appendChild(relevanceCell);
                 tr.style.background = "#EEEEEE";
@@ -112,7 +106,6 @@
                 }
             );
             return table.outerHTML;
-
         }
 
         $(document).ready(function() {
@@ -162,11 +155,11 @@
                 switch (feature.properties.type) {
                     case 'heatmap': {
                         {#counters = JSON.stringify(feature.properties.counters);#}
-                        text = '<b>Collection ' + feature.properties.collection_id + '</b><br />'
-                                + '<b>Risk ' + feature.properties.smfr_flood_index + '</b><br />'
-                                + '<b>EFAS Region ' + feature.properties.efas_id + '</b><br />'
-                                + '<b>Trigger ' + feature.properties.efas_trigger + '</b><br />'
-                                + '<b>EFAS Name ' + feature.properties.efas_name + '</b><br /><br /><hr />'
+                        text = '<b>Collection <a target="_blank" href="/details/">' + feature.properties.collection_id + '</a></b><br />'
+                                + '<b>Risk</b> ' + feature.properties.smfr_flood_index + '<br />'
+                                + '<b>EFAS Region</b> ' + feature.properties.efas_id + '<br />'
+                                + '<b>Trigger</b> ' + feature.properties.efas_trigger + '<br />'
+                                + '<b>EFAS Name</b> ' + feature.properties.efas_name + '<br /><br /><hr />'
                                 + makeTableFromDict(feature.properties.counters);
                         layer.bindPopup(text);
                     }

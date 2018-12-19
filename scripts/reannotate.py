@@ -1,10 +1,11 @@
-import sys
 import logging
+import multiprocessing
 
 from smfrcore.models.cassandra import Tweet
 from smfrcore.client.api_client import AnnotatorClient
 from smfrcore.utils import DEFAULT_HANDLER
 from smfrcore.ml.annotator import Annotator
+from smfrcore.geocoding.geocoder import Geocoder
 
 from scripts.utils import ParserHelpOnError
 
@@ -22,8 +23,33 @@ def add_args(parser):
     parser.add_argument('-t', '--ttype', help='Which type of stored tweets to export',
                         choices=["annotated", "collected", "geotagged"], default='annotated',
                         metavar='ttype', required=True)
-    parser.add_argument('-l', '--lang', help='Optional, language of tweets to export',
-                        metavar='language', default='en')
+
+
+def process(conf, lang):
+    geocoder = Geocoder()
+    tweets = Tweet.get_iterator(conf.collection_id, conf.ttype, lang=lang, out_format='obj', forked_process=True)
+    model, tokenizer = Annotator.load_annotation_model(lang)
+    for i, t in enumerate(tweets, start=1):
+        if not (i % 100):
+            logger.info('Processed so far %d', i)
+        buffer_to_annotate.append(t)
+        previous_annotation[t.tweetid] = t.annotations['flood_probability'][0]
+        if len(buffer_to_annotate) >= 100:
+            annotate_tweets(buffer_to_annotate, model, tokenizer, geocoder)
+            buffer_to_annotate.clear()
+    if buffer_to_annotate:
+        annotate_tweets(buffer_to_annotate, model, tokenizer, geocoder)
+        buffer_to_annotate.clear()
+
+
+def coords_in_collection_bbox(coordinates, tweet):
+    if not tweet.is_ondemand:
+        return True
+    bbox = tweet.collection_bbox
+    if not bbox:
+        return True
+    lat, lon = coordinates
+    return bbox['max_lat'] >= lat >= bbox['min_lat'] and bbox['max_lon'] >= lon >= bbox['min_lon']
 
 
 def main():
@@ -32,26 +58,31 @@ def main():
 
     add_args(parser)
     conf = parser.parse_args()
+    logger.info(conf)
     available_languages = AnnotatorClient.available_languages()
-    if conf.lang not in available_languages:
-        sys.exit('Cannot annotate: model not available %s' % conf.lang)
-    tweets = Tweet.get_iterator(conf.collection_id, conf.ttype, conf.lang, out_format='obj')
-    model, tokenizer = Annotator.load_annotation_model(conf.lang)
-
-    for i, t in enumerate(tweets, start=1):
-        buffer_to_annotate.append(t)
-        previous_annotation[t.tweetid] = t.annotations['flood_probability'][0]
-        if len(buffer_to_annotate) >= 100:
-            annotate_tweets(buffer_to_annotate, model, tokenizer)
-            buffer_to_annotate.clear()
-
-    if buffer_to_annotate:
-        annotate_tweets(buffer_to_annotate, model, tokenizer)
+    logger.info(available_languages.keys())
+    processes = []
+    for lang in available_languages:
+        logger.info('Starting annotation for %s', lang)
+        p = multiprocessing.Process(target=process, args=(conf, lang), name='Annotator-{}'.format(lang))
+        processes.append(p)
+        p.daemon = True
+        p.start()
+    for p in processes:
+        logger.info('Joining %s', p.name)
+        p.join()
 
 
-def annotate_tweets(tweets_to_annotate, model, tokenizer):
+def annotate_tweets(tweets_to_annotate, model, tokenizer, geocoder):
     annotated_tweets = Annotator.annotate(model, tweets_to_annotate, tokenizer)
     for tweet in annotated_tweets:
         if previous_annotation[tweet.tweetid] != tweet.annotations['flood_probability'][0]:
             logger.warning('%s -> old: %s new: %s', tweet.tweetid, previous_annotation[tweet.tweetid], tweet.annotations['flood_probability'][0])
+        coordinates, nuts2, nuts_source, country_code, place, geonameid = geocoder.find_nuts_heuristic(tweet)
+        if not coordinates:
+            logger.debug('No coordinates for %s...skipping', tweet.tweetid)
+        elif not coords_in_collection_bbox(coordinates, tweet):
+            logger.debug('Out of bbox for %s...skipping', tweet.tweetid)
+        else:
+            tweet.set_geo(coordinates, nuts2, nuts_source, country_code, place, geonameid)
         tweet.save()
