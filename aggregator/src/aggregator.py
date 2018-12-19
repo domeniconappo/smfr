@@ -192,7 +192,8 @@ def run_single_aggregation(collection_id,
         running_aggregators.add(collection_id)
 
         try:
-            collected_tweets = Tweet.get_iterator(collection_id, 'collected', last_tweetid=last_tweetid_collected)
+            logger.info('[+] Counting collected')
+            collected_tweets = Tweet.get_iterator(collection_id, Tweet.COLLECTED_TYPE, last_tweetid=last_tweetid_collected)
             for t in collected_tweets:
                 max_collected_tweetid = max(max_collected_tweetid, t.tweet_id)
                 last_timestamp_start = min(last_timestamp_start, t.created_at)
@@ -205,7 +206,8 @@ def run_single_aggregation(collection_id,
             aggregation.values = dict(counter)
             aggregation.save()
 
-            annotated_tweets = Tweet.get_iterator(collection_id, 'annotated', last_tweetid=last_tweetid_annotated)
+            annotated_tweets = Tweet.get_iterator(collection_id, Tweet.ANNOTATED_TYPE, last_tweetid=last_tweetid_annotated)
+            logger.info('[+] Counting annotated')
             for t in annotated_tweets:
                 max_annotated_tweetid = max(max_annotated_tweetid, t.tweet_id)
                 counter['annotated'] += 1
@@ -215,7 +217,8 @@ def run_single_aggregation(collection_id,
             aggregation.values = dict(counter)
             aggregation.save()
 
-            geotagged_tweets = Tweet.get_iterator(collection_id, 'geotagged', last_tweetid=last_tweetid_geotagged)
+            geotagged_tweets = Tweet.get_iterator(collection_id, Tweet.GEOTAGGED_TYPE, last_tweetid=last_tweetid_geotagged)
+            logger.info('[+] Counting geotagged')
             for t in geotagged_tweets:
                 max_geotagged_tweetid = max(max_geotagged_tweetid, t.tweet_id)
                 counter['geotagged'] += 1
@@ -238,10 +241,10 @@ def run_single_aggregation(collection_id,
             logger.error('ERROR during aggregation collection %d: error: %s %s', collection_id, type(e), e)
             running_aggregators.remove(collection_id)
             return 1
-
-        running_aggregators.remove(collection_id)
-        logger.info(' <<<<<<<<<<< Aggregation terminated for collection %d', collection_id)
-        return 0
+        else:
+            running_aggregators.remove(collection_id)
+            logger.info(' <<<<<<<<<<< Aggregation terminated for collection %d', collection_id)
+            return 0
 
 
 def pretty_running_conf(conf):

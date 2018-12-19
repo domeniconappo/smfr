@@ -163,7 +163,12 @@
                 switch (feature.properties.type) {
                     case 'heatmap': {
                         {#counters = JSON.stringify(feature.properties.counters);#}
-                        text = '<br /><h4>EFAS Region ' + feature.properties.efas_id + '</h4><br />' + makeTableFromDict(feature.properties.counters);
+                        text = '<b>Collection ' + feature.properties.collection_id + '</b><br />'
+                                + '<b>Risk ' + feature.properties.smfr_flood_index + '</b><br />'
+                                + '<b>EFAS Region ' + feature.properties.efas_id + '</b><br />'
+                                + '<b>Trigger ' + feature.properties.efas_trigger + '</b><br />'
+                                + '<b>EFAS Name ' + feature.properties.efas_name + '</b><br /><br /><hr />'
+                                + makeTableFromDict(feature.properties.counters);
                         layer.bindPopup(text);
                     }
                     break;

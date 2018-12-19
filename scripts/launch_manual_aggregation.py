@@ -24,6 +24,8 @@ def do():
         aggregation = Aggregation(collection_id=collection_id, values={}, relevant_tweets={})
         aggregation.save()
 
+    print(aggregation)
+
     run_single_aggregation(collection_id, aggregation.last_tweetid_collected,
                            aggregation.last_tweetid_annotated,
                            aggregation.last_tweetid_geotagged,

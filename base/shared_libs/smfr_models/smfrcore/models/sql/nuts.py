@@ -37,7 +37,7 @@ class Nuts2(SMFRModel):
     @classmethod
     def load_nuts(cls):
         rows = cls.query.all()
-        cls._preloaded = {r.id: r for r in rows}
+        cls._preloaded = {r.efas_id: r for r in rows}
         return cls._preloaded
 
     @classmethod
