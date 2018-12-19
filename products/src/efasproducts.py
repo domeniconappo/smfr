@@ -44,11 +44,12 @@ class Products:
     out_crs = dict(type='EPSG', properties=dict(code=4326, coordinate_order=[1, 0]))
     high_prob_range = os.getenv('HIGH_PROB_RANGE', '90-100')
     low_prob_range = os.getenv('LOW_PROB_RANGE', '0-10')
+    mid_prob_range = os.getenv('MID_PROB_RANGE', '10-90')
 
-    # this variable reflects the following heuristic (e.g. considering default 10:5:9):
-    # GREEN - less than 10 high relevant tweets
-    # ORANGE - num of high rel > 5 * num low rel
-    # RED - num of high rel > 9 * num low rel
+    # This variable reflects the following heuristic (e.g. considering default 10:5:9)
+    # GRAY   - Less than 10 high relevant tweets
+    # ORANGE - #highrel > 1/9 * #midrel
+    # RED    - 1/9 * #midrel > #highrel > 1/5 * #midrel
     alert_heuristic = os.getenv('THRESHOLDS', '10:5:9')
 
     max_relevant_tweets = int(os.getenv('NUM_RELEVANT_TWEETS_PRODUCTS', 5))
@@ -65,17 +66,19 @@ class Products:
     @classmethod
     def log_config(cls):
         heuristics = cls.alert_heuristic.split(':')
-        logger.info('=================================')
-        logger.info('Products configuration:')
-        logger.info('High Probability range %s', cls.high_prob_range)
-        logger.info('Low Probability range %s', cls.low_prob_range)
+        logger.info('===============================================================================================')
+        logger.info('Products configuration')
+        logger.info('-----------------------')
+        logger.info('High relevance probability range %s', cls.high_prob_range)
+        logger.info('Medium relevance probability range %s', cls.mid_prob_range)
+        logger.info('Low relevance probability range %s', cls.low_prob_range)
         logger.info('Alert thresholds: ')
         logger.info('Gray: less than %s relevant tweets or '
-                    'Num of high prob. relevant tweets <= %s Num of low prob. relevant tweets',
-                    heuristics[0], heuristics[1])
-        logger.info('Orange: Num of high prob. relevant tweets > %s Num of low prob. relevant tweets', heuristics[1])
-        logger.info('Red: Num of high prob. relevant tweets > %s Num of low prob. relevant tweets', heuristics[2])
-        logger.info('=================================')
+                    'Num of high prob. relevant tweets <= 1/%s Num of mid prob. relevant tweets',
+                    heuristics[0], heuristics[2])
+        logger.info('Orange: Num of high prob. relevant tweets > 1/%s Num of mid prob. relevant tweets', heuristics[2])
+        logger.info('Red: Num of high prob. relevant tweets > 1/%s Num of mid prob. relevant tweets', heuristics[1])
+        logger.info('===============================================================================================')
 
     @classmethod
     def produce(cls, efas_cycle='12'):
@@ -183,7 +186,7 @@ class Products:
                         collection = collections[collection_id]
                         efas_nuts2 = nuts2.get(efas_id) or Nuts2.get_by_efas_id(efas_id)
                         efas_name = efas_nuts2.efas_name
-                        color_str, risk_color = cls.determine_color(counters_by_efas_id[efas_id])
+                        color_str, risk_color = cls.apply_heuristic(counters_by_efas_id[efas_id])
                         flood_index = cls.flood_indexes[color_str]
                         geom = Geometry(
                             coordinates=feat['geometry']['coordinates'],
@@ -192,6 +195,7 @@ class Products:
                         out_data.append(Feature(geometry=geom, properties={
                             'collection_id': collection_id,
                             'efas_trigger': collection.forecast_id,
+                            'stopdate': collection.runtime if collection.runtime and collection.is_active else collection.stopped_at,
                             'efas_id': efas_id,
                             'efas_name': efas_name,
                             'risk_color': risk_color,
@@ -305,18 +309,21 @@ class Products:
         return cls.is_efas_id(tokens[0]) and int(tokens[0]) == efas_id
 
     @classmethod
-    def determine_color(cls, counters):
+    def apply_heuristic(cls, counters):
+        """
+        # GRAY   - Less than 10 high relevant tweets
+        # ORANGE - #highrel > 1/9 * #midrel
+        # RED    - 1/9 * #midrel > #highrel > 1/5 * #midrel
+        """
         heuristics = list(map(int, cls.alert_heuristic.split(':')))
-        gray_th = heuristics[0]
-        orange_th = heuristics[1]
-        red_th = heuristics[2]
+        gray_th = heuristics[0]  # 10
+        red_th = heuristics[1]  # 5
+        orange_th = heuristics[2]  # 9
         color = 'gray'
         if counters.get(cls.high_prob_range, 0) >= gray_th:
-            if orange_th * counters.get(cls.low_prob_range, 0) < counters.get(cls.high_prob_range,
-                                                                              0) <= red_th * counters.get(
-                    cls.low_prob_range, 0):
+            if 1/orange_th * counters.get(cls.mid_prob_range, 0) <= counters.get(cls.high_prob_range, 0) < 1/red_th * counters.get(cls.mid_prob_range, 0):
                 color = 'orange'
-            elif counters.get(cls.high_prob_range, 0) > red_th * counters.get(cls.low_prob_range, 0):
+            elif counters.get(cls.high_prob_range, 0) >= 1/red_th * counters.get(cls.mid_prob_range, 0):
                 color = 'red'
         return color, RGB[color]
 
