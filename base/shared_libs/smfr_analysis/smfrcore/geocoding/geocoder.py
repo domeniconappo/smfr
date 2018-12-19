@@ -175,5 +175,5 @@ class Geocoder:
                     place = mention[3]
                     geonameid = mention[4]
         elif len(mentions) == 1:
-            coordinates, nuts2, nuts_source, country_code, place, geonameid = self._nuts_from_one_mention(mentions)
+            coordinates, nuts2, nuts_source, country_code, place, geonameid = self._nuts_from_one_mention(mentions, efas_id)
         return coordinates, nuts2, nuts_source, country_code, place, geonameid

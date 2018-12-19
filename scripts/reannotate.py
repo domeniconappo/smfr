@@ -1,10 +1,12 @@
+import sys
 import logging
 import multiprocessing
 
+from smfrcore.models.sql import create_app
 from smfrcore.models.cassandra import Tweet
-from smfrcore.client.api_client import AnnotatorClient
 from smfrcore.utils import DEFAULT_HANDLER
 from smfrcore.ml.annotator import Annotator
+from smfrcore.ml.helpers import available_languages
 from smfrcore.geocoding.geocoder import Geocoder
 
 from scripts.utils import ParserHelpOnError
@@ -22,24 +24,28 @@ def add_args(parser):
                         metavar='collection_id', required=True)
     parser.add_argument('-t', '--ttype', help='Which type of stored tweets to export',
                         choices=["annotated", "collected", "geotagged"], default='annotated',
-                        metavar='ttype', required=True)
+                        metavar='ttype')
 
 
 def process(conf, lang):
-    geocoder = Geocoder()
-    tweets = Tweet.get_iterator(conf.collection_id, conf.ttype, lang=lang, out_format='obj', forked_process=True)
-    model, tokenizer = Annotator.load_annotation_model(lang)
-    for i, t in enumerate(tweets, start=1):
-        if not (i % 100):
-            logger.info('Processed so far %d', i)
-        buffer_to_annotate.append(t)
-        previous_annotation[t.tweetid] = t.annotations['flood_probability'][0]
-        if len(buffer_to_annotate) >= 100:
-            annotate_tweets(buffer_to_annotate, model, tokenizer, geocoder)
+    app = create_app()
+    with app.app_context():
+        geocoder = Geocoder()
+        tweets = Tweet.get_iterator(conf.collection_id, conf.ttype, lang=lang, out_format='obj', forked_process=True)
+        model, tokenizer = Annotator.load_annotation_model(lang)
+        for i, t in enumerate(tweets, start=1):
+            if not (i % 500):
+                logger.info('Processed so far %d', i)
+            buffer_to_annotate.append(t)
+            previous_annotation[t.tweetid] = t.annotations['flood_probability'][0]
+            if len(buffer_to_annotate) >= 100:
+                annotate_and_geocode_tweets(buffer_to_annotate, model, tokenizer, geocoder)
+                buffer_to_annotate.clear()
+        # flush the rest
+        if buffer_to_annotate:
+            annotate_and_geocode_tweets(buffer_to_annotate, model, tokenizer, geocoder)
             buffer_to_annotate.clear()
-    if buffer_to_annotate:
-        annotate_tweets(buffer_to_annotate, model, tokenizer, geocoder)
-        buffer_to_annotate.clear()
+    logger.info('Finished processing for lang: %s', lang)
 
 
 def coords_in_collection_bbox(coordinates, tweet):
@@ -59,8 +65,7 @@ def main():
     add_args(parser)
     conf = parser.parse_args()
     logger.info(conf)
-    available_languages = AnnotatorClient.available_languages()
-    logger.info(available_languages.keys())
+    logger.info(available_languages)
     processes = []
     for lang in available_languages:
         logger.info('Starting annotation for %s', lang)
@@ -73,11 +78,16 @@ def main():
         p.join()
 
 
-def annotate_tweets(tweets_to_annotate, model, tokenizer, geocoder):
+def annotate_and_geocode_tweets(tweets_to_annotate, model, tokenizer, geocoder):
     annotated_tweets = Annotator.annotate(model, tweets_to_annotate, tokenizer)
     for tweet in annotated_tweets:
         if previous_annotation[tweet.tweetid] != tweet.annotations['flood_probability'][0]:
             logger.warning('%s -> old: %s new: %s', tweet.tweetid, previous_annotation[tweet.tweetid], tweet.annotations['flood_probability'][0])
+        tweet.save()
+
+        tweet.ttype = Tweet.GEOTAGGED_TYPE
+        tweet.geo = {}
+        tweet.latlong = None
         coordinates, nuts2, nuts_source, country_code, place, geonameid = geocoder.find_nuts_heuristic(tweet)
         if not coordinates:
             logger.debug('No coordinates for %s...skipping', tweet.tweetid)
@@ -86,3 +96,7 @@ def annotate_tweets(tweets_to_annotate, model, tokenizer, geocoder):
         else:
             tweet.set_geo(coordinates, nuts2, nuts_source, country_code, place, geonameid)
         tweet.save()
+
+
+if __name__ == '__main__':
+    sys.exit(main())

@@ -8,7 +8,7 @@ from smfrcore.utils import IN_DOCKER, DEFAULT_HANDLER
 
 CNN_MAX_SEQUENCE_LENGTH = 100
 
-models_path = os.path.join(os.getenv('MODELS_PATH', '/'), 'models') if IN_DOCKER else os.path.join(os.path.dirname(__file__), '../models/models')
+models_path = os.path.join(os.getenv('MODELS_PATH', '/'), 'models') if IN_DOCKER else os.path.join('./annotator/', 'models/models')
 current_models_mapping = os.path.join(models_path, 'current-model.json')
 
 logger = logging.getLogger('ANNOTATOR')
@@ -37,8 +37,8 @@ def update_models():
 
     git_query = Popen(git_command, cwd=repository, stdout=PIPE, stderr=PIPE)
     git_status, error = git_query.communicate()
-    logger.info(git_status)
     logger.info(error)
+    logger.info(git_status)
     return models_by_language(current_models_mapping)
 
 

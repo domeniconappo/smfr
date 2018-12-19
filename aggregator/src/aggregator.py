@@ -224,6 +224,8 @@ def run_single_aggregation(collection_id,
             logger.info('[+] Counting geotagged')
             for t in geotagged_tweets:
                 max_geotagged_tweetid = max(max_geotagged_tweetid, t.tweet_id)
+                if not t.geo:
+                    continue
                 counter['geotagged'] += 1
                 counter['{}_geotagged'.format(t.lang)] += 1
                 geoloc_id = t.geo['nuts_efas_id'] or 'G%s' % (t.geo['geonameid'] or '-')

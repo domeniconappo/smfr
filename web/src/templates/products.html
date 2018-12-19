@@ -155,7 +155,9 @@
                 switch (feature.properties.type) {
                     case 'heatmap': {
                         {#counters = JSON.stringify(feature.properties.counters);#}
-                        text = '<b>Collection <a target="_blank" href="/details/">' + feature.properties.collection_id + '</a></b><br />'
+                        text = '<b>Collection <a target="_blank" href="/details/' +
+                                       feature.properties.collection_id + '">' +
+                                       feature.properties.collection_id + '</a></b><br />'
                                 + '<b>Risk</b> ' + feature.properties.smfr_flood_index + '<br />'
                                 + '<b>EFAS Region</b> ' + feature.properties.efas_id + '<br />'
                                 + '<b>Trigger</b> ' + feature.properties.efas_trigger + '<br />'
