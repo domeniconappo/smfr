@@ -188,6 +188,7 @@ class Products:
                         efas_name = efas_nuts2.efas_name
                         color_str, risk_color = cls.apply_heuristic(counters_by_efas_id[efas_id])
                         flood_index = cls.flood_indexes[color_str]
+                        stopdate = collection.runtime if collection.runtime and collection.is_active else collection.stopped_at
                         geom = Geometry(
                             coordinates=feat['geometry']['coordinates'],
                             type=feat['geometry']['type'],
@@ -195,7 +196,7 @@ class Products:
                         out_data.append(Feature(geometry=geom, properties={
                             'collection_id': collection_id,
                             'efas_trigger': collection.forecast_id,
-                            'stopdate': collection.runtime if collection.runtime and collection.is_active else collection.stopped_at,
+                            'stopdate': stopdate.strftime('%Y%m%d') if stopdate else '',
                             'efas_id': efas_id,
                             'efas_name': efas_name,
                             'risk_color': risk_color,

@@ -139,6 +139,9 @@ def inc_annotated_counter(counter, probability, place_id=None):
             counter[counter_key] = 0
         if range_a < probability <= range_b:
             counter[counter_key] += 1
+            if place_id:
+                other_counter_key = 'geotagged_{}-{}'.format(range_a, range_b)
+                counter[other_counter_key] += 1
             break
 
 

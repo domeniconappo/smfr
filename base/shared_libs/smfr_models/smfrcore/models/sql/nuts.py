@@ -170,34 +170,52 @@ class Nuts2Finder:
         return point.within(poly)
 
     @classmethod
-    def find_nuts2_by_point(cls, lat, lon):
+    def find_nuts2_by_point(cls, lat, lon, check_first=None):
         """
         Check if a point (lat, lon) is in a NUTS2 region and returns its id. None otherwise.
         :param lat: Latitude of a point
-        :rtype lat: float
+        :type lat: float
         :param lon: Longitute of a point
-        :rtype lon: float
+        :type lon: float
+        :param check_first: efas_id of the efas region to check first.
+               It's tipically the efas id associated to the collection which the tweet belongs to
+        :type: int
         :return: Nuts2 object
-
         """
         if lat is None or lon is None:
             return None
-
+        nuts2 = None
         lat, lon = float(lat), float(lon)
         point = Point(lon, lat)
-        nuts2_candidates = Nuts2.get_nuts2(lat, lon)
 
-        for nuts2 in nuts2_candidates:
-            geometry = nuts2.geometry[0]
-            try:
-                if cls._is_in_poly(point, geometry):
-                    return nuts2
-            except ValueError:
-                for subgeometry in geometry:
-                    if cls._is_in_poly(point, subgeometry):
-                        return nuts2
+        if check_first:
+            nuts2_to_check_first = Nuts2.get_by_efas_id(check_first)
+            if nuts2_to_check_first:
+                geometry = nuts2_to_check_first.geometry[0]
+                try:
+                    if cls._is_in_poly(point, geometry):
+                        nuts2 = nuts2_to_check_first
+                except ValueError:
+                    for subgeometry in geometry:
+                        if cls._is_in_poly(point, subgeometry):
+                            nuts2 = nuts2_to_check_first
 
-        return None
+        if not nuts2:
+            nuts2_candidates = Nuts2.get_nuts2(lat, lon)
+            for n in nuts2_candidates:
+                geometry = n.geometry[0]
+                try:
+                    if cls._is_in_poly(point, geometry):
+                        nuts2 = n
+                        break
+                except ValueError:
+                    for subgeometry in geometry:
+                        if cls._is_in_poly(point, subgeometry):
+                            nuts2 = n
+                            break
+                    if nuts2:
+                        break
+        return nuts2
 
     @classmethod
     def find_country(cls, code):

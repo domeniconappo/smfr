@@ -97,9 +97,9 @@ class Geocoder:
 
         if tweet_coords != (None, None):
 
-            coordinates, nuts2, nuts_source, country_code, place, geonameid = self._nuts_from_tweet_coords(mentions, tweet_coords)
+            coordinates, nuts2, nuts_source, country_code, place, geonameid = self._nuts_from_tweet_coords(mentions, tweet_coords, tweet.collection.efas_id)
         elif len(mentions) == 1:
-            coordinates, nuts2, nuts_source, country_code, place, geonameid = self._nuts_from_one_mention(mentions)
+            coordinates, nuts2, nuts_source, country_code, place, geonameid = self._nuts_from_one_mention(mentions, tweet.collection.efas_id)
         elif user_location:
             # no geolocated tweet and one or more mentions...try to get location from user
             coordinates, nuts2, nuts_source, country_code, place, geonameid = self._nuts_from_user_location(mentions, user_location)
@@ -136,7 +136,7 @@ class Geocoder:
                     break
         return coordinates, nuts2, nuts_source, country_code, place, geonameid
 
-    def _nuts_from_one_mention(self, mentions):
+    def _nuts_from_one_mention(self, mentions, efas_id):
         nuts2 = None
         mention = mentions[0]
         coordinates = mention[0], mention[1]
@@ -144,18 +144,18 @@ class Geocoder:
         place = mention[3]
         geonameid = mention[4]
         nuts_source = 'mentions'
-        nuts2mention = Nuts2Finder.find_nuts2_by_point(*coordinates)
+        nuts2mention = Nuts2Finder.find_nuts2_by_point(*coordinates, check_first=efas_id)
         if nuts2mention:
             nuts2 = nuts2mention
         return coordinates, nuts2, nuts_source, country_code, place, geonameid
 
-    def _nuts_from_tweet_coords(self, mentions, tweet_coords):
+    def _nuts_from_tweet_coords(self, mentions, tweet_coords, efas_id):
         nuts2, country_code, place, geonameid = None, '', '', ''
 
         coordinates = tweet_coords
         nuts_source = 'coordinates'
 
-        nuts2tweet = Nuts2Finder.find_nuts2_by_point(*tweet_coords)
+        nuts2tweet = Nuts2Finder.find_nuts2_by_point(*tweet_coords, check_first=efas_id)
 
         if not nuts2tweet:
             return coordinates, nuts2, nuts_source, country_code, place, geonameid
@@ -166,7 +166,7 @@ class Geocoder:
             for mention in mentions:
                 # checking the list of mentioned places coordinates
                 latlong = mention[0], mention[1]
-                nuts2mention = Nuts2Finder.find_nuts2_by_point(*latlong)
+                nuts2mention = Nuts2Finder.find_nuts2_by_point(*latlong, check_first=efas_id)
                 if nuts2mention and nuts2tweet.id == nuts2mention.id:
                     coordinates = latlong
                     nuts2 = nuts2tweet
