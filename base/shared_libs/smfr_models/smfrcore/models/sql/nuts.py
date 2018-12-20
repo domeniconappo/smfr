@@ -166,8 +166,12 @@ class Nuts2Finder:
 
     @classmethod
     def _is_in_poly(cls, point, geo):
-        poly = Polygon(geo)
-        return point.within(poly)
+        try:
+            poly = Polygon(geo)
+        except AssertionError:
+            return False
+        else:
+            return point.within(poly)
 
     @classmethod
     def find_nuts2_by_point(cls, lat, lon, check_first=None):

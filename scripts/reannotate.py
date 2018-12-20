@@ -67,7 +67,7 @@ def main():
     Tweet.objects(collectionid=conf.collection_id, ttype=Tweet.GEOTAGGED_TYPE).batch(b).delete()
     Tweet.objects(collectionid=conf.collection_id, ttype=Tweet.ANNOTATED_TYPE).batch(b).delete()
     b.execute()
-    print('>>>> Deleted geotagged tweets from collection {}'.format(conf.collection_id))
+    print('>>>> Deleted annotated and geotagged tweets from collection {}'.format(conf.collection_id))
     processes = []
     for lang in available_languages:
         logger.info('Starting annotation for %s', lang)
