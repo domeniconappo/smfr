@@ -18,7 +18,19 @@ def perform_aggregation(collection_id):
     if not aggregation:
         aggregation = Aggregation(collection_id=collection_id, values={}, relevant_tweets={})
         aggregation.save()
+    else:
+        print('>>>> Reset aggregations for collection {}'.format(collection_id))
+        aggregation.values = {}
+        aggregation.relevant_tweets = {}
+        aggregation.last_tweetid_collected = None
+        aggregation.last_tweetid_annotated = None
+        aggregation.last_tweetid_geotagged = None
+        aggregation.timestamp_start = None
+        aggregation.timestamp_end = None
+        aggregation.save()
+
     print(aggregation)
+    print('>>>> Performing aggregation for collection {}'.format(collection_id))
     run_single_aggregation(collection_id, aggregation.last_tweetid_collected,
                            aggregation.last_tweetid_annotated,
                            aggregation.last_tweetid_geotagged,
