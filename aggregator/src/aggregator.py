@@ -142,7 +142,6 @@ def inc_annotated_counter(counter, probability, place_id=None):
             if place_id:
                 other_counter_key = 'geotagged_{}-{}'.format(range_a, range_b)
                 counter[other_counter_key] += 1
-            break
 
 
 def run_single_aggregation(collection_id,

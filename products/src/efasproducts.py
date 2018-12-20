@@ -37,10 +37,10 @@ class Products:
     output_folder = '/output' if IN_DOCKER else os.path.join(os.path.dirname(__file__), '../output')
 
     template = os.path.join(config_folder, 'maptemplate.shp')
-    output_filename_tpl = os.path.join(output_folder, 'SMFR_products_{}.geojson')
-    output_heatmap_filename_tpl = os.path.join(output_folder, 'heatmaps/SMFR_heatmaps_{}.geojson')
-    output_incidents_filename_tpl = os.path.join(output_folder, 'incidents/SMFR_incidents_{}.geojson')
-    output_relevant_tweets_filename_tpl = os.path.join(output_folder, 'tweets/SMFR_tweets_{}.geojson')
+    output_filename_tpl = os.path.join(output_folder, 'SMFR_products_{}.json')
+    output_heatmap_filename_tpl = os.path.join(output_folder, 'heatmaps/SMFR_heatmaps_{}.json')
+    output_incidents_filename_tpl = os.path.join(output_folder, 'incidents/SMFR_incidents_{}.json')
+    output_relevant_tweets_filename_tpl = os.path.join(output_folder, 'tweets/SMFR_tweets_{}.json')
     out_crs = dict(type='EPSG', properties=dict(code=4326, coordinate_order=[1, 0]))
     high_prob_range = os.getenv('HIGH_PROB_RANGE', '90-100')
     low_prob_range = os.getenv('LOW_PROB_RANGE', '0-10')
@@ -63,6 +63,9 @@ class Products:
     here_client = HereClient()
     app = create_app()
 
+    with app.app_context():
+        nuts2 = Nuts2.load_nuts()
+
     @classmethod
     def log_config(cls):
         heuristics = cls.alert_heuristic.split(':')
@@ -84,7 +87,6 @@ class Products:
     def produce(cls, efas_cycle='12'):
         # create products for on-demand active collections or recently stopped collections
         with cls.app.app_context():
-            nuts2 = Nuts2.load_nuts()
             collections = TwitterCollection.get_active_ondemand()
             collections = {c.id: c for c in collections}
 
@@ -125,10 +127,10 @@ class Products:
             probs_interval = tokens[-1]
             counters_by_efas_id[efas_id][probs_interval] = value
 
-        heatmap_file = cls.write_heatmap_geojson(counters_by_efas_id, efas_cycle, nuts2, collections)
-        relevant_tweets_file = cls.write_relevant_tweets_geojson(relevant_tweets_output, efas_cycle, nuts2, collections)
+        heatmap_file = cls.write_heatmap_geojson(counters_by_efas_id, efas_cycle, collections, relevant_tweets_output)
+        relevant_tweets_file = cls.write_relevant_tweets_geojson(relevant_tweets_output, efas_cycle, collections)
         cls.push_products_to_sftp(heatmap_file, relevant_tweets_file)
-        cls.write_incidents_geojson(counters_by_efas_id, efas_cycle, nuts2)
+        cls.write_incidents_geojson(counters_by_efas_id, efas_cycle)
         cls.write_to_sql(counters_by_efas_id, relevant_tweets_output, collection_ids)
 
     @classmethod
@@ -141,10 +143,9 @@ class Products:
             logger.info('[OK] Pushed files %s to SFTP %s', [heatmap_file, relevant_tweets_file], server)
 
     @classmethod
-    def get_incidents(cls, efas_id, nuts2):
+    def get_incidents(cls, efas_id):
         """
 
-        :param nuts2:
         :param efas_id:
         :return: list of items
         An item is a dictionary:
@@ -160,7 +161,7 @@ class Products:
             'risk_color': self._risk_color(item['CRITICALITY'])
         }
         """
-        nut = nuts2.get(efas_id) or Nuts2.get_by_efas_id(efas_id)
+        nut = cls.nuts2.get(efas_id) or Nuts2.get_by_efas_id(efas_id)
         bbox = nut.bbox if nut else None
         if not bbox:
             return []
@@ -170,7 +171,7 @@ class Products:
         return cls.here_client.get_by_bbox(bbox_for_here)
 
     @classmethod
-    def write_heatmap_geojson(cls, counters_by_efas_id, efas_cycle, nuts2, collections):
+    def write_heatmap_geojson(cls, counters_by_efas_id, efas_cycle, collections, relevant_tweets):
         geojson_output_filename = cls.output_heatmap_filename_tpl.format('{}{}'.format(datetime.now().strftime('%Y%m%d'), efas_cycle))
         logger.info('<<<<<< Writing %s', geojson_output_filename)
         with cls.app.app_context():
@@ -184,7 +185,7 @@ class Products:
                             continue
                         collection_id = collection_ids_by_efas_id[efas_id]
                         collection = collections[collection_id]
-                        efas_nuts2 = nuts2.get(efas_id) or Nuts2.get_by_efas_id(efas_id)
+                        efas_nuts2 = cls.nuts2.get(efas_id) or Nuts2.get_by_efas_id(efas_id)
                         efas_name = efas_nuts2.efas_name
                         color_str, risk_color = cls.apply_heuristic(counters_by_efas_id[efas_id])
                         flood_index = cls.flood_indexes[color_str]
@@ -202,7 +203,7 @@ class Products:
                             'risk_color': risk_color,
                             'smfr_flood_index': flood_index,
                             'counters': counters_by_efas_id[efas_id],
-                            'representative_tweets': [],
+                            'repr_tweets': cls.tweets_for_riskmap(relevant_tweets.get(efas_id, []), collection, efas_id) if flood_index != cls.flood_indexes['gray'] else [],
                             'type': 'heatmap',
                         }))
                     geojson.dump(FeatureCollection(out_data), sink, sort_keys=True, indent=2)
@@ -210,7 +211,7 @@ class Products:
         return geojson_output_filename
 
     @classmethod
-    def write_relevant_tweets_geojson(cls, relevant_tweets, efas_cycle, nuts2, collections):
+    def write_relevant_tweets_geojson(cls, relevant_tweets, efas_cycle, collections):
         geojson_output_filename = cls.output_relevant_tweets_filename_tpl.format('{}{}'.format(datetime.now().strftime('%Y%m%d'), efas_cycle))
         logger.info('<<<<<< Writing %s', geojson_output_filename)
         with cls.app.app_context():
@@ -221,7 +222,7 @@ class Products:
                         efas_id = int(feat['id'])
                         if efas_id not in relevant_tweets:
                             continue
-                        efas_nuts2 = nuts2.get(efas_id) or Nuts2.get_by_efas_id(efas_id)
+                        efas_nuts2 = cls.nuts2.get(efas_id) or Nuts2.get_by_efas_id(efas_id)
                         efas_name = efas_nuts2.efas_name
                         for tweet in relevant_tweets[efas_id]:
                             collection = collections.get(tweet['collectionid'])
@@ -250,7 +251,7 @@ class Products:
         return geojson_output_filename
 
     @classmethod
-    def write_incidents_geojson(cls, counters_by_efas_id, efas_cycle, nuts2):
+    def write_incidents_geojson(cls, counters_by_efas_id, efas_cycle):
         geojson_output_filename = cls.output_incidents_filename_tpl.format(
             '{}{}'.format(datetime.now().strftime('%Y%m%d'), efas_cycle))
         logger.info('<<<<<< Writing %s', geojson_output_filename)
@@ -262,7 +263,7 @@ class Products:
                         efas_id = int(feat['id'])
                         if efas_id not in counters_by_efas_id:
                             continue
-                        incidents = cls.get_incidents(efas_id, nuts2)
+                        incidents = cls.get_incidents(efas_id)
                         if not incidents:
                             continue
                         for inc in incidents:
@@ -290,15 +291,13 @@ class Products:
         heuristics = list(map(int, cls.alert_heuristic.split(':')))
         gray_th = heuristics[0]
         orange_th = heuristics[1]
-        red_th = heuristics[2]
         with cls.app.app_context():
             highlights = {}
             for efas_id, counters in counters_by_efas_id.items():
-                if not (counters.get(cls.high_prob_range, 0) < gray_th or counters.get(cls.high_prob_range,
-                                                                                       0) <= orange_th * counters.get(
-                        cls.low_prob_range, 0)) or orange_th * counters.get(cls.low_prob_range, 0) < counters.get(
-                        cls.high_prob_range, 0) <= red_th * counters.get(cls.low_prob_range, 0):
+                if not (counters.get(cls.high_prob_range, 0) < gray_th or
+                        counters.get(cls.high_prob_range, 0) < 1/orange_th * counters.get(cls.mid_prob_range, 0)):
                     highlights[efas_id] = counters
+
             product = Product(aggregated=counters_by_efas_id, relevant_tweets=relevant_tweets_aggregated,
                               highlights=highlights, collection_ids=collection_ids)
             product.save()
@@ -336,6 +335,29 @@ class Products:
             return True
         except ValueError:
             return False
+
+    @classmethod
+    def tweets_for_riskmap(cls, tweets, collection, efas_id):
+        out = []
+        efas_nuts2 = cls.nuts2.get(efas_id) or Nuts2.get_by_efas_id(efas_id)
+        efas_name = efas_nuts2.efas_name
+        for tweet in tweets:
+            out.append({
+                'tweet_id': tweet['tweetid'],
+                'lat': tweet['latlong'][0],
+                'lon': tweet['latlong'][1],
+                'creation_time': tweet['created_at'],
+                'collection_id': tweet['collectionid'],
+                'efas_trigger': collection.forecast_id,
+                'efas_id': efas_id,
+                'efas_name': efas_name,
+                'prediction': tweet['label_predicted'],
+                'centrality': tweet['_centrality'],
+                'multiplicity': tweet['_multiplicity'],
+                'reprindex': tweet['representativeness'],
+                'text': tweet.get('_normalized_text') or tweet.get('full_text') or tweet['tweet'].get('text', ''),
+            })
+        return out
 
 
 class TweetsDeduplicator:

@@ -232,14 +232,14 @@ def show_products():
     requested_date = request.args.get('date')
     requested_type = request.args.get('type')
     if requested_date:
-        filename = 'SMFR_{}_{}.geojson'.format(requested_type, requested_date)
+        filename = 'SMFR_{}_{}.json'.format(requested_type, requested_date)
         geojson_path = os.path.join(PRODUCTS_FOLDER, requested_type, filename)
         with open(geojson_path) as fh:
             geojson = json.load(fh)
 
-    files_hm = glob.glob(PRODUCTS_FOLDER + '/heatmaps/*.geojson')
-    files_tw = glob.glob(PRODUCTS_FOLDER + '/tweets/*.geojson')
-    files_in = glob.glob(PRODUCTS_FOLDER + '/incidents/*.geojson')
+    files_hm = glob.glob(PRODUCTS_FOLDER + '/heatmaps/*.json')
+    files_tw = glob.glob(PRODUCTS_FOLDER + '/tweets/*.json')
+    files_in = glob.glob(PRODUCTS_FOLDER + '/incidents/*.json')
 
     files_hm = sorted(files_hm, reverse=True)[:10]
     files_tw = sorted(files_tw, reverse=True)[:10]
