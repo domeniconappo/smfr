@@ -17,7 +17,6 @@ logger.setLevel(logging.DEBUG)
 logger.addHandler(DEFAULT_HANDLER)
 
 buffer_to_annotate = []
-previous_annotation = {}
 
 
 def add_args(parser):
@@ -36,7 +35,6 @@ def process(conf, lang):
             if not (i % 500):
                 logger.info('Processed so far %d', i)
             buffer_to_annotate.append(t)
-            previous_annotation[t.tweetid] = t.annotations['flood_probability'][0]
             if len(buffer_to_annotate) >= 100:
                 annotate_and_geocode_tweets(buffer_to_annotate, model, tokenizer, geocoder)
                 buffer_to_annotate.clear()
@@ -85,10 +83,8 @@ def main():
 def annotate_and_geocode_tweets(tweets_to_annotate, model, tokenizer, geocoder):
     annotated_tweets = Annotator.annotate(model, tweets_to_annotate, tokenizer)
     for tweet in annotated_tweets:
-        if previous_annotation[tweet.tweetid] != tweet.annotations['flood_probability'][0]:
-            logger.warning('%s -> old: %s new: %s', tweet.tweetid, previous_annotation[tweet.tweetid], tweet.annotations['flood_probability'][0])
+        # save annotated tweet
         tweet.save()
-
         tweet.ttype = Tweet.GEOTAGGED_TYPE
         tweet.geo = {}
         tweet.latlong = None
@@ -99,6 +95,7 @@ def annotate_and_geocode_tweets(tweets_to_annotate, model, tokenizer, geocoder):
             logger.debug('Out of bbox for %s...skipping', tweet.tweetid)
         else:
             tweet.set_geo(coordinates, nuts2, nuts_source, country_code, place, geonameid)
+        # save geotagged tweet
         tweet.save()
 
 
