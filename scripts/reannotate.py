@@ -2,6 +2,7 @@ import sys
 import logging
 import multiprocessing
 
+from cassandra.cqlengine.query import BatchQuery
 from smfrcore.models.sql import create_app
 from smfrcore.models.cassandra import Tweet
 from smfrcore.utils import DEFAULT_HANDLER
@@ -22,16 +23,14 @@ previous_annotation = {}
 def add_args(parser):
     parser.add_argument('-c', '--collection_id', help='collection id', type=int,
                         metavar='collection_id', required=True)
-    parser.add_argument('-t', '--ttype', help='Which type of stored tweets to export',
-                        choices=["annotated", "collected", "geotagged"], default='annotated',
-                        metavar='ttype')
 
 
 def process(conf, lang):
     app = create_app()
     with app.app_context():
         geocoder = Geocoder()
-        tweets = Tweet.get_iterator(conf.collection_id, conf.ttype, lang=lang, out_format='obj', forked_process=True)
+        tweets = Tweet.get_iterator(conf.collection_id, Tweet.COLLECTED_TYPE,
+                                    lang=lang, out_format='obj', forked_process=True)
         model, tokenizer = Annotator.load_annotation_model(lang)
         for i, t in enumerate(tweets, start=1):
             if not (i % 500):
@@ -66,6 +65,11 @@ def main():
     conf = parser.parse_args()
     logger.info(conf)
     logger.info(available_languages)
+    b = BatchQuery()
+    Tweet.objects(collectionid=conf.collection_id, ttype=Tweet.GEOTAGGED_TYPE).batch(b).delete()
+    Tweet.objects(collectionid=conf.collection_id, ttype=Tweet.ANNOTATED_TYPE).batch(b).delete()
+    b.execute()
+    print('>>>> Deleted geotagged tweets from collection {}'.format(conf.collection_id))
     processes = []
     for lang in available_languages:
         logger.info('Starting annotation for %s', lang)
