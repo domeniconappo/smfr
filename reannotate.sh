@@ -1,10 +1,11 @@
 #!/usr/bin/env bash
 
-# usage
-# reannotate.sh -c 42 -t annotated
-# reannotate.sh --collection_id 42 --ttype annotated
+# A command to launch python script to execute classification and geolocalization for a given collection
+#
+# Usage:
+# reannotate.sh -c 42
+# reannotate.sh --collection_id 42
 
-# defaults: ttype: annotated
 source export_env.sh
 
 python3 scripts/reannotate.py $@
