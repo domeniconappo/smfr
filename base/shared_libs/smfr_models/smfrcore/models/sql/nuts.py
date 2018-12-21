@@ -66,6 +66,9 @@ class Nuts2(SMFRModel):
                                                                           self.max_lon)}
         return bbox
 
+    def coordinates_in_bbox(self, lat, lon):
+        return self.min_lat <= lat <= self.max_lat and self.min_lon <= lon <= self.max_lon
+
     @classmethod
     def get_nuts2(cls, lat, lon):
         """
@@ -193,32 +196,35 @@ class Nuts2Finder:
         point = Point(lon, lat)
 
         if check_first:
+            # if check_first is present, check if coords are inside the bbox
             nuts2_to_check_first = Nuts2.get_by_efas_id(check_first)
             if nuts2_to_check_first:
                 geometry = nuts2_to_check_first.geometry[0]
                 try:
-                    if cls._is_in_poly(point, geometry):
+                    if nuts2_to_check_first.coordinates_in_bbox(lat, lon) or cls._is_in_poly(point, geometry):
                         nuts2 = nuts2_to_check_first
                 except ValueError:
                     for subgeometry in geometry:
                         if cls._is_in_poly(point, subgeometry):
                             nuts2 = nuts2_to_check_first
+        if nuts2:
+            return nuts2
 
-        if not nuts2:
-            nuts2_candidates = Nuts2.get_nuts2(lat, lon)
-            for n in nuts2_candidates:
-                geometry = n.geometry[0]
-                try:
-                    if cls._is_in_poly(point, geometry):
+        # check polygons, not bboxes
+        nuts2_candidates = Nuts2.get_nuts2(lat, lon)
+        for n in nuts2_candidates:
+            geometry = n.geometry[0]
+            try:
+                if cls._is_in_poly(point, geometry):
+                    nuts2 = n
+                    break
+            except ValueError:
+                for subgeometry in geometry:
+                    if cls._is_in_poly(point, subgeometry):
                         nuts2 = n
                         break
-                except ValueError:
-                    for subgeometry in geometry:
-                        if cls._is_in_poly(point, subgeometry):
-                            nuts2 = n
-                            break
-                    if nuts2:
-                        break
+                if nuts2:
+                    break
         return nuts2
 
     @classmethod

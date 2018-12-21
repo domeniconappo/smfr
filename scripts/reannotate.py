@@ -3,7 +3,7 @@ import logging
 import multiprocessing
 
 from cassandra.cqlengine.query import BatchQuery
-from smfrcore.models.sql import create_app
+from smfrcore.models.sql import create_app, TwitterCollection
 from smfrcore.models.cassandra import Tweet
 from smfrcore.utils import DEFAULT_HANDLER
 from smfrcore.ml.annotator import Annotator
@@ -27,6 +27,7 @@ def add_args(parser):
 def process(conf, lang):
     app = create_app()
     with app.app_context():
+        collection = TwitterCollection.get_collection(conf.collection_id)
         geocoder = Geocoder()
         tweets = Tweet.get_iterator(conf.collection_id, Tweet.COLLECTED_TYPE,
                                     lang=lang, out_format='obj', forked_process=True)
@@ -36,11 +37,11 @@ def process(conf, lang):
                 logger.info('Processed so far %d', i)
             buffer_to_annotate.append(t)
             if len(buffer_to_annotate) >= 100:
-                annotate_and_geocode_tweets(buffer_to_annotate, model, tokenizer, geocoder)
+                annotate_and_geocode_tweets(buffer_to_annotate, model, tokenizer, geocoder, collection)
                 buffer_to_annotate.clear()
         # flush the rest
         if buffer_to_annotate:
-            annotate_and_geocode_tweets(buffer_to_annotate, model, tokenizer, geocoder)
+            annotate_and_geocode_tweets(buffer_to_annotate, model, tokenizer, geocoder, collection)
             buffer_to_annotate.clear()
     logger.info('Finished processing for lang: %s', lang)
 
@@ -80,7 +81,7 @@ def main():
         p.join()
 
 
-def annotate_and_geocode_tweets(tweets_to_annotate, model, tokenizer, geocoder):
+def annotate_and_geocode_tweets(tweets_to_annotate, model, tokenizer, geocoder, collection):
     annotated_tweets = Annotator.annotate(model, tweets_to_annotate, tokenizer)
     for tweet in annotated_tweets:
         # save annotated tweet
@@ -88,7 +89,7 @@ def annotate_and_geocode_tweets(tweets_to_annotate, model, tokenizer, geocoder):
         tweet.ttype = Tweet.GEOTAGGED_TYPE
         tweet.geo = {}
         tweet.latlong = None
-        coordinates, nuts2, nuts_source, country_code, place, geonameid = geocoder.find_nuts_heuristic(tweet)
+        coordinates, nuts2, nuts_source, country_code, place, geonameid = geocoder.find_nuts_heuristic(tweet, collection.efas_id)
         if not coordinates:
             logger.debug('No coordinates for %s...skipping', tweet.tweetid)
         elif not coords_in_collection_bbox(coordinates, tweet):
