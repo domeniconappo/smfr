@@ -152,12 +152,10 @@ class Geocoder:
 
     def _nuts_from_tweet_coords(self, mentions, tweet_coords, check_first_efas_id=None):
         nuts2, country_code, place, geonameid = None, '', '', ''
-
         coordinates = tweet_coords
         nuts_source = 'coordinates'
 
         nuts2tweet = Nuts2Finder.find_nuts2_by_point(*tweet_coords, check_first=check_first_efas_id)
-
         if not nuts2tweet:
             return coordinates, nuts2, nuts_source, country_code, place, geonameid
 
@@ -176,5 +174,5 @@ class Geocoder:
                     place = mention[3]
                     geonameid = mention[4]
         elif len(mentions) == 1:
-            coordinates, nuts2, nuts_source, country_code, place, geonameid = self._nuts_from_one_mention(mentions, efas_id)
+            coordinates, nuts2, nuts_source, country_code, place, geonameid = self._nuts_from_one_mention(mentions, check_first_efas_id)
         return coordinates, nuts2, nuts_source, country_code, place, geonameid
