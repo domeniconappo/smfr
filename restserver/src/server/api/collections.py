@@ -16,7 +16,7 @@ from smfrcore.client.marshmallow import Collection as CollectionSchema, Aggregat
 from smfrcore.utils import DEFAULT_HANDLER
 from smfrcore.utils.errors import SMFRRestException
 
-from server.api.clients import AnnotatorClient, GeocoderClient
+from smfrcore.client.api_client import AnnotatorClient, GeocoderClient
 # from server.api.decorators import check_identity, check_role
 from server.config import RestServerConfiguration
 from server.helpers import (add_collection_helper, add_collection_from_rra_event,

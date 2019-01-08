@@ -42,13 +42,6 @@ services:
     depends_on:
     - mysql
     - cassandrasmfr
-#    deploy:
-#      placement:
-#        constraints: [ node.labels.large == true ]
-#      restart_policy:
-#        condition: on-failure
-#        max_attempts: 3
-#        window: 120s
 
   annotator:
     restart: always
@@ -298,6 +291,8 @@ services:
         http_proxy: ${http_proxy}
         https_proxy: ${https_proxy}
         sftp_host: ${KAJO_FTP_SERVER}
+        ftp_host: ${FTP_HOST}
+        download_folder: ${DOWNLOAD_FOLDER}
     working_dir: /products
     volumes:
       - ./products/src:/products
@@ -307,9 +302,17 @@ services:
       DEVELOPMENT: ${DEVELOPMENT}
       PYTHONUNBUFFERED: "true"
       PERSISTER_KAFKA_TOPIC: ${PERSISTER_KAFKA_TOPIC}
-      PRODUCTS_SCHEDULING_HOURS: ${PRODUCTS_SCHEDULING_HOURS}
-      HIGH_PROB_RANGE: ${HIGH_PROB_RANGE}
-      LOW_PROB_RANGE: ${LOW_PROB_RANGE}
+#      PRODUCTS_SCHEDULING_HOURS: ${PRODUCTS_SCHEDULING_HOURS}
+      RESTSERVER_BASEPATH: '/1.0'
+      RESTSERVER_PORT: ${RESTSERVER_PORT}
+      RRA_FETCH_SCHEDULING: ${RRA_FETCH_SCHEDULING}
+      FTP_USER: ${FTP_USER}
+      FTP_PASS: ${FTP_PASS}
+      FTP_HOST: ${FTP_HOST}
+      FTP_PATH: ${FTP_PATH}
+      DOWNLOAD_FOLDER: ${DOWNLOAD_FOLDER}
+      RRA_ONDEMAND_FILENAME: ${RRA_ONDEMAND_FILENAME}
+      FLOOD_PROBABILITY_RANGES: ${FLOOD_PROBABILITY_RANGES}
       THRESHOLDS: ${THRESHOLDS}
       NUM_RELEVANT_TWEETS_PRODUCTS: ${NUM_RELEVANT_TWEETS_PRODUCTS}
       HERE_APP_ID: ${HERE_APP_ID}
@@ -364,6 +367,7 @@ services:
       CASSANDRA_KEYSPACE: ${CASSANDRA_KEYSPACE}
       CASSANDRA_USE_CLUSTER: ${CASSANDRA_USE_CLUSTER}
       CASSANDRA_NODES: ${CASSANDRA_NODES}
+      RESTSERVER_BASEPATH: '/1.0'
       RESTSERVER_PORT: ${RESTSERVER_PORT}
       ANNOTATOR_PORT: ${ANNOTATOR_PORT}
       GEOCODER_PORT: ${GEOCODER_PORT}
@@ -373,14 +377,6 @@ services:
       FLASK_APP: smfr.py
       SERVER_PATH_UPLOADS: /smfr/uploads/
       CQLENG_ALLOW_SCHEMA_MANAGEMENT: 1
-      RESTSERVER_BASEPATH: '/1.0'
-      FTP_USER: ${FTP_USER}
-      FTP_PASS: ${FTP_PASS}
-      FTP_HOST: ${FTP_HOST}
-      FTP_PATH: ${FTP_PATH}
-      DOWNLOAD_FOLDER: ${DOWNLOAD_FOLDER}
-      RRA_ONDEMAND_FILENAME: ${RRA_ONDEMAND_FILENAME}
-      RRA_FETCH_SCHEDULING: ${RRA_FETCH_SCHEDULING}
       CHECK_ONDEMAND_RUNTIME_SCHEDULING: ${CHECK_ONDEMAND_RUNTIME_SCHEDULING}
       CHECK_JOBS_INTERVAL_SECONDS: ${CHECK_JOBS_INTERVAL_SECONDS}
       PYTHONUNBUFFERED: 'true'

@@ -1,8 +1,8 @@
 import logging
 
+from smfrcore.client.api_client import AnnotatorClient, GeocoderClient, PersisterClient
 from smfrcore.utils import DEFAULT_HANDLER
 
-from server.api.clients import AnnotatorClient, PersisterClient, GeocoderClient
 from server.config import RestServerConfiguration
 
 logger = logging.getLogger('RestServer Collectors')

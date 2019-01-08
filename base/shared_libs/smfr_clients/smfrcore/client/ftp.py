@@ -3,6 +3,8 @@ import socket
 
 import paramiko
 
+from smfrcore.utils import logger
+
 
 class FTPEfas:
     user = os.getenv('FTP_USER')
@@ -24,6 +26,14 @@ class FTPEfas:
         self.connection = paramiko.SFTPClient.from_transport(self.t)
         self.remote_path = ''
         self.filename = ''
+        if not os.path.exists('./latest'):
+            logger.warning('+++ No Info about latest fetched RRA')
+            self.latest_fetched_date = ''
+        else:
+            with open('./latest') as f:
+                efas_rra_date = f.read()
+                self.latest_fetched_date = efas_rra_date
+                logger.info('Latest RRA downloaded: %s', self.latest_fetched_date)
 
     @property
     def localfilepath(self):
@@ -54,20 +64,31 @@ class FTPEfas:
         name, _ = os.path.splitext(filename)
         return name[:10] if name[:10].isdigit() else name[-10:]
 
-    def _fetch(self, force=False, dated=None):
+    def download_rra(self, force=False, dated=None):
         dated = dated or 'latest'  # 'latest' or 'YYYYMMDDHH'
         if not self.filename:
             self.filename = self._get_filename(dated)
+        efas_rra_date = self.date_from_filename(self.filename)
+        if efas_rra_date == self.latest_fetched_date:
+            logger.warning('Latest EFAS RRA already downloaded...%s', efas_rra_date)
+            return False
+
         self.remote_path = os.path.join(self.server_folder, self.filename)
         localfile_path = os.path.join(self.local_folder, os.path.basename(self.filename))
         if not os.path.exists(localfile_path) or force:
+            logger.info('-----> downloading new RRA: %s to %s', self.remote_path, localfile_path)
             self.connection.get(self.remote_path, localfile_path)
-
-    def download_rra(self, force=False, dated=None):
-        self._fetch(force, dated)
+            self.update_last_downloaded(efas_rra_date)
+            return True
+        return False
 
     def close(self):
         self.t.close()
+
+    def update_last_downloaded(self, efas_rra_date):
+        with open('./latest', 'w') as f:
+            f.write(efas_rra_date)
+            self.latest_fetched_date = efas_rra_date
 
 
 class SFTPClient:

@@ -194,7 +194,7 @@ def run_single_aggregation(collection_id,
         running_aggregators.add(collection_id)
 
         try:
-            logger.info('[+] Counting collected')
+            logger.info('[+] Counting collected for %d', collection_id)
             collected_tweets = Tweet.get_iterator(collection_id, Tweet.COLLECTED_TYPE, last_tweetid=last_tweetid_collected)
             for t in collected_tweets:
                 max_collected_tweetid = max(max_collected_tweetid, t.tweet_id)

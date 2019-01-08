@@ -1,5 +1,4 @@
 import os
-import logging
 import pathlib
 import signal
 
@@ -7,10 +6,7 @@ import connexion
 
 from daemons.collector import BackgroundCollector, OnDemandCollector, ManualCollector
 from server.config import RestServerConfiguration, SERVER_BOOTSTRAP, MYSQL_MIGRATION
-from server.jobs import schedule_rra_jobs, add_rra_events, update_ondemand_collections_status
-
-logging.getLogger('cassandra').setLevel(logging.WARNING)
-
+from server.jobs import schedule_rra_jobs, update_ondemand_collections_status
 
 os.environ['NO_PROXY'] = ','.join((RestServerConfiguration.restserver_host,
                                    RestServerConfiguration.annotator_host,
@@ -48,9 +44,8 @@ def create_app():
                                ondemand_collector.type: ondemand_collector,
                                manual_collector.type: manual_collector})
 
-        # RRA Scheduled jobs. First execution is performed at bootstrap
         update_ondemand_collections_status(restart_ondemand=False)
-        add_rra_events(restart_ondemand=False)
+        # add_rra_events(restart_ondemand=False)
 
         background_collector.start()
         ondemand_collector.start()

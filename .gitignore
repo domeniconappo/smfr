@@ -34,7 +34,7 @@ ignoreme*.*
 annotator/models
 
 base/shared_libs/smfr_*/VERSION
-
+products/src/latest
 GlobalRegions_052018.geojson
 restserver/src/tests/data/CostPopEst2018061300.json
 *geonames_index*

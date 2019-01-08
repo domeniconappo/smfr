@@ -74,7 +74,7 @@ class Tweet(cqldb.Model):
     """
     Id of the tweet
     """
-    created_at = cqldb.columns.DateTime(index=True, required=True)
+    created_at = cqldb.columns.DateTime(required=True, custom_index=True, )
     collectionid = cqldb.columns.Integer(required=True, default=0, partition_key=True, index=True, )
     """
     Relation to collection id in MySQL virtual_twitter_collection table
@@ -213,16 +213,21 @@ class Tweet(cqldb.Model):
         return res
 
     @classmethod
-    def get_iterator(cls, collection_id, ttype, lang=None, out_format='tuple', last_tweetid=None, forked_process=False):
+    def get_iterator(cls, collection_id, ttype, lang=None, out_format='tuple',
+                     last_tweetid=None, ts_start=None, ts_end=None,
+                     forked_process=False):
         """
 
-        :param forked_process:
-        :param collection_id:
+        :param collection_id: id number of Twitter collection as stored in MySQL table
         :param ttype: 'annotated', 'collected' OR 'geotagged'
         :param lang: two chars lang code (e.g. en)
         :param out_format: can be 'obj', 'json', 'tuple' or 'dict'
         :param last_tweetid:
-        :return: smfrcore.models.cassandra.Tweet object, dictionary or JSON encoded, according out_format param
+        :param ts_end:
+        :param ts_start:
+        :param forked_process:
+        :return: Iterator of smfrcore.models.cassandra.Tweet objects, tuples, dictionary or JSON encoded,
+                    according out_format param
         """
         if out_format not in ('obj', 'json', 'dict', 'tuple'):
             raise ValueError('out_format is not valid')
@@ -233,6 +238,11 @@ class Tweet(cqldb.Model):
         if last_tweetid:
             results = cls.session.execute(cls.stmt_with_last_tweetid,
                                           parameters=(collection_id, ttype, int(last_tweetid)),
+                                          timeout=None)
+        elif ts_start or ts_end:
+            ts_end = ts_end or datetime.datetime.now()
+            results = cls.session.execute(cls.stmt_with_created_at,
+                                          parameters=(collection_id, ttype, ts_start, ts_end),
                                           timeout=None)
         else:
             results = cls.session.execute(cls.stmt,
@@ -273,6 +283,10 @@ class Tweet(cqldb.Model):
         if not hasattr(cls, 'stmt_single') or not isinstance(cls.stmt_single, PreparedStatement):
             cls.stmt_single = cls.session.prepare(
                 'SELECT * FROM {}.tweet WHERE collectionid=? AND ttype=? and tweetid=?'.format(cls.__keyspace__)
+            )
+        if not hasattr(cls, 'stmt_with_created_at') or not isinstance(cls.stmt_with_created_at, PreparedStatement):
+            cls.stmt_with_created_at = cls.session.prepare(
+                'SELECT * FROM {}.tweet WHERE collectionid=? AND ttype=? and created_at>=? and created_at<=?'.format(cls.__keyspace__)
             )
 
     @classmethod

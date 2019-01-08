@@ -33,7 +33,7 @@ class BaseStreamer(TwythonStreamer):
 
     """
     mp_manager = multiprocessing.Manager()
-    max_errors_len = 50
+    max_errors_len = 15
 
     def __init__(self, **api_keys):
         # self.lock = multiprocessing.RLock()
@@ -126,7 +126,7 @@ class BaseStreamer(TwythonStreamer):
     def handle_termination(self, signum, _):
         logger.info('Streamer %s process Terminated. Disconnecting...')
         self.disconnect(deactivate_collections=False)
-        time.sleep(15)
+        time.sleep(2)
 
     def connect(self, collections):
         signal.signal(signal.SIGTERM, self.handle_termination)
@@ -171,8 +171,8 @@ class BaseStreamer(TwythonStreamer):
         logger.info('Disconnecting twitter streamer')
         if self.process and isinstance(self.process, multiprocessing.Process):
             self.process.terminate()  # this will call handle_termination method because it sends SIGTERM signal
-            logger.debug('Sleeping 30 secs')
-            time.sleep(30)
+            # logger.debug('Sleeping 30 secs')
+            # time.sleep(30)
 
         # with self.lock:
         super().disconnect()

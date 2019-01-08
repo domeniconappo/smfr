@@ -200,9 +200,9 @@ class SMFRRestException(SMFRError):
 class MicroserviceClient:
     """Base classe for microservices with common methods"""
 
-    base_uri = None
     host = None
     port = None
+    base_uri = None
 
     @classmethod
     def _check_response(cls, res, code):
@@ -221,6 +221,63 @@ class MicroserviceClient:
         cls._check_response(res, res.status_code)
         return res.json(), res.status_code
 
+    @classmethod
+    def counters(cls):
+        url = '{}/counters'.format(cls.base_uri)
+        res = requests.get(url)
+        cls._check_response(res, res.status_code)
+        result = res.json()
+        return result, res.status_code
+
+    @classmethod
+    def start(cls, collection_id, start_date=None, end_date=None):
+        """
+
+        :param end_date:
+        :param start_date:
+        :param collection_id: ID of Collection as it's stored in virtual_twitter_collection.id field in MySQL
+        :type collection_id: int
+        :return: JSON result from microservice API
+        :rtype: dict
+        """
+        url = '{}/{}/start'.format(cls.base_uri, collection_id)
+        params = {'start_date': start_date, 'end_date': end_date}
+        res = requests.put(url, params=params)
+        cls._check_response(res, res.status_code)
+        return res.json(), res.status_code
+
+    @classmethod
+    def stop(cls, collection_id):
+        """
+
+        :param collection_id: ID of Collection as it's stored in virtual_twitter_collection.id field in MySQL
+        :type collection_id: int
+        :return: JSON result from microservice API
+        :rtype: dict
+        """
+        url = '{}/{}/stop'.format(cls.base_uri, collection_id)
+        res = requests.put(url)
+        cls._check_response(res, res.status_code)
+        return res.json(), res.status_code
+
+
+class PersisterClient(MicroserviceClient):
+    """
+
+    """
+    host = '127.0.0.1' if not IN_DOCKER else 'persister'
+    port = os.getenv('PERSISTER_PORT_PORT', 5558)
+    base_uri = 'http://{}:{}'.format(host, port)
+
+
+class GeocoderClient(MicroserviceClient):
+    """
+
+    """
+    host = '127.0.0.1' if not IN_DOCKER else 'geocoder'
+    port = os.getenv('GEOCODER_PORT', 5557)
+    base_uri = 'http://{}:{}'.format(host, port)
+
 
 class AnnotatorClient(MicroserviceClient):
     """
@@ -228,8 +285,8 @@ class AnnotatorClient(MicroserviceClient):
     """
     host = '127.0.0.1' if not IN_DOCKER else 'annotator'
     port = os.getenv('ANNOTATOR_PORT', 5556)
-
     base_uri = 'http://{}:{}'.format(host, port)
+
     _models = None
 
     @classmethod
@@ -247,74 +304,3 @@ class AnnotatorClient(MicroserviceClient):
     def available_languages(cls):
         models = cls.models()[0]['models']
         return tuple(models.keys())
-
-    @classmethod
-    def start(cls, collection_id, start_date=None, end_date=None):
-        """
-
-        :param end_date:
-        :param start_date:
-        :param collection_id: ID of Collection as it's stored in virtual_twitter_collection.id field in MySQL
-        :type collection_id: int
-        :return: JSON result from Geocoder API
-        :rtype: dict
-        """
-        url = '{}/{}/start'.format(cls.base_uri, collection_id)
-        params = {'start_date': start_date, 'end_date': end_date}
-        res = requests.put(url, params=params)
-        cls._check_response(res, res.status_code)
-        return res.json(), res.status_code
-
-    @classmethod
-    def stop(cls, collection_id):
-        """
-
-        :param collection_id: ID of Collection as it's stored in virtual_twitter_collection.id field in MySQL
-        :type collection_id: int
-        :return: JSON result from Geocoder API
-        :rtype: dict
-        """
-        url = '{}/{}/stop'.format(cls.base_uri, collection_id)
-        res = requests.put(url)
-        cls._check_response(res, res.status_code)
-        return res.json(), res.status_code
-
-
-class GeocoderClient(MicroserviceClient):
-    """
-
-    """
-    host = '127.0.0.1' if not IN_DOCKER else 'geocoder'
-    port = os.getenv('GEOCODER_PORT', 5557)
-    base_uri = 'http://{}:{}'.format(host, port)
-
-    @classmethod
-    def start(cls, collection_id, start_date, end_date):
-        """
-
-        :param end_date:
-        :param start_date:
-        :param collection_id: ID of Collection as it's stored in virtual_twitter_collection.id field in MySQL
-        :type collection_id: int
-        :return: JSON result from Geocoder API
-        :rtype: dict
-        """
-        url = '{}/{}/start'.format(cls.base_uri, collection_id)
-        params = {'start_date': start_date, 'end_date': end_date}
-        res = requests.put(url, params=params)
-        cls._check_response(res, res.status_code)
-        return res.json(), res.status_code
-
-    @classmethod
-    def stop(cls, collection_id):
-        """
-
-        :param collection_id: ID of Collection as it's stored in virtual_twitter_collection.id field in MySQL
-        :type collection_id: int
-        :return: JSON result from Geocoder API
-        :rtype: dict
-        """
-        url = '{}/{}/stop'.format(cls.base_uri, collection_id)
-        res = requests.put(url)
-        cls._check_response(res, res.status_code)
-        return res.json(), res.status_code

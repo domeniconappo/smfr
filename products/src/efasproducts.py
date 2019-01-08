@@ -19,14 +19,20 @@ from smfrcore.utils.text import tweet_normalization_aggressive
 logger = logging.getLogger(__name__)
 logger.setLevel(os.getenv('LOGGING_LEVEL', 'DEBUG'))
 logger.addHandler(DEFAULT_HANDLER)
+logger.propagate = False
 
 logging.getLogger('cassandra').setLevel(logging.ERROR)
+logging.getLogger('fiona').setLevel(logging.ERROR)
+logging.getLogger('urllib3').setLevel(logging.ERROR)
+logging.getLogger('requests_oauthlib').setLevel(logging.ERROR)
+logging.getLogger('paramiko').setLevel(logging.ERROR)
+logging.getLogger('oauthlib').setLevel(logging.ERROR)
 
 # FTP client for KAJO server
 server = os.getenv('KAJO_FTP_SERVER', '207.180.226.197')
 user = os.getenv('KAJO_FTP_USER', 'jrc')
 password = os.getenv('KAJO_FTP_PASSWORD')
-folder = os.getenv('KAJO_FTP_FOLDER')
+folder = os.getenv('KAJO_FTP_FOLDER', '/home/jrc')
 
 
 class Products:
@@ -37,19 +43,18 @@ class Products:
     output_folder = '/output' if IN_DOCKER else os.path.join(os.path.dirname(__file__), '../output')
 
     template = os.path.join(config_folder, 'maptemplate.shp')
-    output_filename_tpl = os.path.join(output_folder, 'SMFR_products_{}.json')
     output_heatmap_filename_tpl = os.path.join(output_folder, 'heatmaps/SMFR_heatmaps_{}.json')
     output_incidents_filename_tpl = os.path.join(output_folder, 'incidents/SMFR_incidents_{}.json')
     output_relevant_tweets_filename_tpl = os.path.join(output_folder, 'tweets/SMFR_tweets_{}.json')
+
     out_crs = dict(type='EPSG', properties=dict(code=4326, coordinate_order=[1, 0]))
-    high_prob_range = os.getenv('HIGH_PROB_RANGE', '90-100')
-    low_prob_range = os.getenv('LOW_PROB_RANGE', '0-10')
-    mid_prob_range = os.getenv('MID_PROB_RANGE', '10-90')
+    probability_ranges = os.getenv('FLOOD_PROBABILITY_RANGES', '0-10,10-80,80-100')
+    low_prob_range, mid_prob_range, high_prob_range = probability_ranges.split(',')
 
     # This variable reflects the following heuristic (e.g. considering default 10:5:9)
-    # GRAY   - Less than 10 high relevant tweets
-    # ORANGE - #highrel > 1/9 * #midrel
-    # RED    - 1/9 * #midrel > #highrel > 1/5 * #midrel
+    # GRAY   - Less than 10 high relevant tweets or #highrel < 1/9 * #midrel
+    # ORANGE - 1/5 * #midrel > #highrel >= 1/9 * #midrel
+    # RED    - 1/9 * #midrel > #highrel >= 1/5 * #midrel
     alert_heuristic = os.getenv('THRESHOLDS', '10:5:9')
 
     max_relevant_tweets = int(os.getenv('NUM_RELEVANT_TWEETS_PRODUCTS', 5))
@@ -69,7 +74,7 @@ class Products:
     @classmethod
     def log_config(cls):
         heuristics = cls.alert_heuristic.split(':')
-        logger.info('===============================================================================================')
+        logger.info('============================================================================')
         logger.info('Products configuration')
         logger.info('-----------------------')
         logger.info('High relevance probability range %s', cls.high_prob_range)
@@ -81,10 +86,10 @@ class Products:
                     heuristics[0], heuristics[2])
         logger.info('Orange: Num of high prob. relevant tweets > 1/%s Num of mid prob. relevant tweets', heuristics[2])
         logger.info('Red: Num of high prob. relevant tweets > 1/%s Num of mid prob. relevant tweets', heuristics[1])
-        logger.info('===============================================================================================')
+        logger.info('============================================================================')
 
     @classmethod
-    def produce(cls, efas_cycle='12'):
+    def produce(cls, forecast_date):
         # create products for on-demand active collections or recently stopped collections
         with cls.app.app_context():
             collections = TwitterCollection.get_active_ondemand()
@@ -127,10 +132,10 @@ class Products:
             probs_interval = tokens[-1]
             counters_by_efas_id[efas_id][probs_interval] = value
 
-        heatmap_file = cls.write_heatmap_geojson(counters_by_efas_id, efas_cycle, collections, relevant_tweets_output)
-        relevant_tweets_file = cls.write_relevant_tweets_geojson(relevant_tweets_output, efas_cycle, collections)
+        heatmap_file = cls.write_heatmap_geojson(counters_by_efas_id, forecast_date, collections, relevant_tweets_output)
+        relevant_tweets_file = cls.write_relevant_tweets_geojson(relevant_tweets_output, forecast_date, collections)
         cls.push_products_to_sftp(heatmap_file, relevant_tweets_file)
-        cls.write_incidents_geojson(counters_by_efas_id, efas_cycle)
+        cls.write_incidents_geojson(counters_by_efas_id, forecast_date)
         cls.write_to_sql(counters_by_efas_id, relevant_tweets_output, collection_ids)
 
     @classmethod
@@ -171,8 +176,8 @@ class Products:
         return cls.here_client.get_by_bbox(bbox_for_here)
 
     @classmethod
-    def write_heatmap_geojson(cls, counters_by_efas_id, efas_cycle, collections, relevant_tweets):
-        geojson_output_filename = cls.output_heatmap_filename_tpl.format('{}{}'.format(datetime.now().strftime('%Y%m%d'), efas_cycle))
+    def write_heatmap_geojson(cls, counters_by_efas_id, forecast_date, collections, relevant_tweets):
+        geojson_output_filename = cls.output_heatmap_filename_tpl.format(forecast_date)
         logger.info('<<<<<< Writing %s', geojson_output_filename)
         with cls.app.app_context():
             collection_ids_by_efas_id = {c.efas_id: c.id for c in collections.values()}
@@ -211,8 +216,8 @@ class Products:
         return geojson_output_filename
 
     @classmethod
-    def write_relevant_tweets_geojson(cls, relevant_tweets, efas_cycle, collections):
-        geojson_output_filename = cls.output_relevant_tweets_filename_tpl.format('{}{}'.format(datetime.now().strftime('%Y%m%d'), efas_cycle))
+    def write_relevant_tweets_geojson(cls, relevant_tweets, forecast_date, collections):
+        geojson_output_filename = cls.output_relevant_tweets_filename_tpl.format(forecast_date)
         logger.info('<<<<<< Writing %s', geojson_output_filename)
         with cls.app.app_context():
             with fiona.open(cls.template) as source:
@@ -251,9 +256,8 @@ class Products:
         return geojson_output_filename
 
     @classmethod
-    def write_incidents_geojson(cls, counters_by_efas_id, efas_cycle):
-        geojson_output_filename = cls.output_incidents_filename_tpl.format(
-            '{}{}'.format(datetime.now().strftime('%Y%m%d'), efas_cycle))
+    def write_incidents_geojson(cls, counters_by_efas_id, forecast_date):
+        geojson_output_filename = cls.output_incidents_filename_tpl.format(forecast_date)
         logger.info('<<<<<< Writing %s', geojson_output_filename)
         with cls.app.app_context():
             with fiona.open(cls.template) as source:
