@@ -551,7 +551,9 @@ class TwitterCollection(SMFRModel):
 
     @property
     def is_active_or_recent(self):
-        return self.status == self.ACTIVE_STATUS or (self.stopped_at and self.stopped_at >= (datetime.datetime.utcnow() - datetime.timedelta(days=2)))
+        return self.status == self.ACTIVE_STATUS or \
+               (self.stopped_at and
+                self.stopped_at >= (datetime.datetime.utcnow() - datetime.timedelta(days=2)))
 
 
 class Aggregation(SMFRModel):

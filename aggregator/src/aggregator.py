@@ -87,7 +87,7 @@ def aggregate(running_conf=None):
             aggregation = c.aggregation
 
             if not aggregation:
-                aggregation = Aggregation(collection_id=c.id, values={}, relevant_tweets={})
+                aggregation = Aggregation(collection_id=c.id, values={}, relevant_tweets={}, trends={})
                 aggregation.save()
 
             aggregations_args.append(
@@ -98,7 +98,8 @@ def aggregate(running_conf=None):
                  aggregation.timestamp_start,
                  aggregation.timestamp_end,
                  aggregation.values,
-                 aggregation.relevant_tweets)
+                 aggregation.relevant_tweets,
+                 aggregation)
             )
 
         # cpu_count() - 1 aggregation threads running at same time

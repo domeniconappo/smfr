@@ -55,8 +55,8 @@ class BaseStreamer(TwythonStreamer):
 
         self.client_args = {}
         if os.getenv('http_proxy'):
-            self.client_args = dict(proxies=dict(http=os.environ['http_proxy'],
-                                                 https=os.getenv('https_proxy') or os.environ['http_proxy']))
+            self.client_args = dict(proxies=dict(http=os.getenv('http_proxy'),
+                                                 https=os.getenv('https_proxy') or os.getenv('http_proxy')))
         logger.debug('Instantiate a streamer with args %s', str(self.client_args))
         super().__init__(self.consumer_key, self.consumer_secret,
                          self.access_token, self.access_token_secret,
