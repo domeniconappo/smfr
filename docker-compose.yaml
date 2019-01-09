@@ -391,7 +391,6 @@ services:
       - './restserver/src:/restserver'
       - './downloads:/smfr/downloaded'
       - './restserver/logs:/logs'
-      - '${COLLECTOR_KEYS_PATH}:/configuration/admin_collector.yaml'
       - '${FLOOD_KEYWORDS_PATH}:/configuration/flood_keywords.yaml'
     depends_on:
       - mysql

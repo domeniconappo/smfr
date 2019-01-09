@@ -27,7 +27,7 @@ flood_propability_ranges = [[int(g) for g in t.split('-')] for t in flood_propab
 
 class MostRelevantTweets:
     min_relevant_probability = int(os.getenv('MIN_RELEVANT_FLOOD_PROBABILITY', 90)) / 100
-    max_size = int(os.getenv('NUM_RELEVANT_TWEETS_AGGREGATED', 100))
+    max_size = int(os.getenv('NUM_RELEVANT_TWEETS_AGGREGATED', 300))
 
     @classmethod
     def _sortkey(cls, t):

@@ -1,6 +1,7 @@
 import multiprocessing
 from abc import ABC, abstractmethod
 import logging
+from time import sleep
 
 from smfrcore.models.sql import TwitterCollection
 from smfrcore.utils import DEFAULT_HANDLER
@@ -58,7 +59,7 @@ class BackgroundCollector(BaseCollector):
         if self.streamer.process and isinstance(self.streamer.process, multiprocessing.Process):
             logger.info('Sending SIGTERM signal to streamer')
             self.streamer.process.terminate()
-            # sleep(30)
+            sleep(2)
         if self.streamer.is_connected.value == 1:
             logger.info('Trying to start an already connected streamer %s', self.streamer)
             return
@@ -75,12 +76,10 @@ class OnDemandCollector(BaseCollector):
     StreamerClass = OnDemandStreamer
 
     def start(self):
-        # with self.streamer.lock:
         if self.streamer.process and isinstance(self.streamer.process, multiprocessing.Process):
             logger.info('Sending SIGTERM signal to streamer')
             self.streamer.process.terminate()
-            # logger.debug('Sleeping 30 secs after terminate')
-            # sleep(30)
+            sleep(2)
             self.streamer.process = None
         if self.streamer.is_connected.value == 1:
             logger.info('Trying to start an already connected streamer %s', self.streamer)
@@ -97,11 +96,10 @@ class ManualCollector(OnDemandCollector):
     StreamerClass = ManualStreamer
 
     def start(self):
-        # with self.streamer.lock:
         if self.streamer.process and isinstance(self.streamer.process, multiprocessing.Process):
             logger.info('Sending SIGTERM signal to streamer')
             self.streamer.process.terminate()
-            # sleep(30)
+            sleep(2)
         if self.streamer.is_connected.value == 1:
             logger.info('Trying to start an already connected streamer %s', self.streamer)
             return

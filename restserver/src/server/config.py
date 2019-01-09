@@ -175,9 +175,10 @@ class RestServerConfiguration(metaclass=Singleton):
 
     @classmethod
     def admin_twitter_keys(cls, iden):
-        with open(os.path.join(CONFIG_FOLDER, 'admin_collector.yaml')) as f:
-            admin_collector = yaml.load(f)
-            keys = admin_collector[iden]
+        keys = {
+            k: os.getenv('{}_{}'.format(iden, k).upper())
+            for k in ('consumer_key', 'consumer_secret', 'access_token', 'access_token_secret')
+        }
         return keys
 
     @classmethod
