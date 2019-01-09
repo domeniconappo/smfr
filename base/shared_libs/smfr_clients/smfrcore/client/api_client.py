@@ -4,24 +4,26 @@ Module for API client to the SMFR Rest Server
 import os
 import json
 import logging
+from json.decoder import JSONDecodeError
 
 import requests
 
 from smfrcore.client.conf import ServerConfiguration
 from smfrcore.utils.errors import SMFRError
-from smfrcore.utils import LOGGER_FORMAT, LOGGER_DATE_FORMAT, smfr_json_encoder, IN_DOCKER
+from smfrcore.utils import DEFAULT_HANDLER, smfr_json_encoder, IN_DOCKER
 
 from .marshmallow import OnDemandPayload, CollectionPayload
 
-logging.basicConfig(level=os.getenv('LOGGING_LEVEL', 'DEBUG'),
-                    format=LOGGER_FORMAT, datefmt=LOGGER_DATE_FORMAT)
+
+logger = logging.getLogger('API Clients')
+logger.setLevel(os.getenv('LOGGING_LEVEL', 'DEBUG'))
+logger.addHandler(DEFAULT_HANDLER)
 
 
 class ApiLocalClient:
     """
     Simple requests client to SMFR Rest Server
     """
-    logger = logging.getLogger(__name__)
     endpoints = {
         'list_admin': '/admin',
         'restart_collector': '/admin/{trigger_type}/restart',
@@ -56,7 +58,12 @@ class ApiLocalClient:
     def _check_response(cls, res):
         code = res.status_code
         if code >= 400:
-            raise SMFRRestException(res.json(), code)
+            logger.error('ERROR from Rest Server API: %s', code)
+            try:
+                content = res.json()
+            except JSONDecodeError:
+                content = {'error': 'Error {}'.format(code), 'description': res.text}
+            raise SMFRRestException(content, code)
 
     def _get(self, endpoint, path_kwargs=None, query_params=None):
         try:
@@ -67,10 +74,10 @@ class ApiLocalClient:
             res = requests.get(url, **requests_kwargs)
             self._check_response(res)
         except SMFRRestException as e:
-            self.logger.error('REST API Error %s', str(e))
+            logger.error('REST API Error %s', str(e))
             raise e
         except ConnectionError:
-            self.logger.error('SMFR REST API server is not listening...')
+            logger.error('SMFR REST API server is not listening...')
         else:
             return res.json()
 
@@ -93,15 +100,15 @@ class ApiLocalClient:
 
         url = self._build_url(endpoint, path_kwargs)
 
-        self.logger.debug('POST %s %s', url, requests_kwargs)
+        logger.debug('POST %s %s', url, requests_kwargs)
         try:
             res = requests.post(url, **requests_kwargs)
             self._check_response(res)
         except SMFRRestException as e:
-            self.logger.error('REST API Error %s', str(e))
+            logger.error('REST API Error %s', str(e))
             raise e
         except ConnectionError as e:
-            self.logger.error('SMFR REST API server is not listening...%s', str(e))
+            logger.error('SMFR REST API server is not listening...%s', str(e))
             raise SMFRRestException({'error': {'description': 'SMFR Rest Server is not listening'}},
                                     status_code=500)
         else:
@@ -147,7 +154,7 @@ class ApiLocalClient:
     def new_collection(self, input_payload):
         schema = CollectionPayload()
         payload = schema.load(input_payload).data
-        self.logger.debug('Payload %s', input_payload)
+        logger.debug('Payload %s', input_payload)
         return self._post('new_collection', payload=payload)
 
     def logout_user(self, user_id):

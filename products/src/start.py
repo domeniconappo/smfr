@@ -6,8 +6,10 @@ import schedule
 from smfrcore.utils import IS_DEVELOPMENT
 
 from efasproducts import Products, logger
-from helpers import rra_events_and_products
+from helpers import rra_events_and_products, restserver_client
 
+
+os.environ['NO_PROXY'] = restserver_client.config.restserver_host
 
 if __name__ == '__main__':
     Products.makedirs()

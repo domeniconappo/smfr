@@ -571,6 +571,7 @@ class Aggregation(SMFRModel):
     timestamp_start = Column(TIMESTAMP, nullable=True)
     timestamp_end = Column(TIMESTAMP, nullable=True)
     relevant_tweets = Column(LongJSONType, nullable=True)
+    trends = Column(LongJSONType, nullable=True)
 
     @property
     def data(self):

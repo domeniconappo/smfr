@@ -8,14 +8,13 @@ from multiprocessing.pool import ThreadPool
 
 import cassandra
 
-from smfrcore.utils import LOGGER_FORMAT, LOGGER_DATE_FORMAT, logged_job, job_exceptions_catcher, FALSE_VALUES
+from smfrcore.utils import logged_job, job_exceptions_catcher, FALSE_VALUES, DEFAULT_HANDLER
 from smfrcore.models.sql import TwitterCollection, Aggregation, create_app
 
-log_level = os.getenv('LOGGING_LEVEL', 'DEBUG')
-logging.basicConfig(level=log_level, format=LOGGER_FORMAT, datefmt=LOGGER_DATE_FORMAT)
 
 logger = logging.getLogger('AGGREGATOR')
-logger.setLevel(log_level)
+logger.setLevel(os.getenv('LOGGING_LEVEL', 'DEBUG'))
+logger.addHandler(DEFAULT_HANDLER)
 logging.getLogger('cassandra').setLevel(logging.WARNING)
 
 flask_app = create_app()
@@ -84,20 +83,22 @@ def aggregate(running_conf=None):
             collections = [collections]
 
         aggregations_args = []
-        for coll in collections:
-            aggregation = Aggregation.query.filter_by(collection_id=coll.id).first()
+        for c in collections:
+            aggregation = c.aggregation
 
             if not aggregation:
-                aggregation = Aggregation(collection_id=coll.id, values={}, relevant_tweets={})
+                aggregation = Aggregation(collection_id=c.id, values={}, relevant_tweets={})
                 aggregation.save()
 
             aggregations_args.append(
-                (coll.id,
+                (c.id,
                  aggregation.last_tweetid_collected,
                  aggregation.last_tweetid_annotated,
                  aggregation.last_tweetid_geotagged,
-                 aggregation.timestamp_start, aggregation.timestamp_end,
-                 aggregation.values, aggregation.relevant_tweets)
+                 aggregation.timestamp_start,
+                 aggregation.timestamp_end,
+                 aggregation.values,
+                 aggregation.relevant_tweets)
             )
 
         # cpu_count() - 1 aggregation threads running at same time
@@ -140,8 +141,8 @@ def inc_annotated_counter(counter, probability, place_id=None):
         if range_a < probability <= range_b:
             counter[counter_key] += 1
             if place_id:
-                other_counter_key = 'geotagged_{}-{}'.format(range_a, range_b)
-                counter[other_counter_key] += 1
+                geotagged_counter_key = 'geotagged_{}-{}'.format(range_a, range_b)
+                counter[geotagged_counter_key] += 1
 
 
 def run_single_aggregation(collection_id,
@@ -257,3 +258,36 @@ def pretty_running_conf(conf):
             return 'Aggregation on {} collections'.format(k)
         elif k == 'collections' and v:
             return 'Aggregation on collections: {}'.format(v)
+
+
+"""
+trends notes....
+
+In [14]: t.created_at
+Out[14]: datetime.datetime(2019, 1, 9, 12, 47, 35)
+
+In [15]: t.created_at.day
+Out[15]: 9
+
+In [16]: t.created_at.strftime('%m')
+Out[16]: '01'
+
+In [17]: t.created_at.strftime('%Y%m')
+Out[17]: '201901'
+
+In [18]: t.created_at.strftime('%Y%m%d')
+Out[18]: '20190109'
+
+In [19]: '0-10,10-90,90-100'.split(',')
+Out[19]: ['0-10', '10-90', '90-100']
+
+In [20]: import os
+
+In [21]: flood_propability_ranges_env = os.getenv('FLOOD_PROBABILITY_RANGES', '0-10,10-90,90-100')
+
+In [22]: flood_propability_ranges = [[int(g) for g in t.split('-')] for t in flood_propability_ranges_env.split(',')]
+
+In [23]: flood_propability_ranges
+Out[23]: [[0, 10], [10, 90], [90, 100]]
+
+"""
