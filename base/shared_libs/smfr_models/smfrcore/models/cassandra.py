@@ -51,14 +51,99 @@ def new_cassandra_session():
     return cassandra_session
 
 
-class Tweet(cqldb.Model):
+class CassandraHelpers:
+
+    @classmethod
+    def fields(cls):
+        return list(cls._defined_columns.keys())
+
+    @classmethod
+    def to_obj(cls, row):
+        """
+        :param row: a tuple representing a row in Cassandra tweet table
+        :return: A Tweet object
+        """
+        return cls(**row._asdict())
+
+    @classmethod
+    def to_tuple(cls, row):
+        return row
+
+    @classmethod
+    def to_dict(cls, row):
+        """
+        :param row: a tuple representing a row in Cassandra tweet table
+        :return: A dictionary that can be serialized
+        """
+        return row._asdict()
+
+    @classmethod
+    def to_json(cls, row):
+        """
+        Needs to be encoded because of OrderedMapSerializedKey and other specific Cassandra objects
+        :param row: a tuple representing a row in Cassandra tweet table
+        :return: A dictionary that can be serialized
+        """
+        res = {}
+        for k, v in row._asdict().items():
+            if isinstance(v, (np.float32, np.float64, Decimal)):
+                res[k] = float(v)
+            elif isinstance(v, (np.int32, np.int64)):
+                res[k] = int(v)
+            elif isinstance(v, datetime.datetime):
+                res[k] = v.isoformat()
+            elif isinstance(v, tuple):
+                res[k] = [float(i) if isinstance(i, (np.float32, np.float64, Decimal)) else i for i in v]
+            elif isinstance(v, OrderedMapSerializedKey):
+                # cassandra Map column
+                innerres = {}
+                for inner_k, inner_v in v.items():
+                    if isinstance(inner_v, tuple):
+                        encoded_v = [float(i) if isinstance(i, (np.float32, np.float64, Decimal)) else i for i in
+                                     inner_v]
+                        try:
+                            innerres[inner_k] = dict((encoded_v,))
+                        except ValueError:
+                            innerres[inner_k] = (encoded_v[0], encoded_v[1])
+                    else:
+                        innerres[inner_k] = inner_v
+
+                res[k] = innerres
+            else:
+                res[k] = v
+        res['full_text'] = cls.get_full_text(row)
+        return res
+
+    def serialize(self):
+        """
+        Method to serialize Tweet object to Kafka
+        :return: string version in JSON format
+        """
+
+        outdict = {}
+        for k, v in self.__dict__['_values'].items():
+            if isinstance(v.value, (datetime.datetime, datetime.date)):
+                outdict[k] = v.value.isoformat()
+            else:
+                outdict[k] = v.value
+        return json.dumps(outdict, ensure_ascii=False).encode('utf-8')
+
+    @classmethod
+    def serializetuple(cls, row):
+        """
+        Method to serialize a tuple representing a row in Cassandra tweet table
+        :return: string version in JSON format
+        """
+        return cls.to_obj(row).serialize()
+
+
+class Tweet(cqldb.Model, CassandraHelpers):
     """
     Object representing the `tweet` column family in Cassandra
     """
     session = new_cassandra_session()
     __keyspace__ = _keyspace
 
-    # session = None
     ANNOTATED_TYPE = 'annotated'
     COLLECTED_TYPE = 'collected'
     GEOTAGGED_TYPE = 'geotagged'
@@ -130,9 +215,12 @@ class Tweet(cqldb.Model):
                '{o.created_at} - {o.lang} \n{o.full_text:.120}' \
                '\nGeo: {o.geo}\nAnnotations: {o.annotations}'.format(o=self)
 
-    @classmethod
-    def fields(cls):
-        return list(cls._defined_columns.keys())
+    @property
+    def efas_cycle(self):
+        hour = '12' if self.created_at.hour < 12 else '00'
+        efas_day = self.created_at if hour == '12' else self.created_at + datetime.timedelta(days=1)
+        res = efas_day.strftime('%Y%m%d')
+        return '{}{}'.format(res, hour)
 
     @property
     def use_pipeline(self):
@@ -154,63 +242,6 @@ class Tweet(cqldb.Model):
             collection = TwitterCollection.query.get(self.collectionid)
         self.cache_collections[self.collectionid] = collection
         return collection
-
-    @classmethod
-    def to_obj(cls, row):
-        """
-        :param row: a tuple representing a row in Cassandra tweet table
-        :return: A Tweet object
-        """
-        return cls(**row._asdict())
-
-    @classmethod
-    def to_tuple(cls, row):
-        return row
-
-    @classmethod
-    def to_dict(cls, row):
-        """
-        :param row: a tuple representing a row in Cassandra tweet table
-        :return: A dictionary that can be serialized
-        """
-        return row._asdict()
-
-    @classmethod
-    def to_json(cls, row):
-        """
-        Needs to be encoded because of OrderedMapSerializedKey and other specific Cassandra objects
-        :param row: a tuple representing a row in Cassandra tweet table
-        :return: A dictionary that can be serialized
-        """
-        res = {}
-        for k, v in row._asdict().items():
-            if isinstance(v, (np.float32, np.float64, Decimal)):
-                res[k] = float(v)
-            elif isinstance(v, (np.int32, np.int64)):
-                res[k] = int(v)
-            elif isinstance(v, datetime.datetime):
-                res[k] = v.isoformat()
-            elif isinstance(v, tuple):
-                res[k] = [float(i) if isinstance(i, (np.float32, np.float64, Decimal)) else i for i in v]
-            elif isinstance(v, OrderedMapSerializedKey):
-                # cassandra Map column
-                innerres = {}
-                for inner_k, inner_v in v.items():
-                    if isinstance(inner_v, tuple):
-                        encoded_v = [float(i) if isinstance(i, (np.float32, np.float64, Decimal)) else i for i in
-                                     inner_v]
-                        try:
-                            innerres[inner_k] = dict((encoded_v,))
-                        except ValueError:
-                            innerres[inner_k] = (encoded_v[0], encoded_v[1])
-                    else:
-                        innerres[inner_k] = inner_v
-
-                res[k] = innerres
-            else:
-                res[k] = v
-        res['full_text'] = cls.get_full_text(row)
-        return res
 
     @classmethod
     def get_iterator(cls, collection_id, ttype, lang=None, out_format='tuple',
@@ -327,10 +358,6 @@ class Tweet(cqldb.Model):
         rows = cls.session.execute(cls.samples_stmt, parameters=[collection_id, ttype, size])
         return rows
 
-    def validate(self):
-        # TODO validate tweet content
-        super().validate()
-
     @property
     def original_tweet_as_string(self):
         """
@@ -364,28 +391,6 @@ class Tweet(cqldb.Model):
             return '-'
         out = ['{}: {}'.format(k, v) for k, v in geo.items() if v]
         return '<pre>{}</pre>'.format('\n'.join(out))
-
-    def serialize(self):
-        """
-        Method to serialize Tweet object to Kafka
-        :return: string version in JSON format
-        """
-
-        outdict = {}
-        for k, v in self.__dict__['_values'].items():
-            if isinstance(v.value, (datetime.datetime, datetime.date)):
-                outdict[k] = v.value.isoformat()
-            else:
-                outdict[k] = v.value
-        return json.dumps(outdict, ensure_ascii=False).encode('utf-8')
-
-    @classmethod
-    def serializetuple(cls, row):
-        """
-        Method to serialize a tuple representing a row in Cassandra tweet table
-        :return: string version in JSON format
-        """
-        return cls.to_obj(row).serialize()
 
     @classmethod
     def from_tweet(cls, collectionid, tweet, ttype=COLLECTED_TYPE):

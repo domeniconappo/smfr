@@ -15,13 +15,14 @@ from smfrcore.models.sql import TwitterCollection, Aggregation, create_app
 logger = logging.getLogger('AGGREGATOR')
 logger.setLevel(os.getenv('LOGGING_LEVEL', 'DEBUG'))
 logger.addHandler(DEFAULT_HANDLER)
-logging.getLogger('cassandra').setLevel(logging.WARNING)
+
+logging.getLogger('cassandra').setLevel(logging.ERROR)
 
 flask_app = create_app()
 
-running_aggregators = set()
 flood_propability_ranges_env = os.getenv('FLOOD_PROBABILITY_RANGES', '0-10,10-90,90-100')
 flood_propability_ranges = [[int(g) for g in t.split('-')] for t in flood_propability_ranges_env.split(',')]
+running_aggregators = set()
 
 
 class MostRelevantTweets:
@@ -166,10 +167,10 @@ def run_single_aggregation(collection_id,
     :return:
     """
     from smfrcore.models.cassandra import Tweet
-
+    res = 0
     if collection_id in running_aggregators:
         logger.warning('!!!!!! Previous aggregation for collection id %d is not finished yet !!!!!!' % collection_id)
-        return 0
+        return res
 
     with flask_app.app_context():
         if not aggregation:
@@ -211,7 +212,7 @@ def run_single_aggregation(collection_id,
             aggregation.save()
 
             annotated_tweets = Tweet.get_iterator(collection_id, Tweet.ANNOTATED_TYPE, last_tweetid=last_tweetid_annotated)
-            logger.info('[+] Counting annotated')
+            logger.info('[+] Counting annotated for %d', collection_id)
             for t in annotated_tweets:
                 max_annotated_tweetid = max(max_annotated_tweetid, t.tweet_id)
                 counter['annotated'] += 1
@@ -222,7 +223,7 @@ def run_single_aggregation(collection_id,
             aggregation.save()
 
             geotagged_tweets = Tweet.get_iterator(collection_id, Tweet.GEOTAGGED_TYPE, last_tweetid=last_tweetid_geotagged)
-            logger.info('[+] Counting geotagged')
+            logger.info('[+] Counting geotagged for %d', collection_id)
             for t in geotagged_tweets:
                 max_geotagged_tweetid = max(max_geotagged_tweetid, t.tweet_id)
                 if not t.geo:
@@ -234,6 +235,7 @@ def run_single_aggregation(collection_id,
                 geo_identifier = '%s_%s' % (geoloc_id, nuts_id) if nuts_id else geoloc_id
                 inc_annotated_counter(counter, flood_probability(t), place_id=geo_identifier)
                 relevant_tweets.push_if_relevant(Tweet.to_json(t))
+
             aggregation.last_tweetid_geotagged = max_geotagged_tweetid if max_geotagged_tweetid else last_tweetid_geotagged
             aggregation.relevant_tweets = relevant_tweets.values
             aggregation.values = dict(counter)
@@ -241,16 +243,16 @@ def run_single_aggregation(collection_id,
 
         except cassandra.ReadFailure as e:
             logger.error('Cassandra Read failure: %s', e)
-            running_aggregators.remove(collection_id)
-            return 1
+            res = 1
         except Exception as e:
             logger.error('ERROR during aggregation collection %d: error: %s %s', collection_id, type(e), e)
-            running_aggregators.remove(collection_id)
-            return 1
+            res = 1
         else:
-            running_aggregators.remove(collection_id)
             logger.info(' <<<<<<<<<<< Aggregation terminated for collection %d', collection_id)
-            return 0
+            res = 0
+        finally:
+            running_aggregators.remove(collection_id)
+        return res
 
 
 def pretty_running_conf(conf):
