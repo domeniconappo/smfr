@@ -22,6 +22,7 @@
                         <th><em class="fa fa-cogs"></em></th>
                         <th>Trigger</th>
                         <th>Status</th>
+                        <th>Keys</th>
                         <th>Errors</th>
                         <th>Collections</th>
                     </tr>
@@ -38,6 +39,7 @@
                         </td>
                         <td>{{ c.trigger_type }}</td>
                         <td>{{ c.status }}</td>
+                        <td><pre>{% for e in c.apikeys %}<p>{{ e }}</p>{% endfor %}</pre></td>
                         <td>{% for e in c.errors %}<p>{{ e }}</p>{% endfor %}</td>
                         <td>
                            {% for co in c.collections %}

@@ -21,6 +21,7 @@ def get():
     for ttype, c in config.collectors.items():
         item = {
             'trigger_type': ttype,
+            'apikeys': c.streamer.keys,
             'errors': c.streamer.errors,
             'status': 'connected' if c.streamer.is_connected.value == 1 else 'disconnected',
             'collections': [co.id for co in c.streamer.collections],

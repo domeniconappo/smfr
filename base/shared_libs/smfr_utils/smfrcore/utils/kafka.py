@@ -11,7 +11,7 @@ from smfrcore.utils import IN_DOCKER, DEFAULT_HANDLER
 kafka_bootstrap_servers = os.getenv('KAFKA_BOOTSTRAP_SERVERS', 'kafka:9090,kafka:9092') if IN_DOCKER else '127.0.0.1:9090,127.0.0.1:9092'
 persister_kafka_topic = os.getenv('PERSISTER_KAFKA_TOPIC', 'persister')
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger('KAFKA utils')
 logger.setLevel(os.getenv('LOGGING_LEVEL', 'DEBUG'))
 logger.addHandler(DEFAULT_HANDLER)
 

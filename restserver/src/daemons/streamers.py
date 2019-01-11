@@ -36,7 +36,6 @@ class BaseStreamer(TwythonStreamer):
     max_errors_len = 15
 
     def __init__(self, **api_keys):
-        # self.lock = multiprocessing.RLock()
         self.query = {}
         self.consumer_key = api_keys['consumer_key']
         self.consumer_secret = api_keys['consumer_secret']
@@ -169,14 +168,11 @@ class BaseStreamer(TwythonStreamer):
 
     def disconnect(self, deactivate_collections=True):
         logger.info('Disconnecting twitter streamer')
+        self.is_connected.value = 0
         if self.process and isinstance(self.process, multiprocessing.Process):
             self.process.terminate()  # this will call handle_termination method because it sends SIGTERM signal
-            # logger.debug('Sleeping 30 secs')
-            # time.sleep(30)
 
-        # with self.lock:
         super().disconnect()
-        self.is_connected.value = 0
         if self.producer:
             self.producer.flush()
         if deactivate_collections:
@@ -193,6 +189,11 @@ class BaseStreamer(TwythonStreamer):
     @property
     def collections(self):
         return self._collections
+
+    @property
+    def keys(self):
+        return ['{}{}'.format(s[:8].ljust(len(s) - 8, '*'), s[-8:])
+                for s in (self.consumer_key, self.consumer_secret, self.access_token, self.access_token_secret)]
 
     def track_error(self, http_error_code, message):
         message = message.decode('utf-8') if isinstance(message, bytes) else str(message)

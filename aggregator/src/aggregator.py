@@ -22,6 +22,9 @@ flask_app = create_app()
 
 flood_propability_ranges_env = os.getenv('FLOOD_PROBABILITY_RANGES', '0-10,10-90,90-100')
 flood_propability_ranges = [[int(g) for g in t.split('-')] for t in flood_propability_ranges_env.split(',')]
+orange_th = flood_propability_ranges[-2][0]
+red_th = flood_propability_ranges[-1][0]
+
 running_aggregators = set()
 
 
@@ -100,6 +103,7 @@ def aggregate(running_conf=None):
                  aggregation.timestamp_end,
                  aggregation.values,
                  aggregation.relevant_tweets,
+                 aggregation.trends,
                  aggregation)
             )
 
@@ -132,8 +136,7 @@ def inc_annotated_counter(counter, probability, place_id=None):
 
     :param counter: Counter object
     :param probability: flood  probability * 100
-    :param place_id: string composed like <efas_id>_<nuts_id>
-    :return:
+    :param place_id: string composed like <efas_id>_<nuts_id>. It's present only for geotagged tweets
     """
     key = functools.partial('num_tweets_{}-{}'.format) if place_id is None else functools.partial('{}_num_tweets_{}-{}'.format)
     for range_a, range_b in flood_propability_ranges:
@@ -150,10 +153,10 @@ def inc_annotated_counter(counter, probability, place_id=None):
 def run_single_aggregation(collection_id,
                            last_tweetid_collected, last_tweetid_annotated, last_tweetid_geotagged,
                            timestamp_start, timestamp_end,
-                           initial_values, initial_relevant_tweets,
+                           initial_values, initial_relevant_tweets, initial_trends,
                            aggregation=None):
     """
-    Calculate stats for a collection
+    Calculate current stats for a collection
 
     :param collection_id:
     :param last_tweetid_collected:
@@ -163,6 +166,7 @@ def run_single_aggregation(collection_id,
     :param timestamp_start:
     :param initial_values: counters dictionary from last execution
     :param initial_relevant_tweets: relevant tweets from last execution
+    :param initial_trends:
     :param aggregation: Aggregation object
     :return:
     """
@@ -189,8 +193,9 @@ def run_single_aggregation(collection_id,
         last_tweetid_annotated = int(last_tweetid_annotated) if last_tweetid_annotated else 0
         last_tweetid_geotagged = int(last_tweetid_geotagged) if last_tweetid_geotagged else 0
 
-        # init counter
+        # init counters
         counter = Counter(initial_values)
+        trends = Counter(initial_trends)
 
         logger.info(' >>>>>>>>>>>> Starting aggregation for collection id %d' % collection_id)
 
@@ -228,17 +233,27 @@ def run_single_aggregation(collection_id,
                 max_geotagged_tweetid = max(max_geotagged_tweetid, t.tweet_id)
                 if not t.geo:
                     continue
+                prob = flood_probability(t)
                 counter['geotagged'] += 1
                 counter['{}_geotagged'.format(t.lang)] += 1
                 geoloc_id = t.geo['nuts_efas_id'] or 'G%s' % (t.geo['geonameid'] or '-')
                 nuts_id = t.geo['nuts_id']
                 geo_identifier = '%s_%s' % (geoloc_id, nuts_id) if nuts_id else geoloc_id
-                inc_annotated_counter(counter, flood_probability(t), place_id=geo_identifier)
+                inc_annotated_counter(counter, prob, place_id=geo_identifier)
                 relevant_tweets.push_if_relevant(Tweet.to_json(t))
+                if t.geo['nuts_efas_id'] and prob >= orange_th:
+                    # trends....counters by efas cycle (i.e. date)
+                    t = Tweet.to_obj(t)
+                    relevance = 'medium'
+                    if prob >= red_th:
+                        relevance = 'high'
+                    day_key = '{}_{}_{}'.format(t.geo['nuts_efas_id'], relevance, t.efas_cycle)
+                    trends[day_key] += 1
 
             aggregation.last_tweetid_geotagged = max_geotagged_tweetid if max_geotagged_tweetid else last_tweetid_geotagged
             aggregation.relevant_tweets = relevant_tweets.values
             aggregation.values = dict(counter)
+            aggregation.trends = dict(trends)
             aggregation.save()
 
         except cassandra.ReadFailure as e:

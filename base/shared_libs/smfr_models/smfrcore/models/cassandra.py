@@ -382,7 +382,12 @@ class Tweet(cqldb.Model, CassandraHelpers):
     def pretty_annotations(cls, annotations):
         if not annotations:
             return '-'
-        out = ['{}: {:.3f}'.format(k.replace('_', ' ').title(), v[1]) if isinstance(v, tuple) else '{}: {:.3f}'.format(k.replace('_', ' ').title(), v['yes']) for k, v in annotations.items()]
+        out = [
+            '{}: {:.3f}'.format(k.replace('_', ' ').title(), v[1])
+            if isinstance(v, tuple)
+            else '{}: {:.3f}'.format(k.replace('_', ' ').title(), v['yes'])
+            for k, v in annotations.items()
+        ]
         return '<pre>{}</pre>'.format('\n'.join(out))
 
     @classmethod

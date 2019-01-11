@@ -18,6 +18,7 @@ class Aggregation(BaseSchema):
     id = fields.Integer()
     collection_id = fields.Integer()
     data = fields.Field()
+    trends = fields.Field()
     last_tweetid_annotated = fields.Integer()
     last_tweetid_collected = fields.Integer()
     last_tweetid_geotagged = fields.Integer()
@@ -115,6 +116,7 @@ class Collector(BaseSchema):
     status = fields.String(validate=[OneOf(choices=['connected', 'disconnected'], labels=[])])
     collections = fields.List(fields.Integer())
     errors = fields.List(fields.String())
+    apikeys = fields.List(fields.String())
 
 
 class Admin(BaseSchema):

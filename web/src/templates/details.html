@@ -70,13 +70,13 @@
                                        </tr>
                                        {% endif %}
                                        <tr>
-                                           <th>Languages</th>
+                                           <th>Languages:</th>
                                            <td>{{ data.collection.languages|join(', ') }}</td>
 
-                                           <th>Last started (UTC)</th>
+                                           <th>Last started:</th>
                                            <td>{{ data.collection.started_at|datetimeformat('%Y-%m-%d %H:%M:%S') }}</td>
 
-                                           <th>Last stopped (UTC)</th>
+                                           <th>Last stopped:</th>
                                            <td>{{ data.collection.stopped_at|datetimeformat('%Y-%m-%d %H:%M:%S') }}</td>
 
                                            <th>Pipeline activated</th>
@@ -85,7 +85,7 @@
 
                                        {% if data.collection.runtime %}
                                        <tr>
-                                           <th colspan="2">Run until (local time)</th>
+                                           <th colspan="2">Run until:</th>
                                            <td colspan="2">{{ data.collection.runtime|datetimeformat('%Y-%m-%d %H:%M') }}</td>
                                            <td colspan="4">&nbsp;</td>
                                        </tr>
