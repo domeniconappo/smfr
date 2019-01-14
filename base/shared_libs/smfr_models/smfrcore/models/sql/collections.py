@@ -574,6 +574,11 @@ class Aggregation(SMFRModel):
     timestamp_end = Column(TIMESTAMP, nullable=True)
     relevant_tweets = Column(LongJSONType, nullable=True)
     trends = Column(LongJSONType, nullable=True)
+    created_at = Column(TIMESTAMP, nullable=True, default=datetime.datetime.utcnow)
+
+    def __init__(self, *args, **kwargs):
+        self.created_at = kwargs.get('created_at') or datetime.datetime.utcnow()
+        super().__init__(*args, **kwargs)
 
     @property
     def data(self):

@@ -1,8 +1,11 @@
 import os
 import logging
-from collections import defaultdict
+from collections import defaultdict, OrderedDict
+import datetime
 
 import ujson
+from copy import deepcopy
+
 import geojson
 from geojson import Feature, FeatureCollection
 from geojson.geometry import Geometry
@@ -88,7 +91,7 @@ class Products:
         logger.info('============================================================================')
 
     @classmethod
-    def produce(cls, forecast_date):
+    def produce(cls, forecast):
         # create products for on-demand active collections or recently stopped collections
         with cls.app.app_context():
             collections = TwitterCollection.get_active_ondemand()
@@ -98,6 +101,8 @@ class Products:
             aggregations = Aggregation.query.filter(Aggregation.collection_id.in_(collection_ids)).all()
             counters = defaultdict(int)
             relevant_tweets_aggregated = defaultdict(list)
+
+            trends = defaultdict(defaultdict)
 
             for aggregation in aggregations:
                 collection_id = aggregation.collection_id
@@ -115,6 +120,20 @@ class Products:
                     relevant_tweets_aggregated[int(key)] = tweets
                     break
 
+                # Trends (see issue #19)
+                for key, value in aggregation.trends.items():
+                    # trends key is in the format <EFAS_ID>_[medium|high]_YYYYMMDD[00|12]
+                    # eg. 502_high_20190111400
+                    efas_id_tkn, relevance_tkn, efas_cycle_tkn = key.split('_')
+                    if not (cls.is_efas_id(efas_id_tkn) and int(efas_id_tkn) == efas_id):
+                        continue
+                    # TODO complete #19 here....
+                    efas_cycle = datetime.datetime.strptime(efas_cycle_tkn, '%Y%m%d%H')
+                    if not trends[efas_id][relevance_tkn]:
+                        trends[efas_id][relevance_tkn] = OrderedDict({efas_cycle: {'value': value, 'trend': '-'}})
+                    else:
+                        trends[efas_id][relevance_tkn].update({efas_cycle: {'value': value, 'trend': '-'}})
+
         relevant_tweets_output = {}
         for efas_id, tweets in relevant_tweets_aggregated.items():
             deduplicated_tweets = TweetsDeduplicator.deduplicate(tweets)[:cls.max_relevant_tweets]
@@ -131,11 +150,24 @@ class Products:
             probs_interval = tokens[-1]
             counters_by_efas_id[efas_id][probs_interval] = value
 
-        heatmap_file = cls.write_heatmap_geojson(counters_by_efas_id, forecast_date, collections, relevant_tweets_output)
-        relevant_tweets_file = cls.write_relevant_tweets_geojson(relevant_tweets_output, forecast_date, collections)
+        # calculate trends
+        trends_copy = deepcopy(trends)
+        for efas_id, collection_trends in trends_copy.items():
+            for relevance, values_by_efas_cycles in collection_trends.items():
+                # values_by_day is an OrderedDict
+                for efas_cycle, value in values_by_efas_cycles.items():
+                    previous_cycle = efas_cycle - datetime.timedelta(days=1)
+                    if previous_cycle not in values_by_efas_cycles:
+                        continue
+                    previous_value = values_by_efas_cycles[previous_cycle]
+                    trend_perc = 100 * (value - previous_value) / previous_value
+                    trends[efas_id][relevance][efas_cycle]['trend'] = '{:+0.2}%'.format(trend_perc)
+
+        heatmap_file = cls.write_heatmap_geojson(counters_by_efas_id, forecast, collections, relevant_tweets_output, trends)
+        relevant_tweets_file = cls.write_relevant_tweets_geojson(relevant_tweets_output, forecast, collections)
         cls.push_products_to_sftp(heatmap_file, relevant_tweets_file)
-        cls.write_incidents_geojson(counters_by_efas_id, forecast_date)
-        cls.write_to_sql(counters_by_efas_id, relevant_tweets_output, collection_ids)
+        cls.write_incidents_geojson(counters_by_efas_id, forecast)
+        cls.write_to_sql(counters_by_efas_id, relevant_tweets_output, collection_ids, forecast, trends)
 
     @classmethod
     def push_products_to_sftp(cls, heatmap_file, relevant_tweets_file):
@@ -148,6 +180,7 @@ class Products:
 
     @classmethod
     def get_incidents(cls, efas_id):
+        # TODO see issue #20
         """
 
         :param efas_id:
@@ -175,7 +208,7 @@ class Products:
         return cls.here_client.get_by_bbox(bbox_for_here)
 
     @classmethod
-    def write_heatmap_geojson(cls, counters_by_efas_id, forecast_date, collections, relevant_tweets):
+    def write_heatmap_geojson(cls, counters_by_efas_id, forecast_date, collections, relevant_tweets, trends):
         geojson_output_filename = cls.output_heatmap_filename_tpl.format(forecast_date)
         logger.info('<<<<<< Writing %s', geojson_output_filename)
         with cls.app.app_context():
@@ -194,11 +227,7 @@ class Products:
                         color_str, risk_color = cls.apply_heuristic(counters_by_efas_id[efas_id])
                         flood_index = cls.flood_indexes[color_str]
                         stopdate = collection.runtime if collection.runtime and collection.is_active else collection.stopped_at
-                        geom = Geometry(
-                            coordinates=feat['geometry']['coordinates'],
-                            type=feat['geometry']['type'],
-                        )
-                        out_data.append(Feature(geometry=geom, properties={
+                        properties = {
                             'collection_id': collection_id,
                             'efas_trigger': collection.forecast_id,
                             'stopdate': stopdate.strftime('%Y%m%d') if stopdate else '',
@@ -209,7 +238,15 @@ class Products:
                             'counters': counters_by_efas_id[efas_id],
                             'repr_tweets': cls.tweets_for_riskmap(relevant_tweets.get(efas_id, []), collection, efas_id) if flood_index != cls.flood_indexes['gray'] else [],
                             'type': 'heatmap',
-                        }))
+                        }
+                        geom = Geometry(
+                            coordinates=feat['geometry']['coordinates'],
+                            type=feat['geometry']['type'],
+                        )
+                        trends = trends[efas_id].get('high')
+                        if trends:
+                            properties.update({'trends': trends})
+                        out_data.append(Feature(geometry=geom, properties=properties))
                     geojson.dump(FeatureCollection(out_data), sink, sort_keys=True, indent=2)
         logger.info('>>>>>> Wrote %s', geojson_output_filename)
         return geojson_output_filename
@@ -290,7 +327,7 @@ class Products:
             os.makedirs(maked, exist_ok=True)
 
     @classmethod
-    def write_to_sql(cls, counters_by_efas_id, relevant_tweets_aggregated, collection_ids):
+    def write_to_sql(cls, counters_by_efas_id, relevant_tweets_aggregated, collection_ids, forecast_date, trends):
         heuristics = list(map(int, cls.alert_heuristic.split(':')))
         gray_th = heuristics[0]
         orange_th = heuristics[1]
@@ -302,7 +339,7 @@ class Products:
                     highlights[efas_id] = counters
 
             product = Product(aggregated=counters_by_efas_id, relevant_tweets=relevant_tweets_aggregated,
-                              highlights=highlights, collection_ids=collection_ids)
+                              highlights=highlights, collection_ids=collection_ids, trends=trends, efas_cycle=forecast_date)
             product.save()
 
     @classmethod

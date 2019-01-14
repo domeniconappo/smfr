@@ -2,8 +2,7 @@
 
 source export_env.sh
 
-./singlenode_up.sh cassandrasmfr
-./singlenode_up.sh mysql
+./singlenode_dbs.sh
 ./install_shared_libs.sh models
 
 cd restserver/src

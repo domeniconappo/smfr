@@ -19,6 +19,8 @@ class Product(SMFRModel):
     created_at = Column(TIMESTAMP, nullable=True)
     relevant_tweets = Column(LongJSONType, nullable=True)
     aggregated = Column(LongJSONType, nullable=False)
+    trends = Column(LongJSONType, nullable=True)
+    efas_cycle = Column(Integer, nullable=True)  # Same as TwitterCollection.forecast_id e.g. 2019011412
 
     def __init__(self, *args, **kwargs):
         self.created_at = datetime.datetime.utcnow()

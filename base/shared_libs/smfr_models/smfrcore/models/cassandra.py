@@ -319,6 +319,12 @@ class Tweet(cqldb.Model, CassandraHelpers):
             cls.stmt_with_created_at = cls.session.prepare(
                 'SELECT * FROM {}.tweet WHERE collectionid=? AND ttype=? and created_at>=? and created_at<=?'.format(cls.__keyspace__)
             )
+        fetch_size = os.getenv('CASSANDRA_FETCH_SIZE', 1000)
+        cls.samples_stmt.fetch_size = fetch_size
+        cls.stmt.fetch_size = fetch_size
+        cls.stmt_with_last_tweetid.fetch_size = fetch_size
+        cls.stmt_single.fetch_size = fetch_size
+        cls.stmt_with_created_at.fetch_size = fetch_size
 
     @classmethod
     def make_table_object(cls, numrow, tweet_tuple):

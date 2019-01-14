@@ -36,6 +36,20 @@ def do():
 
     add_args(parser)
     conf = parser.parse_args()
+    collections = select_collections(conf)
+    aggregations = Aggregation.query.filter(Aggregation.collection_id.in_((c.id for c in collections))).all()
+    for agg in aggregations:
+        print('Removing aggregation', str(agg))
+        agg.delete()
+
+    for agg in Aggregation.query.all():
+        if agg.collection:
+            continue
+        print('Removing orphan', str(agg))
+        agg.delete()
+
+
+def select_collections(conf):
     collections = []
     if conf.running:
         collections = TwitterCollection.get_running()
@@ -45,28 +59,7 @@ def do():
         collections = TwitterCollection.get_collections(conf.collection_id)
     elif conf.all:
         collections = TwitterCollection.query.all()
-
-    for c in collections:
-        agg = c.aggregation
-        if not agg:
-            continue
-        print('>>>> Reset aggregations for collection {}'.format(agg.collection_id))
-        agg.values = {}
-        agg.relevant_tweets = {}
-        agg.trends = {}
-        agg.last_tweetid_collected = None
-        agg.last_tweetid_annotated = None
-        agg.last_tweetid_geotagged = None
-        agg.timestamp_start = None
-        agg.timestamp_end = None
-        agg.save()
-
-    print('Cleaning orphans')
-    for agg in Aggregation.query.all():
-        if agg.collection:
-            continue
-        print('Removing orphan ', str(agg))
-        agg.delete()
+    return collections
 
 
 if __name__ == '__main__':

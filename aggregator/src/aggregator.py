@@ -88,9 +88,10 @@ def aggregate(running_conf=None):
 
         aggregations_args = []
         for c in collections:
-            aggregation = c.aggregation
+            aggregation = c.aggregation or Aggregation.get_by_collection(c.id)
 
             if not aggregation:
+                # init aggregation object
                 aggregation = Aggregation(collection_id=c.id, values={}, relevant_tweets={}, trends={})
                 aggregation.save()
 
