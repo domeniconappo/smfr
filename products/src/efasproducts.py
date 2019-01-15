@@ -105,6 +105,8 @@ class Products:
             trends = defaultdict(defaultdict)
 
             for aggregation in aggregations:
+                # FIXME now collections (and so aggregations) do not have "out of bbox" tweets
+                # this means that "if not (cls.is_efas_id(key) and int(key) == efas_id)" tests are superfluos
                 collection_id = aggregation.collection_id
                 efas_id = collections[collection_id].efas_id
 
@@ -127,9 +129,8 @@ class Products:
                     efas_id_tkn, relevance_tkn, efas_cycle_tkn = key.split('_')
                     if not (cls.is_efas_id(efas_id_tkn) and int(efas_id_tkn) == efas_id):
                         continue
-                    # TODO complete #19 here....
                     efas_cycle = datetime.datetime.strptime(efas_cycle_tkn, '%Y%m%d%H')
-                    if not trends[efas_id][relevance_tkn]:
+                    if relevance_tkn not in trends[efas_id]:
                         trends[efas_id][relevance_tkn] = OrderedDict({efas_cycle: {'value': value, 'trend': '-'}})
                     else:
                         trends[efas_id][relevance_tkn].update({efas_cycle: {'value': value, 'trend': '-'}})
