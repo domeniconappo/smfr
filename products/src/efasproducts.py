@@ -306,10 +306,11 @@ class Products:
                             type=feat['geometry']['type'],
                         )
 
-                        trend = trends.get(efas_id, {}).get('high', {})
-                        trend = OrderedDict(sorted(trend.items(), key=lambda x: x[0]))
-                        trend = [{'date': k, 'value': trend[k]['value'], 'trend': trend[k]['trend']} for k in trend]
-                        properties.update({'trends': trend})
+                        # need first development on geoserver side
+                        # trend = trends.get(efas_id, {}).get('high', {})
+                        # trend = OrderedDict(sorted(trend.items(), key=lambda x: x[0]))
+                        # trend = [{'date': k, 'value': trend[k]['value'], 'trend': trend[k]['trend']} for k in trend]
+                        # properties.update({'trends': trend})
                         out_data.append(Feature(geometry=geom, properties=properties))
                     geojson.dump(FeatureCollection(out_data), sink, sort_keys=True, indent=2)
         logger.info('>>>>>> Wrote %s', geojson_output_filename)
