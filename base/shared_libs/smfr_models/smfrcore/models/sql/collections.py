@@ -187,6 +187,7 @@ class TwitterCollection(SMFRModel):
                 # a collection for this efas region is already ongoing
                 obj.id = existing.id
                 obj.runtime = existing.runtime if existing.forecast_id == obj.forecast_id else obj.runtime
+                obj.forecast_id = existing.forecast_id
                 obj.created_at = existing.created_at
                 obj.started_at = existing.started_at
             else:

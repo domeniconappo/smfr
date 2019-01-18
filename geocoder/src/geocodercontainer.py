@@ -2,7 +2,6 @@ import logging
 import os
 import multiprocessing
 import time
-from collections import Counter
 
 from kafka.errors import CommitFailedError, KafkaTimeoutError
 

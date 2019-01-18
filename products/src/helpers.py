@@ -5,7 +5,7 @@ import os
 from smfrcore.client.api_client import ApiLocalClient
 from smfrcore.client.ftp import FTPEfas
 from smfrcore.models.sql import Nuts3, Nuts2, create_app, TwitterCollection
-from smfrcore.utils import logged_job, job_exceptions_catcher
+from smfrcore.utils import logged_job, job_exceptions_catcher, IS_DEVELOPMENT
 
 from efasproducts import logger, Products
 
@@ -18,7 +18,7 @@ def fetch_rra_helper(since='latest'):
     new_downloaded = ftp_client.download_rra(dated=since)
     ftp_client.close()
     if not new_downloaded:
-        return [], ''  # empty, not downloaded as it was already existing locally
+        return [], ftp_client.latest_fetched_date  # empty, not downloaded as it was already existing locally
     events = []
     # RRA file content
     # [{"ID":1414,"SM_meanLT":2.0},{"ID":1436,"SM_meanLT":3.0},{"ID":1673,"SM_meanLT":7.0}]
@@ -79,4 +79,6 @@ def rra_events_and_products(since='latest', restart_ondemand=True):
                             '\n'.join(str(c) for c in collections))
                 restserver_client.restart_collector(TwitterCollection.TRIGGER_ONDEMAND)
             # produce and push products only after a new RRA is downloaded
+            Products.produce(date)
+        elif not events and IS_DEVELOPMENT:
             Products.produce(date)

@@ -1,14 +1,12 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# import unittest
-# import json
 import sys
 
 from smfrcore.models.sql import TwitterCollection, create_app
 from smfrcore.models.cassandra import Tweet
 
-from tests.tweets_data import data as tweets
+from .data.tweets_data import data as tweets
 
 
 # class ReconcileTestCase(unittest.TestCase):

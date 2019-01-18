@@ -99,49 +99,73 @@ class Products:
 
             collection_ids = collections.keys()
             aggregations = Aggregation.query.filter(Aggregation.collection_id.in_(collection_ids)).all()
-            counters = defaultdict(int)
-            relevant_tweets_aggregated = defaultdict(list)
+            counters, relevant_tweets_aggregated, trends = cls.aggregate_entities(aggregations, collections)
 
-            trends = defaultdict(defaultdict)
+        relevant_tweets_output = cls.find_relevant_tweets(relevant_tweets_aggregated)
+        counters_by_efas_id = cls.calculate_counters(counters)
+        trends_output = cls.calculate_trends(trends)
 
-            for aggregation in aggregations:
-                # FIXME now collections (and so aggregations) do not have "out of bbox" tweets
-                # this means that "if not (cls.is_efas_id(key) and int(key) == efas_id)" tests are superfluos
-                collection_id = aggregation.collection_id
-                efas_id = collections[collection_id].efas_id
+        heatmap_file = cls.write_heatmap_geojson(counters_by_efas_id, forecast, collections, relevant_tweets_output, trends_output)
+        relevant_tweets_file = cls.write_relevant_tweets_geojson(relevant_tweets_output, forecast, collections)
+        cls.push_products_to_sftp(heatmap_file, relevant_tweets_file)
+        cls.write_incidents_geojson(counters_by_efas_id, forecast)
+        cls.write_to_sql(counters_by_efas_id, relevant_tweets_output, collection_ids, forecast, trends_output)
 
-                for key, value in aggregation.values.items():
-                    if not cls.is_efas_id_counter(key, efas_id):
-                        continue
-                    counters[key] = value
+    @classmethod
+    def aggregate_entities(cls, aggregations, collections):
+        counters = defaultdict(int)
+        relevant_tweets_aggregated = defaultdict(list)
+        trends = defaultdict(defaultdict)
+        for aggregation in aggregations:
+            # FIXME now collections (and so aggregations) do not have "out of bbox" tweets
+            # this means that "if not (cls.is_efas_id(key) and int(key) == efas_id)" tests are superfluos
+            collection_id = aggregation.collection_id
+            efas_id = collections[collection_id].efas_id
 
-                for key, tweets in aggregation.relevant_tweets.items():
+            for key, value in aggregation.values.items():
+                if not cls.is_efas_id_counter(key, efas_id):
+                    continue
+                counters[key] = value
 
-                    if not (cls.is_efas_id(key) and int(key) == efas_id and tweets):
-                        continue
-                    relevant_tweets_aggregated[int(key)] = tweets
-                    break
+            for key, tweets in aggregation.relevant_tweets.items():
 
-                # Trends (see issue #19)
-                for key, value in aggregation.trends.items():
-                    # trends key is in the format <EFAS_ID>_[medium|high]_YYYYMMDD[00|12]
-                    # eg. 502_high_20190111400
-                    efas_id_tkn, relevance_tkn, efas_cycle_tkn = key.split('_')
-                    if not (cls.is_efas_id(efas_id_tkn) and int(efas_id_tkn) == efas_id):
-                        continue
-                    efas_cycle = datetime.datetime.strptime(efas_cycle_tkn, '%Y%m%d%H')
-                    if relevance_tkn not in trends[efas_id]:
-                        trends[efas_id][relevance_tkn] = OrderedDict({efas_cycle: {'value': value, 'trend': '-'}})
-                    else:
-                        trends[efas_id][relevance_tkn].update({efas_cycle: {'value': value, 'trend': '-'}})
+                if not (cls.is_efas_id(key) and int(key) == efas_id and tweets):
+                    continue
+                relevant_tweets_aggregated[int(key)] = tweets
+                break
 
+            # Trends (see issue #19)
+            for key, value in aggregation.trends.items():
+                # trends key is in the format <EFAS_ID>_[medium|high]_YYYYMMDD[00|12]
+                # eg. 502_high_20190111400
+                efas_id_tkn, relevance_tkn, efas_cycle_tkn = key.split('_')
+                if not (cls.is_efas_id(efas_id_tkn) and int(efas_id_tkn) == efas_id):
+                    continue
+                efas_cycle = datetime.datetime.strptime(efas_cycle_tkn, '%Y%m%d%H')
+                if relevance_tkn not in trends[efas_id]:
+                    trends[efas_id][relevance_tkn] = {efas_cycle: {'value': value, 'trend': '-'}}
+                else:
+                    trends[efas_id][relevance_tkn].update({efas_cycle: {'value': value, 'trend': '-'}})
+
+            for efas_id in trends:
+                for rel in trends[efas_id]:
+                    trend = trends[efas_id][rel].items()
+                    trends[efas_id][rel] = OrderedDict(sorted(trend, key=lambda x: x[0]))
+
+        return counters, relevant_tweets_aggregated, trends
+
+    @classmethod
+    def find_relevant_tweets(cls, relevant_tweets_aggregated):
         relevant_tweets_output = {}
         for efas_id, tweets in relevant_tweets_aggregated.items():
             deduplicated_tweets = TweetsDeduplicator.deduplicate(tweets)[:cls.max_relevant_tweets]
             if not deduplicated_tweets:
                 continue
             relevant_tweets_output[efas_id] = deduplicated_tweets
+        return relevant_tweets_output
 
+    @classmethod
+    def calculate_counters(cls, counters):
         counters_by_efas_id = defaultdict(defaultdict)
         for key, value in counters.items():
             # key format: <efasid>_<nutsid>_num_tweets_<minprob>-<maxprob>
@@ -150,28 +174,65 @@ class Products:
             efas_id = int(tokens[0])
             probs_interval = tokens[-1]
             counters_by_efas_id[efas_id][probs_interval] = value
+        return counters_by_efas_id
 
+    @classmethod
+    def calculate_trends(cls, trends):
         # calculate trends
+        """
+        Trends paramaters has the following structure:
+        {"160": {"high": {
+        "2019011412": {"value": 1, "trend": "+0.0%"},
+        "2019011400": {"value": 1, "trend": "-"},
+        "2019011112": {"value": 1, "trend": "-"},
+        "2019011312": {"value": 0, "trend": "-100%"},
+        "2019011100": {"value": 0, "trend": "-100%"}
+         }}}
+        :param trends:
+        :return:
+        """
         trends_copy = deepcopy(trends)
         for efas_id, collection_trends in trends_copy.items():
-            for relevance, values_by_efas_cycles in collection_trends.items():
-                # values_by_day is an OrderedDict
-                for efas_cycle, value in values_by_efas_cycles.items():
-                    previous_cycle = efas_cycle - datetime.timedelta(days=1)
-                    if previous_cycle not in values_by_efas_cycles:
-                        continue
-                    previous_value = values_by_efas_cycles[previous_cycle]
-                    trend_perc = 100 * (value - previous_value) / previous_value
-                    trends[efas_id][relevance][efas_cycle]['trend'] = '{:+0.2}%'.format(trend_perc)
+            # collection_trends is a dict like
+            # {"high": {"2019011412": {"value": 1, "trend": "+0.0%"}}, {"medium": {"2019011412": {"value": 1, "trend": "+0.0%"}}}
+            for relevance, trends_by_efas_cycles in collection_trends.items():
+                # trends_by_efas_cycles is an OrderedDict
+                # {"2019011412": {"value": 1, "trend": "+0.0%"}}
+                cycles = trends_by_efas_cycles.keys()
+                first_cycle = min(cycles)
+                last_cycle = max(cycles)
+                num_cycles = round((last_cycle - first_cycle) / datetime.timedelta(hours=12))
+                filled_cycles = {first_cycle + datetime.timedelta(hours=i*12) for i in range(0, num_cycles)}
+                filled_cycles.add(last_cycle)
+                filled_cycles = sorted(list(filled_cycles))
+                for cycle in filled_cycles:
+                    if cycle not in trends_by_efas_cycles:
+                        # fill it
+                        trends[efas_id][relevance][cycle] = {'value': 0, 'trend': '-'}
 
-        heatmap_file = cls.write_heatmap_geojson(counters_by_efas_id, forecast, collections, relevant_tweets_output, trends)
-        relevant_tweets_file = cls.write_relevant_tweets_geojson(relevant_tweets_output, forecast, collections)
-        cls.push_products_to_sftp(heatmap_file, relevant_tweets_file)
-        cls.write_incidents_geojson(counters_by_efas_id, forecast)
-        cls.write_to_sql(counters_by_efas_id, relevant_tweets_output, collection_ids, forecast, trends)
+                for i, efas_cycle in enumerate(filled_cycles):
+                    # day_trend is a dict like {"value": 1, "trend": "+0.0%"}
+                    if i == 0:
+                        continue
+                    current_value = trends[efas_id][relevance][efas_cycle]['value']
+                    previous_cycle = efas_cycle - datetime.timedelta(hours=12)
+                    previous_value = trends[efas_id][relevance][previous_cycle]['value']
+                    if previous_value == 0:
+                        continue
+                    trend_perc = 100 * (current_value - previous_value) / previous_value
+                    trends[efas_id][relevance][efas_cycle]['trend'] = '{:+2.4}%'.format(trend_perc)
+
+        trends_output = {}
+        # for serialization (ie dump to geojson), keys needs to be strings (and not datetime)
+        for efas_id in trends:
+            trends_output[efas_id] = {}
+            for relevance in trends[efas_id]:
+                trends_output[efas_id][relevance] = OrderedDict({d.strftime('%Y%m%d%H'): v for d, v in trends[efas_id][relevance].items()})
+        return trends_output
 
     @classmethod
     def push_products_to_sftp(cls, heatmap_file, relevant_tweets_file):
+        # push files to FTP only from production
         if not IS_DEVELOPMENT:
             ftp_client = SFTPClient(server, user, password, folder)
             ftp_client.send(heatmap_file)
@@ -244,9 +305,11 @@ class Products:
                             coordinates=feat['geometry']['coordinates'],
                             type=feat['geometry']['type'],
                         )
-                        trends = trends[efas_id].get('high')
-                        if trends:
-                            properties.update({'trends': trends})
+
+                        trend = trends.get(efas_id, {}).get('high', {})
+                        trend = OrderedDict(sorted(trend.items(), key=lambda x: x[0]))
+                        trend = [{'date': k, 'value': trend[k]['value'], 'trend': trend[k]['trend']} for k in trend]
+                        properties.update({'trends': trend})
                         out_data.append(Feature(geometry=geom, properties=properties))
                     geojson.dump(FeatureCollection(out_data), sink, sort_keys=True, indent=2)
         logger.info('>>>>>> Wrote %s', geojson_output_filename)
