@@ -139,7 +139,7 @@ class CassandraHelpers:
 
 class Tweet(cqldb.Model, CassandraHelpers):
     """
-    Object representing the `tweet` column family in Cassandra
+    A class representing the `tweet` column family in Cassandra
     """
     session = new_cassandra_session()
     __keyspace__ = _keyspace

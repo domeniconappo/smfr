@@ -6,4 +6,4 @@ python3 scripts/compose4build.py ${image_tag}
 echo
 echo
 echo ++++++++++++++++++++++++++ Starting DBS ++++++++++++++++++++++++++
-docker-compose up -d mysql cassandrasmfr
+docker-compose -f docker-compose-dbs.yaml up -d mysql cassandrasmfr

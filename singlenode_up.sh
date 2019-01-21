@@ -6,4 +6,4 @@ python3 scripts/compose4build.py ${image_tag}
 echo
 echo
 echo ++++++++++++++++++++++++++ Starting ${service} and its dependent services ++++++++++++++++++++++++++
-docker-compose up -d ${service}
+docker-compose -f docker-compose.yaml -f docker-compose-dbs.yaml up -d ${service}
