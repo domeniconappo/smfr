@@ -10,7 +10,7 @@ from collections import namedtuple
 
 import numpy as np
 import ujson as json
-from cassandra.cluster import Cluster, default_lbp_factory
+from cassandra.cluster import Cluster, default_lbp_factory, NoHostAvailable
 from cassandra.cqlengine.connection import Connection, DEFAULT_CONNECTION, _connections
 from cassandra.query import named_tuple_factory, PreparedStatement
 from cassandra.auth import PlainTextAuthProvider
@@ -39,16 +39,26 @@ flask_app = create_app()
 
 
 def new_cassandra_session():
-    cluster_kwargs = {'compression': True, 'load_balancing_policy': default_lbp_factory(),
-                      'auth_provider': PlainTextAuthProvider(username=_cassandra_user, password=_cassandra_password)}
-    cassandra_cluster = Cluster(_hosts, port=_port, **cluster_kwargs) if IN_DOCKER else Cluster(**cluster_kwargs)
-    cassandra_session = cassandra_cluster.connect()
-    cassandra_session.default_timeout = None
-    cassandra_session.default_fetch_size = os.getenv('CASSANDRA_FETCH_SIZE', 1000)
-    cassandra_session.row_factory = named_tuple_factory
-    cassandra_default_connection = Connection.from_session(DEFAULT_CONNECTION, session=cassandra_session)
-    _connections[DEFAULT_CONNECTION] = cassandra_default_connection
-    return cassandra_session
+    retries = 3
+    while retries >= 0:
+        try:
+            cluster_kwargs = {'compression': True, 'load_balancing_policy': default_lbp_factory(),
+                              'auth_provider': PlainTextAuthProvider(username=_cassandra_user, password=_cassandra_password)}
+            cassandra_cluster = Cluster(_hosts, port=_port, **cluster_kwargs) if IN_DOCKER else Cluster(**cluster_kwargs)
+            cassandra_session = cassandra_cluster.connect()
+            cassandra_session.default_timeout = None
+            cassandra_session.default_fetch_size = os.getenv('CASSANDRA_FETCH_SIZE', 1000)
+            cassandra_session.row_factory = named_tuple_factory
+            cassandra_default_connection = Connection.from_session(DEFAULT_CONNECTION, session=cassandra_session)
+            _connections[DEFAULT_CONNECTION] = cassandra_default_connection
+        except NoHostAvailable:
+            logger.warning('Cassandra host not available yet...sleeping 10 secs')
+            retries -= 1
+            time.sleep(10)
+        except Exception:
+            retries = -1
+        else:
+            return cassandra_session
 
 
 class CassandraHelpers:
