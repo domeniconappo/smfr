@@ -1,6 +1,6 @@
 #!/bin/bash
 set -e
-sysctl -w vm.swappiness=0
+#sysctl -w vm.swappiness=0
 
 # first arg is `-f` or `--some-option`
 # or there are no args
