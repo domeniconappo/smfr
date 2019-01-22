@@ -30,6 +30,8 @@ MYSQL_IMAGE=$(getProperty "MYSQL_IMAGE")
 CASSANDRA_IMAGE=$(getProperty "CASSANDRA_IMAGE")
 GEONAMES_IMAGE=$(getProperty "GEONAMES_IMAGE")
 PRODUCTS_IMAGE=$(getProperty "PRODUCTS_IMAGE")
+KAFKA_IMAGE=$(getProperty "KAFKA_IMAGE")
+ZOOKEEPER_IMAGE=$(getProperty "ZOOKEEPER_IMAGE")
 
 docker-compose -f docker-compose.yaml -f docker-compose.dbs.yaml config > docker-compose-parsed.yaml
 
@@ -43,8 +45,8 @@ docker stack deploy --with-registry-auth -c ./docker-compose-4deploy.yaml SMFR -
 docker service update SMFR_mysql --detach=false --with-registry-auth --image ${DOCKER_REGISTRY}/${MYSQL_IMAGE}:${image_tag}
 docker service update SMFR_cassandrasmfr --detach=false --with-registry-auth --image ${DOCKER_REGISTRY}/${CASSANDRA_IMAGE}:${image_tag}
 docker service update SMFR_geonames --detach=false --with-registry-auth --image ${DOCKER_REGISTRY}/${GEONAMES_IMAGE}:${image_tag}
-docker service update SMFR_zookeeper --detach=false --with-registry-auth --image ${DOCKER_REGISTRY}/${GEONAMES_IMAGE}:${image_tag}
-docker service update SMFR_kafka --detach=false --with-registry-auth --image ${DOCKER_REGISTRY}/${GEONAMES_IMAGE}:${image_tag}
+docker service update SMFR_zookeeper --detach=false --with-registry-auth --image ${DOCKER_REGISTRY}/${ZOOKEEPER_IMAGE}:${image_tag}
+docker service update SMFR_kafka --detach=false --with-registry-auth --image ${DOCKER_REGISTRY}/${KAFKA_IMAGE}:${image_tag}
 
 docker service update SMFR_persister --detach=false --with-registry-auth --image ${DOCKER_REGISTRY}/${PERSISTER_IMAGE}:${image_tag}
 docker service update SMFR_annotator --detach=false --with-registry-auth --image ${DOCKER_REGISTRY}/${ANNOTATOR_IMAGE}:${image_tag}
