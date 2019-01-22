@@ -24,7 +24,7 @@ MYSQL_IMAGE=$(getProperty "MYSQL_IMAGE")
 CASSANDRA_IMAGE=$(getProperty "CASSANDRA_IMAGE")
 GEONAMES_IMAGE=$(getProperty "GEONAMES_IMAGE")
 
-docker-compose -f docker-compose-dbs.yaml config > docker-compose-parsed-dbs.yaml
+docker-compose -f docker-compose.dbs.yaml config > docker-compose-parsed-dbs.yaml
 
 # cleaning volumes from docker compose configuration
 python3 scripts/compose4deploy.py -i docker-compose-parsed-dbs.yaml -o docker-compose-4deploy-dbs.yaml

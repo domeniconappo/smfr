@@ -19,7 +19,7 @@ WEB_BASE_IMAGE=python:3.5-stretch
 ALPINE_IMAGE=itsupport/alpine
 
 SMFR_IMAGE=efas/smfr_base
-BACKUPPER_IMAGE=e1-smfr/backupper
+BACKUPPER_IMAGE=efas/backupper
 GEONAMES_IMAGE=efas/geonames
 CASSANDRA_IMAGE=efas/cassandrasmfr
 MYSQL_IMAGE=efas/mysql
@@ -30,6 +30,7 @@ AGGREGATOR_IMAGE=efas/aggregator
 PRODUCTS_IMAGE=efas/products
 RESTSERVER_IMAGE=efas/restserver
 WEB_IMAGE=efas/web
+TEST_IMAGE=efas/integration_tests
 
 # MYSQL CONFIGURATION
 MYSQL_USER=user

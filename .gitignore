@@ -31,7 +31,6 @@ products/output
 /downloads/*.csv
 docker-compose-*.yaml
 docker-compose-*.yml
-!docker-compose-dbs.yaml
 ignoreme*.*
 annotator/models
 
