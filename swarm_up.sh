@@ -31,7 +31,7 @@ CASSANDRA_IMAGE=$(getProperty "CASSANDRA_IMAGE")
 GEONAMES_IMAGE=$(getProperty "GEONAMES_IMAGE")
 PRODUCTS_IMAGE=$(getProperty "PRODUCTS_IMAGE")
 
-docker-compose -f docker-compose.swarm.yaml -f docker-compose.yaml -f docker-compose.dbs.yaml config > docker-compose-parsed.yaml
+docker-compose -f docker-compose.yaml -f docker-compose.dbs.yaml config > docker-compose-parsed.yaml
 
 # cleaning volumes from docker compose configuration
 python3 scripts/compose4deploy.py -i docker-compose-parsed.yaml -o docker-compose-4deploy.yaml
