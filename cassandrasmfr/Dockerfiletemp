@@ -4,7 +4,8 @@ ARG http_proxy
 ARG https_proxy
 ENV LOCAL_JMX no
 RUN apt-get update && apt-get -y install sudo && adduser cassandra sudo
-
+COPY cassandrasmfr/docker-entrypoint.sh /docker-entrypoint.sh
+RUN chmod a+x /docker-entrypoint.sh
 COPY cassandrasmfr/jmxremote.password /etc/cassandra/jmxremote.password
 COPY cassandrasmfr/jmxremote.access /etc/cassandra/jmxremote.access
 COPY cassandrasmfr/cassandra.yaml /etc/cassandra/cassandra.yaml
