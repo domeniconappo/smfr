@@ -13,4 +13,5 @@ COPY cassandrasmfr/jvm.options /etc/cassandra/jvm.options
 COPY cassandrasmfr/limits_cassandra.conf /etc/security/limits.d/cassandra.conf
 COPY cassandrasmfr/limits.conf /etc/security/limits.conf
 COPY cassandrasmfr/jna-5.2.0.jar /usr/share/cassandra/lib/jna-5.2.0.jar
+COPY cassandrasmfr/sysctl.conf /etc/sysctl.conf
 RUN chmod 400 /etc/cassandra/jmxremote.* && chown cassandra:cassandra /etc/cassandra/*
