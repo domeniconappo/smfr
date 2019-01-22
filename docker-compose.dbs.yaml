@@ -6,6 +6,9 @@ services:
     build:
       context: ./
       dockerfile: cassandrasmfr/Dockerfile
+      args:
+        http_proxy: ${http_proxy}
+        https_proxy: ${https_proxy}
     image: ${DOCKER_REGISTRY}/${CASSANDRA_IMAGE}:${image_tag}
     restart: always
     volumes:

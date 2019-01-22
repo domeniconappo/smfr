@@ -22,6 +22,11 @@ services:
 
   cassandrasmfr:
     deploy:
+      resources:
+        limits:
+          memory-swappiness: 0
+          memory: 20G
+          memory-swap: 20G
       restart_policy:
         condition: on-failure
         max_attempts: 3
