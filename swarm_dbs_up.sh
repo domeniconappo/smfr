@@ -29,7 +29,7 @@ docker-compose -f docker-compose.dbs.yaml config > docker-compose-parsed-dbs.yam
 # cleaning volumes from docker compose configuration
 python3 scripts/compose4deploy.py -i docker-compose-parsed-dbs.yaml -o docker-compose-4deploy-dbs.yaml
 
-docker stack deploy --with-registry-auth -c ./docker-compose-4deploy-dbs.yaml SMFR -c ./docker-compose.swarm.yaml
+docker stack deploy --with-registry-auth -c ./docker-compose-4deploy-dbs.yaml SMFR -c ./docker-compose.dbs.swarm.yaml
 
 # forcing updates of images
 

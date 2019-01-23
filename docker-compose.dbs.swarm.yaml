@@ -1,0 +1,30 @@
+version: "3.5"
+
+services:
+
+  cassandrasmfr:
+    deploy:
+      restart_policy:
+        condition: on-failure
+        max_attempts: 3
+        window: 60s
+      placement:
+        constraints: [ node.labels.large == true ]
+
+  geonames:
+    deploy:
+      restart_policy:
+        condition: on-failure
+        max_attempts: 3
+        window: 120s
+      placement:
+        constraints: [ node.labels.medium == true ]
+
+  mysql:
+    deploy:
+      restart_policy:
+        condition: on-failure
+        max_attempts: 3
+        window: 120s
+      placement:
+        constraints: [ node.labels.large == true ]

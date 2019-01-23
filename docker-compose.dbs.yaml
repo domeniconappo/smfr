@@ -10,10 +10,7 @@ services:
         http_proxy: ${http_proxy}
         https_proxy: ${https_proxy}
     image: ${DOCKER_REGISTRY}/${CASSANDRA_IMAGE}:${image_tag}
-    sysctls:
-      - vm.swappiness=0
-      - swappiness=0
-    restart: always
+    restart: a:qlways
     volumes:
     - vlm-cassandra:/var/lib/cassandra:rw
     container_name: cassandrasmfr

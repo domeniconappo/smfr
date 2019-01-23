@@ -20,25 +20,7 @@ services:
       placement:
         constraints: [ node.labels.huge == true ]
 
-  cassandrasmfr:
-    deploy:
-      restart_policy:
-        condition: on-failure
-        max_attempts: 3
-        window: 60s
-      placement:
-        constraints: [ node.labels.large == true ]
-
   geocoder:
-    deploy:
-      restart_policy:
-        condition: on-failure
-        max_attempts: 3
-        window: 120s
-      placement:
-        constraints: [ node.labels.medium == true ]
-
-  geonames:
     deploy:
       restart_policy:
         condition: on-failure
@@ -55,15 +37,6 @@ services:
         window: 120s
       placement:
         constraints: [ node.labels.huge == true ]
-
-  mysql:
-    deploy:
-      restart_policy:
-        condition: on-failure
-        max_attempts: 3
-        window: 120s
-      placement:
-        constraints: [ node.labels.large == true ]
 
   persister:
     deploy:
