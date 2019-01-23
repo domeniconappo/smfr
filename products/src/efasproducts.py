@@ -220,7 +220,7 @@ class Products:
                     if previous_value == 0:
                         continue
                     trend_perc = 100 * (current_value - previous_value) / previous_value
-                    trends[efas_id][relevance][efas_cycle]['trend'] = '{:+2.4}%'.format(trend_perc)
+                    trends[efas_id][relevance][efas_cycle]['trend'] = '{:+3.5}%'.format(trend_perc)
 
         trends_output = {}
         # for serialization (ie dump to geojson), keys needs to be strings (and not datetime)
