@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-
-PROPERTY_FILE=.env
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+PROPERTY_FILE=${DIR}/../.env
 
 function getProperty {
    PROP_KEY=$1

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-
-source functions.sh
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+source ${DIR}/functions.sh
 
 export FLASK_APP=smfr.py
 export MYSQL_USER=$(getProperty "MYSQL_USER")

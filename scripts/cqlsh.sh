@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
-source export_env.sh
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+source ${DIR}/export_env.sh
 mode=${1:-compose}
 echo " ----------------------------------------------------- "
 echo "              CQLSH in ${mode} mode                    "

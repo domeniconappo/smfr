@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-
-source functions.sh
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+source ${DIR}/functions.sh
 
 mode=${1:-compose}
 echo " ----------------------------------------------------- "
@@ -8,11 +8,11 @@ echo "Backup SMFR databases. Shut down SMFR first if needed..."
 echo " ----------------------------------------------------- "
 
 if [[ ${mode} == "compose" ]]; then
-    ./singlenode_down.sh
+    ${DIR}/singlenode_down.sh
     prefix="smfr"
 elif [[ ${mode} == "swarm" ]]; then
     prefix="SMFR"
-    ./swarm_down.sh
+    ${DIR}/swarm_down.sh
 fi
 
 DOCKER_REGISTRY=$(getProperty "DOCKER_REGISTRY")
@@ -40,9 +40,9 @@ docker run -v ${prefix}_vlm-cassandra:/volume -v ${BACKUP_FOLDER}:/backup --rm $
 echo "[OK] CASSANDRA"
 
 if [[ ${mode} == "compose" ]]; then
-    ./singlenode_up.sh
+    ${DIR}/singlenode_up.sh
     prefix="smfr"
 elif [[ ${mode} == "swarm" ]]; then
     prefix="SMFR"
-    ./swarm_up.sh
+    ${DIR}/swarm_up.sh
 fi

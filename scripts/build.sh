@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 
-source functions.sh
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+
+source ${DIR}/functions.sh
 
 command=${1:-1}
 second_command=${2:-1}
@@ -27,7 +29,7 @@ if [[ -n "${DOCKER_ID_USER}" ]] && [[ ${DOCKER_REGISTRY} != "index.docker.io" ]]
     logged=1
 fi
 
-python3 scripts/compose4build.py ${image_tag}
+python3 ${DIR}/compose4build.py ${image_tag}
 
 # build base image
 docker build --build-arg http_proxy=${http_proxy} --build-arg https_proxy=${http_proxy} -t ${SMFR_IMAGE}:${image_tag} base/.
@@ -55,17 +57,17 @@ echo
 echo
 
 # Set VERSION for shared libraries
-cp VERSION base/shared_libs/smfr_models/
-cp VERSION base/shared_libs/smfr_clients/
-cp VERSION base/shared_libs/smfr_utils/
-cp VERSION base/shared_libs/smfr_analysis/
+cp ${DIR}/../VERSION base/shared_libs/smfr_models/
+cp ${DIR}/../VERSION base/shared_libs/smfr_clients/
+cp ${DIR}/../VERSION base/shared_libs/smfr_utils/
+cp ${DIR}/../VERSION base/shared_libs/smfr_analysis/
 
 if [[ -n "`echo ${SERVICES} | xargs -n1 echo | grep ${command}`" ]]; then
     echo  ++++++++++++++++++++ Building ${command} service +++++++++++++++++++++++++++++++
-    docker-compose -f docker-compose.dbs.yaml -f docker-compose.yaml build ${command}
+    docker-compose -f ${DIR}/../docker-compose.dbs.yaml -f ${DIR}/../docker-compose.yaml build ${command}
 else
     echo !!! Building all services !!!
-    docker-compose -f docker-compose.dbs.yaml -f docker-compose.yaml build
+    docker-compose -f ${DIR}/../docker-compose.dbs.yaml -f ${DIR}/../docker-compose.yaml build
 fi
 
 # push images

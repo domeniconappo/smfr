@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 
-source functions.sh
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+source ${DIR}/functions.sh
 
-export image_tag=`cat ./VERSION`
+export image_tag=`cat ${DIR}/../VERSION`
 
 echo
 echo
@@ -24,12 +25,12 @@ MYSQL_IMAGE=$(getProperty "MYSQL_IMAGE")
 CASSANDRA_IMAGE=$(getProperty "CASSANDRA_IMAGE")
 GEONAMES_IMAGE=$(getProperty "GEONAMES_IMAGE")
 
-docker-compose -f docker-compose.dbs.yaml config > docker-compose-parsed-dbs.yaml
+docker-compose -f ${DIR}/../docker-compose.dbs.yaml config > ${DIR}/../docker-compose-parsed-dbs.yaml
 
 # cleaning volumes from docker compose configuration
-python3 scripts/compose4deploy.py -i docker-compose-parsed-dbs.yaml -o docker-compose-4deploy-dbs.yaml
+python3 ${DIR}/compose4deploy.py -i ${DIR}/../docker-compose-parsed-dbs.yaml -o ${DIR}/../docker-compose-4deploy-dbs.yaml
 
-docker stack deploy --with-registry-auth -c ./docker-compose-4deploy-dbs.yaml SMFR -c ./docker-compose.dbs.swarm.yaml
+docker stack deploy --with-registry-auth -c ${DIR}/../docker-compose-4deploy-dbs.yaml SMFR -c ${DIR}/../docker-compose.dbs.swarm.yaml
 
 # forcing updates of images
 
