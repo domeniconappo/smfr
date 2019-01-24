@@ -185,8 +185,8 @@ class TwitterCollection(SMFRModel):
             obj.save()
         elif obj.is_ondemand:
             obj.status = cls.ACTIVE_CHOICE  # force active status when creating/updating on demand collections
-            existing = cls.query.filter_by(efas_id=data['efas_id']).first()
-            if existing and existing.status == cls.ACTIVE_CHOICE:
+            existing = cls.query.filter_by(efas_id=data['efas_id'], status=cls.ACTIVE_CHOICE).first()
+            if existing:
                 # a collection for this efas region is already active and running
                 existing.runtime = existing.runtime if existing.forecast_id == obj.forecast_id else obj.runtime
                 existing.save()
