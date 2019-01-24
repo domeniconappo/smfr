@@ -7,7 +7,6 @@
 # aggregate.sh --collection_id 42
 # aggregate.sh -r
 # aggregate.sh --running
-
-source export_env.sh
-
-python3 scripts/aggregate.py $@
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+source ${DIR}/export_env.sh
+python3 ${DIR}/aggregate.py $@

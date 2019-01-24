@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+source ${DIR}/functions.sh
 
-source functions.sh
-
-export image_tag=`cat ./VERSION`
+export image_tag=`cat ${DIR}/../VERSION`
 
 echo
 echo
@@ -33,12 +33,12 @@ PRODUCTS_IMAGE=$(getProperty "PRODUCTS_IMAGE")
 KAFKA_IMAGE=$(getProperty "KAFKA_IMAGE")
 ZOOKEEPER_IMAGE=$(getProperty "ZOOKEEPER_IMAGE")
 
-docker-compose -f docker-compose.yaml -f docker-compose.dbs.yaml config > docker-compose-parsed.yaml
+docker-compose -f ${DIR}/../docker-compose.yaml -f ${DIR}/../docker-compose.dbs.yaml config > ${DIR}/../docker-compose-parsed.yaml
 
 # cleaning volumes from docker compose configuration
-python3 scripts/compose4deploy.py -i docker-compose-parsed.yaml -o docker-compose-4deploy.yaml
+python3 ${DIR}/compose4deploy.py -i ${DIR}/../docker-compose-parsed.yaml -o ${DIR}/../docker-compose-4deploy.yaml
 
-docker stack deploy --with-registry-auth -c ./docker-compose-4deploy.yaml SMFR -c ./docker-compose.swarm.yaml -c ./docker-compose.dbs.swarm.yaml
+docker stack deploy --with-registry-auth -c ${DIR}/../docker-compose-4deploy.yaml SMFR -c ${DIR}/../docker-compose.swarm.yaml -c ${DIR}/../docker-compose.dbs.swarm.yaml
 
 # forcing updates of images
 
