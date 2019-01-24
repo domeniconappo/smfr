@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-
-source export_env.sh
-export PYTHONSTARTUP=startup_shell.py
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+source ${DIR}/export_env.sh
+export PYTHONSTARTUP=${DIR}/startup_shell.py
 ipython

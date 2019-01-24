@@ -180,23 +180,23 @@ class TwitterCollection(SMFRModel):
             if existing:
                 raise ValueError("You can't have more than one running background collection. "
                                  "First stop the active background collection.")
+            obj._set_keywords_and_languages(data.get('keywords') or [], data.get('languages') or [])
+            obj._set_locations(data.get('bounding_box') or data.get('locations'))
+            obj.save()
         elif obj.is_ondemand:
             obj.status = cls.ACTIVE_CHOICE  # force active status when creating/updating on demand collections
             existing = cls.query.filter_by(efas_id=data['efas_id']).first()
             if existing and existing.status == cls.ACTIVE_CHOICE:
-                # a collection for this efas region is already ongoing
-                obj.id = existing.id
-                obj.runtime = existing.runtime if existing.forecast_id == obj.forecast_id else obj.runtime
-                obj.forecast_id = existing.forecast_id
-                obj.created_at = existing.created_at
-                obj.started_at = existing.started_at
+                # a collection for this efas region is already active and running
+                existing.runtime = existing.runtime if existing.forecast_id == obj.forecast_id else obj.runtime
+                existing.save()
+                obj = existing
             else:
-                # if a collection is started for EFAS_ID for the first time or if it was properly stopped...
+                # create a new collection (it's a new event)
                 obj.started_at = datetime.datetime.utcnow()
-
-        obj._set_keywords_and_languages(data.get('keywords') or [], data.get('languages') or [])
-        obj._set_locations(data.get('bounding_box') or data.get('locations'))
-        obj.save()
+                obj._set_keywords_and_languages(data.get('keywords') or [], data.get('languages') or [])
+                obj._set_locations(data.get('bounding_box') or data.get('locations'))
+                obj.save()
         # updating caches
         cls._update_caches(obj)
         return obj
