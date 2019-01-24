@@ -48,6 +48,7 @@ def events_to_collections_payload(events, date):
         nuts_id = nuts2.nuts_id or ''
         if nuts3_data:
             cities = ','.join(c for c in set([c[2] for c in nuts3_data if c and c[2]]) | {nuts2.efas_name})
+            cities = cities.strip(',')
         else:
             cities = nuts2.efas_name
 
