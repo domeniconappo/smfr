@@ -47,7 +47,8 @@ def events_to_collections_payload(events, date):
         country_name = nuts3_data[0][0] if nuts3_data else nuts2.country
         nuts_id = nuts2.nuts_id or ''
         if nuts3_data:
-            cities = ','.join(c for c in set([c[2] for c in nuts3_data if c and c[2]]) | {nuts2.efas_name})
+            city_list = sorted(list(c for c in set([c[2] for c in nuts3_data if c and c[2]]) | {nuts2.efas_name}))
+            cities = ','.join(city_list)
             cities = cities.strip(',')
         else:
             cities = nuts2.efas_name
