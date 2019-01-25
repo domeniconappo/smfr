@@ -10,7 +10,7 @@ services:
     image: ${DOCKER_REGISTRY}/${AGGREGATOR_IMAGE}:${image_tag}
     build:
       context: ./
-      dockerfile: Dockerfile.aggregator.ready
+      dockerfile: aggregator/Dockerfile
       args:
         http_proxy: ${http_proxy}
         https_proxy: ${https_proxy}
@@ -49,7 +49,7 @@ services:
     image: ${DOCKER_REGISTRY}/${ANNOTATOR_IMAGE}:${image_tag}
     build:
       context: ./
-      dockerfile: Dockerfile.annotator.ready
+      dockerfile: annotator/Dockerfile
       args:
         http_proxy: ${http_proxy}
         https_proxy: ${https_proxy}
@@ -98,7 +98,7 @@ services:
     image: ${DOCKER_REGISTRY}/${GEOCODER_IMAGE}:${image_tag}
     build:
       context: ./
-      dockerfile: Dockerfile.geocoder.ready
+      dockerfile: geocoder/Dockerfile
       args:
         http_proxy: ${http_proxy}
         https_proxy: ${https_proxy}
@@ -174,7 +174,7 @@ services:
       args:
         http_proxy: ${http_proxy}
         https_proxy: ${https_proxy}
-      dockerfile: Dockerfile.persister.ready
+      dockerfile: persister/Dockerfile
     working_dir: /persister
     environment:
       LOGGING_LEVEL: ${LOGGING_LEVEL}
@@ -215,7 +215,7 @@ services:
     image: ${DOCKER_REGISTRY}/${PRODUCTS_IMAGE}:${image_tag}
     build:
       context: ./
-      dockerfile: Dockerfile.products.ready
+      dockerfile: products/Dockerfile
       args:
         http_proxy: ${http_proxy}
         https_proxy: ${https_proxy}
@@ -274,7 +274,7 @@ services:
     image: ${DOCKER_REGISTRY}/${RESTSERVER_IMAGE}:${image_tag}
     build:
       context: ./
-      dockerfile: Dockerfile.restserver.ready
+      dockerfile: restserver/Dockerfile
       args:
         http_proxy: ${http_proxy}
         https_proxy: ${https_proxy}
@@ -343,7 +343,7 @@ services:
     image: ${DOCKER_REGISTRY}/${WEB_IMAGE}:${image_tag}
     build:
       context: ./
-      dockerfile: Dockerfile.web.ready
+      dockerfile: web/Dockerfile
       args:
         http_proxy: ${http_proxy}
         https_proxy: ${http_proxy}

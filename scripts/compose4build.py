@@ -12,7 +12,7 @@ properties = read_env()
 
 
 def replace_image_variable(component_folder, variable):
-    dockerfile_in = os.path.join(component_folder, 'Dockerfiletemp')
+    dockerfile_in = os.path.join(component_folder, 'Dockerfile.template')
     dockerfile_out = os.path.join(component_folder, 'Dockerfile')
     with open(dockerfile_in, 'r') as fin, open(dockerfile_out, 'w') as fout:
         read = fin.read()
@@ -28,8 +28,8 @@ def do(image_tag):
     replace_image_variable('./backupper', 'ALPINE_IMAGE')
 
     for component in ('annotator', 'geocoder', 'persister', 'restserver', 'web', 'aggregator', 'products',):
-        docker_in = 'Dockerfile.{}'.format(component)
-        docker_out = 'Dockerfile.{}.ready'.format(component)
+        docker_in = './{}/Dockerfile.template'.format(component)
+        docker_out = './{}/Dockerfile'.format(component)
         with open(docker_out, 'w') as fout, open(docker_in) as fin:
             read = fin.read()
             if component != 'web':

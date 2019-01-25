@@ -41,7 +41,6 @@ restserver/src/tests/data/CostPopEst2018061300.json
 *geonames_index*
 # Byte-compiled / optimized / DLL files
 __pycache__/
-*.py[cod]
 *$py.class
 
 # C extensions
@@ -102,14 +101,8 @@ local_settings.py
 instance/
 .webassets-cache
 
-# Scrapy stuff:
-.scrapy
-
 # Sphinx documentation
 docs/_build/
-
-# PyBuilder
-target/
 
 # Jupyter Notebook
 .ipynb_checkpoints
@@ -146,5 +139,14 @@ celerybeat-schedule
 /geonames/Dockerfile
 /mysql/Dockerfile
 /backupper/Dockerfile
+
+/aggregator/Dockerfile
+/annotator/Dockerfile
+/geocoder/Dockerfile
+/persister/Dockerfile
+/products/Dockerfile
+/restserver/Dockerfile
+/web/Dockerfile
+
 docker-compose.override.yaml
 docker-compose.override.yml
