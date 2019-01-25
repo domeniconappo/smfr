@@ -6,7 +6,7 @@ services:
     image: ${DOCKER_REGISTRY}/${TEST_IMAGE}:${image_tag}
       build:
         context: ./
-        dockerfile: Dockerfile.test.ready
+        dockerfile: tester/Dockerfile
         args:
           http_proxy: ${http_proxy}
           https_proxy: ${https_proxy}
@@ -39,8 +39,13 @@ services:
         - './annotator/src:/annotator'
       depends_on:
         - kafka
+        - mysql
         - cassandrasmfr
         - persister
+        - aggregator
+        - annotator
+        - geocoder
+        - restserver
 
   cassandrasmfr:
     volumes:
@@ -48,7 +53,7 @@ services:
 
   mysql:
       volumes:
-        - vlm-mysql:/var/lib/mysql:rw
+        - vlm-mysql-test:/var/lib/mysql:rw
       environment:
         MYSQL_ROOT_PASSWORD: ${MYSQL_PASSWORD}
         MYSQL_DATABASE: ${MYSQL_DBNAME}
