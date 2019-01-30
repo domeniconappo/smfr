@@ -1,0 +1,5 @@
+mysqlclient
+kafka-python==1.4.4
+sqlalchemy
+sqlalchemy_utils
+pytest

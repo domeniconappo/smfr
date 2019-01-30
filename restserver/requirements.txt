@@ -22,6 +22,3 @@ swagger-marshmallow-codegen
 
 twython
 langdetect
-
-nose2
-Flask-Testing

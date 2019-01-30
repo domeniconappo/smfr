@@ -2,54 +2,55 @@ version: "3.5"
 
 services:
 
-  test:
+  tester:
+    container_name: tester
+    command: -- pytest
     image: ${DOCKER_REGISTRY}/${TEST_IMAGE}:${image_tag}
-      build:
-        context: ./
-        dockerfile: tester/Dockerfile
-        args:
-          http_proxy: ${http_proxy}
-          https_proxy: ${https_proxy}
-      working_dir: /annotator
-      networks:
-        - back-tier
-        - front-tier
-
-      environment:
-        PERSISTER_KAFKA_TOPIC: ${PERSISTER_KAFKA_TOPIC}
-        ANNOTATOR_KAFKA_TOPIC: ${ANNOTATOR_KAFKA_TOPIC}
-        DEVELOPMENT: ${DEVELOPMENT}
-        KAFKA_BOOTSTRAP_SERVERS: ${KAFKA_BOOTSTRAP_SERVERS}
-        CASSANDRA_HOST: ${CASSANDRA_HOST}
-        CASSANDRA_PORT: ${CASSANDRA_PORT}
-        CASSANDRA_USER: ${CASSANDRA_USER}
-        CASSANDRA_PASSWORD: ${CASSANDRA_PASSWORD}
-        CASSANDRA_KEYSPACE: ${CASSANDRA_KEYSPACE}
-        CASSANDRA_USE_CLUSTER: ${CASSANDRA_USE_CLUSTER}
-        CASSANDRA_NODES: ${CASSANDRA_NODES}
-        MYSQL_HOST: mysql
-        MYSQL_DBNAME: ${MYSQL_DBNAME}
-        MYSQL_USER: ${MYSQL_USER}
-        MYSQL_PASSWORD: ${MYSQL_PASSWORD}
-        MODELS_PATH: /models
-        GIT_REPO_MODELS: ${GIT_REPO_MODELS}
+    build:
+      context: ./
+      dockerfile: tester/Dockerfile
+      args:
         http_proxy: ${http_proxy}
         https_proxy: ${https_proxy}
-      volumes:
-        - './annotator/src:/annotator'
-      depends_on:
-        - kafka
-        - mysql
-        - cassandrasmfr
-        - persister
-        - aggregator
-        - annotator
-        - geocoder
-        - restserver
+    networks:
+      - back-tier
+      - front-tier
+
+    environment:
+      PERSISTER_KAFKA_TOPIC: ${PERSISTER_KAFKA_TOPIC}
+      ANNOTATOR_KAFKA_TOPIC: ${ANNOTATOR_KAFKA_TOPIC}
+      DEVELOPMENT: ${DEVELOPMENT}
+      KAFKA_BOOTSTRAP_SERVERS: ${KAFKA_BOOTSTRAP_SERVERS}
+      CASSANDRA_HOST: ${CASSANDRA_HOST}
+      CASSANDRA_PORT: ${CASSANDRA_PORT}
+      CASSANDRA_USER: ${CASSANDRA_USER}
+      CASSANDRA_PASSWORD: ${CASSANDRA_PASSWORD}
+      CASSANDRA_KEYSPACE: ${CASSANDRA_KEYSPACE}
+      CASSANDRA_USE_CLUSTER: ${CASSANDRA_USE_CLUSTER}
+      CASSANDRA_NODES: ${CASSANDRA_NODES}
+      MYSQL_HOST: mysql
+      MYSQL_DBNAME: ${MYSQL_DBNAME}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MODELS_PATH: /models
+      GIT_REPO_MODELS: ${GIT_REPO_MODELS}
+      http_proxy: ${http_proxy}
+      https_proxy: ${https_proxy}
+    depends_on:
+      - kafka
+      - mysql
+      - cassandrasmfr
+      - persister
+      - aggregator
+      - annotator
+      - geocoder
+      - restserver
 
   cassandrasmfr:
     volumes:
       - vlm-cassandra-test:/var/lib/cassandra:rw
+    networks:
+      - back-tier
 
   mysql:
       volumes:
@@ -58,8 +59,6 @@ services:
         MYSQL_ROOT_PASSWORD: ${MYSQL_PASSWORD}
         MYSQL_DATABASE: ${MYSQL_DBNAME}
         MYSQL_ALLOW_EMPTY_PASSWORD: 'yes'
-      networks:
-        - back-tier
 
 volumes:
   vlm-cassandra-test:

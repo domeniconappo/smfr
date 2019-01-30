@@ -147,6 +147,7 @@ celerybeat-schedule
 /products/Dockerfile
 /restserver/Dockerfile
 /web/Dockerfile
+/tester/Dockerfile
 
 docker-compose.override.yaml
 docker-compose.override.yml

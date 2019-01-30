@@ -7,7 +7,7 @@ source ${DIR}/functions.sh
 command=${1:-1}
 second_command=${2:-1}
 
-SERVICES="web restserver geocoder annotator persister aggregator cassandrasmfr mysql products"
+SERVICES="web restserver geocoder annotator persister aggregator cassandrasmfr mysql products tester"
 logged=0
 
 echo
@@ -64,10 +64,10 @@ cp ${DIR}/../VERSION base/shared_libs/smfr_analysis/
 
 if [[ -n "`echo ${SERVICES} | xargs -n1 echo | grep ${command}`" ]]; then
     echo  ++++++++++++++++++++ Building ${command} service +++++++++++++++++++++++++++++++
-    docker-compose -f ${DIR}/../docker-compose.dbs.yaml -f ${DIR}/../docker-compose.yaml build ${command}
+    docker-compose -f ${DIR}/../docker-compose.dbs.yaml -f ${DIR}/../docker-compose.yaml -f ${DIR}/../docker-compose.test.yaml build ${command}
 else
     echo !!! Building all services !!!
-    docker-compose -f ${DIR}/../docker-compose.dbs.yaml -f ${DIR}/../docker-compose.yaml build
+    docker-compose -f ${DIR}/../docker-compose.dbs.yaml -f ${DIR}/../docker-compose.yaml -f ${DIR}/../docker-compose.test.yaml build
 fi
 
 # push images
