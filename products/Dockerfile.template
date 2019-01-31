@@ -6,6 +6,7 @@ ARG https_proxy
 ARG download_folder
 ARG sftp_host
 ARG ftp_host
+ARG ramnode_host
 ENV LANG=C.UTF-8
 ENV http_proxy=${http_proxy}
 ENV https_proxy=${https_proxy}
@@ -16,6 +17,8 @@ RUN echo "Host *\nSendEnv LC_* LANG\nProxyCommand /usr/local/bin/corkscrew ${htt
 
 RUN ssh-keyscan -t rsa ${sftp_host} >> ~/.ssh/known_hosts
 RUN ssh-keyscan -t rsa ${ftp_host} >> ~/.ssh/known_hosts
+RUN ssh-keyscan -t rsa ${ramnode_host} >> ~/.ssh/known_hosts
+
 COPY base/shared_libs/scripts/wait_for_it.sh /scripts/
 COPY base/shared_libs/smfr_utils/. /smfr_libs/utils/
 COPY base/shared_libs/smfr_models/. /smfr_libs/models/
