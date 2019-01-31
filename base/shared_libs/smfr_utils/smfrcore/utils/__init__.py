@@ -1,6 +1,7 @@
 """
 Core Utils module
 """
+import sys
 import logging
 from logging import StreamHandler
 from collections import defaultdict
@@ -17,7 +18,7 @@ from flask.json import JSONEncoder
 logger = logging.getLogger('SMFR utils')
 logger.setLevel(os.getenv('LOGGING_LEVEL', 'DEBUG'))
 IS_DEVELOPMENT = os.getenv('DEVELOPMENT', '0') in ('1', 'yes', 'YES', 'Yes')
-
+UNDER_TESTS = any('pytest' in x for x in sys.argv)
 FALSE_VALUES = (False, 0, None, 'False', 'false', 'NO', 'no', 'No', '0', 'FALSE', 'null', 'None', 'NULL', 'NONE')
 
 LOGGER_FORMAT = '[%(asctime)s: %(name)s (%(threadName)s@%(processName)s) <%(filename)s:%(lineno)d>-%(levelname)s] %(message)s'
@@ -63,7 +64,7 @@ def job_exceptions_catcher(job_func, cancel_on_failure=False):
     def wrapper(*args, **kwargs):
         try:
             return job_func(*args, **kwargs)
-        except:
+        except Exception:
             import traceback
             logger.error(traceback.format_exc())
             if cancel_on_failure:
@@ -103,5 +104,3 @@ class DefaultDictSyncManager(BaseManager):
 
 # multiprocessing.Manager does not include defaultdict: we need to use a customized Manager
 DefaultDictSyncManager.register('defaultdict', defaultdict, DictProxy)
-
-

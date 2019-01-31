@@ -27,10 +27,9 @@ from flask_jwt_extended import (
 )
 
 from smfrcore.auth import authenticate, identity
-from smfrcore.utils import IN_DOCKER, DEFAULT_HANDLER, IS_DEVELOPMENT
+from smfrcore.utils import IN_DOCKER, DEFAULT_HANDLER, IS_DEVELOPMENT, UNDER_TESTS
 
 DEVELOPMENT = IS_DEVELOPMENT
-UNDER_TESTS = any('nose2' in x for x in sys.argv)
 SERVER_BOOTSTRAP = 'gunicorn' in sys.argv[0]
 MYSQL_MIGRATION = all(os.path.basename(a) in ('flask', 'db', 'migrate') for a in sys.argv) \
                   or all(os.path.basename(a) in ('flask', 'db', 'upgrade') for a in sys.argv) \

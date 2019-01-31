@@ -6,10 +6,10 @@ source ${DIR}/export_env.sh
 ${DIR}/singlenode_dbs.sh
 ${DIR}/install_shared_libs.sh models
 
-cd ${DIR}/../restserver/src
+cd ${DIR}/../base/shared_libs/smfr_models/smfrcore/models/sql/migrations
 
 flask db migrate
-flask db upgrade
+alembic upgrade head
 
 cd -
 echo "[WARN] Databases were started. To stop db services execute ./singlenode_down.sh"
