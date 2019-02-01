@@ -8,9 +8,11 @@ restserver/logs
 scripts/
 uploads/
 Dockerfile.*.ready
-nuts.db
 .mypy_cache/
 .pytest_cache/
-.git/
-*.py[cod]
+**/.mypy_cache/
+**/.pytest_cache/
 __pycache__/
+.git/
+**/__pycache__/
+**/*.pyc

@@ -64,9 +64,11 @@ cp ${DIR}/../VERSION base/shared_libs/smfr_analysis/
 
 if [[ -n "`echo ${SERVICES} | xargs -n1 echo | grep ${command}`" ]]; then
     echo  ++++++++++++++++++++ Building ${command} service +++++++++++++++++++++++++++++++
+    echo "docker-compose -f ${DIR}/../docker-compose.dbs.yaml -f ${DIR}/../docker-compose.yaml -f ${DIR}/../docker-compose.test.yaml build ${command}"
     docker-compose -f ${DIR}/../docker-compose.dbs.yaml -f ${DIR}/../docker-compose.yaml -f ${DIR}/../docker-compose.test.yaml build ${command}
 else
     echo !!! Building all services !!!
+    echo "docker-compose -f ${DIR}/../docker-compose.dbs.yaml -f ${DIR}/../docker-compose.yaml -f ${DIR}/../docker-compose.test.yaml build"
     docker-compose -f ${DIR}/../docker-compose.dbs.yaml -f ${DIR}/../docker-compose.yaml -f ${DIR}/../docker-compose.test.yaml build
 fi
 
@@ -87,15 +89,19 @@ if [[ -n "${DOCKER_ID_USER}" ]] && [[ ${command} == "push" ]]; then
     CASSANDRA_IMAGE=$(getProperty "CASSANDRA_IMAGE")
     GEONAMES_IMAGE=$(getProperty "GEONAMES_IMAGE")
     PRODUCTS_IMAGE=$(getProperty "PRODUCTS_IMAGE")
+    TEST_IMAGE=$(getProperty "TEST_IMAGE")
 
-    docker push ${DOCKER_REGISTRY}/${PERSISTER_IMAGE}:${image_tag}
+    docker push ${DOCKER_REGISTRY}/${CASSANDRA_IMAGE}:${image_tag}
+    docker push ${DOCKER_REGISTRY}/${GEONAMES_IMAGE}:${image_tag}
+    docker push ${DOCKER_REGISTRY}/${MYSQL_IMAGE}:${image_tag}
+
     docker push ${DOCKER_REGISTRY}/${AGGREGATOR_IMAGE}:${image_tag}
     docker push ${DOCKER_REGISTRY}/${ANNOTATOR_IMAGE}:${image_tag}
     docker push ${DOCKER_REGISTRY}/${GEOCODER_IMAGE}:${image_tag}
+    docker push ${DOCKER_REGISTRY}/${PERSISTER_IMAGE}:${image_tag}
     docker push ${DOCKER_REGISTRY}/${PRODUCTS_IMAGE}:${image_tag}
     docker push ${DOCKER_REGISTRY}/${RESTSERVER_IMAGE}:${image_tag}
+    docker push ${DOCKER_REGISTRY}/${TEST_IMAGE}:${image_tag}
     docker push ${DOCKER_REGISTRY}/${WEB_IMAGE}:${image_tag}
-    docker push ${DOCKER_REGISTRY}/${MYSQL_IMAGE}:${image_tag}
-    docker push ${DOCKER_REGISTRY}/${GEONAMES_IMAGE}:${image_tag}
-    docker push ${DOCKER_REGISTRY}/${CASSANDRA_IMAGE}:${image_tag}
+
 fi

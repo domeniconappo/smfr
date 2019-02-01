@@ -5,7 +5,7 @@ export image_tag=`cat ${DIR}/../VERSION`
 export SINGLENODE=1
 
 ${DIR}/singlenode_down.sh
-${DIR}/build.sh tester
+#${DIR}/build.sh tester
 
 python3 ${DIR}/compose4build.py ${image_tag}
 
