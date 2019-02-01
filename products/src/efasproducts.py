@@ -30,22 +30,6 @@ logging.getLogger('requests_oauthlib').setLevel(logging.ERROR)
 logging.getLogger('paramiko').setLevel(logging.ERROR)
 logging.getLogger('oauthlib').setLevel(logging.ERROR)
 
-# FTP client for KAJO server
-sftps = {
-    'KAJO': {
-        'server': os.getenv('KAJO_FTP_SERVER', '207.180.226.197'),
-        'user': os.getenv('KAJO_FTP_USER', 'jrc'),
-        'password': os.getenv('KAJO_FTP_PASSWORD'),
-        'folder': os.getenv('KAJO_FTP_FOLDER', '/home/jrc')
-    },
-    'RAMNODE': {
-        'server': os.getenv('RAMNODE_FTP_SERVER', '81.4.107.12'),
-        'user': os.getenv('RAMNODE_FTP_USER', 'smfr'),
-        'password': os.getenv('RAMNODE_FTP_PASSWORD'),
-        'folder': os.getenv('RAMNODE_FTP_FOLDER', '/home/smfr/products')
-    },
-}
-
 
 class Products:
     """
@@ -76,10 +60,27 @@ class Products:
         'red': 'high',
     }
 
+    # FTP client configs for dissemination
+    sftps = {
+        'KAJO': {
+            'server': os.getenv('KAJO_FTP_SERVER', '207.180.226.197'),
+            'user': os.getenv('KAJO_FTP_USER', 'jrc'),
+            'password': os.getenv('KAJO_FTP_PASSWORD'),
+            'folder': os.getenv('KAJO_FTP_FOLDER', '/home/jrc')
+        },
+        'RAMNODE': {
+            'server': os.getenv('RAMNODE_FTP_SERVER', '81.4.107.12'),
+            'user': os.getenv('RAMNODE_FTP_USER', 'smfr'),
+            'password': os.getenv('RAMNODE_FTP_PASSWORD'),
+            'folder': os.getenv('RAMNODE_FTP_FOLDER', '/home/smfr/products')
+        },
+    }
+
     # here api
     here_client = HereClient()
-    app = create_app()
 
+    # preload nuts
+    app = create_app()
     with app.app_context():
         nuts2 = Nuts2.load_nuts()
 
@@ -244,7 +245,7 @@ class Products:
     def disseminate(cls, heatmap_file):
         # push files to FTP only from production
         if not IS_DEVELOPMENT:
-            for sftp in sftps:
+            for sftp in cls.sftps.values():
                 server = sftp['server']
                 user = sftp['user']
                 password = sftp['password']
