@@ -30,12 +30,6 @@ logging.getLogger('requests_oauthlib').setLevel(logging.ERROR)
 logging.getLogger('paramiko').setLevel(logging.ERROR)
 logging.getLogger('oauthlib').setLevel(logging.ERROR)
 
-# FTP client for KAJO server
-server = os.getenv('KAJO_FTP_SERVER', '207.180.226.197')
-user = os.getenv('KAJO_FTP_USER', 'jrc')
-password = os.getenv('KAJO_FTP_PASSWORD')
-folder = os.getenv('KAJO_FTP_FOLDER', '/home/jrc')
-
 
 class Products:
     """
@@ -66,10 +60,27 @@ class Products:
         'red': 'high',
     }
 
+    # FTP client configs for dissemination
+    sftps = {
+        'KAJO': {
+            'server': os.getenv('KAJO_FTP_SERVER', '207.180.226.197'),
+            'user': os.getenv('KAJO_FTP_USER', 'jrc'),
+            'password': os.getenv('KAJO_FTP_PASSWORD'),
+            'folder': os.getenv('KAJO_FTP_FOLDER', '/home/jrc')
+        },
+        'RAMNODE': {
+            'server': os.getenv('RAMNODE_FTP_SERVER', '81.4.107.12'),
+            'user': os.getenv('RAMNODE_FTP_USER', 'smfr'),
+            'password': os.getenv('RAMNODE_FTP_PASSWORD'),
+            'folder': os.getenv('RAMNODE_FTP_FOLDER', '/home/smfr/products')
+        },
+    }
+
     # here api
     here_client = HereClient()
-    app = create_app()
 
+    # preload nuts
+    app = create_app()
     with app.app_context():
         nuts2 = Nuts2.load_nuts()
 
@@ -107,7 +118,7 @@ class Products:
 
         heatmap_file = cls.write_heatmap_geojson(counters_by_efas_id, forecast, collections, relevant_tweets_output, trends_output)
         relevant_tweets_file = cls.write_relevant_tweets_geojson(relevant_tweets_output, forecast, collections)
-        cls.push_products_to_sftp(heatmap_file, relevant_tweets_file)
+        cls.disseminate(heatmap_file)
         cls.write_incidents_geojson(counters_by_efas_id, forecast)
         cls.write_to_sql(counters_by_efas_id, relevant_tweets_output, collection_ids, forecast, trends_output)
 
@@ -202,7 +213,7 @@ class Products:
                 first_cycle = min(cycles)
                 last_cycle = max(cycles)
                 num_cycles = round((last_cycle - first_cycle) / datetime.timedelta(hours=12))
-                filled_cycles = {first_cycle + datetime.timedelta(hours=i*12) for i in range(0, num_cycles)}
+                filled_cycles = {first_cycle + datetime.timedelta(hours=i * 12) for i in range(0, num_cycles)}
                 filled_cycles.add(last_cycle)
                 filled_cycles = sorted(list(filled_cycles))
                 for cycle in filled_cycles:
@@ -231,14 +242,18 @@ class Products:
         return trends_output
 
     @classmethod
-    def push_products_to_sftp(cls, heatmap_file, relevant_tweets_file):
+    def disseminate(cls, heatmap_file):
         # push files to FTP only from production
         if not IS_DEVELOPMENT:
-            ftp_client = SFTPClient(server, user, password, folder)
-            ftp_client.send(heatmap_file)
-            ftp_client.send(relevant_tweets_file)
-            ftp_client.close()
-            logger.info('[OK] Pushed files %s to SFTP %s', [heatmap_file, relevant_tweets_file], server)
+            for sftp in cls.sftps.values():
+                server = sftp['server']
+                user = sftp['user']
+                password = sftp['password']
+                folder = sftp['folder']
+                ftp_client = SFTPClient(server, user, password, folder)
+                ftp_client.send(heatmap_file)
+                ftp_client.close()
+                logger.info('[OK] Pushed files %s to SFTP %s[%s]', [heatmap_file], sftp, server)
 
     @classmethod
     def get_incidents(cls, efas_id):
@@ -400,7 +415,7 @@ class Products:
             highlights = {}
             for efas_id, counters in counters_by_efas_id.items():
                 if not (counters.get(cls.high_prob_range, 0) < gray_th or
-                        counters.get(cls.high_prob_range, 0) < 1/orange_th * counters.get(cls.mid_prob_range, 0)):
+                        counters.get(cls.high_prob_range, 0) < 1 / orange_th * counters.get(cls.mid_prob_range, 0)):
                     highlights[efas_id] = counters
 
             product = Product(aggregated=counters_by_efas_id, relevant_tweets=relevant_tweets_aggregated,
@@ -427,9 +442,10 @@ class Products:
         orange_th = heuristics[2]  # 9
         color = 'gray'
         if counters.get(cls.high_prob_range, 0) >= gray_th:
-            if 1/orange_th * counters.get(cls.mid_prob_range, 0) <= counters.get(cls.high_prob_range, 0) < 1/red_th * counters.get(cls.mid_prob_range, 0):
+            if 1 / orange_th * counters.get(cls.mid_prob_range, 0) <= counters.get(cls.high_prob_range, 0) < 1 / red_th * counters.get(
+                    cls.mid_prob_range, 0):
                 color = 'orange'
-            elif counters.get(cls.high_prob_range, 0) >= 1/red_th * counters.get(cls.mid_prob_range, 0):
+            elif counters.get(cls.high_prob_range, 0) >= 1 / red_th * counters.get(cls.mid_prob_range, 0):
                 color = 'red'
         return color, RGB[color]
 
