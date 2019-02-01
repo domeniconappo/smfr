@@ -192,6 +192,9 @@ def create_app(app_name='SMFR'):
     app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://{}:{}@{}/{}?charset=utf8mb4'.format(
         _mysql_user, _mysql_pass, _mysql_host, _mysql_db_name
     )
+    if UNDER_TESTS:
+        app.config['TESTING'] = True
+
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     app.config['SQLALCHEMY_POOL_TIMEOUT'] = 3600
     app.config['SQLALCHEMY_POOL_RECYCLE'] = 1200
