@@ -261,6 +261,10 @@ services:
       KAJO_FTP_USER: ${KAJO_FTP_USER}
       KAJO_FTP_PASSWORD: ${KAJO_FTP_PASSWORD}
       KAJO_FTP_FOLDER: ${KAJO_FTP_FOLDER}
+      RAMNODE_FTP_SERVER: ${RAMNODE_FTP_SERVER}
+      RAMNODE_FTP_USER: ${RAMNODE_FTP_USER}
+      RAMNODE_FTP_PASSWORD: ${RAMNODE_FTP_PASSWORD}
+      RAMNODE_FTP_FOLDER: ${RAMNODE_FTP_FOLDER}
       http_proxy: ${http_proxy}
       https_proxy: ${https_proxy}
     networks:
