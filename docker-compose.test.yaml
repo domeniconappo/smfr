@@ -4,7 +4,7 @@ services:
 
   tester:
     container_name: tester
-    command: -- pytest
+    command: ["--", "pytest", "-s"]
     image: ${DOCKER_REGISTRY}/${TEST_IMAGE}:${image_tag}
     build:
       context: ./
@@ -15,6 +15,8 @@ services:
     networks:
       - back-tier
       - front-tier
+    volumes:
+      - './tester/src:/tests'
 
     environment:
       PERSISTER_KAFKA_TOPIC: ${PERSISTER_KAFKA_TOPIC}
@@ -46,20 +48,12 @@ services:
       - geocoder
       - restserver
 
-  cassandrasmfr:
-    volumes:
-      - vlm-cassandra-test:/var/lib/cassandra:rw
-    networks:
-      - back-tier
+#  cassandrasmfr:
+#    networks:
+#      - back-tier
 
-  mysql:
-      volumes:
-        - vlm-mysql-test:/var/lib/mysql:rw
-      environment:
-        MYSQL_ROOT_PASSWORD: ${MYSQL_PASSWORD}
-        MYSQL_DATABASE: ${MYSQL_DBNAME}
-        MYSQL_ALLOW_EMPTY_PASSWORD: 'yes'
-
-volumes:
-  vlm-cassandra-test:
-  vlm-mysql-test:
+#  mysql:
+#      environment:
+#        MYSQL_ROOT_PASSWORD: ${MYSQL_PASSWORD}
+#        MYSQL_DATABASE: ${MYSQL_DBNAME}
+#        MYSQL_ALLOW_EMPTY_PASSWORD: 'yes'
