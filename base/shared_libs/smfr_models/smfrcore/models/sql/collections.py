@@ -1,5 +1,6 @@
 import datetime
 import copy
+import os
 import statistics
 
 import arrow
@@ -261,15 +262,17 @@ class TwitterCollection(SMFRModel):
 
     @classmethod
     def get_active_ondemand(cls):
-        calabria_collection =  cls.query.get(42)
+        include_past = os.getenv('INCLUDE_PAST_COLLECTIONS', '').split(',')
+        included_collections = [cls.query.get(int(i)) for i in include_past]
+        included_collections = [c for c in included_collections if c]
         key = cls.cache_keys['on-demand']
         res = cls.cache.get(key)
         if not res:
             res = cls.query.filter(
                 cls.trigger == cls.TRIGGER_ONDEMAND, cls.status == cls.ACTIVE_STATUS,
             ).order_by(cls.status, cls.started_at.desc(), cls.runtime.desc()).all()
-            cls.cache[key] = res + [calabria_collection] if calabria_collection else res
-        return res + [calabria_collection] if calabria_collection else res
+            cls.cache[key] = res + included_collections
+        return res + included_collections
 
     @classmethod
     def get_ondemand(cls):
