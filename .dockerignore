@@ -12,7 +12,6 @@ Dockerfile.*.ready
 .pytest_cache/
 **/.mypy_cache/
 **/.pytest_cache/
-__pycache__/
 .git/
 **/__pycache__/
 **/*.pyc

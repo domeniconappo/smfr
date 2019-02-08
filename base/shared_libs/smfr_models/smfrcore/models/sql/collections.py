@@ -268,8 +268,8 @@ class TwitterCollection(SMFRModel):
             res = cls.query.filter(
                 cls.trigger == cls.TRIGGER_ONDEMAND, cls.status == cls.ACTIVE_STATUS,
             ).order_by(cls.status, cls.started_at.desc(), cls.runtime.desc()).all()
-            cls.cache[key] = res + calabria_collection if calabria_collection else res
-        return res + calabria_collection if calabria_collection else res
+            cls.cache[key] = res + [calabria_collection] if calabria_collection else res
+        return res + [calabria_collection] if calabria_collection else res
 
     @classmethod
     def get_ondemand(cls):
