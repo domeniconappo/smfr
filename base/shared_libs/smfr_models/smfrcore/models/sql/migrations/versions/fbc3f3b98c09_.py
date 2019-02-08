@@ -135,7 +135,7 @@ def upgrade():
                     )
     # ### end Alembic commands ###
 
-    path = os.path.join(os.path.dirname(__file__), '../../data/smfr_nuts2.json.tar.gz')
+    path = os.path.join(os.path.dirname(__file__), '../../../data/smfr_nuts2.json.tar.gz')
     nuts2_table = Nuts2.__table__
     with tarfile.open(path, 'r:gz') as tar:
         archive = tar.getmembers()[0]
@@ -143,7 +143,7 @@ def upgrade():
         init_data = json.load(init_f, precise_float=True)
         op.bulk_insert(nuts2_table, init_data)
 
-    path = os.path.join(os.path.dirname(__file__), '../../data/smfr_nuts3.json.tar.gz')
+    path = os.path.join(os.path.dirname(__file__), '../../../data/smfr_nuts3.json.tar.gz')
     nuts3_table = Nuts3.__table__
     with tarfile.open(path, 'r:gz') as tar:
         archive = tar.getmembers()[0]

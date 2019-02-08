@@ -3,6 +3,7 @@ import signal
 import schedule
 from flask_restful import Resource, fields, marshal_with_field, Api
 from smfrcore.models.sql import TwitterCollection
+from smfrcore.models.sql.migrations.tools import run_migrations
 from smfrcore.utils import logged_job
 
 from persister import Persister, logger
@@ -14,11 +15,12 @@ api = Api(app)
 
 @logged_job
 def get_active_collections_for_persister(p):
-    with Persister.app.app_context():
+    with app.app_context():
         p.set_collections(TwitterCollection.get_running())
 
 
 if __name__ in ('__main__', 'start'):
+    run_migrations(app)
     persister = Persister()
     background_process = persister.start_in_background()
 

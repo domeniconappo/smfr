@@ -2,11 +2,15 @@ import os
 import tarfile
 
 import ujson
+
+from sqlalchemy import create_engine
+from sqlalchemy.orm import Session
+
 from smfrcore.models.sql import Nuts2, Nuts3, create_app
 
 
 def update_nutstables_8163c029df4e():
-
+    print('************** POPULATING NUTS TABLES *****************')
     path = os.path.join(os.path.dirname(__file__), '../../data/countries.json.tar.gz')
     with tarfile.open(path, 'r:gz') as tar:
         archive = tar.getmembers()[0]
@@ -15,9 +19,13 @@ def update_nutstables_8163c029df4e():
 
     app = create_app()
     app.app_context().push()
+    db_uri = app.config['SQLALCHEMY_DATABASE_URI']
+    engine = create_engine(db_uri)
+    s = Session(bind=engine)
+    objects = []
 
     for alpha3, v in data.items():
-        print('***************************** country', v['name'])
+
         nuts2list = list(Nuts2.query.filter_by(country_code=v['alpha_2'])) + list(Nuts2.query.filter_by(country=v['name']))
         nuts3list = list(Nuts3.query.filter_by(country_code=v['alpha_2'])) + list(Nuts3.query.filter_by(country_name=v['name']))
         if alpha3 == 'GRC':
@@ -37,11 +45,18 @@ def update_nutstables_8163c029df4e():
                 nuts2.country_code3 = alpha3
                 nuts2.country = v['name']
                 nuts2.country_code = country_code
-                nuts2.save()
+                # nuts2.save()
+                objects.append(nuts2)
 
         if nuts3list:
             for nuts3 in nuts3list:
                 nuts3.country_code3 = alpha3
                 nuts3.country_name = v['name']
                 nuts3.country_code = country_code
-                nuts3.save()
+                # nuts3.save()
+                objects.append(nuts3)
+
+    print('!!!! ******* BULK INSERT OF NUTS TABLES')
+    s.bulk_save_objects(objects)
+    s.commit()
+    print('+++++++++ ******* COMMIT END POPULATING NUTS TABLES')
