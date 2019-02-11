@@ -2,7 +2,7 @@ import logging
 
 from smfrcore.client.api_client import AnnotatorClient, GeocoderClient, PersisterClient
 from smfrcore.utils import DEFAULT_HANDLER
-
+from smfrcore.models.sql import TwitterCollection
 from server.config import RestServerConfiguration
 
 logger = logging.getLogger('RestServer Collectors')
@@ -29,6 +29,8 @@ def get():
         res['collectors'].append(item)
     res['counters'] = AnnotatorClient.counters()[0]
     res['persisted'] = PersisterClient.counters()[0]
+    res['background_collected'] = res['persisted'].pop(TwitterCollection.TRIGGER_BACKGROUND, 0)
+    res['on-demand_collected'] = res['persisted'].pop(TwitterCollection.TRIGGER_ONDEMAND, 0)
     res['geo_counters'] = GeocoderClient.counters()[0]
     return res, 200
 

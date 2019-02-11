@@ -101,7 +101,8 @@ class Persister:
                             # reconcile with running collections
                             collection = self.reconcile_tweet_with_collection(tweet)
                             if not collection:
-                                self.shared_counter['not-reconciled'] += 1
+                                with self._lock:
+                                    self.shared_counter['not-reconciled'] += 1
                                 file_logger.error('%s', msg)
                                 continue  # continue the consumer for loop
                             tweet.collectionid = collection.id
@@ -111,6 +112,7 @@ class Persister:
                             logger.debug('Saved tweet: %s - collection %d', tweet.tweetid, tweet.collectionid)
 
                         with self._lock:
+                            self.shared_counter[tweet.collection.trigger] += 1
                             self.shared_counter[tweet.ttype] += 1
                             self.shared_counter['{}-{}'.format(tweet.lang, tweet.ttype)] += 1
 
