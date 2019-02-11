@@ -54,7 +54,7 @@
               </table>
             {% endif %}
 
-            {% if data and data.background_collected %}
+            {% if data and data["background_collected"] %}
                 <table class="table table-striped table-bordered table-list">
                 <thead>
                     <tr>
@@ -65,11 +65,11 @@
                 <tbody>
                 <tr>
                     <td>From Background collector</td>
-                    <td>{{ data.background_collected }}</td>
+                    <td>{{ data["background_collected"] }}</td>
                 </tr>
                 <tr>
                     <td>From On-Demand collector</td>
-                    <td>{{ data.on-demand_collected }}</td>
+                    <td>{{ data["on-demand_collected"] }}</td>
                 </tr>
                 </tbody>
               </table>
