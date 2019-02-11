@@ -112,7 +112,8 @@ class Persister:
                             logger.debug('Saved tweet: %s - collection %d', tweet.tweetid, tweet.collectionid)
 
                         with self._lock:
-                            self.shared_counter[tweet.collection.trigger] += 1
+                            trigger_key = TwitterCollection.TRIGGER_ONDEMAND if tweet.is_ondemand else TwitterCollection.TRIGGER_BACKGROUND
+                            self.shared_counter[trigger_key] += 1
                             self.shared_counter[tweet.ttype] += 1
                             self.shared_counter['{}-{}'.format(tweet.lang, tweet.ttype)] += 1
 
