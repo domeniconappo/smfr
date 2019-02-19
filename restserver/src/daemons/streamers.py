@@ -66,6 +66,14 @@ class BaseStreamer(TwythonStreamer):
     def __str__(self):
         return '{o.__class__.__name__}'.format(o=self)
 
+    @classmethod
+    def _detect_language(cls, data):
+        text = Tweet.full_text_from_raw_tweet(data)
+        if not text:
+            return None
+        lang = safe_langdetect(tweet_normalization_aggressive(text))
+        return lang
+
     def _build_query_for(self):
         query = {}
         locations = []
@@ -219,17 +227,15 @@ class BackgroundStreamer(BaseStreamer):
 
     def on_success(self, data):
 
-        if 'text' in data:
-            lang = safe_langdetect(data['text'])
-
-            if lang == 'en' or lang in self.collection.languages:
-                data['lang'] = lang
-                tweet = Tweet.from_tweet(self.collection.id, data, ttype=Tweet.COLLECTED_TYPE)
-                message = tweet.serialize()
-                self.producer.send(self.persister_kafka_topic, message)
-                self.log(tweet)
-        else:
-            logger.error('No Data: %s', str(data))
+        lang = self._detect_language(data)
+        if not lang:
+            return
+        if lang == 'en' or lang in self.collection.languages:
+            data['lang'] = lang
+            tweet = Tweet.from_tweet(self.collection.id, data, ttype=Tweet.COLLECTED_TYPE)
+            message = tweet.serialize()
+            self.producer.send(self.persister_kafka_topic, message)
+            self.log(tweet)
 
 
 class OnDemandStreamer(BaseStreamer):
@@ -239,15 +245,14 @@ class OnDemandStreamer(BaseStreamer):
 
     def on_success(self, data):
 
-        if 'text' in data:
-            lang = safe_langdetect(tweet_normalization_aggressive(data['text']))
-            if not lang:
-                return
-            data['lang'] = lang
-            tweet = Tweet.from_tweet(Tweet.NO_COLLECTION_ID, data, ttype=Tweet.COLLECTED_TYPE)
-            message = tweet.serialize()
-            self.producer.send(self.persister_kafka_topic, message)
-            self.log(tweet)
+        lang = self._detect_language(data)
+        if not lang:
+            return
+        data['lang'] = lang
+        tweet = Tweet.from_tweet(Tweet.NO_COLLECTION_ID, data, ttype=Tweet.COLLECTED_TYPE)
+        message = tweet.serialize()
+        self.producer.send(self.persister_kafka_topic, message)
+        self.log(tweet)
 
     def use_pipeline(self, collection):
         return True

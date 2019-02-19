@@ -476,22 +476,20 @@ class Tweet(cqldb.Model, CassandraHelpers):
     @classmethod
     def coords_from_raw_tweet(cls, data):
         latlong = (None, None)
-        coords = (None, None)
-        coordtype = None
         for d in (data, data.get('quoted_status'), data.get('retweeted_status')):
             if not d:
                 continue
-            for k in ('geo', 'coordinates'):
-                section = d.get(k) or {}
-                if section.get('coordinates'):
-                    coords = section['coordinates']
-                    coordtype = k
-                    break
-            if coords != (None, None):
-                break
+            coordinates = d.get('coordinates') or {}
+            if coordinates and 'coordinates' in coordinates:
+                coords = coordinates['coordinates']
+                latlong = (coords[1], coords[0])
+            else:
+                place = d.get('place') or {}
+                if 'coordinates' in place.get('bounding_box', {}):
+                    latlong = cls.centroid_from_raw_tweet(data)
 
-        if coords:
-            latlong = (coords[1], coords[0]) if coordtype == 'coordinates' else (coords[0], coords[1])
+            if latlong != (None, None):
+                break
 
         return latlong
 
