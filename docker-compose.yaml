@@ -137,34 +137,6 @@ services:
     - geonames
     - persister
 
-  kafka:
-    restart: always
-    image: ${DOCKER_REGISTRY}/${KAFKA_IMAGE}
-    container_name: kafka
-    hostname: kafka
-    environment:
-      KAFKA_ADVERTISED_HOST_NAME: ${DOCKER_HOST_IP}
-      KAFKA_ADVERTISED_PORT: 9092
-      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INSIDE:PLAINTEXT,OUTSIDE:PLAINTEXT
-      KAFKA_INTER_BROKER_LISTENER_NAME: INSIDE
-      KAFKA_LISTENERS: INSIDE://:9090,OUTSIDE://:9092
-      KAFKA_ADVERTISED_LISTENERS: INSIDE://:9090,OUTSIDE://${DOCKER_HOST_IP}:9092
-      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-      KAFKA_CREATE_TOPICS: '${PERSISTER_KAFKA_TOPIC}:1:1,${ALL_ANNOTATOR_KAFKA_TOPICS},${GEOCODER_KAFKA_TOPIC}:1:1'
-      KAFKA_HEAP_OPTS: -Xmx8912m -Xms8912m
-    ports:
-      - target: 9092
-        published: 9092
-        protocol: tcp
-        mode: host
-    networks:
-      - back-tier
-    depends_on:
-      - zookeeper
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-
   persister:
     restart: always
     container_name: persister
@@ -373,16 +345,6 @@ services:
       - products
     networks:
       - front-tier
-
-  zookeeper:
-    restart: always
-    image: ${DOCKER_REGISTRY}/${ZOOKEEPER_IMAGE}
-    container_name: zookeeper
-    hostname: zookeeper
-    ports:
-      - '2181:2181'
-    networks:
-      - back-tier
 
 networks:
   front-tier:

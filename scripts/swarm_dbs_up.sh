@@ -33,7 +33,8 @@ python3 ${DIR}/compose4deploy.py -i ${DIR}/../docker-compose-parsed-dbs.yaml -o 
 docker stack deploy --with-registry-auth -c ${DIR}/../docker-compose-4deploy-dbs.yaml SMFR -c ${DIR}/../docker-compose.dbs.swarm.yaml
 
 # forcing updates of images
-
+docker service update SMFR_zookeeper --detach=false --with-registry-auth --image ${DOCKER_REGISTRY}/${ZOOKEEPER_IMAGE}
+docker service update SMFR_kafka --detach=false --with-registry-auth --image ${DOCKER_REGISTRY}/${KAFKA_IMAGE}
 docker service update SMFR_mysql --detach=false --with-registry-auth --image ${DOCKER_REGISTRY}/${MYSQL_IMAGE}:${image_tag}
 docker service update SMFR_cassandrasmfr --detach=false --with-registry-auth --image ${DOCKER_REGISTRY}/${CASSANDRA_IMAGE}:${image_tag}
 docker service update SMFR_geonames --detach=false --with-registry-auth --image ${DOCKER_REGISTRY}/${GEONAMES_IMAGE}:${image_tag}

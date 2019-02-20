@@ -7,4 +7,4 @@ python3 ${DIR}/compose4build.py ${image_tag}
 echo
 echo
 echo ++++++++++++++++++++++++++ Starting DBS ++++++++++++++++++++++++++
-docker-compose -f ${DIR}/../docker-compose.dbs.yaml up -d mysql cassandrasmfr geonames
+docker-compose -f ${DIR}/../docker-compose.dbs.yaml up -d zookeeper kafka mysql cassandrasmfr geonames

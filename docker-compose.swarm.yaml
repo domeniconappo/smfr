@@ -29,15 +29,6 @@ services:
       placement:
         constraints: [ node.labels.medium == true ]
 
-  kafka:
-    deploy:
-      restart_policy:
-        condition: on-failure
-        max_attempts: 3
-        window: 120s
-      placement:
-        constraints: [ node.labels.huge == true ]
-
   persister:
     deploy:
       restart_policy:
@@ -73,12 +64,3 @@ services:
         window: 120s
       placement:
         constraints: [ node.labels.small == true ]
-
-  zookeeper:
-    deploy:
-      restart_policy:
-        condition: on-failure
-        max_attempts: 3
-        window: 120s
-      placement:
-        constraints: [ node.labels.huge == true ]
