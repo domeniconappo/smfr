@@ -117,6 +117,72 @@ class RestServerConfiguration(metaclass=Singleton):
     logger.setLevel(logger_level)
     logger.addHandler(DEFAULT_HANDLER)
 
+    def _bootstrap_cassandra(self):
+        up = False
+        retries = 5
+        while not up and retries <= 5:
+            try:
+                from smfrcore.models.cassandra import cqldb
+                cqldb.init_app(self.flask_app)
+                self.db_cassandra = cqldb
+            except (NoHostAvailable, socket.gaierror):
+                self.logger.error('Missing link with Cassandra.')
+                self.logger.warning('Mysql was not up. Wait 5 seconds before retrying')
+                sleep(5)
+                retries += 1
+            else:
+                up = True
+            finally:
+                if not up and retries >= 5:
+                    self.logger.error('Too many retries. CASSANDRA still not reachable! Exiting...')
+                    sys.exit(1)
+
+    def _bootstrap_mysql(self):
+        up = False
+        retries = 5
+        while not up and retries <= 5:
+            try:
+                from smfrcore.models.sql import sqldb
+                self.db_mysql = sqldb
+                self.migrate = Migrate(self.flask_app, self.db_mysql)
+            except (OperationalError, socket.gaierror):
+                self.logger.error('Missing link with MySQL.')
+                self.logger.warning('Mysql were not up. Wait 5 seconds before retrying')
+                sleep(5)
+                retries += 1
+            else:
+                up = True
+            finally:
+                if not up and retries >= 5:
+                    self.logger.error('Too many retries. MySQL still not reachable! Exiting...')
+                    sys.exit(1)
+
+    def _bootstrap_kafka(self):
+        if not SERVER_BOOTSTRAP or self.producer:
+            return
+        up = False
+        retries = 5
+        while not up and retries <= 5:
+            try:
+                # Flask apps are setup when issuing CLI commands as well.
+                # This code is executed in case of launching REST Server
+                self.producer = KafkaProducer(
+                    bootstrap_servers=self.kafka_bootstrap_servers, linger_ms=500,
+                    batch_size=1048576, retries=5, compression_type='gzip',
+                    buffer_memory=134217728
+                )
+            except (NoBrokersAvailable, socket.gaierror):
+                self.logger.error('Missing link with Kafka.')
+                self.logger.warning('Kafka were not up. Wait 5 seconds before retrying')
+                sleep(5)
+                retries += 1
+            else:
+                up = True
+            finally:
+                if not up and retries >= 5:
+                    self.logger.error('Too many retries. Kafka still not reachable! Exiting...')
+                    sys.exit(1)
+
     def __init__(self, connexion_app=None):
 
         if not connexion_app:
@@ -133,35 +199,9 @@ class RestServerConfiguration(metaclass=Singleton):
             up = False
             retries = 1
             self.collectors = {}
-
-            while not up and retries <= 5:
-                try:
-                    from smfrcore.models.sql import sqldb
-                    from smfrcore.models.cassandra import cqldb
-                    sqldb.init_app(self.flask_app)
-                    cqldb.init_app(self.flask_app)
-                    self.db_mysql = sqldb
-                    self.db_cassandra = cqldb
-                    self.migrate = Migrate(self.flask_app, self.db_mysql)
-                    if SERVER_BOOTSTRAP and not self.producer:
-                        # Flask apps are setup when issuing CLI commands as well.
-                        # This code is executed in case of launching REST Server
-                        self.producer = KafkaProducer(
-                            bootstrap_servers=self.kafka_bootstrap_servers, linger_ms=500,
-                            batch_size=1048576, retries=5, compression_type='gzip',
-                            buffer_memory=134217728
-                        )
-                except (NoHostAvailable, OperationalError, NoBrokersAvailable, socket.gaierror):
-                    self.logger.error('Missing link with a db server.')
-                    self.logger.warning('C*/Mysql/Kafka/ES were not up. Wait 5 seconds before retrying')
-                    sleep(5)
-                    retries += 1
-                else:
-                    up = True
-                finally:
-                    if not up and retries >= 5:
-                        self.logger.error('Too many retries. Cannot boot as DB servers are not reachable! Exiting...')
-                        sys.exit(1)
+            self._bootstrap_cassandra()
+            self._bootstrap_mysql()
+            self._bootstrap_kafka()
             self.log_configuration()
 
     @classmethod
