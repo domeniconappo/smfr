@@ -24,6 +24,8 @@ fi
 MYSQL_IMAGE=$(getProperty "MYSQL_IMAGE")
 CASSANDRA_IMAGE=$(getProperty "CASSANDRA_IMAGE")
 GEONAMES_IMAGE=$(getProperty "GEONAMES_IMAGE")
+KAFKA_IMAGE=$(getProperty "KAFKA_IMAGE")
+ZOOKEEPER_IMAGE=$(getProperty "ZOOKEEPER_IMAGE")
 
 docker-compose -f ${DIR}/../docker-compose.dbs.yaml config > ${DIR}/../docker-compose-parsed-dbs.yaml
 

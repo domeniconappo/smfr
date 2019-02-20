@@ -16,7 +16,7 @@ services:
       restart_policy:
         condition: on-failure
         max_attempts: 5
-        window: 240
+        window: 240s
       placement:
         constraints: [ node.labels.huge == true ]
 
