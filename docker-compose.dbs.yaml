@@ -39,6 +39,7 @@ services:
       - zookeeper
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
+      - ./kafka-logs:/var/lib/kafka
 
   cassandrasmfr:
     build:

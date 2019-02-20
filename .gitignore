@@ -42,7 +42,7 @@ restserver/src/tests/data/CostPopEst2018061300.json
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *$py.class
-
+kafka-logs/
 # C extensions
 *.so
 
