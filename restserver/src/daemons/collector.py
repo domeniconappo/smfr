@@ -91,6 +91,7 @@ class OnDemandCollector(BaseCollector):
 
 
 class ManualCollector(OnDemandCollector):
+    twitter_keys_iden = 'twitterma'
     type = TwitterCollection.TRIGGER_MANUAL
     StreamerClass = ManualStreamer
 
