@@ -272,7 +272,7 @@ class PersisterClient(MicroserviceClient):
     """
 
     """
-    host = '127.0.0.1' if not IN_DOCKER else 'persister'
+    host = '127.0.0.1' if not IN_DOCKER else os.getenv('PERSISTER_HOST', 'persister')
     port = os.getenv('PERSISTER_PORT_PORT', 5558)
     base_uri = 'http://{}:{}'.format(host, port)
 
@@ -281,7 +281,7 @@ class GeocoderClient(MicroserviceClient):
     """
 
     """
-    host = '127.0.0.1' if not IN_DOCKER else 'geocoder'
+    host = '127.0.0.1' if not IN_DOCKER else os.getenv('GEOCODER_HOST', 'geocoder')
     port = os.getenv('GEOCODER_PORT', 5557)
     base_uri = 'http://{}:{}'.format(host, port)
 
@@ -290,7 +290,7 @@ class AnnotatorClient(MicroserviceClient):
     """
 
     """
-    host = '127.0.0.1' if not IN_DOCKER else 'annotator'
+    host = '127.0.0.1' if not IN_DOCKER else os.getenv('ANNOTATOR_HOST', 'annotator')
     port = os.getenv('ANNOTATOR_PORT', 5556)
     base_uri = 'http://{}:{}'.format(host, port)
 
