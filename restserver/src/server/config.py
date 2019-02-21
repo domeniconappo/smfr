@@ -91,7 +91,7 @@ class RestServerConfiguration(metaclass=Singleton):
     Constructor accepts a connexion app object.
     """
     geonames_host = '127.0.0.1' if not IN_DOCKER else 'geonames'
-    kafka_bootstrap_servers = ['127.0.0.1:9090', '127.0.0.1:9092'] if not IN_DOCKER else os.getenv('KAFKA_BOOTSTRAP_SERVERS', 'kafka:9090,kafka:9092').split(',')
+    kafka_bootstrap_servers = ['127.0.0.1:9090', '127.0.0.1:9092'] if not IN_DOCKER else os.getenv('KAFKA_BOOTSTRAP_SERVERS', 'kafka:9092,kafka:9094').split(',')
     mysql_host = '127.0.0.1' if not IN_DOCKER else os.getenv('MYSQL_HOST', 'mysql')
     __mysql_user = os.getenv('MYSQL_USER', 'root')
     __mysql_pass = os.getenv('MYSQL_PASSWORD', 'example')
@@ -196,8 +196,6 @@ class RestServerConfiguration(metaclass=Singleton):
             self.jwt = JWTManager(self.flask_app)
             self.flask_app.app_context().push()
             self.producer = None
-            up = False
-            retries = 1
             self.collectors = {}
             self._bootstrap_cassandra()
             self._bootstrap_mysql()

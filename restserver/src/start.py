@@ -45,7 +45,6 @@ def create_app():
                                manual_collector.type: manual_collector})
 
         update_ondemand_collections_status(restart_ondemand=False)
-        # add_rra_events(restart_ondemand=False)
 
         background_collector.start()
         ondemand_collector.start()

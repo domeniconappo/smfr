@@ -19,18 +19,18 @@ services:
     hostname: kafka
     environment:
       KAFKA_ADVERTISED_HOST_NAME: ${DOCKER_HOST_IP}
-      KAFKA_ADVERTISED_PORT: 9092
+      KAFKA_ADVERTISED_PORT: 9094
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INSIDE:PLAINTEXT,OUTSIDE:PLAINTEXT
       KAFKA_INTER_BROKER_LISTENER_NAME: INSIDE
-      KAFKA_LISTENERS: INSIDE://:9090,OUTSIDE://:9092
-      KAFKA_ADVERTISED_LISTENERS: INSIDE://:9090,OUTSIDE://${DOCKER_HOST_IP}:9092
+      KAFKA_ADVERTISED_LISTENERS: INSIDE://:9092,OUTSIDE://${DOCKER_HOST_IP}:9094
+      KAFKA_LISTENERS: INSIDE://:9092,OUTSIDE://:9094
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
       KAFKA_CREATE_TOPICS: '${PERSISTER_KAFKA_TOPIC}:1:1,${ALL_ANNOTATOR_KAFKA_TOPICS},${GEOCODER_KAFKA_TOPIC}:1:1'
       KAFKA_HEAP_OPTS: -Xmx8912m -Xms8912m
     ports:
-      - target: 9092
-        published: 9092
+      - target: 9094
+        published: 9094
         protocol: tcp
         mode: host
     networks:
@@ -39,7 +39,6 @@ services:
       - zookeeper
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-      - ./kafka-logs:/var/lib/kafka
 
   cassandrasmfr:
     build:
