@@ -8,7 +8,7 @@ from kafka.errors import NoBrokersAvailable
 
 from smfrcore.utils import IN_DOCKER, DEFAULT_HANDLER
 
-kafka_bootstrap_servers = os.getenv('KAFKA_BOOTSTRAP_SERVERS', 'kafka:9090,kafka:9092') if IN_DOCKER else '127.0.0.1:9090,127.0.0.1:9092'
+kafka_bootstrap_servers = os.getenv('KAFKA_BOOTSTRAP_SERVERS', 'kafka:9092,kafka:9094') if IN_DOCKER else '127.0.0.1:9092,127.0.0.1:9094'
 persister_kafka_topic = os.getenv('PERSISTER_KAFKA_TOPIC', 'persister')
 
 logger = logging.getLogger('KAFKA utils')
@@ -38,6 +38,7 @@ def make_kafka_consumer(topic, kafka_servers=None):
             if retries < 0:
                 logger.error('Kafka server was not listening. Exiting...')
                 sys.exit(1)
+            kafka_servers = 'kafka:9092,kafka:9094'.split(',') if retries % 2 else '127.0.0.1:9092,127.0.0.1:9094'
         else:
             return consumer
 
@@ -60,6 +61,7 @@ def make_kafka_producer(kafka_servers=None):
             if retries < 0:
                 logger.error('Kafka server was not listening. Exiting...')
                 sys.exit(1)
+            kafka_servers = 'kafka:9092,kafka:9094'.split(',') if retries % 2 else '127.0.0.1:9092,127.0.0.1:9094'
         else:
             return producer
 
