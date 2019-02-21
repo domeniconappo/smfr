@@ -36,6 +36,7 @@ TEST_IMAGE=efas/integration_tests
 MYSQL_USER=user
 MYSQL_PASSWORD=pass
 MYSQL_DBNAME=smfr
+MYSQL_HOST=mysql
 
 # CASSANDRA CONFIGURATION
 CASSANDRA_KEYSPACE=smfr_persistent

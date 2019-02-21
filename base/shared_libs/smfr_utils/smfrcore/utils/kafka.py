@@ -8,7 +8,8 @@ from kafka.errors import NoBrokersAvailable
 
 from smfrcore.utils import IN_DOCKER, DEFAULT_HANDLER
 
-kafka_bootstrap_servers = os.getenv('KAFKA_BOOTSTRAP_SERVERS', 'kafka:9092,kafka:9094') if IN_DOCKER else '127.0.0.1:9092,127.0.0.1:9094'
+kafka_bootstrap_servers = os.getenv('KAFKA_BOOTSTRAP_SERVERS', 'kafka:9092,kafka:9094').split(',') if IN_DOCKER else '127.0.0.1:9092,127.0.0.1:9094'.split(',')
+alternatives = ['kafka:9092', 'kafka:9094', '127.0.0.1:9092', '127.0.0.1:9094', 'localhost:9092', 'localhost:9094', 'localhost:9092', 'kafka:9092', '127.0.0.1:9092']
 persister_kafka_topic = os.getenv('PERSISTER_KAFKA_TOPIC', 'persister')
 
 logger = logging.getLogger('KAFKA utils')
@@ -16,9 +17,14 @@ logger.setLevel(os.getenv('LOGGING_LEVEL', 'DEBUG'))
 logger.addHandler(DEFAULT_HANDLER)
 
 
+def _get_kafka_servers(retries):
+    i = retries if 0 <= retries < len(alternatives) else 0
+    return alternatives[i]
+
+
 def make_kafka_consumer(topic, kafka_servers=None):
     if not kafka_servers:
-        kafka_servers = kafka_bootstrap_servers.split(',')
+        kafka_servers = kafka_bootstrap_servers
     retries = 10
     while retries >= 0:
         try:
@@ -38,14 +44,14 @@ def make_kafka_consumer(topic, kafka_servers=None):
             if retries < 0:
                 logger.error('Kafka server was not listening. Exiting...')
                 sys.exit(1)
-            kafka_servers = 'kafka:9094'.split(',') if retries % 2 else '127.0.0.1:9094'.split(',')
+            kafka_servers = _get_kafka_servers(retries)
         else:
             return consumer
 
 
 def make_kafka_producer(kafka_servers=None):
     if not kafka_servers:
-        kafka_servers = kafka_bootstrap_servers.split(',')
+        kafka_servers = kafka_bootstrap_servers
     retries = 10
     while retries >= 0:
         try:
@@ -61,7 +67,7 @@ def make_kafka_producer(kafka_servers=None):
             if retries < 0:
                 logger.error('Kafka server was not listening. Exiting...')
                 sys.exit(1)
-            kafka_servers = 'kafka:9094'.split(',') if retries % 2 else '127.0.0.1:9094'.split(',')
+            kafka_servers = _get_kafka_servers(retries)
         else:
             return producer
 

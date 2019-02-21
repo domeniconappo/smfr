@@ -59,11 +59,9 @@ class Nuts2(SMFRModel):
             return None
 
         plain_bbox = '({}, {}, {}, {})'.format(self.min_lon, self.min_lat, self.max_lon, self.max_lat)
-        bbox = {'min_lat': self.min_lat, 'max_lat': self.max_lat,
-                'min_lon': self.min_lon, 'max_lon': self.max_lon,
+        bbox = {'min_lat': self.min_lat, 'max_lat': self.max_lat, 'min_lon': self.min_lon, 'max_lon': self.max_lon,
                 'plain': plain_bbox,
-                'bboxfinder': 'http://bboxfinder.com/#{},{},{},{}'.format(self.min_lat, self.min_lon, self.max_lat,
-                                                                          self.max_lon)}
+                'bboxfinder': 'http://bboxfinder.com/#{},{},{},{}'.format(self.min_lat, self.min_lon, self.max_lat, self.max_lon)}
         return bbox
 
     def coordinates_in_bbox(self, lat, lon):
