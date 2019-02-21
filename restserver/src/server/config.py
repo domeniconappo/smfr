@@ -143,6 +143,7 @@ class RestServerConfiguration(metaclass=Singleton):
         while not up and retries <= 5:
             try:
                 from smfrcore.models.sql import sqldb
+                sqldb.init_app(self.flask_app)
                 self.db_mysql = sqldb
                 self.migrate = Migrate(self.flask_app, self.db_mysql)
             except (OperationalError, socket.gaierror):
