@@ -623,9 +623,9 @@ FID,COUNTRY,ISO_CODE,ISO_CC,ISO_SUB,NUTS_ID,CNTR_CODE,EFAS_name,ID
 1661, , , , ,RO315,RO,Ialomita,1684
 323,Romania,ROIS,RO,IS, , ,Iasi,478
 1647, , , , ,RO213,RO,Iasi,1670
-520,Turkey,TR33,TR,33, , ,Içel,479
-521,Turkey,TR33,TR,33, , ,Içel,480
-522,Turkey,TR33,TR,33, , ,Içel,481
+520,Turkey,TR33,TR,33, , ,Iï¿½el,479
+521,Turkey,TR33,TR,33, , ,Iï¿½el,480
+522,Turkey,TR33,TR,33, , ,Iï¿½el,481
 523,Estonia,EE44,EE,44, , ,Ida-Virumaa,482
 524,Syria,SYID,SY,ID, , ,Idlib,483
 525,Turkey,TR76,TR,76, , ,Igdir,484
@@ -767,7 +767,7 @@ FID,COUNTRY,ISO_CODE,ISO_CC,ISO_SUB,NUTS_ID,CNTR_CODE,EFAS_name,ID
 1287, , , , ,TR52,TR,Konya,1272
 602,Slovenia,SI050,SI,50, , ,Koper,571
 334,Croatia,HR06,HR,6, , ,Koprivnicko-krizevacka zupanija,572
-335,Albania,AL6,AL,6, , ,Korçe,573
+335,Albania,AL6,AL,6, , ,Korï¿½e,573
 603,Iran,IR16,IR,16, , ,Kordestan,574
 1698, , , , ,SI013,SI,Koroska,1721
 336,Slovakia,SKKI,SK,KI, , ,Kosicky kraj,575
@@ -1030,7 +1030,7 @@ FID,COUNTRY,ISO_CODE,ISO_CC,ISO_SUB,NUTS_ID,CNTR_CODE,EFAS_name,ID
 736,Tunisia,TN21,TN,21, , ,Nabeul,727
 737,Libya,LYNL,LY,NL, , ,Nalut,728
 1412, , , , ,ES220,ES,Navarra,1419
-738,Azerbaijan,AZNX,AZ,NX, , ,Naxçivan,729
+738,Azerbaijan,AZNX,AZ,NX, , ,Naxï¿½ivan,729
 1648, , , , ,RO214,RO,Neamt,1671
 739,Russian Federation,RUNEN,RU,NEN, , ,Nenetskiy avtonomnyy okrug,730
 740,Russian Federation,RUNEN,RU,NEN, , ,Nenetskiy avtonomnyy okrug,731
