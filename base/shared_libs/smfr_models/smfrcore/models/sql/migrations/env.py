@@ -1,19 +1,21 @@
 from __future__ import with_statement
-from alembic import context
-from sqlalchemy import engine_from_config, pool
 from logging.config import fileConfig
 import logging
 
+from sqlalchemy import engine_from_config, pool
+from alembic import context
+
 from smfrcore.models.sql import create_app, base
+
 current_app = create_app()
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
 config = context.config
-print(config)
+config.set_main_option('sqlalchemy.url', current_app.config.get('SQLALCHEMY_DATABASE_URI'))
 print(config.config_file_name)
 print(config.config_ini_section)
-print('-------------------------------------------------------------^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^66')
+print('-------------------------------------------------------------^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^')
 
 # Interpret the config file for Python logging.
 # This line sets up loggers basically.
@@ -25,7 +27,7 @@ logger = logging.getLogger('alembic.env')
 # from myapp import mymodel
 # target_metadata = mymodel.Base.metadata
 
-config.set_main_option('sqlalchemy.url', current_app.config.get('SQLALCHEMY_DATABASE_URI'))
+
 target_metadata = base.metadata
 
 # other values from the config, defined by the needs of env.py,

@@ -22,7 +22,7 @@ flask-sqlalchemy
 flask-cqlalchemy
 flask-migrate
 sqlalchemy_utils
-
+flask-alembic
 PyYAML
 PyJWT
 gunicorn

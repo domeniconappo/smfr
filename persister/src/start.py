@@ -3,7 +3,7 @@ import signal
 import schedule
 from flask_restful import Resource, fields, marshal_with_field, Api
 from smfrcore.models.sql import TwitterCollection
-from smfrcore.models.sql.migrations.tools import run_migrations
+# from smfrcore.models.sql.migrations.tools import run_migrations
 from smfrcore.utils import logged_job
 
 from persister import Persister, logger
@@ -20,7 +20,7 @@ def get_active_collections_for_persister(p):
 
 
 if __name__ in ('__main__', 'start'):
-    run_migrations(app)
+    # run_migrations(app)
     persister = Persister()
     background_process = persister.start_in_background()
 
