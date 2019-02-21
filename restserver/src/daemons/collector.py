@@ -55,7 +55,6 @@ class BackgroundCollector(BaseCollector):
     StreamerClass = BackgroundStreamer
 
     def start(self):
-        # with self.streamer.lock:
         if self.streamer.process and isinstance(self.streamer.process, multiprocessing.Process):
             logger.info('Sending SIGTERM signal to streamer')
             self.streamer.process.terminate()

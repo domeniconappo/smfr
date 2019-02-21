@@ -194,13 +194,13 @@ class RestServerConfiguration(metaclass=Singleton):
             self.flask_app = self.set_flaskapp(connexion_app)
             self.flask_app.config['JWT_SECRET_KEY'] = os.getenv('SECRET_KEY', 'super-secret')
             self.jwt = JWTManager(self.flask_app)
-            self.flask_app.app_context().push()
             self.producer = None
             self.collectors = {}
             self._bootstrap_cassandra()
             self._bootstrap_mysql()
             self._bootstrap_kafka()
             self.log_configuration()
+            self.flask_app.app_context().push()
 
     @classmethod
     def default_keywords(cls):
