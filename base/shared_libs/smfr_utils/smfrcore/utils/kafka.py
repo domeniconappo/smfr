@@ -22,6 +22,7 @@ def make_kafka_consumer(topic, kafka_servers=None):
     retries = 5
     while retries >= 0:
         try:
+            logger.info('Consumer-> Trying to connect to %s', str(kafka_servers))
             consumer = KafkaConsumer(
                 topic, check_crcs=False,
                 group_id=topic,
@@ -49,6 +50,7 @@ def make_kafka_producer(kafka_servers=None):
     retries = 5
     while retries >= 0:
         try:
+            logger.info('Producer-> Trying to connect to %s', str(kafka_servers))
             producer = KafkaProducer(bootstrap_servers=kafka_servers, retries=5, max_block_ms=120000,
                                      compression_type='gzip', buffer_memory=134217728,
                                      linger_ms=500, batch_size=1048576, )
