@@ -96,10 +96,10 @@ class RestServerConfiguration(metaclass=Singleton):
     __mysql_user = os.getenv('MYSQL_USER', 'root')
     __mysql_pass = os.getenv('MYSQL_PASSWORD', 'example')
     cassandra_host = '127.0.0.1' if not IN_DOCKER else os.getenv('CASSANDRA_HOST', 'cassandrasmfr')
-    annotator_host = '127.0.0.1' if not IN_DOCKER else 'annotator'
-    persister_host = '127.0.0.1' if not IN_DOCKER else 'persister'
-    geocoder_host = '127.0.0.1' if not IN_DOCKER else 'geocoder'
-    restserver_host = '127.0.0.1' if not IN_DOCKER else 'restserver'
+    annotator_host = '127.0.0.1' if not IN_DOCKER else os.getenv('ANNOTATOR_HOST', 'annotator')
+    persister_host = '127.0.0.1' if not IN_DOCKER else os.getenv('PERSISTER_HOST', 'persister')
+    geocoder_host = '127.0.0.1' if not IN_DOCKER else os.getenv('GEOCODER_HOST', 'geocoder')
+    restserver_host = '127.0.0.1' if not IN_DOCKER else os.getenv('RESTSERVER_HOST', 'restserver')
 
     cassandra_keyspace = '{}{}'.format(os.getenv('CASSANDRA_KEYSPACE', 'smfr_persistent'), '_test' if UNDER_TESTS else '')
     mysql_db_name = '{}{}'.format(os.getenv('MYSQL_DBNAME', 'smfr'), '_test' if UNDER_TESTS else '')
