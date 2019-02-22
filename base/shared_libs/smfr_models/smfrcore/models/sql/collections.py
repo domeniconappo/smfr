@@ -263,17 +263,19 @@ class TwitterCollection(SMFRModel):
 
     @classmethod
     def get_active_ondemand(cls):
-        include_past = os.getenv('INCLUDE_PAST_COLLECTIONS', '').split(',')
-        included_collections = [cls.query.get(int(i)) for i in include_past]
-        included_collections = [c for c in included_collections if c]
         key = cls.cache_keys['on-demand']
         res = cls.cache.get(key)
         if not res:
+            included_collections = []
             res = cls.query.filter(
                 cls.trigger == cls.TRIGGER_ONDEMAND, cls.status == cls.ACTIVE_STATUS,
             ).order_by(cls.status, cls.started_at.desc(), cls.runtime.desc()).all()
+            past_collections_ids = [int(i) for i in os.getenv('INCLUDE_PAST_COLLECTIONS', '').split(',') if i]
+            if past_collections_ids:
+                included_collections = (cls.query.get(i) for i in past_collections_ids)
+                included_collections = [c for c in included_collections if c]
             cls.cache[key] = res + included_collections
-        return res + included_collections
+        return cls.cache[key]
 
     @classmethod
     def get_ondemand(cls):
