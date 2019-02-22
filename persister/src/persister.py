@@ -112,7 +112,7 @@ class Persister:
                             logger.debug('Saved tweet: %s - collection %d', tweet.tweetid, tweet.collectionid)
 
                         with self._lock:
-                            trigger_key = str(tweet.collection.trigger)
+                            trigger_key = tweet.collection.trigger.code
                             self.shared_counter[trigger_key] += 1
                             self.shared_counter[tweet.ttype] += 1
                             self.shared_counter['{}-{}'.format(tweet.lang, tweet.ttype)] += 1
