@@ -20,9 +20,10 @@ if __name__ == '__main__':
     if IS_DEVELOPMENT:
         # produce at service startup: useful for debugging
         rra_events_and_products()
+    rra_since = os.getenv('DOWNLOAD_RRA_SINCE', 'latest')
 
     for hour in scheduling_interval:
-        schedule.every().day.at('{}:07'.format(hour)).do(rra_events_and_products).tag('products-{}'.format(hour))
+        schedule.every().day.at('{}:07'.format(hour)).do(rra_events_and_products, **{'since': rra_since}).tag('products-{}'.format(hour))
 
     while True:
         schedule.run_pending()

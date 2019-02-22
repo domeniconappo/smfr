@@ -1,6 +1,7 @@
 import json
 import logging
 import os
+import datetime
 
 from smfrcore.client.api_client import ApiLocalClient
 from smfrcore.client.ftp import FTPEfas
@@ -68,19 +69,31 @@ def rra_events_and_products(since='latest', restart_ondemand=True):
     current_app = create_app()
     with current_app.app_context():
         running_collections = TwitterCollection.get_active_ondemand()
-        events, date = fetch_rra_helper(since)
-        if events:
-            if logger.isEnabledFor(logging.DEBUG):
-                logger.debug('FETCHED RRA %s', events)
-            results = events_to_collections_payload(events, date)
-            collections = TwitterCollection.add_rra_events(results)
-            if any(c not in running_collections for c in collections) and restart_ondemand:
-                # There is at least one new collection (even the same one with updated keywords)
-                # Collector must be restarted
-                logger.info(' ============= Adding/Updating on-demand collections from RRA EFAS events:\n\n%s',
-                            '\n'.join(str(c) for c in collections))
-                restserver_client.restart_collector(TwitterCollection.TRIGGER_ONDEMAND)
-            # produce and push products only after a new RRA is downloaded
-            Products.produce(date)
-        elif not events and IS_DEVELOPMENT:
-            Products.produce(date)
+        if since == 'latest':
+            _fetch_and_produce_for_date(restart_ondemand, running_collections)
+        else:
+            _latest = datetime.datetime.now().strftime('%Y%m%d') + '12'
+            while since < _latest:
+                _fetch_and_produce_for_date(restart_ondemand, running_collections, since)
+                _date = datetime.datetime.strptime(since, '%Y%m%d%H')
+                _date = _date + datetime.timedelta(hours=12)
+                since = _date.strftime('%Y%m%d%H')
+
+
+def _fetch_and_produce_for_date(restart_ondemand, running_collections, rra_date='latest'):
+    events, date = fetch_rra_helper(rra_date)
+    if events:
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.debug('FETCHED RRA %s', events)
+        results = events_to_collections_payload(events, date)
+        collections = TwitterCollection.add_rra_events(results)
+        if any(c not in running_collections for c in collections) and restart_ondemand:
+            # There is at least one new collection (even the same one with updated keywords)
+            # Collector must be restarted
+            logger.info(' ============= Adding/Updating on-demand collections from RRA EFAS events:\n\n%s',
+                        '\n'.join(str(c) for c in collections))
+            restserver_client.restart_collector(TwitterCollection.TRIGGER_ONDEMAND)
+        # produce and push products only after a new RRA is downloaded
+        Products.produce(date)
+    elif not events and IS_DEVELOPMENT:
+        Products.produce(date)

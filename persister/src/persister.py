@@ -105,7 +105,7 @@ class Persister:
                                 with self._lock:
                                     self.shared_counter['not-reconciled'] += 1
                                 file_logger.error('%s', msg)
-                                continue  # continue the consumer for loop
+                                continue  # continue the consumer loop
                             tweet.collectionid = collection.id
                         tweet.save()
 

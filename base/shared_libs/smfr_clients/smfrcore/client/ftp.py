@@ -69,7 +69,7 @@ class FTPEfas:
         if not self.filename:
             self.filename = self._get_filename(dated)
         efas_rra_date = self.date_from_filename(self.filename)
-        if efas_rra_date == self.latest_fetched_date:
+        if efas_rra_date <= self.latest_fetched_date:
             logger.warning('Latest EFAS RRA already downloaded...%s', efas_rra_date)
             return False
 
