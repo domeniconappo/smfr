@@ -66,7 +66,10 @@
                         <u><b>keywords...</b></u>
                     </td>
                     <td class="{% if c.status=='Running' %}color-green{% else %}color-red{% endif %}"><strong>{{ c.status }}</strong></td>
-                    <td>{{c.languages|join(', ')}}</td>
+
+
+                    <td>{% if c.languages %}{{c.languages|join(', ')}}{% endif %}</td>
+
 
                     <td>{% if c.locations %}
                         <a href="{{ c.bboxfinder }}" target="_blank">
