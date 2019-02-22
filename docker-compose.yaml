@@ -56,11 +56,16 @@ services:
         models_repo: ${GIT_REPO_MODELS}
     working_dir: /annotator
     ports:
-      - '5556:5556'
-      - '6006:6006'
+      - target: 5556
+        published: 5556
+        protocol: tcp
+        mode: host
+      - target: 6006
+        published: 6006
+        protocol: tcp
+        mode: host
     networks:
       - back-tier
-
     environment:
       LOGGING_LEVEL: ${LOGGING_LEVEL}
       TF_CPP_MIN_LOG_LEVEL: '2'
