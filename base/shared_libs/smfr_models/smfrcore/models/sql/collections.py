@@ -240,17 +240,18 @@ class TwitterCollection(SMFRModel):
 
     @classmethod
     def get_active(cls):
-        key = cls.cache_keys['active']
-        res = cls.cache.get(key)
-        if not res:
-            res = cls.query.filter(
-                    cls.status == cls.ACTIVE_STATUS,
-            ).order_by(cls.started_at.desc(), cls.runtime.desc()).all()
-            cls.cache[key] = res
-        return res
+        """
+        alias for get_running
+        :return:
+        """
+        return cls.get_running()
 
     @classmethod
     def get_running(cls):
+        """
+        All active collections
+        :return:
+        """
         key = cls.cache_keys['running']
         res = cls.cache.get(key)
         if not res:

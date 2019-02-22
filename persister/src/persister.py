@@ -60,7 +60,8 @@ class Persister:
         self.background_process = None
         self.active = True
         with self.app.app_context():
-            self.collections = TwitterCollection.get_running()
+            running = TwitterCollection.get_running()
+            self.collections = [c for c in running if c.trigger != TwitterCollection.TRIGGER_BACKGROUND]
 
     def set_collections(self, collections):
         with self._lock:
