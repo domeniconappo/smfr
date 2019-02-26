@@ -10,7 +10,7 @@ import cassandra
 
 from smfrcore.utils import logged_job, job_exceptions_catcher, FALSE_VALUES, DEFAULT_HANDLER
 from smfrcore.models.sql import TwitterCollection, Aggregation, create_app
-
+from sqlalchemy.exc import OperationalError
 
 logger = logging.getLogger('AGGREGATOR')
 logger.setLevel(os.getenv('LOGGING_LEVEL', 'DEBUG'))
@@ -250,7 +250,6 @@ def run_single_aggregation(collection_id,
                         relevance = 'high'
                     day_key = '{}_{}_{}'.format(t.geo['nuts_efas_id'], relevance, t.efas_cycle)
                     trends[day_key] += 1
-
             aggregation.last_tweetid_geotagged = max_geotagged_tweetid if max_geotagged_tweetid else last_tweetid_geotagged
             aggregation.relevant_tweets = relevant_tweets.values
             aggregation.values = dict(counter)

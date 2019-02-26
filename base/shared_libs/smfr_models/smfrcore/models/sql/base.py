@@ -179,6 +179,10 @@ class SQLAlchemy(SQLAlchemyBase):
         """Returns the metadata"""
         return self.Model.metadata
 
+    def apply_driver_hacks(self, app, info, options):
+        super().apply_driver_hacks(app, info, options)
+        options['pool_pre_ping'] = True
+
 
 sqldb = SQLAlchemy(metadata=metadata, session_options={'expire_on_commit': False})
 
@@ -197,8 +201,8 @@ def create_app(app_name='SMFR'):
 
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     app.config['SQLALCHEMY_POOL_TIMEOUT'] = 3600
-    app.config['SQLALCHEMY_POOL_RECYCLE'] = 1200
-    app.config['SQLALCHEMY_POOL_SIZE'] = 10
+    app.config['SQLALCHEMY_POOL_RECYCLE'] = 300
+    app.config['SQLALCHEMY_POOL_SIZE'] = 100
     sqldb.init_app(app)
     return app
 
