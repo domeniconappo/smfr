@@ -176,6 +176,7 @@ def run_single_aggregation(collection_id,
         logger.warning('!!!!!! Previous aggregation for %d is not finished yet !!!!!!' % collection_id)
         return res
 
+    logger.info(' >>>>>>>>>>>> Starting aggregation - %d' % collection_id)
     with flask_app.app_context():
         if not aggregation:
             aggregation = Aggregation.query.filter_by(collection_id=collection_id).first()
@@ -196,11 +197,8 @@ def run_single_aggregation(collection_id,
         # init counters
         counter = Counter(initial_values)
         trends = Counter(initial_trends)
-
-        logger.info(' >>>>>>>>>>>> Starting aggregation - %d' % collection_id)
-
         running_aggregators.add(collection_id)
-
+        collection = aggregation.collection
         try:
             logger.info('[+] Counting collected for %d', collection_id)
             collected_tweets = Tweet.get_iterator(collection_id, Tweet.COLLECTED_TYPE, last_tweetid=last_tweetid_collected)
@@ -240,19 +238,21 @@ def run_single_aggregation(collection_id,
                 nuts_id = t.geo['nuts_id']
                 geo_identifier = '%s_%s' % (geoloc_id, nuts_id) if nuts_id else geoloc_id
                 inc_annotated_counter(counter, prob, place_id=geo_identifier)
-                relevant_tweets.push_if_relevant(Tweet.to_json(t))
-                if t.geo['nuts_efas_id'] and prob >= orange_th:
-                    # trends....counters by efas cycle (i.e. date)
-                    t = Tweet.to_obj(t)
-                    relevance = 'medium'
-                    if prob >= red_th:
-                        relevance = 'high'
-                    day_key = '{}_{}_{}'.format(t.geo['nuts_efas_id'], relevance, t.efas_cycle)
-                    trends[day_key] += 1
+                if collection.trigger != TwitterCollection.TRIGGER_BACKGROUND:
+                    relevant_tweets.push_if_relevant(Tweet.to_json(t))
+                    if t.geo['nuts_efas_id'] and prob >= orange_th:
+                        # trends....counters by efas cycle (i.e. date)
+                        t = Tweet.to_obj(t)
+                        relevance = 'medium'
+                        if prob >= red_th:
+                            relevance = 'high'
+                        day_key = '{}_{}_{}'.format(t.geo['nuts_efas_id'], relevance, t.efas_cycle)
+                        trends[day_key] += 1
             aggregation.last_tweetid_geotagged = max_geotagged_tweetid if max_geotagged_tweetid else last_tweetid_geotagged
-            aggregation.relevant_tweets = relevant_tweets.values
             aggregation.values = dict(counter)
-            aggregation.trends = dict(trends)
+            if collection.trigger != TwitterCollection.TRIGGER_BACKGROUND:
+                aggregation.relevant_tweets = relevant_tweets
+                aggregation.trends = dict(trends)
             aggregation.save()
 
         except cassandra.ReadFailure as e:
