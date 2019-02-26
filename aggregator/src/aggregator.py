@@ -10,7 +10,6 @@ import cassandra
 
 from smfrcore.utils import logged_job, job_exceptions_catcher, FALSE_VALUES, DEFAULT_HANDLER
 from smfrcore.models.sql import TwitterCollection, Aggregation, create_app
-from sqlalchemy.exc import OperationalError
 
 logger = logging.getLogger('AGGREGATOR')
 logger.setLevel(os.getenv('LOGGING_LEVEL', 'DEBUG'))
@@ -174,7 +173,7 @@ def run_single_aggregation(collection_id,
     from smfrcore.models.cassandra import Tweet
     res = 0
     if collection_id in running_aggregators:
-        logger.warning('!!!!!! Previous aggregation for collection id %d is not finished yet !!!!!!' % collection_id)
+        logger.warning('!!!!!! Previous aggregation for %d is not finished yet !!!!!!' % collection_id)
         return res
 
     with flask_app.app_context():
@@ -198,7 +197,7 @@ def run_single_aggregation(collection_id,
         counter = Counter(initial_values)
         trends = Counter(initial_trends)
 
-        logger.info(' >>>>>>>>>>>> Starting aggregation for collection id %d' % collection_id)
+        logger.info(' >>>>>>>>>>>> Starting aggregation - %d' % collection_id)
 
         running_aggregators.add(collection_id)
 
@@ -263,7 +262,7 @@ def run_single_aggregation(collection_id,
             logger.error('ERROR during aggregation collection %d: error: %s %s', collection_id, type(e), e)
             res = 1
         else:
-            logger.info(' <<<<<<<<<<< Aggregation terminated for collection %d', collection_id)
+            logger.info(' <<<<<<<<<<< Aggregation terminated - %d', collection_id)
             res = 0
         finally:
             running_aggregators.remove(collection_id)
@@ -276,36 +275,3 @@ def pretty_running_conf(conf):
             return 'Aggregation on {} collections'.format(k)
         elif k == 'collections' and v:
             return 'Aggregation on collections: {}'.format(v)
-
-
-"""
-trends notes....
-
-In [14]: t.created_at
-Out[14]: datetime.datetime(2019, 1, 9, 12, 47, 35)
-
-In [15]: t.created_at.day
-Out[15]: 9
-
-In [16]: t.created_at.strftime('%m')
-Out[16]: '01'
-
-In [17]: t.created_at.strftime('%Y%m')
-Out[17]: '201901'
-
-In [18]: t.created_at.strftime('%Y%m%d')
-Out[18]: '20190109'
-
-In [19]: '0-10,10-90,90-100'.split(',')
-Out[19]: ['0-10', '10-90', '90-100']
-
-In [20]: import os
-
-In [21]: flood_propability_ranges_env = os.getenv('FLOOD_PROBABILITY_RANGES', '0-10,10-90,90-100')
-
-In [22]: flood_propability_ranges = [[int(g) for g in t.split('-')] for t in flood_propability_ranges_env.split(',')]
-
-In [23]: flood_propability_ranges
-Out[23]: [[0, 10], [10, 90], [90, 100]]
-
-"""
