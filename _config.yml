@@ -255,4 +255,9 @@ defaults:
         - title: "- Configuration"
           url: 2_install_configure
 
+      - section_title: "Annex"
+        items:
+        - title: "- Disclaimer"
+          url: 0_disclaimer
+
 theme: jekyll-theme-minimal
