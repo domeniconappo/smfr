@@ -2,5 +2,6 @@
 main:
   - section_title: "SMFR"
 
-  - title: "Lisflood Model Documentation"
-    url: https://ec-jrc.github.io/lisflood-model/
+  - title: "Source code"
+    url: https://github.com/ec-jrc/lisflood-smfr
+    image: media/github.png
