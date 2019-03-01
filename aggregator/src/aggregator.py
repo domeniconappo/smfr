@@ -181,8 +181,6 @@ def run_single_aggregation(collection_id,
         if not aggregation:
             aggregation = Aggregation.query.filter_by(collection_id=collection_id).first()
 
-        relevant_tweets = MostRelevantTweets(initial=initial_relevant_tweets)
-
         max_collected_tweetid = 0
         max_annotated_tweetid = 0
         max_geotagged_tweetid = 0
@@ -195,6 +193,7 @@ def run_single_aggregation(collection_id,
         last_tweetid_geotagged = int(last_tweetid_geotagged) if last_tweetid_geotagged else 0
 
         # init counters
+        relevant_tweets = MostRelevantTweets(initial=initial_relevant_tweets)
         counter = Counter(initial_values)
         trends = Counter(initial_trends)
         running_aggregators.add(collection_id)
@@ -251,7 +250,7 @@ def run_single_aggregation(collection_id,
             aggregation.last_tweetid_geotagged = max_geotagged_tweetid if max_geotagged_tweetid else last_tweetid_geotagged
             aggregation.values = dict(counter)
             if collection.trigger != TwitterCollection.TRIGGER_BACKGROUND:
-                aggregation.relevant_tweets = relevant_tweets
+                aggregation.relevant_tweets = relevant_tweets.values
                 aggregation.trends = dict(trends)
             aggregation.save()
 
