@@ -1,6 +1,0 @@
-python-Levenshtein
-schedule
-ujson
-fiona
-sqlalchemy
-geojson

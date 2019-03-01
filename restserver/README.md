@@ -1,3 +1,0 @@
-# SMFR Rest Server
-
-
