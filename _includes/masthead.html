@@ -20,7 +20,9 @@
               {% assign navclass = '' %}
             {% endif %}
             <li class="masthead__menu-item {{ navclass }}">
-              <a href="{{ domain }}{{ link.url }}" class="{{ navclass }}" {% if link.description %}title="{{ link.description }}"{% endif %}>{{ link.title }}</a>
+              <a href="{{ domain }}{{ link.url }}" class="{{ navclass }}" {% if link.description %}title="{{ link.description }}"{% endif %}>
+              <img alt="{{ link.title }}" src="{{ link.image }}" />  &nbsp;{{ link.title }}
+              </a>
             </li>
           {% endfor %}
         </ul>

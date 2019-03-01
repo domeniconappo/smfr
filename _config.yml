@@ -255,6 +255,17 @@ defaults:
         - title: "- Configuration"
           url: 2_install_configure
 
+      - section_title: "Installation and Configuration"
+        items:
+        - title: "- Requirements"
+          url: 2_install_requirements
+        - title: "- Install"
+          url: 2_install
+        - title: "- Setup"
+          url: 2_install_setup
+        - title: "- Configuration"
+          url: 2_install_configure
+
       - section_title: "Annex"
         items:
         - title: "- Disclaimer"
