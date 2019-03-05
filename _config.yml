@@ -250,21 +250,23 @@ defaults:
           url: 2_install_requirements
         - title: "- Install"
           url: 2_install
-        - title: "- Setup"
-          url: 2_install_setup
-        - title: "- Configuration"
+        - title: "- Setup and Configure"
           url: 2_install_configure
 
-      - section_title: "Installation and Configuration"
+      - section_title: "Start SMFR"
         items:
-        - title: "- Requirements"
-          url: 2_install_requirements
-        - title: "- Install"
-          url: 2_install
-        - title: "- Setup"
-          url: 2_install_setup
-        - title: "- Configuration"
-          url: 2_install_configure
+        - title: "- Run SMFR in a Docker Compose setup"
+          url: 3_run_compose
+        - title: "- Run SMFR in a Docker Swarm"
+          url: 3_run_swarm
+
+      - section_title: "Developer Notes"
+        items:
+          - title: "- Manage database migrations"
+            url: 4_notes_migrations
+          - title: "- Troubleshooting"
+            url: 4_notes_troubleshooting
+
 
       - section_title: "Annex"
         items:
