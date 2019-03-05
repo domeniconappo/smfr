@@ -239,9 +239,9 @@ defaults:
       
       - section_title: "Introduction"
         items:
-        - title: "What is SMFR"
+        - title: "- What is SMFR"
           url: 1_introduction_SMFR
-        - title: "Technology stack"
+        - title: "- Technology stack"
           url: 1_introduction_tech
 
       - section_title: "Installation and Configuration"
