@@ -1,20 +1,22 @@
 <header>
     <nav class="navbar navbar-inverse navbar-expand-lg fixed-top" role="navigation">
-      <div class="container bg-blue-light">
-      <a class="navbar-brand" href="#">{{ site.title }}</a>
+      <div class="container">
+      <a class="nav-link" title="home" href="{{ site.baseurl }}/">
+       <img src="{{ site.baseurl }}/media/logo.png" alt="SMFR logo" />
+        </a>
       <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
         <span class="navbar-toggler-icon"></span>
       </button>
+
       <div class="collapse navbar-collapse" id="navbarResponsive">
         <ul class="navbar-nav mr-auto">
-          <li class="nav-item">
-             <img style="border: 0; position: fixed; left: 0; top:0; z-index: 9000" src="{{ site.baseurl }}/media/SMFR_logo.png" alt="SMFR logo" />
-           </li>
           {% for link in site.data.navigation.main %}
             {% if link.url contains 'http' %}
               {% assign domain = '' %}
+              {% assign target = '_blank' %}
             {% else %}
               {% assign domain = site.url | append: site.baseurl %}
+              {% assign target = '_self' %}
             {% endif %}
 
             {% if page.url contains link.url %}
@@ -22,18 +24,15 @@
             {% else %}
               {% assign navclass = '' %}
             {% endif %}
+
             <li class="nav-item {{ navclass }}">
-              <a href="{{ domain }}{{ link.url }}" class="{{ navclass }}" {% if link.description %}title="{{ link.description }}"{% endif %}>
+              <a href="{{ domain }}{{ link.url }}" target="{{ target }}" class="navbar-text" {% if link.description %}title="{{ link.description }}"{% endif %}>
               <img alt="{{ link.title }}" src="{{ site.baseurl }}/{{ link.image }}" />  &nbsp;{{ link.title }}
               </a>
             </li>
           {% endfor %}
         </ul>
-        <button class="greedy-nav__toggle hidden" type="button">
-          <span class="visually-hidden">{{ site.data.ui-text[site.locale].menu_label | default: "Toggle Menu" }}</span>
-          <div class="navicon"></div>
-        </button>
-        </div>
+      </div>
       </div>
     </nav>
 </header> <!-- /.masthead -->
