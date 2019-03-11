@@ -8,6 +8,10 @@ venv/
 ENV/
 env.bak/
 venv.bak/
+# jekyll temp files
+.jekyll-metadata
+Gemfile.lock
+/_site/
 
 .pytest_cache/
 # IDE

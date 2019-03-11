@@ -186,7 +186,7 @@ class TwitterCollection(SMFRModel):
             obj.save()
             cls._update_caches(obj)
             return obj
-        elif obj.is_ondemand:
+        elif obj.is_ondemand or obj.is_manual:
             obj.status = cls.ACTIVE_CHOICE  # force active status when creating/updating on demand collections
             existing = cls.query.filter_by(efas_id=int(data['efas_id']), status=cls.ACTIVE_CHOICE).first()
             if existing:

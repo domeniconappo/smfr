@@ -1,5 +1,6 @@
 import os
 import logging
+from collections import defaultdict
 from logging.handlers import RotatingFileHandler
 import time
 import multiprocessing
@@ -59,16 +60,24 @@ class Persister:
         self.language_models = AnnotatorClient.available_languages()
         self.background_process = None
         self.active = True
+        self.collections_by_trigger = defaultdict(list)
         with self.app.app_context():
             running = TwitterCollection.get_running()
             self.collections = [c for c in running if c.trigger != TwitterCollection.TRIGGER_BACKGROUND]
+            for c in self.collections:
+                self.collections_by_trigger[c.trigger].append(c)
 
     def set_collections(self, collections):
         with self._lock:
             self.collections = collections
 
     def reconcile_tweet_with_collection(self, tweet):
-        for c in self.collections:
+        # if there is only one collection in the set, we just reconcile with it.
+        # e.g. if the tweet was collected by the manual collections streamer, and there is only one manual collection defined,
+        # tweet is assigned to that collection without any further check
+        if len(self.collections_by_trigger[tweet.collection.trigger]) == 1:
+            return self.collections_by_trigger[tweet.collection.trigger][0]
+        for c in self.collections_by_trigger[tweet.collection.trigger]:
             if c.is_tweet_in_bounding_box(tweet) or c.tweet_matched_keyword(tweet):
                 return c
         # no collection found for ingested tweet...
