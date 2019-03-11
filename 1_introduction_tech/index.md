@@ -1,3 +1,34 @@
-# Disclaimer
+## Architecture notes
 
-Both the program code and the LISFLOOD documentation (including the [LISFLOOD Model Documentation](https://ec-jrc.github.io/lisflood-model/), the [LISFLOOD User Guide](https://ec-jrc.github.io/lisflood-code/) and the **XXX***) have been carefully inspected before publishing. However, no  warranties, either expressed or implied, are made concerning the accuracy, completeness, reliability, usability, performance, or fitness for any particular purpose of the information contained in this documentation, to the software described in this documentation, and to other material supplied in connection therewith. The material is provided \"as is\". The entire risk as to its quality and performance is with the user.
+System is build based on <a href="https://www.reactivemanifesto.org/" target="_blank">Reactive Architecture paradigm.</a> 
+We struggled to make the system resilient, allowing loose coupled components to rely on asynchronous message delivery (Message Driven).
+
+The solution was conveniently developed as a set of containerized services, by adopting docker technologies (Docker, Docker Compose, Docker Swarm).
+
+![A bird eye overview of the architecture]({{site.baseurl}}/media/smfr-architecture.png) 
+
+It follows description of technology stack for each component.
+
+## Functional Components
+
+### REST Server
+
+### Persister
+
+### Annotator
+
+### Geocoder
+
+### Aggregator
+
+### Products
+
+## Infrastructure Components
+
+### DB MySQL
+
+### DB Cassandra
+
+### Kafka
+
+### Geonames (ElasticSearch)

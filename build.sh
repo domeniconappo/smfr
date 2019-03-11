@@ -1,3 +1,3 @@
 #!/usr/bin/env bash
 
-bundle exec jekyll build --watch --incremental
+bundle exec jekyll build --trace --incremental
