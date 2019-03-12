@@ -49,15 +49,65 @@ $bgHighlight    : #37369d;
 $colDefault     : #ecf0f1;
 $colHighlight   : #bbf0ff;
 $dropDown       : true;
+
 html {
   scroll-behavior: smooth;
 }
-.page__content {margin-top: 3em !important;}
-nav {
-  margin-bottom: 2em !important;
-}
-.navbar {
 
+.github-corner:hover .octo-arm {
+  animation: octocat-wave 560ms ease-in-out;
+}
+
+@keyframes octocat-wave {
+    0% {
+        transform: rotate(0deg);
+    }
+
+    20% {
+        transform: rotate(-25deg);
+    }
+
+    40% {
+        transform: rotate(10deg);
+    }
+
+    60% {
+        transform: rotate(-25deg);
+    }
+
+    80% {
+        transform: rotate(10deg);
+    }
+
+    100% {
+        transform: rotate(0deg);
+    }
+}
+
+@media (max-width: 500px) {
+    .github-corner:hover .octo-arm {
+        animation: none;
+    }
+
+    .github-corner .octo-arm {
+        animation: octocat-wave 560ms ease-in-out;
+    }
+}
+#main {margin-top: 1em !important;}
+.sidebar {
+    clear: both;
+    margin-bottom: 1em;
+    padding-right: 1em;
+    margin-top: 2em !important;
+}
+nav {margin-bottom: 2em !important;}
+
+.nav__list .nav__items {
+    margin-top: 1.25em;
+    font-size: 1.25rem;
+}
+
+.navbar {
   background-color: $bgDefault;
   .navbar-brand {
     color: $colDefault;

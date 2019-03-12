@@ -1,7 +1,8 @@
 # main links
 main:
-  - section_title: "SMFR"
-
-  - title: "Source code"
-    url: https://github.com/ec-jrc/lisflood-smfr
-    image: media/github-sm.png
+#  - section_title: "SMFR"
+#
+#  - title: "Github"
+#    url: https://github.com/ec-jrc/smfr
+#    image: media/github-sm.png
+#    description: "Link to GitHub repository"

@@ -224,7 +224,6 @@ compress_html:
   ignore:
     envs: development
 
-
 # Defaults
 
 defaults:
@@ -268,11 +267,12 @@ defaults:
 
       - section_title: "Developer Notes"
         items:
-          - title: "- Manage database migrations"
-            url: 4_notes_migrations
-          - title: "- Troubleshooting"
-            url: 4_notes_troubleshooting
-
+        - title: "- REST API full documentation"
+          url: 4_notes_restapi
+        - title: "- Manage database migrations"
+          url: 4_notes_migrations
+        - title: "- Troubleshooting"
+          url: 4_notes_troubleshooting
 
       - section_title: "Annex"
         items:

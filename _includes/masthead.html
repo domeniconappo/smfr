@@ -2,12 +2,12 @@
     <nav class="navbar navbar-inverse navbar-expand-lg fixed-top" role="navigation">
       <div class="container">
       <a class="nav-link" title="home" href="{{ site.baseurl }}/">
-       <img src="{{ site.baseurl }}/media/logo.png" alt="SMFR logo" />
+       <img src="{{ site.baseurl }}/media/logo.png" alt="SMFR logo" style="position: absolute;top:0;left:0;z-index: 1789"/>
         </a>
       <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
         <span class="navbar-toggler-icon"></span>
       </button>
-
+      {% include github_ribbon.html %}
       <div class="collapse navbar-collapse" id="navbarResponsive">
         <ul class="navbar-nav mr-auto">
           {% for link in site.data.navigation.main %}
@@ -26,13 +26,15 @@
             {% endif %}
 
             <li class="nav-item {{ navclass }}">
-              <a href="{{ domain }}{{ link.url }}" target="{{ target }}" class="navbar-text" {% if link.description %}title="{{ link.description }}"{% endif %}>
-              <img alt="{{ link.title }}" src="{{ site.baseurl }}/{{ link.image }}" />  &nbsp;{{ link.title }}
+              <a class="nav-link" href="{{ domain }}{{ link.url }}" target="{{ target }}" {% if link.description %}title="{{ link.description }}"{% endif %}>
+                <img alt="{{ link.title }}" src="{{ site.baseurl }}/{{ link.image }}" class="align-center" />
+                <span><i class="-github-alt"></i> {{ link.title }}</span>
               </a>
             </li>
           {% endfor %}
         </ul>
       </div>
-      </div>
+
+      </div> <!-- end DIV class container -->
     </nav>
 </header> <!-- /.masthead -->
