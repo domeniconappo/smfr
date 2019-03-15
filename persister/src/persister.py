@@ -145,10 +145,6 @@ class Persister:
                         logger.error(e)
                     else:
                         self.send_to_pipeline(producer, tweet)
-                    # except (AttributeError, Exception) as e:
-                    #     logger.error(type(e))
-                    #     logger.error(e)
-                    #     continue
             except KafkaTimeoutError:
                 logger.warning('Consumer Timeout...sleep 5 seconds')
                 time.sleep(5)
