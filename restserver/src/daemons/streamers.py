@@ -32,6 +32,7 @@ class BaseStreamer(TwythonStreamer):
     """
 
     """
+    trigger = None
     mp_manager = multiprocessing.Manager()
     max_errors_len = 15
 
@@ -234,7 +235,7 @@ class BackgroundStreamer(BaseStreamer):
         if lang == 'en' or lang in self.collection.languages:
             data['lang'] = lang
             tweet = Tweet.from_tweet(self.collection.id, data, ttype=Tweet.COLLECTED_TYPE)
-            message = tweet.serialize()
+            message = tweet.serialize(**{'trigger': self.trigger})
             self.producer.send(self.persister_kafka_topic, message)
             self.log(tweet)
 

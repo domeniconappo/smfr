@@ -111,7 +111,7 @@ class Persister:
                     try:
                         msg = msg.value.decode('utf-8')
                         msg = json.loads(msg)
-                        trigger = msg.pop('trigger', 'on-demand')
+                        trigger = msg.pop('trigger', TwitterCollection.TRIGGER_ONDEMAND)
                         tweet = Tweet.from_json(msg)
                         if tweet.collectionid == Tweet.NO_COLLECTION_ID:
                             # reconcile with running collections
