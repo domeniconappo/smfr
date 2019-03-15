@@ -128,7 +128,7 @@ class CassandraHelpers:
         res['full_text'] = cls.get_full_text(row)
         return res
 
-    def serialize(self):
+    def serialize(self, **additional):
         """
         Method to serialize Tweet object to Kafka
         :return: string version in JSON format
@@ -140,6 +140,7 @@ class CassandraHelpers:
                 outdict[k] = v.value.isoformat()
             else:
                 outdict[k] = v.value
+        outdict.update(additional)
         return json.dumps(outdict, ensure_ascii=False).encode('utf-8')
 
     @classmethod
@@ -246,14 +247,13 @@ class Tweet(cqldb.Model, CassandraHelpers):
 
     @property
     def collection(self):
-        if self.collectionid in self.cache_collections:
-            return self.cache_collections[self.collectionid]
-        with flask_app.app_context():
-            collection = TwitterCollection.query.get(self.collectionid)
-            if not collection:
-                return None
-        self.cache_collections[self.collectionid] = collection
-        return collection
+        if not self.cache_collections.get(self.collectionid):
+            with flask_app.app_context():
+                collection = TwitterCollection.query.get(self.collectionid)
+                if not collection:
+                    return None
+                self.cache_collections[self.collectionid] = collection
+        return self.cache_collections[self.collectionid]
 
     @classmethod
     def get_iterator(cls, collection_id, ttype, lang=None, out_format='tuple',
@@ -433,7 +433,9 @@ class Tweet(cqldb.Model, CassandraHelpers):
         :param message: json string representing a Tweet object (tipically from Kafka queue)
         :return: Tweet object
         """
-        values = json.loads(message)
+        values = message
+        if not isinstance(message, dict):
+            values = json.loads(message)
         obj = cls()
         for k, v in values.items():
             if v is None:

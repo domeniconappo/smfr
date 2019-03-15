@@ -15,7 +15,7 @@ from smfrcore.utils.kafka import make_kafka_producer
 from twython import TwythonStreamer
 
 from smfrcore.models.cassandra import Tweet
-from smfrcore.models.sql import create_app
+from smfrcore.models.sql import create_app, TwitterCollection
 from smfrcore.utils import DEFAULT_HANDLER
 
 from daemons.utils import safe_langdetect, tweet_normalization_aggressive
@@ -220,6 +220,7 @@ class BackgroundStreamer(BaseStreamer):
     """
 
     """
+    trigger = TwitterCollection.TRIGGER_BACKGROUND
 
     def connect(self, collections):
         self.collection = collections[0]
@@ -242,6 +243,7 @@ class OnDemandStreamer(BaseStreamer):
     """
 
     """
+    trigger = TwitterCollection.TRIGGER_ONDEMAND
 
     def on_success(self, data):
 
@@ -250,7 +252,7 @@ class OnDemandStreamer(BaseStreamer):
             return
         data['lang'] = lang
         tweet = Tweet.from_tweet(Tweet.NO_COLLECTION_ID, data, ttype=Tweet.COLLECTED_TYPE)
-        message = tweet.serialize()
+        message = tweet.serialize(**{'trigger': self.trigger})
         self.producer.send(self.persister_kafka_topic, message)
         self.log(tweet)
 
@@ -259,5 +261,7 @@ class OnDemandStreamer(BaseStreamer):
 
 
 class ManualStreamer(OnDemandStreamer):
+    trigger = TwitterCollection.TRIGGER_MANUAL
+
     def use_pipeline(self, collection):
         return collection.is_using_pipeline

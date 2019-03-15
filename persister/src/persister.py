@@ -5,6 +5,7 @@ from logging.handlers import RotatingFileHandler
 import time
 import multiprocessing
 
+import ujson as json
 from cassandra import InvalidRequest
 from cassandra.cqlengine import ValidationError, CQLEngineException
 from kafka.errors import CommitFailedError, KafkaTimeoutError
@@ -63,21 +64,24 @@ class Persister:
         self.collections_by_trigger = defaultdict(list)
         with self.app.app_context():
             running = TwitterCollection.get_running()
-            self.collections = [c for c in running if c.trigger != TwitterCollection.TRIGGER_BACKGROUND]
+            self.collections = [c for c in running if c.trigger.code != TwitterCollection.TRIGGER_BACKGROUND]
             for c in self.collections:
-                self.collections_by_trigger[c.trigger].append(c)
+                self.collections_by_trigger[c.trigger.code].append(c)
 
     def set_collections(self, collections):
         with self._lock:
             self.collections = collections
 
-    def reconcile_tweet_with_collection(self, tweet):
+    def reconcile_tweet_with_collection(self, tweet, trigger=TwitterCollection.TRIGGER_ONDEMAND):
         # if there is only one collection in the set, we just reconcile with it.
         # e.g. if the tweet was collected by the manual collections streamer, and there is only one manual collection defined,
         # tweet is assigned to that collection without any further check
-        if len(self.collections_by_trigger[tweet.collection.trigger]) == 1:
-            return self.collections_by_trigger[tweet.collection.trigger][0]
-        for c in self.collections_by_trigger[tweet.collection.trigger]:
+        logger.debug(trigger)
+        logger.debug(self.collections_by_trigger.keys())
+        logger.debug(self.collections_by_trigger.values())
+        if len(self.collections_by_trigger.get(trigger, [])) == 1:
+            return self.collections_by_trigger[trigger][0]
+        for c in self.collections_by_trigger.get(trigger, []):
             if c.is_tweet_in_bounding_box(tweet) or c.tweet_matched_keyword(tweet):
                 return c
         # no collection found for ingested tweet...
@@ -106,24 +110,28 @@ class Persister:
                     tweet = None
                     try:
                         msg = msg.value.decode('utf-8')
+                        msg = json.loads(msg)
+                        trigger = msg.pop('trigger', 'on-demand')
                         tweet = Tweet.from_json(msg)
                         if tweet.collectionid == Tweet.NO_COLLECTION_ID:
                             # reconcile with running collections
-                            collection = self.reconcile_tweet_with_collection(tweet)
+                            # trigger should be either 'manual' or 'on-demand'
+                            collection = self.reconcile_tweet_with_collection(tweet, trigger)
                             if not collection:
                                 with self._lock:
                                     self.shared_counter['not-reconciled'] += 1
                                 file_logger.error('%s', msg)
                                 continue  # continue the consumer loop
                             tweet.collectionid = collection.id
+
                         tweet.save()
                         collection = tweet.collection
+                        trigger_key = collection.trigger.code
 
                         if logger.isEnabledFor(logging.DEBUG):
                             logger.debug('Saved tweet: %s - collection %d', tweet.tweetid, tweet.collectionid)
 
                         with self._lock:
-                            trigger_key = collection.trigger.code
                             self.shared_counter[trigger_key] += 1
                             self.shared_counter[tweet.ttype] += 1
                             self.shared_counter['{}-{}'.format(tweet.lang, tweet.ttype)] += 1
@@ -133,14 +141,14 @@ class Persister:
                     except (ValidationError, ValueError, TypeError, InvalidRequest) as e:
                         logger.error(e)
                         logger.error('Poison message for Cassandra: %s', tweet or msg)
-                        continue
                     except CQLEngineException as e:
                         logger.error(e)
-                        continue
-                    except (AttributeError, Exception) as e:
-                        logger.error(type(e))
-                        logger.error(e)
-                        continue
+                    else:
+                        self.send_to_pipeline(producer, tweet)
+                    # except (AttributeError, Exception) as e:
+                    #     logger.error(type(e))
+                    #     logger.error(e)
+                    #     continue
             except KafkaTimeoutError:
                 logger.warning('Consumer Timeout...sleep 5 seconds')
                 time.sleep(5)

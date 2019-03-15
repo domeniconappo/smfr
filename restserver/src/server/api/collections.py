@@ -50,7 +50,7 @@ def add_collection(payload):
             efas_id = nuts2.efas_id if nuts2 else None
         finally:
             payload['efas_id'] = efas_id
-        if not efas_id and payload['trigger'] in ('manual', 'on-demand'):
+        if not efas_id and (payload['trigger'] in ('manual', 'on-demand') and not payload.get('bounding_box')):
             raise SMFRRestException('Manual and ondemand collections needs a proper EFAS ID/NUTS2 code', 400)
 
     if logger.isEnabledFor(logging.DEBUG):
