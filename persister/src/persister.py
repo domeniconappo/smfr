@@ -117,12 +117,13 @@ class Persister:
                                 continue  # continue the consumer loop
                             tweet.collectionid = collection.id
                         tweet.save()
+                        collection = tweet.collection
 
                         if logger.isEnabledFor(logging.DEBUG):
                             logger.debug('Saved tweet: %s - collection %d', tweet.tweetid, tweet.collectionid)
 
                         with self._lock:
-                            trigger_key = tweet.collection.trigger.code
+                            trigger_key = collection.trigger.code
                             self.shared_counter[trigger_key] += 1
                             self.shared_counter[tweet.ttype] += 1
                             self.shared_counter['{}-{}'.format(tweet.lang, tweet.ttype)] += 1
@@ -136,7 +137,7 @@ class Persister:
                     except CQLEngineException as e:
                         logger.error(e)
                         continue
-                    except Exception as e:
+                    except (AttributeError, Exception) as e:
                         logger.error(type(e))
                         logger.error(e)
                         continue

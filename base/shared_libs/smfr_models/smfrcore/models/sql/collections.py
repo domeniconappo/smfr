@@ -283,7 +283,8 @@ class TwitterCollection(SMFRModel):
         res = cls.cache.get(key)
         if not res:
             res = cls.query.filter_by(
-                trigger=cls.TRIGGER_ONDEMAND).order_by(cls.started_at.desc(), cls.runtime.desc()).all()
+                trigger=cls.TRIGGER_ONDEMAND
+            ).order_by(cls.started_at.desc(), cls.runtime.desc()).all()
             cls.cache[key] = res
         return res
 

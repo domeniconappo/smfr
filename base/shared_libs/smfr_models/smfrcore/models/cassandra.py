@@ -10,6 +10,8 @@ from collections import namedtuple
 
 import numpy as np
 import ujson as json
+
+from cachetools import TTLCache
 from cassandra.cluster import Cluster, default_lbp_factory, NoHostAvailable
 from cassandra.cqlengine.connection import Connection, DEFAULT_CONNECTION, _connections
 from cassandra.query import named_tuple_factory, PreparedStatement
@@ -62,6 +64,8 @@ def new_cassandra_session():
 
 
 class CassandraHelpers:
+
+    cache_collections = TTLCache(500, 60 * 60 * 6)  # max size 500, 6 hours caching
 
     @classmethod
     def fields(cls):
@@ -212,10 +216,6 @@ class Tweet(cqldb.Model, CassandraHelpers):
     """
     Language of the tweet
     """
-    cache_collections = {}
-    """
-    simple dict to hold TwitterCollection objects (temporary caching solution!)
-    """
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -250,6 +250,8 @@ class Tweet(cqldb.Model, CassandraHelpers):
             return self.cache_collections[self.collectionid]
         with flask_app.app_context():
             collection = TwitterCollection.query.get(self.collectionid)
+            if not collection:
+                return None
         self.cache_collections[self.collectionid] = collection
         return collection
 
@@ -403,13 +405,17 @@ class Tweet(cqldb.Model, CassandraHelpers):
     @classmethod
     def from_tweet(cls, collectionid, tweet, ttype=COLLECTED_TYPE):
         """
-
+        Build a Tweet object from raw tweet and collectionid
         :param ttype:
         :param collectionid:
         :param tweet: tweet dictionary coming from Twitter API (stream API)
         :return:
         """
         created = tweet.get('created_at')
+        if not cls.cache_collections.get(collectionid):
+            with flask_app.app_context():
+                collection = TwitterCollection.query.get(collectionid)
+                cls.cache_collections[collectionid] = collection
         return cls(
             tweetid=tweet['id_str'], tweet_id=int(tweet['id_str']),
             collectionid=collectionid,

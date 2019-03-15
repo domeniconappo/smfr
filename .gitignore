@@ -155,3 +155,4 @@ celerybeat-schedule
 
 docker-compose.override.yaml
 docker-compose.override.yml
+/4_notes_restapi/
