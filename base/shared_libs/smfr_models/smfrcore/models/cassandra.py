@@ -412,7 +412,7 @@ class Tweet(cqldb.Model, CassandraHelpers):
         :return:
         """
         created = tweet.get('created_at')
-        if not cls.cache_collections.get(collectionid):
+        if collectionid != cls.NO_COLLECTION_ID and not cls.cache_collections.get(collectionid):
             with flask_app.app_context():
                 collection = TwitterCollection.query.get(collectionid)
                 cls.cache_collections[collectionid] = collection
