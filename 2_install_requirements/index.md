@@ -1,3 +1,13 @@
-# Disclaimer
+## Requirements
 
-Both the program code and the LISFLOOD documentation (including the [LISFLOOD Model Documentation](https://ec-jrc.github.io/lisflood-model/), the [LISFLOOD User Guide](https://ec-jrc.github.io/lisflood-code/) and the **XXX***) have been carefully inspected before publishing. However, no  warranties, either expressed or implied, are made concerning the accuracy, completeness, reliability, usability, performance, or fitness for any particular purpose of the information contained in this documentation, to the software described in this documentation, and to other material supplied in connection therewith. The material is provided \"as is\". The entire risk as to its quality and performance is with the user.
+To properly run SMFR you need some powerful hardware and lots of disk space (1 TB at least), and a good network link, of course.
+
+The entire solution is Docker Compose based so a running Docker daemon and docker-compose software are required on the machine(s) where you will launch the system. 
+
+In case you opt for the Swarm, the Docker Swarm mode is also required, meaning that you have to configure the Swarm cluster (choosing a manager, adding nodes and labels etc.)
+
+If you opt to use a single machine to run SMFR, ensure the machine meets the _minimum_ requirements enlisted here:
+
+- 8 cores 
+- 32 GB Mem
+- 500 GB of dedicated disk space

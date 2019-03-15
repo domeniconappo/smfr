@@ -244,15 +244,13 @@ defaults:
       
       - section_title: "Introduction"
         items:
-        - title: "- What is SMFR"
+        - title: "- About SMFR"
           url: 1_introduction_SMFR
         - title: "- Technology stack"
           url: 1_introduction_tech
 
       - section_title: "Installation and Configuration"
         items:
-        - title: "- Requirements"
-          url: 2_install_requirements
         - title: "- Install"
           url: 2_install
         - title: "- Setup and Configure"

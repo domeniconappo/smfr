@@ -1,10 +1,11 @@
-## Introduction
+## About SMFR
 
 Social Media Flood Risk (SMFR) is a platform to monitor specific flood events on social media (currently, only Twitter).
 
 The software is developed as Exploratory Research project at the JRC - European Commission facilities and is released under [EUPL licence](LICENCE).
 
 Current version is based on:
+
   - Twitter Stream API to filter tweets using keywords and/or bounding box criteria
   - ML algorithms and models for classification of tweets (flood relevance)
   - Geonames index for geocoding of relevant tweets
