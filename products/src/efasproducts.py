@@ -66,14 +66,14 @@ class Products:
             'server': os.getenv('KAJO_FTP_SERVER', '207.180.226.197'),
             'user': os.getenv('KAJO_FTP_USER', 'jrc'),
             'password': os.getenv('KAJO_FTP_PASSWORD'),
-            'folder': os.getenv('KAJO_FTP_FOLDER', '/home/jrc')
+            'folder': os.getenv('KAJO_FTP_FOLDER', '/home/jrc'),
         },
         'RAMNODE': {
             'server': os.getenv('RAMNODE_FTP_SERVER', '81.4.107.12'),
             'user': os.getenv('RAMNODE_FTP_USER', 'smfr'),
             'password': os.getenv('RAMNODE_FTP_PASSWORD'),
-            'folder': os.getenv('RAMNODE_FTP_FOLDER', '/home/smfr/app/products')
-            'save_folder_policy': 'year_month'
+            'folder': os.getenv('RAMNODE_FTP_FOLDER', '/home/smfr/app/products'),
+            'save_folder_policy': 'year_month',
         },
     }
 
