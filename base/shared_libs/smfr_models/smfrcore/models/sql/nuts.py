@@ -45,6 +45,13 @@ class Nuts2(SMFRModel):
         return cls._preloaded.get(efas_id) or cls.query.filter_by(efas_id=efas_id).first()
 
     @classmethod
+    def get_by_nuts_code(cls, nuts_code):
+        for n in cls._preloaded.values():
+            if nuts_code == n.nuts_id:
+                return n
+        return cls.query.filter_by(nuts_id=nuts_code).first()
+
+    @classmethod
     def efas_id_bbox(cls, efas_id):
         nuts2 = cls._preloaded.get(efas_id) or cls.query.filter_by(efas_id=efas_id).first()
         return nuts2.bbox

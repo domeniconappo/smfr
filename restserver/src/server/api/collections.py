@@ -10,7 +10,7 @@ import ujson as json
 # from flask_jwt_extended import jwt_required, get_jwt_identity
 from sqlalchemy.exc import OperationalError
 
-from smfrcore.models.sql import TwitterCollection, User, Aggregation
+from smfrcore.models.sql import TwitterCollection, Aggregation, Nuts2
 from smfrcore.models.cassandra import Tweet, TweetTuple
 from smfrcore.client.marshmallow import Collection as CollectionSchema, Aggregation as AggregationSchema
 from smfrcore.utils import DEFAULT_HANDLER
@@ -36,11 +36,27 @@ def add_collection(payload):
     :return: the created collection as a dict, 201
     """
     payload = json.loads(payload) if payload and not isinstance(payload, dict) else payload or {}
-    logger.debug(payload['keywords'])
-    logger.debug(payload['languages'])
+    payload['timezone'] = payload.get('tzclient') or '+00:00'
+
     if not payload.get('keywords') and not payload.get('languages'):
         payload['languages'], payload['keywords'] = RestServerConfiguration.default_keywords()
-    payload['timezone'] = payload.get('tzclient') or '+00:00'
+
+    nuts_code = payload.get('nuts2')
+    if nuts_code:
+        try:
+            efas_id = int(nuts_code)
+        except ValueError:
+            nuts2 = Nuts2.get_by_nuts_code(nuts_code)
+            efas_id = nuts2.efas_id if nuts2 else None
+        finally:
+            payload['efas_id'] = efas_id
+        if not efas_id and payload['trigger'] in ('manual', 'on-demand'):
+            raise SMFRRestException('Manual and ondemand collections needs a proper EFAS ID/NUTS2 code', 400)
+
+    if logger.isEnabledFor(logging.DEBUG):
+        logger.debug(payload['keywords'])
+        logger.debug(payload['languages'])
+
     collection = add_collection_helper(**payload)
     res = CollectionSchema().dump(collection).data
     return res, 201

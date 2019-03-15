@@ -104,6 +104,7 @@ class SFTPClient:
 
     def __init__(self, host, user, passwd, folder=None):
         self.remote_path = '/home/{}'.format(user) if not folder else folder
+        self.mkdir_p(self.remote_path)
         self.host = host
         self.user = user
         self.password = passwd
@@ -126,6 +127,28 @@ class SFTPClient:
     def send(self, path_to_file):
         remote_path_file = os.path.join(self.remote_path, os.path.basename(path_to_file))
         self.connection.put(path_to_file, remote_path_file)
+
+    def mkdir_p(self, remote):
+        """
+        emulates mkdir_p if required.
+        sftp - is a valid sftp object
+        remote - remote path to create.
+        """
+        dirs_ = []
+        dir_ = remote
+        while len(dir_) > 1:
+            dirs_.append(dir_)
+            dir_, _ = os.path.split(dir_)
+
+        if len(dir_) == 1 and not dir_.startswith("/"):
+            dirs_.append(dir_)  # For a remote path like y/x.txt
+
+        while len(dirs_):
+            dir_ = dirs_.pop()
+            try:
+                self.connection.stat(dir_)
+            except (IOError, Exception):
+                self.connection.mkdir(dir_)
 
     def close(self):
         self.connection.close()

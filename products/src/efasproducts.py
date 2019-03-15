@@ -72,7 +72,8 @@ class Products:
             'server': os.getenv('RAMNODE_FTP_SERVER', '81.4.107.12'),
             'user': os.getenv('RAMNODE_FTP_USER', 'smfr'),
             'password': os.getenv('RAMNODE_FTP_PASSWORD'),
-            'folder': os.getenv('RAMNODE_FTP_FOLDER', '/home/smfr/products')
+            'folder': os.getenv('RAMNODE_FTP_FOLDER', '/home/smfr/app/products')
+            'save_folder_policy': 'year_month'
         },
     }
 
@@ -118,7 +119,7 @@ class Products:
 
         heatmap_file = cls.write_heatmap_geojson(counters_by_efas_id, forecast, collections, relevant_tweets_output, trends_output)
         relevant_tweets_file = cls.write_relevant_tweets_geojson(relevant_tweets_output, forecast, collections)
-        cls.disseminate(heatmap_file)
+        cls.disseminate(forecast, heatmap_file)
         cls.write_incidents_geojson(counters_by_efas_id, forecast)
         cls.write_to_sql(counters_by_efas_id, relevant_tweets_output, collection_ids, forecast, trends_output)
 
@@ -242,7 +243,7 @@ class Products:
         return trends_output
 
     @classmethod
-    def disseminate(cls, heatmap_file):
+    def disseminate(cls, forecast_date, heatmap_file):
         # push files to FTP only from production
         if not IS_DEVELOPMENT:
             for sftp in cls.sftps.values():
@@ -250,6 +251,9 @@ class Products:
                 user = sftp['user']
                 password = sftp['password']
                 folder = sftp['folder']
+                if sftp.get('save_folder_policy'):
+                    year, month = forecast_date[0:4], forecast_date[4:6]
+                    folder = os.path.join(folder, year, month)
                 ftp_client = SFTPClient(server, user, password, folder)
                 ftp_client.send(heatmap_file)
                 ftp_client.close()

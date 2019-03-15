@@ -125,8 +125,6 @@ paths:
       tags: [collections]
       operationId: server.api.collections.add_collection
       summary: Submit a new collection
-      consumes:
-        - multipart/form-data
       parameters:
         - in: body
           name: payload

@@ -106,7 +106,7 @@ def new_collection():
             'configuration': form.configuration.data, 'keywords': form.keywords.data,
             'bounding_box': form.bounding_box.data, 'use_pipeline': form.use_pipeline,
             'runtime': form.runtime.data, 'trigger': form.trigger.data, 'nuts2': form.nuts2.data,
-            'forecast': form.forecast_id.data, 'tzclient': form.tzclient.data,
+            'forecast': form.forecast_id.data, 'tzclient': form.tzclient.data, 'languages': form.languages.data,
         }
         try:
             _ = client.new_collection(payload)
