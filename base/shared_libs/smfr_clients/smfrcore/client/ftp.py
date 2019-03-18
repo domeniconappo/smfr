@@ -104,7 +104,6 @@ class SFTPClient:
 
     def __init__(self, host, user, passwd, folder=None):
         self.remote_path = '/home/{}'.format(user) if not folder else folder
-        self.mkdir_p(self.remote_path)
         self.host = host
         self.user = user
         self.password = passwd
@@ -123,6 +122,7 @@ class SFTPClient:
         # being garbage collected and the connection from being closed.
         sftp.sshclient = self._ssh
         self.connection = sftp
+        self.mkdir_p(self.remote_path)
 
     def send(self, path_to_file):
         remote_path_file = os.path.join(self.remote_path, os.path.basename(path_to_file))
