@@ -36,7 +36,7 @@ services:
         max_attempts: 5
         window: 120s
       placement:
-        constraints: [ node.labels.medium == true ]
+        constraints: [ node.labels.huge == true ]
 
   mysql:
     deploy:
