@@ -6,8 +6,6 @@ import time
 import datetime
 
 import ujson as json
-# from flask import abort
-# from flask_jwt_extended import jwt_required, get_jwt_identity
 from sqlalchemy.exc import OperationalError
 
 from smfrcore.models.sql import TwitterCollection, Aggregation, Nuts2
@@ -16,18 +14,15 @@ from smfrcore.client.marshmallow import Collection as CollectionSchema, Aggregat
 from smfrcore.utils import DEFAULT_HANDLER
 from smfrcore.utils.errors import SMFRRestException
 
-from smfrcore.client.api_client import AnnotatorClient, GeocoderClient
-# from server.api.decorators import check_identity, check_role
+from smfrcore.client.api_client import AnnotatorClient, GeocoderClient, CollectorsClient
 from server.config import RestServerConfiguration
-from server.helpers import (add_collection_helper, add_collection_from_rra_event,
-                            fetch_rra_helper, events_to_collections_payload)
+from smfrcore.utils.helpers import (add_collection_helper, add_collection_from_rra_event, fetch_rra_helper, events_to_collections_payload)
 
 logger = logging.getLogger('RestServer API')
 logger.setLevel(RestServerConfiguration.logger_level)
 logger.addHandler(DEFAULT_HANDLER)
 
 
-# @jwt_required
 def add_collection(payload):
     """
     POST /collections
@@ -42,6 +37,7 @@ def add_collection(payload):
         payload['languages'], payload['keywords'] = RestServerConfiguration.default_keywords()
 
     nuts_code = payload.get('nuts2')
+    efas_id = None
     if nuts_code:
         try:
             efas_id = int(nuts_code)
@@ -62,8 +58,6 @@ def add_collection(payload):
     return res, 201
 
 
-# @check_role
-# @jwt_required
 def add_ondemand(payload):
     """
     Add a list of on demand collections running immediately which stop at given runtime parameter
@@ -78,11 +72,10 @@ def add_ondemand(payload):
     for event in payload:
         collection = add_collection_from_rra_event(**event)
         collections.append(collection)
+    CollectorsClient.restart(TwitterCollection.TRIGGER_ONDEMAND)
     return CollectionSchema().dump(collections, many=True).data, 201
 
 
-# @check_role
-# @jwt_required
 def fetch_efas(since='latest'):
     """
 
@@ -129,8 +122,6 @@ def get_active_collections():
     return res, 200
 
 
-# @check_identity
-# @jwt_required
 def stop_collection(collection_id):
     """
     POST /collections/{collection_id}/stop
@@ -143,13 +134,10 @@ def stop_collection(collection_id):
         return {'error': {'description': 'No collection with id {} was found'.format(collection_id)}}, 404
 
     collection.deactivate()
-    collector = RestServerConfiguration().collectors[collection.trigger]
-    collector.restart()
+    CollectorsClient.restart(collection.trigger.code)
     return {}, 204
 
 
-# @check_identity
-# @jwt_required
 def start_collection(collection_id):
     """
     POST /collections/{collection_id}/start
@@ -162,13 +150,10 @@ def start_collection(collection_id):
         return {'error': {'description': 'No collection with id {} was found'.format(collection_id)}}, 404
 
     collection.activate()
-    collector = RestServerConfiguration().collectors[collection.trigger]
-    collector.restart()
+    CollectorsClient.restart(collection.trigger.code)
     return {}, 204
 
 
-# @check_identity
-# @jwt_required
 def remove_collection(collection_id):
     """
     POST /collections/{collection_id}/remove
@@ -184,15 +169,12 @@ def remove_collection(collection_id):
         aggregation.delete()
     if collection.is_active:
         collection.deactivate()
-        collector = RestServerConfiguration().collectors[collection.trigger]
-        collector.restart()
+        CollectorsClient.restart(collection.trigger.code)
 
     collection.delete()
     return {}, 204
 
 
-# @check_identity
-# @jwt_required
 def get_collection_details(collection_id):
     """
     GET /collections/{collection_id}/details
@@ -228,8 +210,6 @@ def get_collection_details(collection_id):
         return res, 200
 
 
-# @check_identity
-# @jwt_required
 def geolocalize(collection_id, startdate=None, enddate=None):
     """
 
@@ -246,8 +226,6 @@ def geolocalize(collection_id, startdate=None, enddate=None):
         return res, code
 
 
-# @check_identity
-# @jwt_required
 def annotate(collection_id, startdate=None, enddate=None):
     """
 
@@ -264,8 +242,6 @@ def annotate(collection_id, startdate=None, enddate=None):
         return res, code
 
 
-# @check_identity
-# @jwt_required
 def stopgeolocalize(collection_id):
     """
 
@@ -280,8 +256,6 @@ def stopgeolocalize(collection_id):
         return res, code
 
 
-# @check_identity
-# @jwt_required
 def stopannotate(collection_id):
     """
 

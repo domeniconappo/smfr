@@ -47,6 +47,15 @@ services:
         max_attempts: 3
         window: 120s
 
+  collectors:
+    deploy:
+      restart_policy:
+        condition: on-failure
+        max_attempts: 3
+        window: 120s
+      placement:
+        constraints: [ node.labels.huge == true ]
+
   restserver:
     deploy:
       restart_policy:

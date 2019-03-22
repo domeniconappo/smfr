@@ -1,6 +1,6 @@
 schedule
 cassandra-driver
-kafka-python==1.4.4
+kafka-python==1.4.5
 arrow
 flask
 flask-restful

@@ -1,0 +1,32 @@
+FROM ${SMFR_IMAGE}:${IMAGE_TAG}
+MAINTAINER Domenico Nappo <domenico.nappo@ext.ec.europa.eu>
+
+ARG http_proxy
+ARG https_proxy
+ARG ftp_host
+ARG download_folder
+
+ENV LANG=C.UTF-8
+
+RUN mkdir -p /scripts && mkdir -p /collectors && mkdir -p /smfr_libs && mkdir -p /requirements \
+ && mkdir -p /configuration && mkdir -p ~/.ssh/ && mkdir -p ${download_folder}
+
+
+ENV PATH=/usr/local/mysql/bin/:$PATH
+
+RUN ssh-keyscan -t rsa ${ftp_host} >> ~/.ssh/known_hosts
+
+COPY ./collectors/requirements.txt /requirements
+COPY base/shared_libs/scripts/wait_for_it.sh /scripts/
+COPY base/shared_libs/smfr_utils/. /smfr_libs/utils/
+COPY base/shared_libs/smfr_models/. /smfr_libs/models/
+COPY base/shared_libs/smfr_clients/. /smfr_libs/clients/
+RUN pip3.6 install -r /requirements/requirements.txt && pip3.6 install /smfr_libs/utils/ \
+ && pip3.6 install /smfr_libs/models/ && pip3.6 install /smfr_libs/clients/ \
+ && chmod -R a+x /scripts/ && rm -R /root/.cache
+
+COPY ./collectors/src/. /collectors/
+
+WORKDIR /collectors
+ENTRYPOINT ["/scripts/wait_for_it.sh", "cassandrasmfr:9160"]
+CMD ["--", "gunicorn", "-b", "0.0.0.0:5559", "--workers", "1", "--log-level", "warning", "--timeout", "240", "--threads", "4", "-k", "gthread", "--reload", "--access-logfile", "-", "--name", "collectors", "start:app"]

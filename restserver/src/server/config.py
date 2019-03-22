@@ -21,12 +21,6 @@ from sqlalchemy import create_engine
 from sqlalchemy.exc import OperationalError
 from sqlalchemy_utils import database_exists, create_database, Choice
 from flask_migrate import Migrate
-from flask_jwt_extended import (
-    JWTManager, jwt_required, create_access_token,
-    get_jwt_identity
-)
-
-from smfrcore.auth import authenticate, identity
 from smfrcore.utils import IN_DOCKER, DEFAULT_HANDLER, IS_DEVELOPMENT, UNDER_TESTS
 
 DEVELOPMENT = IS_DEVELOPMENT
@@ -194,9 +188,8 @@ class RestServerConfiguration(metaclass=Singleton):
         else:
             self.flask_app = self.set_flaskapp(connexion_app)
             self.flask_app.config['JWT_SECRET_KEY'] = os.getenv('SECRET_KEY', 'super-secret')
-            self.jwt = JWTManager(self.flask_app)
             self.producer = None
-            self.collectors = {}
+            # self.collectors = {}
             self._bootstrap_cassandra()
             self._bootstrap_mysql()
             self._bootstrap_kafka()
@@ -211,13 +204,13 @@ class RestServerConfiguration(metaclass=Singleton):
             track = sorted(list(set(w for s in floods_keywords.values() for w in s)))
         return languages, track
 
-    @classmethod
-    def admin_twitter_keys(cls, iden):
-        keys = {
-            k: os.getenv('{}_{}'.format(iden, k).upper())
-            for k in ('consumer_key', 'consumer_secret', 'access_token', 'access_token_secret')
-        }
-        return keys
+    # @classmethod
+    # def admin_twitter_keys(cls, iden):
+    #     keys = {
+    #         k: os.getenv('{}_{}'.format(iden, k).upper())
+    #         for k in ('consumer_key', 'consumer_secret', 'access_token', 'access_token_secret')
+    #     }
+    #     return keys
 
     @classmethod
     def configure_migrations(cls):
@@ -324,13 +317,13 @@ class RestServerConfiguration(metaclass=Singleton):
         self.logger.info(' - {}'.format(self.geonames_host))
         self.logger.info('======= END LOGGING Configuration =======')
 
-    def set_collectors(self, collectors):
-        """
-
-        :param collectors: dict of collectors with keys ('manual', 'ondemand', background')
-        """
-        self.collectors = collectors
-
-    @property
-    def running_collections(self):
-        return (c for collector in self.collectors for c in collector.collections)
+    # def set_collectors(self, collectors):
+    #     """
+    #
+    #     :param collectors: dict of collectors with keys ('manual', 'ondemand', background')
+    #     """
+    #     self.collectors = collectors
+    #
+    # @property
+    # def running_collections(self):
+    #     return (c for collector in self.collectors for c in collector.collections)

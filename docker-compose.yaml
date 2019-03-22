@@ -253,10 +253,10 @@ services:
       - mysql
       - cassandrasmfr
 
-  restserver:
+  collectors:
     restart: always
     container_name: restserver
-    image: ${DOCKER_REGISTRY}/${RESTSERVER_IMAGE}:${image_tag}
+    image: ${DOCKER_REGISTRY}/${COLLECTORS_IMAGE}:${image_tag}
     build:
       context: ./
       dockerfile: restserver/Dockerfile
@@ -269,7 +269,6 @@ services:
     environment:
       LOGGING_LEVEL: ${LOGGING_LEVEL}
       DEVELOPMENT: ${DEVELOPMENT}
-      INCLUDE_PAST_COLLECTIONS: ${INCLUDE_PAST_COLLECTIONS}
       MYSQL_HOST: ${MYSQL_HOST}
       MYSQL_USER: ${MYSQL_USER}
       MYSQL_PASSWORD: ${MYSQL_PASSWORD}
@@ -293,6 +292,55 @@ services:
       TWITTERMA_CONSUMER_SECRET: ${TWITTERMA_CONSUMER_SECRET}
       TWITTERMA_ACCESS_TOKEN: ${TWITTERMA_ACCESS_TOKEN}
       TWITTERMA_ACCESS_TOKEN_SECRET: ${TWITTERMA_ACCESS_TOKEN_SECRET}
+      KAFKA_BOOTSTRAP_SERVERS: ${KAFKA_BOOTSTRAP_SERVERS}
+      PERSISTER_KAFKA_TOPIC: ${PERSISTER_KAFKA_TOPIC}
+      CQLENG_ALLOW_SCHEMA_MANAGEMENT: 1
+      CHECK_ONDEMAND_RUNTIME_SCHEDULING: ${CHECK_ONDEMAND_RUNTIME_SCHEDULING}
+      CHECK_JOBS_INTERVAL_SECONDS: ${CHECK_JOBS_INTERVAL_SECONDS}
+      PYTHONUNBUFFERED: 'true'
+      http_proxy: ${http_proxy}
+      https_proxy: ${http_proxy}
+    networks:
+      - back-tier
+    volumes:
+      - './collectors/src:/collectors'
+      - '${FLOOD_KEYWORDS_PATH}:/configuration/flood_keywords.yaml'
+    depends_on:
+      - mysql
+      - kafka
+      - cassandrasmfr
+      - persister
+      - annotator
+      - geocoder
+      - restserver
+      - web
+
+  restserver:
+    restart: always
+    container_name: restserver
+    image: ${DOCKER_REGISTRY}/${RESTSERVER_IMAGE}:${image_tag}
+    build:
+      context: ./
+      dockerfile: restserver/Dockerfile
+      args:
+        http_proxy: ${http_proxy}
+        https_proxy: ${https_proxy}
+    working_dir: /restserver
+    environment:
+      LOGGING_LEVEL: ${LOGGING_LEVEL}
+      DEVELOPMENT: ${DEVELOPMENT}
+      INCLUDE_PAST_COLLECTIONS: ${INCLUDE_PAST_COLLECTIONS}
+      MYSQL_HOST: ${MYSQL_HOST}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_DBNAME: ${MYSQL_DBNAME}
+      CASSANDRA_HOST: ${CASSANDRA_HOST}
+      CASSANDRA_PORT: ${CASSANDRA_PORT}
+      CASSANDRA_USER: ${CASSANDRA_USER}
+      CASSANDRA_PASSWORD: ${CASSANDRA_PASSWORD}
+      CASSANDRA_KEYSPACE: ${CASSANDRA_KEYSPACE}
+      CASSANDRA_USE_CLUSTER: ${CASSANDRA_USE_CLUSTER}
+      CASSANDRA_NODES: ${CASSANDRA_NODES}
       RESTSERVER_BASEPATH: '/1.0'
       RESTSERVER_PORT: ${RESTSERVER_PORT}
       ANNOTATOR_PORT: ${ANNOTATOR_PORT}

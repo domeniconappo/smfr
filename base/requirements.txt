@@ -1,5 +1,5 @@
 arrow
-kafka-python==1.4.4
+kafka-python==1.4.5
 cassandra-driver
 mysqlclient
 requests
@@ -24,5 +24,4 @@ flask-migrate
 sqlalchemy_utils
 flask-alembic
 PyYAML
-PyJWT
 gunicorn

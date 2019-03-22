@@ -268,6 +268,29 @@ class MicroserviceClient:
         return res.json(), res.status_code
 
 
+class CollectorsClient(MicroserviceClient):
+    """
+
+    """
+    host = '127.0.0.1' if not IN_DOCKER else os.getenv('COLLECTORS_HOST', 'collectors')
+    port = os.getenv('COLLECTORS_PORT', 5559)
+    base_uri = 'http://{}:{}'.format(host, port)
+
+    @classmethod
+    def restart(cls, trigger):
+        url = '{}/{}'.format(cls.base_uri, trigger)
+        res = requests.put(url)
+        cls._check_response(res, res.status_code)
+        return res.json(), res.status_code
+
+    @classmethod
+    def get(cls, trigger):
+        url = '{}/{}'.format(cls.base_uri, trigger)
+        res = requests.get(url)
+        cls._check_response(res, res.status_code)
+        return res.json(), res.status_code
+
+
 class PersisterClient(MicroserviceClient):
     """
 

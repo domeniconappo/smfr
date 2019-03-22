@@ -28,6 +28,7 @@ ANNOTATOR_IMAGE=efas/annotator
 GEOCODER_IMAGE=efas/geocoder
 AGGREGATOR_IMAGE=efas/aggregator
 PRODUCTS_IMAGE=efas/products
+COLLECTORS_IMAGE=efas/collectors
 RESTSERVER_IMAGE=efas/restserver
 WEB_IMAGE=efas/web
 TEST_IMAGE=efas/integration_tests
@@ -63,14 +64,16 @@ RESTSERVER_PORT=5555
 ANNOTATOR_PORT=5556
 GEOCODER_PORT=5557
 PERSISTER_PORT=5558
+COLLECTORS_PORT=5559
 ANNOTATOR_HOST=annotator
 GEOCODER_HOST=geocoder
 RESTSERVER_HOST=restserver
 PERSISTER_HOST=persister
+COLLECTORS_HOST=collectors
 
 # REST API CONFIGURATION
 NUM_SAMPLES=100
-FLOOD_KEYWORDS_PATH=./restserver/src/config/flood_keywords.yaml
+FLOOD_KEYWORDS_PATH=./collectors/src/config/flood_keywords.yaml
 # TWITTER STREAMER API SECRETS (Backgroun, OnDemand and Manual collectors)
 TWITTERBG_CONSUMER_KEY=XXXxxxYYYyyyZZZzzz
 TWITTERBG_CONSUMER_SECRET=XXXxxxYYYyyyZZZzzz

@@ -1,22 +1,15 @@
-pytz
 mysqlclient
 ujson
 kafka-python==1.4.5
 arrow
 schedule
 scrypt
-
-Flask
 gunicorn
-connexion
+Flask
 
 flask-sqlalchemy
-flask-migrate
 sqlalchemy_utils
 flask-cqlalchemy
-flask-marshmallow
-
-swagger-marshmallow-codegen
 
 twython
 langdetect
