@@ -22,6 +22,7 @@ if [[ -n "${DOCKER_ID_USER}" ]] && [[ ${DOCKER_REGISTRY} != "index.docker.io" ]]
 fi
 
 PERSISTER_IMAGE=$(getProperty "PERSISTER_IMAGE")
+COLLECTORS_IMAGE=$(getProperty "COLLECTORS_IMAGE")
 AGGREGATOR_IMAGE=$(getProperty "AGGREGATOR_IMAGE")
 ANNOTATOR_IMAGE=$(getProperty "ANNOTATOR_IMAGE")
 GEOCODER_IMAGE=$(getProperty "GEOCODER_IMAGE")
@@ -46,3 +47,4 @@ docker service update SMFR_aggregator --detach=false --with-registry-auth --imag
 docker service update SMFR_products --detach=false --with-registry-auth --image ${DOCKER_REGISTRY}/${PRODUCTS_IMAGE}:${image_tag}
 docker service update SMFR_restserver --detach=false --with-registry-auth --image ${DOCKER_REGISTRY}/${RESTSERVER_IMAGE}:${image_tag}
 docker service update SMFR_web --detach=false --with-registry-auth --image ${DOCKER_REGISTRY}/${WEB_IMAGE}:${image_tag}
+docker service update SMFR_collectors --detach=false --with-registry-auth --image ${DOCKER_REGISTRY}/${COLLECTORS_IMAGE}:${image_tag}
