@@ -19,7 +19,7 @@ import ujson
 
 from smfrcore.models.cassandra import Tweet
 
-from scripts.utils import ParserHelpOnError, CustomJSONEncoder
+from smfrcore.utils import CustomJSONEncoder, ParserHelpOnError
 
 
 def add_args(parser):

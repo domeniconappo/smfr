@@ -26,7 +26,7 @@ def update_ondemand_collections_status(restart_ondemand=True):
         updated = TwitterCollection.update_status_by_runtime()
         if updated and restart_ondemand:
             logger.info(' ============== Some on demand collections were stopped...restarting collector')
-            on_demand_collector = Configuration().collectors[TwitterCollection.TRIGGER_ONDEMAND]
+            on_demand_collector = Configuration()._collectors[TwitterCollection.TRIGGER_ONDEMAND]
             on_demand_collector.restart()
 
 

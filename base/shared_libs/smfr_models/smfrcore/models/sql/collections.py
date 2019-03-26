@@ -42,6 +42,17 @@ class TwitterCollection(SMFRModel):
 
     ACTIVE_CHOICE = Choice(ACTIVE_STATUS, 'Running')
     INACTIVE_CHOICE = Choice(INACTIVE_STATUS, 'Stopped')
+    TRIGGER_BACKGROUND_CHOICE = (TRIGGER_BACKGROUND, 'Background')
+    TRIGGER_ONDEMAND_CHOICE = (TRIGGER_ONDEMAND, 'On Demand')
+    TRIGGER_MANUAL_CHOICE = (TRIGGER_MANUAL, 'Manual')
+
+    CHOICES = {
+        ACTIVE_STATUS: ACTIVE_CHOICE,
+        INACTIVE_STATUS: INACTIVE_CHOICE,
+        TRIGGER_BACKGROUND: TRIGGER_BACKGROUND_CHOICE,
+        TRIGGER_ONDEMAND: TRIGGER_ONDEMAND_CHOICE,
+        TRIGGER_MANUAL: TRIGGER_MANUAL_CHOICE,
+    }
 
     id = Column(Integer, primary_key=True, autoincrement=True, nullable=False)
     forecast_id = Column(Integer)
@@ -78,10 +89,14 @@ class TwitterCollection(SMFRModel):
         cache[cache_keys[key]] = []
     cache['background'] = None
 
+    def __repr__(self):
+        return str(self)
+
     def __str__(self):
-        return 'Collection<{o.id}: {o.forecast_id} - {o.trigger}>' \
-               '\n Tracking: {o.tracking_keywords} ' \
-               '\n Bbox: {o.locations}'.format(o=self)
+        return 'Collection<{o.id}: {o.forecast_id}' \
+               '\n Tracking: {o.tracking_keywords}' \
+               '\n Bbox: {o.locations}'\
+               '\n Trigger: {x}'.format(o=self, x=self.trigger.value)
 
     def __eq__(self, other):
         return self.efas_id == other.efas_id and self.trigger == other.trigger \
@@ -168,8 +183,8 @@ class TwitterCollection(SMFRModel):
             raise SystemError('You have to configure at least one admin user for SMFR system')
 
         obj = cls()
-        obj.status = data.get('status', cls.INACTIVE_CHOICE)
-        obj.trigger = data['trigger']
+        obj.status = cls.CHOICES.get(data.get('status') or cls.INACTIVE_STATUS)
+        obj.trigger = cls.CHOICES.get(data['trigger'])
         obj.runtime = cls.convert_runtime(data.get('runtime'))
         obj.forecast_id = data.get('forecast_id')
         obj.efas_id = data.get('efas_id')

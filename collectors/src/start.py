@@ -1,14 +1,17 @@
 import signal
-from flask import Flask
+
 from flask_restful import Resource, Api, marshal_with, fields, marshal_with_field
 
+from smfrcore.models.sql import create_app
+
 from collector import BackgroundCollector, OnDemandCollector, ManualCollector, logger
-from config import Configuration
+from config import configuration_object
 from jobs import schedule_rra_jobs, update_ondemand_collections_status
 
-
-app = Flask(__name__)
+app = create_app(__name__)
 api = Api(app)
+
+app.app_context().push()
 
 
 class CollectorsApi(Resource):
@@ -23,6 +26,7 @@ class CollectorsApi(Resource):
         Get all collectors
         :return:
         """
+
         def build_collector_item(c):
             return {
                 'trigger_type': c.type,
@@ -32,35 +36,32 @@ class CollectorsApi(Resource):
                 'collections': [co.id for co in c.streamer.collections],
             }
 
-        config = Configuration()
         if trigger_type != 'all':
-            collector = config.collectors.get(trigger_type, None)
+            collector = configuration_object.collectors.get(trigger_type, None)
             res = {'collectors': [build_collector_item(collector)]}
         else:
             collectors = []
-            for tt, collector in config.collectors.items():
+            for tt, collector in configuration_object.collectors.items():
                 collectors.append(build_collector_item(collector))
             res = {'collectors': collectors}
         return res, 200
 
     @marshal_with({'result': fields.Raw})
     def put(self, trigger_type):
-        config = Configuration()
-        collector_to_restart = config.collectors[trigger_type]
+        collector_to_restart = configuration_object.collectors[trigger_type]
         collector_to_restart.restart()
         return {'succes': True}, 201
 
 
 def main():
-    config = Configuration()
     background_collector = BackgroundCollector()
     ondemand_collector = OnDemandCollector()
     manual_collector = ManualCollector()
     logger.debug('---------- Registering collectors in main configuration:\n%s',
                  [background_collector, ondemand_collector, manual_collector])
-    config.set_collectors({background_collector.type: background_collector,
-                           ondemand_collector.type: ondemand_collector,
-                           manual_collector.type: manual_collector})
+    configuration_object.set_collectors({background_collector.type: background_collector,
+                                         ondemand_collector.type: ondemand_collector,
+                                         manual_collector.type: manual_collector})
 
     update_ondemand_collections_status(restart_ondemand=False)
 

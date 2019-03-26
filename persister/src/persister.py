@@ -32,8 +32,7 @@ file_logger.setLevel(logging.ERROR)
 file_logger.propagate = False
 
 if IN_DOCKER:
-    filelog_path = os.path.join(os.path.dirname(__file__),
-                                '../../logs/not_reconciled_tweets.log') if not IN_DOCKER else '/logs/not_reconciled_tweets.log'
+    filelog_path = os.path.join(os.path.dirname(__file__), '../../logs/not_reconciled_tweets.log') if not IN_DOCKER else '/logs/not_reconciled_tweets.log'
     hdlr = RotatingFileHandler(filelog_path, maxBytes=10485760, backupCount=2)
     hdlr.setLevel(logging.ERROR)
     file_logger.addHandler(hdlr)
@@ -76,9 +75,6 @@ class Persister:
         # if there is only one collection in the set, we just reconcile with it.
         # e.g. if the tweet was collected by the manual collections streamer, and there is only one manual collection defined,
         # tweet is assigned to that collection without any further check
-        logger.debug(trigger)
-        logger.debug(self.collections_by_trigger.keys())
-        logger.debug(self.collections_by_trigger.values())
         if len(self.collections_by_trigger.get(trigger, [])) == 1:
             return self.collections_by_trigger[trigger][0]
         for c in self.collections_by_trigger.get(trigger, []):
@@ -202,4 +198,5 @@ class Persister:
         return 'Persister ({}): {}@{}'.format(id(self), self.topic, self.bootstrap_servers)
 
     def counters(self):
-        return dict(self.shared_counter)
+        with self._lock:
+            return dict(self.shared_counter)

@@ -1,16 +1,11 @@
 import codecs
 import logging
 import os
-from decimal import Decimal
+import threading
 
-import numpy as np
 import yaml
-from cassandra.auth import PlainTextAuthProvider
-from cassandra.cluster import default_lbp_factory
-from cassandra.util import OrderedMapSerializedKey
-from flask.json import JSONEncoder
-from sqlalchemy_utils import Choice
-from smfrcore.utils import IN_DOCKER, DEFAULT_HANDLER, UNDER_TESTS
+
+from smfrcore.utils import IN_DOCKER, DEFAULT_HANDLER, UNDER_TESTS, Singleton
 
 
 CONFIG_STORE_PATH = os.getenv('SERVER_PATH_UPLOADS', os.path.join(os.path.dirname(__file__), '../../../uploads/'))
@@ -29,38 +24,6 @@ logging.getLogger('oauthlib').setLevel(logging.ERROR)
 os.makedirs(CONFIG_STORE_PATH, exist_ok=True)
 
 codecs.register(lambda name: codecs.lookup('utf8') if name.lower() == 'utf8mb4' else None)
-
-
-# class CustomJSONEncoder(JSONEncoder):
-#     """
-#
-#     """
-#
-#     def default(self, obj):
-#         if isinstance(obj, (np.float32, np.float64, Decimal)):
-#             return float(obj)
-#         elif isinstance(obj, Choice):
-#             return float(obj.code)
-#         elif isinstance(obj, (np.int32, np.int64)):
-#             return int(obj)
-#         elif isinstance(obj, OrderedMapSerializedKey):
-#             res = {}
-#             for k, v in obj.items():
-#                 res[k] = (v[0], float(v[1]))
-#             return res
-#         return super().default(obj)
-
-
-class Singleton(type):
-    """
-
-    """
-    instances = {}
-
-    def __call__(cls, *args, **kwargs):
-        if cls not in cls.instances:
-            cls.instances[cls] = super().__call__(*args, **kwargs)
-        return cls.instances[cls]
 
 
 class Configuration(metaclass=Singleton):
@@ -83,15 +46,11 @@ class Configuration(metaclass=Singleton):
     logger = logging.getLogger('Collectors config')
     logger.setLevel(logger_level)
     logger.addHandler(DEFAULT_HANDLER)
+    lock = threading.RLock()
 
     def __init__(self):
-
-        if Configuration not in self.__class__.instances:
-            from start import app
-        # noinspection PyMethodFirstArgAssignment
-        self = self.__class__.instances[Configuration]
         self.producer = None
-        self.collectors = {}
+        self._collectors = {}
 
     @classmethod
     def default_keywords(cls):
@@ -109,38 +68,26 @@ class Configuration(metaclass=Singleton):
         }
         return keys
 
-    # def set_flaskapp(self, connexion_app):
-    #     app = connexion_app.app
-    #     app.json_encoder = CustomJSONEncoder
-    #     app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://{}:{}@{}/{}?charset=utf8mb4'.format(
-    #         self.__mysql_user, self.__mysql_pass, self.mysql_host, self.mysql_db_name
-    #     )
-    #     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-    #     app.config['SQLALCHEMY_POOL_TIMEOUT'] = 360
-    #     app.config['SQLALCHEMY_POOL_RECYCLE'] = 120
-    #     app.config['SQLALCHEMY_POOL_SIZE'] = 10
-    #
-    #     app.config['CASSANDRA_HOSTS'] = [self.cassandra_host]
-    #     app.config['CASSANDRA_KEYSPACE'] = self.cassandra_keyspace
-    #     app.config['CASSANDRA_SETUP_KWARGS'] = {
-    #         'auth_provider': PlainTextAuthProvider(username=os.getenv('CASSANDRA_USER'),
-    #                                                password=os.getenv('CASSANDRA_PASSWORD')),
-    #         'load_balancing_policy': default_lbp_factory(),
-    #         'compression': True,
-    #     }
-    #     return app
-
     @property
     def kafka_producer(self):
         return self.producer
+
+    @property
+    def collectors(self):
+        with self.lock:
+            return self._collectors
 
     def set_collectors(self, collectors):
         """
 
         :param collectors: dict of collectors with keys ('manual', 'ondemand', background')
         """
-        self.collectors = collectors
+        with self.lock:
+            self._collectors = collectors
 
     @property
     def running_collections(self):
-        return (c for collector in self.collectors for c in collector.collections)
+        return (c for collector in self._collectors for c in collector.collections)
+
+
+configuration_object = Configuration()

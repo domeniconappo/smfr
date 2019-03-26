@@ -1,11 +1,8 @@
-import datetime
-
 from passlib.apps import custom_app_context as pwd_context
 from sqlalchemy import Column, Integer, String
 from sqlalchemy_utils import ChoiceType
 
 from .base import SMFRModel
-from smfrcore.models.utils import jwt_token, jwt_decode
 
 
 class User(SMFRModel):
@@ -39,32 +36,3 @@ class User(SMFRModel):
 
     def verify_password(self, password):
         return pwd_context.verify(password, self.password_hash)
-
-    def generate_auth_token(self, app, expires=10):
-        """
-        Generate a JWT Token for user. Default expire is 10 minutes
-        :return: bytes representing the JWT token
-        :raise: JWT encoding exceptions
-        """
-        payload = {
-            'type': 'access',
-            'exp': datetime.datetime.utcnow() + datetime.timedelta(minutes=expires),
-            'iat': datetime.datetime.utcnow(),
-            'sub': self.id,
-            'identity': self.email,
-            'jti': '{}==={}'.format(self.email, self.id),
-            'fresh': '',
-        }
-        return jwt_token(app, payload)
-
-    @classmethod
-    def decode_auth_token(cls, app, auth_token):
-        """
-        Decode the auth token
-        :param app:
-        :param auth_token:
-        :return: user id
-        :raise jwt.ExpiredSignatureError, jwt.InvalidTokenError
-        """
-        payload = jwt_decode(app, auth_token)
-        return payload['sub']

@@ -4,24 +4,21 @@ import os
 import re
 import socket
 import sys
-from decimal import Decimal
 from time import sleep
 
-import numpy as np
 import yaml
 from cassandra.auth import PlainTextAuthProvider
 from cassandra.cluster import NoHostAvailable, default_lbp_factory
 from cassandra.cqlengine import connection
-from cassandra.util import OrderedMapSerializedKey
 from flask import Flask
-from flask.json import JSONEncoder
 from kafka import KafkaProducer
 from kafka.errors import NoBrokersAvailable
 from sqlalchemy import create_engine
 from sqlalchemy.exc import OperationalError
-from sqlalchemy_utils import database_exists, create_database, Choice
+from sqlalchemy_utils import database_exists, create_database
 from flask_migrate import Migrate
-from smfrcore.utils import IN_DOCKER, DEFAULT_HANDLER, IS_DEVELOPMENT, UNDER_TESTS
+
+from smfrcore.utils import IN_DOCKER, DEFAULT_HANDLER, IS_DEVELOPMENT, UNDER_TESTS, Singleton, CustomJSONEncoder
 
 DEVELOPMENT = IS_DEVELOPMENT
 SERVER_BOOTSTRAP = 'gunicorn' in sys.argv[0]
@@ -47,38 +44,6 @@ os.makedirs(CONFIG_STORE_PATH, exist_ok=True)
 codecs.register(lambda name: codecs.lookup('utf8') if name.lower() == 'utf8mb4' else None)
 
 
-class CustomJSONEncoder(JSONEncoder):
-    """
-
-    """
-
-    def default(self, obj):
-        if isinstance(obj, (np.float32, np.float64, Decimal)):
-            return float(obj)
-        elif isinstance(obj, Choice):
-            return float(obj.code)
-        elif isinstance(obj, (np.int32, np.int64)):
-            return int(obj)
-        elif isinstance(obj, OrderedMapSerializedKey):
-            res = {}
-            for k, v in obj.items():
-                res[k] = (v[0], float(v[1]))
-            return res
-        return super().default(obj)
-
-
-class Singleton(type):
-    """
-
-    """
-    instances = {}
-
-    def __call__(cls, *args, **kwargs):
-        if cls not in cls.instances:
-            cls.instances[cls] = super().__call__(*args, **kwargs)
-        return cls.instances[cls]
-
-
 class RestServerConfiguration(metaclass=Singleton):
     """
     A class whose objects hold SMFR Rest Server Configuration as singletons.
@@ -92,6 +57,7 @@ class RestServerConfiguration(metaclass=Singleton):
     cassandra_host = '127.0.0.1' if not IN_DOCKER else os.getenv('CASSANDRA_HOST', 'cassandrasmfr')
     annotator_host = '127.0.0.1' if not IN_DOCKER else os.getenv('ANNOTATOR_HOST', 'annotator')
     persister_host = '127.0.0.1' if not IN_DOCKER else os.getenv('PERSISTER_HOST', 'persister')
+    collectors_host = '127.0.0.1' if not IN_DOCKER else os.getenv('COLLECTORS_HOST', 'collectors')
     geocoder_host = '127.0.0.1' if not IN_DOCKER else os.getenv('GEOCODER_HOST', 'geocoder')
     restserver_host = '127.0.0.1' if not IN_DOCKER else os.getenv('RESTSERVER_HOST', 'restserver')
 
@@ -316,14 +282,3 @@ class RestServerConfiguration(metaclass=Singleton):
         self.logger.info('+++ Geonames service (used by Geocoder/mordecai)')
         self.logger.info(' - {}'.format(self.geonames_host))
         self.logger.info('======= END LOGGING Configuration =======')
-
-    # def set_collectors(self, collectors):
-    #     """
-    #
-    #     :param collectors: dict of collectors with keys ('manual', 'ondemand', background')
-    #     """
-    #     self.collectors = collectors
-    #
-    # @property
-    # def running_collections(self):
-    #     return (c for collector in self.collectors for c in collector.collections)

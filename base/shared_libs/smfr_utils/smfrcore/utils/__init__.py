@@ -2,6 +2,7 @@
 Core Utils module
 """
 import sys
+import argparse
 import logging
 from logging import StreamHandler
 from collections import defaultdict
@@ -31,8 +32,6 @@ DEFAULT_HANDLER.setFormatter(formatter)
 NULL_HANDLER = logging.NullHandler()
 
 RGB = {'red': '255 0 0', 'orange': '255 128 0', 'gray': '225 225 225'}
-
-smfr_json_encoder = JSONEncoder().default
 
 
 def _running_in_docker():
@@ -102,5 +101,55 @@ class DefaultDictSyncManager(BaseManager):
     pass
 
 
+class Singleton(type):
+    """
+
+    """
+    instances = {}
+
+    def __call__(cls, *args, **kwargs):
+        if cls not in cls.instances:
+            cls.instances[cls] = super().__call__(*args, **kwargs)
+        return cls.instances[cls]
+
+
+class CustomJSONEncoder(JSONEncoder):
+    """
+
+    """
+
+    def default(self, obj):
+        if isinstance(obj, (np.float32, np.float64, Decimal)):
+            return float(obj)
+        elif isinstance(obj, datetime):
+            return obj.isoformat()
+        elif isinstance(obj, Choice):
+            return float(obj.code)
+        elif isinstance(obj, (np.int32, np.int64)):
+            return int(obj)
+        elif isinstance(obj, OrderedMapSerializedKey):
+            res = {}
+            for k, v in obj.items():
+                if isinstance(v, tuple):
+                    try:
+                        res[k] = dict((v,))
+                    except ValueError:
+                        res[k] = (v[0], v[1])
+                else:
+                    res[k] = v
+
+            return res
+        return super().default(obj)
+
+
+class ParserHelpOnError(argparse.ArgumentParser):
+    def error(self, message):
+        sys.stderr.write('error: %s\n' % message)
+        self.print_help()
+        sys.exit(2)
+
+
 # multiprocessing.Manager does not include defaultdict: we need to use a customized Manager
 DefaultDictSyncManager.register('defaultdict', defaultdict, DictProxy)
+
+smfr_json_encoder = CustomJSONEncoder().default

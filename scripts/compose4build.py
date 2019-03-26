@@ -27,7 +27,7 @@ def do(image_tag):
     replace_image_variable('./geonames', 'GEONAMES_BASE_IMAGE')
     replace_image_variable('./backupper', 'ALPINE_IMAGE')
 
-    for component in ('annotator', 'geocoder', 'persister', 'restserver', 'web', 'aggregator', 'products', 'tester',):
+    for component in ('annotator', 'geocoder', 'persister', 'restserver', 'web', 'aggregator', 'products', 'tester', 'collectors',):
         docker_in = './{}/Dockerfile.template'.format(component)
         docker_out = './{}/Dockerfile'.format(component)
         with open(docker_out, 'w') as fout, open(docker_in) as fin:

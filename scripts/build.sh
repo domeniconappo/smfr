@@ -7,7 +7,7 @@ source ${DIR}/functions.sh
 command=${1:-1}
 second_command=${2:-1}
 
-SERVICES="web restserver geocoder annotator persister aggregator cassandrasmfr mysql products tester"
+SERVICES="collectors web restserver geocoder annotator persister aggregator cassandrasmfr mysql products tester"
 logged=0
 
 echo
@@ -82,6 +82,7 @@ if [[ -n "${DOCKER_ID_USER}" ]] && [[ ${command} == "push" ]]; then
     PERSISTER_IMAGE=$(getProperty "PERSISTER_IMAGE")
     AGGREGATOR_IMAGE=$(getProperty "AGGREGATOR_IMAGE")
     ANNOTATOR_IMAGE=$(getProperty "ANNOTATOR_IMAGE")
+    COLLECTORS_IMAGE=$(getProperty "COLLECTORS_IMAGE")
     GEOCODER_IMAGE=$(getProperty "GEOCODER_IMAGE")
     RESTSERVER_IMAGE=$(getProperty "RESTSERVER_IMAGE")
     WEB_IMAGE=$(getProperty "WEB_IMAGE")
@@ -99,6 +100,7 @@ if [[ -n "${DOCKER_ID_USER}" ]] && [[ ${command} == "push" ]]; then
     docker push ${DOCKER_REGISTRY}/${ANNOTATOR_IMAGE}:${image_tag}
     docker push ${DOCKER_REGISTRY}/${GEOCODER_IMAGE}:${image_tag}
     docker push ${DOCKER_REGISTRY}/${PERSISTER_IMAGE}:${image_tag}
+    docker push ${DOCKER_REGISTRY}/${COLLECTORS_IMAGE}:${image_tag}
     docker push ${DOCKER_REGISTRY}/${PRODUCTS_IMAGE}:${image_tag}
     docker push ${DOCKER_REGISTRY}/${RESTSERVER_IMAGE}:${image_tag}
     docker push ${DOCKER_REGISTRY}/${TEST_IMAGE}:${image_tag}

@@ -8,6 +8,7 @@ from server.config import RestServerConfiguration, SERVER_BOOTSTRAP, MYSQL_MIGRA
 os.environ['NO_PROXY'] = ','.join((RestServerConfiguration.restserver_host,
                                    RestServerConfiguration.annotator_host,
                                    RestServerConfiguration.persister_host,
+                                   RestServerConfiguration.collectors_host,
                                    RestServerConfiguration.geocoder_host))
 
 

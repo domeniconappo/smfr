@@ -16,7 +16,8 @@ def get():
     Get all collectors
     :return:
     """
-    collectors = CollectorsClient.get('all')[0]
+    res = CollectorsClient.get('all')[0]
+    collectors = res['collectors']
 
     res = {
         'collectors': collectors,
@@ -25,7 +26,8 @@ def get():
         'geo_counters': GeocoderClient.counters()[0]
     }
     res['background_collected'] = res['persisted'].pop(TwitterCollection.TRIGGER_BACKGROUND, 0)
-    res['on-demand_collected'] = res['persisted'].pop(TwitterCollection.TRIGGER_ONDEMAND, 0)
+    res['ondemand_collected'] = res['persisted'].pop(TwitterCollection.TRIGGER_ONDEMAND, 0)
+    res['manual_collected'] = res['persisted'].pop(TwitterCollection.TRIGGER_MANUAL, 0)
     return res, 200
 
 

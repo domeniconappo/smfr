@@ -1,4 +1,3 @@
-import os
 import datetime
 import http
 import logging
@@ -12,14 +11,13 @@ import time
 import urllib3
 
 import requests
-from smfrcore.utils.kafka import make_kafka_producer
 from twython import TwythonStreamer
 
 from smfrcore.models.cassandra import Tweet
-from smfrcore.models.sql import create_app, TwitterCollection
+from smfrcore.models.sql import TwitterCollection
 from smfrcore.utils import DEFAULT_HANDLER, IS_DEVELOPMENT
-
-from utils import safe_langdetect, tweet_normalization_aggressive
+from smfrcore.utils.kafka import make_kafka_producer
+from smfrcore.utils.text import safe_langdetect, tweet_normalization_aggressive
 
 
 logger = logging.getLogger('Streamer')
@@ -38,12 +36,14 @@ class BaseStreamer(TwythonStreamer):
 
     def __init__(self, **api_keys):
         self.query = {}
+        self.lock = multiprocessing.RLock()
         self.consumer_key = api_keys['consumer_key']
         self.consumer_secret = api_keys['consumer_secret']
         self.access_token = api_keys['access_token']
         self.access_token_secret = api_keys['access_token_secret']
         self.persister_kafka_topic = os.getenv('PERSISTER_KAFKA_TOPIC', 'persister')
         self._shared_errors = self.mp_manager.list([])
+        self.incremental_sleep = 1
 
         self.producer = None
 
@@ -58,7 +58,7 @@ class BaseStreamer(TwythonStreamer):
             # Setting proxies for twython streamer
             self.client_args = dict(proxies=dict(http=os.getenv('http_proxy'),
                                                  https=os.getenv('https_proxy') or os.getenv('http_proxy')))
-        logger.debug('Instantiate a streamer with args %s', str(self.client_args))
+        logger.debug('Instantiate a %s streamer with args %s', self.trigger, str(self.client_args))
         super().__init__(self.consumer_key, self.consumer_secret,
                          self.access_token, self.access_token_secret,
                          retry_count=None, retry_in=120, chunk_size=512,
@@ -113,12 +113,15 @@ class BaseStreamer(TwythonStreamer):
         self.disconnect(deactivate_collections=False)
         self._collections = self.mp_manager.list([])
         self.collection = None
-        sleep_time = 60 if status_code == 420 and 'Exceeded connection limit' in err else 15
-        logger.debug('Sleeping %d secs after error', sleep_time)
+        sleep_time = 30
+        if status_code == 420:
+            sleep_time = 60 * self.incremental_sleep
+            self.incremental_sleep *= 2
+        logger.info('Sleeping %d secs after error', sleep_time)
         time.sleep(sleep_time)
 
     def on_timeout(self):
-        logger.error('Timeout...')
+        logger.error('Timeout...sleeping 30 secs')
         self.track_error(500, 'Timeout')
         time.sleep(30)
 
@@ -135,31 +138,35 @@ class BaseStreamer(TwythonStreamer):
     def handle_termination(self, signum, _):
         logger.info('Streamer %s process Terminated. Disconnecting...')
         self.disconnect(deactivate_collections=False)
-        time.sleep(2)
+        time.sleep(3)
 
     def connect(self, collections):
+
+        with self.lock:
+            if self.is_connected.value == 1:
+                logger.warning('Trying to connect to an already connected stream. Ignoring...')
+                return
+
         signal.signal(signal.SIGTERM, self.handle_termination)
 
-        # with self.lock:
-
-        if self.is_connected.value == 1:
-            logger.warning('Trying to connect to an already connected stream. Ignoring...')
-            return
-
         self.producer = make_kafka_producer()
-
         self.query = self._build_query_for()
         filter_args = {k: ','.join(v).strip(',') for k, v in self.query.items() if k != 'languages' and v}
         logger.info('Streaming for collections: \n%s', '\n'.join(str(c) for c in collections))
-        stay_active = True
-        # with self.lock:
-        self.connected = True
-        self.is_connected.value = multiprocessing.Value('i', 1)
+
+        with self.lock:
+            stay_active = True
+            self.connected = True
+            self.is_connected.value = 1
+
+        # Main Twython consumer loop
         while stay_active:
             try:
                 logger.info('Connecting to streamer %s', str(filter_args))
                 self.statuses.filter(**filter_args)
             except (urllib3.exceptions.ReadTimeoutError, socket.timeout, requests.exceptions.ConnectionError,) as e:
+                # FIXME
+                # check: this code should never be executed as parent class will call on_timeout and on_error methods, without raising exceptions
                 logger.warning('A timeout occurred. Streamer is sleeping for 10 seconds: %s', e)
                 self.track_error(500, 'Timeout')
                 time.sleep(10)
@@ -178,17 +185,17 @@ class BaseStreamer(TwythonStreamer):
 
     def disconnect(self, deactivate_collections=True):
         logger.info('Disconnecting twitter streamer')
-        self.is_connected.value = multiprocessing.Value('i', 0)
+
         if self.process and isinstance(self.process, multiprocessing.Process):
             self.process.terminate()  # this will call handle_termination method because it sends SIGTERM signal
-
-        super().disconnect()
         if self.producer:
             self.producer.flush()
-        if deactivate_collections:
-            logger.warning('Deactivating all collections!')
-            app = create_app()
-            with app.app_context():
+
+        with self.lock:
+            self.is_connected.value = 0
+            super().disconnect()
+            if deactivate_collections:
+                logger.warning('Deactivating all collections!')
                 for c in self._collections:
                     c.deactivate()
 
@@ -207,15 +214,14 @@ class BaseStreamer(TwythonStreamer):
 
     def track_error(self, http_error_code, message):
         message = message.decode('utf-8') if isinstance(message, bytes) else str(message)
-        # with self.lock:
-
-        self._shared_errors.insert(0, '{code}: {date} - {error}'.format(
-            code=http_error_code,
-            date=datetime.datetime.now().strftime('%Y%m%d %H:%M'),
-            error=message.strip('\r\n'))
-        )
-        if len(self._shared_errors) > self.max_errors_len:
-            self._shared_errors = self._shared_errors[:self.max_errors_len]
+        with self.lock:
+            self._shared_errors.insert(0, '{code}: {date} - {error}'.format(
+                code=http_error_code,
+                date=datetime.datetime.now().strftime('%Y%m%d %H:%M'),
+                error=message.strip('\r\n'))
+            )
+            if len(self._shared_errors) > self.max_errors_len:
+                self._shared_errors = self._shared_errors[:self.max_errors_len]
 
 
 class BackgroundStreamer(BaseStreamer):

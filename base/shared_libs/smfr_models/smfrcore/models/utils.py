@@ -1,6 +1,5 @@
 import os
 
-import jwt
 from flask import jsonify
 from werkzeug.exceptions import BadRequest
 
@@ -15,18 +14,6 @@ def get_cassandra_hosts():
 def error_response(status_code, message):
     resp = {'error': message}
     return jsonify(resp), status_code
-
-
-def jwt_token(app, payload):
-    return jwt.encode(
-        payload,
-        app.config.get('JWT_SECRET_KEY'),
-        algorithm='HS256'
-    ).decode('utf-8')
-
-
-def jwt_decode(app, auth_token):
-    return jwt.decode(auth_token, app.config.get('SECRET_KEY'))
 
 
 def response(status_code=201, **kwargs):

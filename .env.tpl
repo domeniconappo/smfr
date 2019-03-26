@@ -74,7 +74,7 @@ COLLECTORS_HOST=collectors
 # REST API CONFIGURATION
 NUM_SAMPLES=100
 FLOOD_KEYWORDS_PATH=./collectors/src/config/flood_keywords.yaml
-# TWITTER STREAMER API SECRETS (Backgroun, OnDemand and Manual collectors)
+# TWITTER STREAMER API SECRETS (Background, OnDemand and Manual collectors)
 TWITTERBG_CONSUMER_KEY=XXXxxxYYYyyyZZZzzz
 TWITTERBG_CONSUMER_SECRET=XXXxxxYYYyyyZZZzzz
 TWITTERBG_ACCESS_TOKEN=XXXxxxYYYyyyZZZzzz

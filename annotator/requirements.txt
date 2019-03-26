@@ -1,3 +1,4 @@
+langdetect
 nltk~=3.1
 Keras==2.2.4
 numpy>=1.15.0
@@ -8,7 +9,6 @@ ujson
 schedule
 flask
 flask-restful
-flask-jwt-extended
 kafka-python==1.4.5
 cassandra-driver
 mysqlclient

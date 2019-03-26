@@ -8,6 +8,6 @@ setup(
     description='SMFR Core modules (Clients)',
     author='Domenico Nappo',
     author_email='domenico.nappo@ext.ec.europa.eu',
-    install_requires=['ujson', 'requests', 'Flask', 'PassLib', 'PyYAML', 'PyJWT', 'paramiko',
-                      'flask-marshmallow', 'flask-jwt-extended', 'swagger-marshmallow-codegen', ],
+    install_requires=['ujson', 'requests', 'Flask', 'PassLib', 'PyYAML', 'paramiko',
+                      'flask-marshmallow', 'swagger-marshmallow-codegen', ],
 )

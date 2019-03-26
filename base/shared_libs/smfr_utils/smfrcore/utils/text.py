@@ -2,7 +2,11 @@ import math
 import re
 
 import geotext
+import langdetect
 
+NO_LANGUAGE = 'no_language'
+RECOGNIZED_LANGUAGES = ('es', 'en', 'fr', 'de', 'it')
+CNN_MAX_SEQUENCE_LENGTH = 100
 
 regexp = {
     'ampersand': re.compile(r'\s+&amp;?\s+'),
@@ -17,6 +21,18 @@ regexp = {
     'newlines': re.compile(r'\n'),
     'double_spaces': re.compile(r'\s{2,}'),
 }
+
+
+def safe_langdetect(text):
+    """ Detects language of a lower case text """
+    sanitized = tweet_normalization_aggressive(text)
+    if len(sanitized) == 0:
+        return None
+    else:
+        try:
+            return langdetect.detect(sanitized.lower())
+        except langdetect.lang_detect_exception.LangDetectException:
+            return None
 
 
 def replace_locations_loc_text(raw_text, locations):

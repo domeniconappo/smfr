@@ -6,10 +6,10 @@ schedule
 scrypt
 gunicorn
 Flask
-
+flask-restful
 flask-sqlalchemy
 sqlalchemy_utils
 flask-cqlalchemy
-
+PyYAML
 twython
 langdetect

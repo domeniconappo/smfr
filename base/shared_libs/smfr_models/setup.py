@@ -14,6 +14,6 @@ setup(
     author_email='domenico.nappo@ext.ec.europa.eu',
     install_requires=['ujson', 'requests', 'Flask', 'python-Levenshtein', 'fuzzywuzzy',
                       'sqlalchemy_utils', 'flask-sqlalchemy', 'flask-cqlalchemy',
-                      'PassLib', 'PyYAML', 'PyJWT', 'shapely', 'fiona', 'alembic',
-                      'flask-marshmallow', 'flask-jwt-extended', 'swagger-marshmallow-codegen'],
+                      'PassLib', 'PyYAML', 'shapely', 'fiona', 'alembic',
+                      'flask-marshmallow', 'swagger-marshmallow-codegen'],
 )

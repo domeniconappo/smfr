@@ -255,17 +255,17 @@ services:
 
   collectors:
     restart: always
-    container_name: restserver
+    container_name: collectors
     image: ${DOCKER_REGISTRY}/${COLLECTORS_IMAGE}:${image_tag}
     build:
       context: ./
-      dockerfile: restserver/Dockerfile
+      dockerfile: collectors/Dockerfile
       args:
         http_proxy: ${http_proxy}
         https_proxy: ${https_proxy}
         ftp_host: ${FTP_HOST}
         download_folder: ${DOWNLOAD_FOLDER}
-    working_dir: /restserver
+    working_dir: /collectors
     environment:
       LOGGING_LEVEL: ${LOGGING_LEVEL}
       DEVELOPMENT: ${DEVELOPMENT}
@@ -313,6 +313,8 @@ services:
       - annotator
       - geocoder
       - restserver
+      - products
+      - aggregator
       - web
 
   restserver:
@@ -325,6 +327,7 @@ services:
       args:
         http_proxy: ${http_proxy}
         https_proxy: ${https_proxy}
+        ftp_host: ${FTP_HOST}
     working_dir: /restserver
     environment:
       LOGGING_LEVEL: ${LOGGING_LEVEL}
