@@ -8,5 +8,5 @@ setup(
     description='SMFR Core modules (utilities)',
     author='Domenico Nappo',
     author_email='domenico.nappo@ext.ec.europa.eu',
-    install_requires=['Flask', 'schedule', 'geotext~=0.3.0'],
+    install_requires=['Flask', 'schedule', 'geotext~=0.3.0', 'numpy>=1.15.0', 'kafka-python==1.4.5'],
 )
