@@ -11,14 +11,10 @@ import threading
 from logging import StreamHandler
 from collections import defaultdict
 from multiprocessing.managers import DictProxy, BaseManager
-from datetime import timedelta, datetime
-from decimal import Decimal
+from datetime import timedelta
 
-import numpy as np
 import schedule
-from cassandra.util import OrderedMapSerializedKey
-from sqlalchemy_utils import Choice
-from flask.json import JSONEncoder
+
 
 logger = logging.getLogger('SMFR utils')
 logger.setLevel(os.getenv('LOGGING_LEVEL', 'DEBUG'))
@@ -117,35 +113,6 @@ class Singleton(type):
         return cls.instances[cls]
 
 
-class CustomJSONEncoder(JSONEncoder):
-    """
-
-    """
-
-    def default(self, obj):
-        if isinstance(obj, (np.float32, np.float64, Decimal)):
-            return float(obj)
-        elif isinstance(obj, datetime):
-            return obj.isoformat()
-        elif isinstance(obj, Choice):
-            return float(obj.code)
-        elif isinstance(obj, (np.int32, np.int64)):
-            return int(obj)
-        elif isinstance(obj, OrderedMapSerializedKey):
-            res = {}
-            for k, v in obj.items():
-                if isinstance(v, tuple):
-                    try:
-                        res[k] = dict((v,))
-                    except ValueError:
-                        res[k] = (v[0], v[1])
-                else:
-                    res[k] = v
-
-            return res
-        return super().default(obj)
-
-
 class ParserHelpOnError(argparse.ArgumentParser):
     def error(self, message):
         sys.stderr.write('error: %s\n' % message)
@@ -155,5 +122,3 @@ class ParserHelpOnError(argparse.ArgumentParser):
 
 # multiprocessing.Manager does not include defaultdict: we need to use a customized Manager
 DefaultDictSyncManager.register('defaultdict', defaultdict, DictProxy)
-
-smfr_json_encoder = CustomJSONEncoder().default

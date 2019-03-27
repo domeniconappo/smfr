@@ -18,7 +18,10 @@ from sqlalchemy.exc import OperationalError
 from sqlalchemy_utils import database_exists, create_database
 from flask_migrate import Migrate
 
-from smfrcore.utils import IN_DOCKER, DEFAULT_HANDLER, IS_DEVELOPMENT, UNDER_TESTS, Singleton, CustomJSONEncoder
+
+from smfrcore.utils import IN_DOCKER, DEFAULT_HANDLER, IS_DEVELOPMENT, UNDER_TESTS, Singleton
+from smfrcore.models.utils import CustomJSONEncoder
+
 
 DEVELOPMENT = IS_DEVELOPMENT
 SERVER_BOOTSTRAP = 'gunicorn' in sys.argv[0]
