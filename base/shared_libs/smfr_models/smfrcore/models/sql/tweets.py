@@ -2,7 +2,7 @@ import datetime
 
 from smfrcore.models.sql import SMFRModel, sqldb
 from smfrcore.models.sql.base import LongJSONType
-from sqlalchemy import Column, ForeignKey, Integer, TIMESTAMP, String, Float, BigInteger
+from sqlalchemy import Index, Column, ForeignKey, Integer, TIMESTAMP, String, Float, BigInteger
 
 
 class BackgroundTweet(SMFRModel):
@@ -10,14 +10,18 @@ class BackgroundTweet(SMFRModel):
 
     """
     __tablename__ = 'background_tweet'
-    __table_args__ = {'mysql_engine': 'InnoDB', 'mysql_charset': 'utf8mb4', 'mysql_collate': 'utf8mb4_general_ci'}
+    __table_args__ = (
+        Index('tweetcollectionidx', 'collection_id', 'ttype', 'lang'),
+        {'mysql_engine': 'InnoDB', 'mysql_charset': 'utf8mb4', 'mysql_collate': 'utf8mb4_general_ci'}
+    )
 
-    id = Column(Integer, primary_key=True, autoincrement=True, nullable=False)
-    collection_id = Column(Integer, ForeignKey('virtual_twitter_collection.id'))
+    id = Column(BigInteger, primary_key=True, nullable=False, autoincrement=False, index=True)
+    """tweet id"""
+    collection_id = Column(Integer, ForeignKey('virtual_twitter_collection.id'), primary_key=True)
     collection = sqldb.relationship('TwitterCollection', backref=sqldb.backref('tweets', uselist=True))
     created_at = Column(TIMESTAMP, nullable=True, default=datetime.datetime.utcnow)
     lang = Column(String(3))
-    ttype = Column(String(20))
+    ttype = Column(String(20), primary_key=True)
     nuts2 = Column(String(10), nullable=True)
     nuts2_source = Column(String(100), nullable=True)
     lat = Column(Float, nullable=True)
