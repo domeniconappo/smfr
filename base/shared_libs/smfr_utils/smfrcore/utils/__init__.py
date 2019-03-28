@@ -11,8 +11,11 @@ import threading
 from logging import StreamHandler
 from collections import defaultdict
 from multiprocessing.managers import DictProxy, BaseManager
-from datetime import timedelta
+from datetime import timedelta, datetime
+from collections import Mapping
+from decimal import Decimal
 
+import numpy as np
 import schedule
 
 
@@ -119,6 +122,36 @@ class ParserHelpOnError(argparse.ArgumentParser):
         self.print_help()
         sys.exit(2)
 
+
+class CustomJSONEncoder(JSONEncoder):
+    """
+
+    """
+    def default(self, obj):
+        if isinstance(obj, (np.float32, np.float64, Decimal)):
+            return float(obj)
+        elif isinstance(obj, datetime):
+            return obj.isoformat()
+        elif isinstance(obj, Choice):
+            return float(obj.code)
+        elif isinstance(obj, (np.int32, np.int64)):
+            return int(obj)
+        elif isinstance(obj, Mapping):
+            res = {}
+            for k, v in obj.items():
+                if isinstance(v, tuple):
+                    try:
+                        res[k] = dict((v,))
+                    except ValueError:
+                        res[k] = (v[0], v[1])
+                else:
+                    res[k] = v
+
+            return res
+        return super().default(obj)
+
+
+smfr_json_encoder = CustomJSONEncoder().default
 
 # multiprocessing.Manager does not include defaultdict: we need to use a customized Manager
 DefaultDictSyncManager.register('defaultdict', defaultdict, DictProxy)

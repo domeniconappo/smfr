@@ -66,15 +66,13 @@ class BackgroundCollector(BaseCollector):
         if self.streamer.process and isinstance(self.streamer.process, multiprocessing.Process):
             logger.info('Sending SIGTERM signal to streamer')
             self.streamer.process.terminate()
-            sleep(2)
+            self.streamer.process = None
+            sleep(20)
         if self.streamer.is_connected.value == 1:
             logger.info('Trying to start an already connected streamer %s', self.streamer)
             return
-        collection = TwitterCollection.get_active_background()
-        if not collection:
-            return
         # Launch streamer based on track/location params from collection
-        self.streamer.run_collections([collection])
+        self.streamer.run_collections()
 
 
 class OnDemandCollector(BaseCollector):
@@ -86,16 +84,13 @@ class OnDemandCollector(BaseCollector):
         if self.streamer.process and isinstance(self.streamer.process, multiprocessing.Process):
             logger.info('Sending SIGTERM signal to streamer')
             self.streamer.process.terminate()
-            sleep(2)
+            sleep(20)
             self.streamer.process = None
         if self.streamer.is_connected.value == 1:
             logger.info('Trying to start an already connected streamer %s', self.streamer)
             return
-        collections = TwitterCollection.get_active_ondemand()
-        if not collections:
-            return
         # Launch streamer based on track/location params from collection
-        self.streamer.run_collections(collections)
+        self.streamer.run_collections()
 
 
 class ManualCollector(OnDemandCollector):
@@ -107,11 +102,10 @@ class ManualCollector(OnDemandCollector):
         if self.streamer.process and isinstance(self.streamer.process, multiprocessing.Process):
             logger.info('Sending SIGTERM signal to streamer')
             self.streamer.process.terminate()
-            sleep(2)
+            self.streamer.process = None
+            self.streamer.is_connected.value = 0
+            sleep(20)
         if self.streamer.is_connected.value == 1:
             logger.info('Trying to start an already connected streamer %s', self.streamer)
             return
-        collections = TwitterCollection.get_active_manual()
-        if not collections:
-            return
-        self.streamer.run_collections(collections)
+        self.streamer.run_collections()

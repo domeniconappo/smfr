@@ -119,6 +119,7 @@ class BaseStreamer(TwythonStreamer):
             self.incremental_sleep *= 2
         logger.info('Sleeping %d secs after error', sleep_time)
         time.sleep(sleep_time)
+        self.run_collections()
 
     def on_timeout(self):
         logger.error('Timeout...sleeping 30 secs')
@@ -128,8 +129,8 @@ class BaseStreamer(TwythonStreamer):
     def use_pipeline(self, collection):
         return collection.is_using_pipeline
 
-    def run_collections(self, collections):
-        self._collections = self.mp_manager.list(collections)
+    def run_collections(self):
+        self._collections = self.mp_manager.list(self._get_collections())
         p = multiprocessing.Process(target=self.connect, name=str(self), args=(self._collections,))
         p.daemon = True
         p.start()
@@ -180,6 +181,8 @@ class BaseStreamer(TwythonStreamer):
                 logger.warning('An error occurred during filtering in Streamer %s: %s. '
                                'Disconnecting collector due an unexpected error', self.__class__.__name__, e)
                 stay_active = False
+                self.connected = False
+                self.is_connected.value = 0
                 self.disconnect(deactivate_collections=False)
                 self.track_error(500, str(e))
 
@@ -190,8 +193,10 @@ class BaseStreamer(TwythonStreamer):
             self.process.terminate()  # this will call handle_termination method because it sends SIGTERM signal
         if self.producer:
             self.producer.flush()
+            self.producer.close()
 
         with self.lock:
+            self.connected = False
             self.is_connected.value = 0
             super().disconnect()
             if deactivate_collections:
@@ -223,12 +228,21 @@ class BaseStreamer(TwythonStreamer):
             if len(self._shared_errors) > self.max_errors_len:
                 self._shared_errors = self._shared_errors[:self.max_errors_len]
 
+    def _get_collections(self):
+        pass
+
 
 class BackgroundStreamer(BaseStreamer):
     """
 
     """
     trigger = TwitterCollection.TRIGGER_BACKGROUND
+
+    def _get_collections(self):
+        collection = TwitterCollection.get_active_background()
+        if not collection:
+            return
+        return [collection]
 
     def connect(self, collections):
         self.collection = collections[0]
@@ -253,6 +267,10 @@ class OnDemandStreamer(BaseStreamer):
     """
     trigger = TwitterCollection.TRIGGER_ONDEMAND
 
+    def _get_collections(self):
+        collections = TwitterCollection.get_active_ondemand()
+        return collections
+
     def on_success(self, data):
 
         lang = self._detect_language(data)
@@ -270,6 +288,10 @@ class OnDemandStreamer(BaseStreamer):
 
 class ManualStreamer(OnDemandStreamer):
     trigger = TwitterCollection.TRIGGER_MANUAL
+
+    def _get_collections(self):
+        collections = TwitterCollection.get_active_manual()
+        return collections
 
     def use_pipeline(self, collection):
         return collection.is_using_pipeline

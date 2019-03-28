@@ -19,8 +19,7 @@ from sqlalchemy_utils import database_exists, create_database
 from flask_migrate import Migrate
 
 
-from smfrcore.utils import IN_DOCKER, DEFAULT_HANDLER, IS_DEVELOPMENT, UNDER_TESTS, Singleton
-from smfrcore.models.utils import CustomJSONEncoder
+from smfrcore.utils import IN_DOCKER, DEFAULT_HANDLER, IS_DEVELOPMENT, UNDER_TESTS, Singleton, CustomJSONEncoder
 
 
 DEVELOPMENT = IS_DEVELOPMENT

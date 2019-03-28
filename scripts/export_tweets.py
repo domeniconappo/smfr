@@ -18,8 +18,7 @@ import jsonlines
 import ujson
 
 from smfrcore.models.cassandra import Tweet
-from smfrcore.utils import ParserHelpOnError
-from smfrcore.models.utils import CustomJSONEncoder
+from smfrcore.utils import ParserHelpOnError, smfr_json_encoder
 
 
 def add_args(parser):
@@ -87,7 +86,7 @@ def write_json(conf, tweets):
         if not (i % 500):
             print('Exported so far...', str(i))
     with open(conf.output_file, 'w', encoding='utf-8') as fd:
-        json.dump(out, fd, indent=2, ensure_ascii=False, sort_keys=True, default=CustomJSONEncoder().default)
+        json.dump(out, fd, indent=2, ensure_ascii=False, sort_keys=True, default=smfr_json_encoder)
 
 
 if __name__ == '__main__':

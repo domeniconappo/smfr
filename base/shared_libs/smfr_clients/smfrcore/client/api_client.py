@@ -10,8 +10,7 @@ import requests
 
 from smfrcore.client.conf import ServerConfiguration
 from smfrcore.utils.errors import SMFRError
-from smfrcore.utils import DEFAULT_HANDLER, IN_DOCKER
-from smfrcore.models.utils import smfr_json_encoder
+from smfrcore.utils import DEFAULT_HANDLER, IN_DOCKER, smfr_json_encoder
 
 from .marshmallow import OnDemandPayload, CollectionPayload
 
