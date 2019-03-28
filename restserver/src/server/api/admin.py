@@ -25,9 +25,15 @@ def get():
         'persisted': PersisterClient.counters()[0],
         'geo_counters': GeocoderClient.counters()[0]
     }
-    res['background_collected'] = res['persisted'].pop(TwitterCollection.TRIGGER_BACKGROUND, 0)
-    res['ondemand_collected'] = res['persisted'].pop(TwitterCollection.TRIGGER_ONDEMAND, 0)
-    res['manual_collected'] = res['persisted'].pop(TwitterCollection.TRIGGER_MANUAL, 0)
+    res['background_collected'] = res['persisted'].pop('{}-{}'.format(TwitterCollection.TRIGGER_BACKGROUND, 'collected'), 0)
+    res['ondemand_collected'] = res['persisted'].pop('{}-{}'.format(TwitterCollection.TRIGGER_ONDEMAND, 'collected'), 0)
+    res['manual_collected'] = res['persisted'].pop('{}-{}'.format(TwitterCollection.TRIGGER_MANUAL, 'collected'), 0)
+    res['background_annotated'] = res['persisted'].pop('{}-{}'.format(TwitterCollection.TRIGGER_BACKGROUND, 'annotated'), 0)
+    res['ondemand_annotated'] = res['persisted'].pop('{}-{}'.format(TwitterCollection.TRIGGER_ONDEMAND, 'annotated'), 0)
+    res['manual_annotated'] = res['persisted'].pop('{}-{}'.format(TwitterCollection.TRIGGER_MANUAL, 'annotated'), 0)
+    res['background_geotagged'] = res['persisted'].pop('{}-{}'.format(TwitterCollection.TRIGGER_BACKGROUND, 'geotagged'), 0)
+    res['ondemand_geotagged'] = res['persisted'].pop('{}-{}'.format(TwitterCollection.TRIGGER_ONDEMAND, 'geotagged'), 0)
+    res['manual_geotagged'] = res['persisted'].pop('{}-{}'.format(TwitterCollection.TRIGGER_MANUAL, 'geotagged'), 0)
     return res, 200
 
 

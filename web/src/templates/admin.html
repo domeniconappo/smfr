@@ -59,21 +59,29 @@
                 <thead>
                     <tr>
                         <th>Trigger Type</th>
-                        <th>Collected from last restart</th>
+                        <th>Collected</th>
+                        <th>Annotated</th>
+                        <th>Geotagged</th>
                     </tr>
                 </thead>
                 <tbody>
                 <tr>
-                    <td>From Background collector</td>
+                    <td>Background</td>
                     <td>{{ data.background_collected }}</td>
+                    <td>{{ data.background_annotated }}</td>
+                    <td>{{ data.background_geotagged }}</td>
                 </tr>
                 <tr>
-                    <td>From On-Demand collector</td>
-                    <td>{{ data["ondemand_collected"] }}</td>
+                    <td>On-Demand</td>
+                    <td>{{ data.ondemand_collected }}</td>
+                    <td>{{ data.ondemand_annotated }}</td>
+                    <td>{{ data.ondemand_geotagged }}</td>
                 </tr>
                 <tr>
-                    <td>From Manual collector</td>
+                    <td>Manual</td>
                     <td>{{ data.manual_collected }}</td>
+                    <td>{{ data.manual_annotated }}</td>
+                    <td>{{ data.manual_geotagged }}</td>
                 </tr>
                 </tbody>
               </table>

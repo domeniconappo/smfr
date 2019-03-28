@@ -13,4 +13,4 @@ elif [[ ${mode} == "swarm" ]]; then
     container=$(docker ps --filter label=com.docker.swarm.service.name=SMFR_cassandrasmfr | awk '{if (NR!=1) {print $1}}')
 fi
 echo "docker exec -it ${container} cqlsh -u ${CASSANDRA_USER} (insert C* password when required)"
-docker exec -it ${container} cqlsh -u ${CASSANDRA_USER} --request-timeout 240
+docker exec -it ${container} cqlsh -u ${CASSANDRA_USER} --request-timeout 36000

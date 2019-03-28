@@ -128,7 +128,7 @@ class Persister:
                             logger.debug('Saved tweet: %s - collection %d', tweet.tweetid, tweet.collectionid)
 
                         with self._lock:
-                            self.shared_counter[trigger_key] += 1
+                            self.shared_counter['{}-{}'.format(trigger_key, tweet.ttype)] += 1
                             self.shared_counter[tweet.ttype] += 1
                             self.shared_counter['{}-{}'.format(tweet.lang, tweet.ttype)] += 1
 
@@ -139,8 +139,6 @@ class Persister:
                         logger.error('Poison message for Cassandra: %s', tweet or msg)
                     except CQLEngineException as e:
                         logger.error(e)
-                    else:
-                        self.send_to_pipeline(producer, tweet)
             except KafkaTimeoutError:
                 logger.warning('Consumer Timeout...sleep 5 seconds')
                 time.sleep(5)
