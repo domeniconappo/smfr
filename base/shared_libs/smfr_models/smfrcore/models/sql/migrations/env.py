@@ -2,38 +2,27 @@ from __future__ import with_statement
 from logging.config import fileConfig
 import logging
 
+from flask_migrate import Migrate
 from sqlalchemy import engine_from_config, pool
 from alembic import context
 
-from smfrcore.models.sql import create_app, base
+from smfrcore.models.sql import create_app, sqldb, SMFRModel
+
 
 current_app = create_app()
+config = context.config
+config.set_main_option('sqlalchemy.url', current_app.config.get('SQLALCHEMY_DATABASE_URI'))
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
-config = context.config
-config.set_main_option('sqlalchemy.url', current_app.config.get('SQLALCHEMY_DATABASE_URI'))
-print(config.config_file_name)
-print(config.config_ini_section)
-print('-------------------------------------------------------------^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^')
 
+migrate = Migrate(current_app, sqldb)
+# target_metadata = current_app.extensions['migrate'].db.metadata
+target_metadata = SMFRModel.metadata
 # Interpret the config file for Python logging.
 # This line sets up loggers basically.
 fileConfig(config.config_file_name)
 logger = logging.getLogger('alembic.env')
-
-# add your model's MetaData object here
-# for 'autogenerate' support
-# from myapp import mymodel
-# target_metadata = mymodel.Base.metadata
-
-
-target_metadata = base.metadata
-
-# other values from the config, defined by the needs of env.py,
-# can be acquired:
-# my_important_option = config.get_main_option("my_important_option")
-# ... etc.
 
 
 def run_migrations_offline():
@@ -73,16 +62,11 @@ def run_migrations_online():
                 directives[:] = []
                 logger.info('No changes in schema detected.')
 
-    engine = engine_from_config(config.get_section(config.config_ini_section),
-                                prefix='sqlalchemy.',
-                                poolclass=pool.NullPool)
+    engine = engine_from_config(config.get_section(config.config_ini_section), prefix='sqlalchemy.', poolclass=pool.NullPool)
 
     connection = engine.connect()
-    context.configure(connection=connection,
-                      target_metadata=target_metadata,
-                      process_revision_directives=process_revision_directives,
-                      ## **current_app.extensions['migrate'].configure_args
-                      )
+    context.configure(connection=connection, target_metadata=target_metadata, process_revision_directives=process_revision_directives,
+                      **current_app.extensions['migrate'].configure_args)
 
     try:
         with context.begin_transaction():
