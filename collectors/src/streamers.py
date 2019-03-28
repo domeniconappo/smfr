@@ -131,6 +131,8 @@ class BaseStreamer(TwythonStreamer):
 
     def run_collections(self):
         self._collections = self.mp_manager.list(self._get_collections())
+        if not self._collections:
+            return None
         p = multiprocessing.Process(target=self.connect, name=str(self), args=(self._collections,))
         p.daemon = True
         p.start()
