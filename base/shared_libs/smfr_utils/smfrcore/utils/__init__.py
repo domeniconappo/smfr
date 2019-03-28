@@ -14,6 +14,7 @@ from multiprocessing.managers import DictProxy, BaseManager
 from datetime import timedelta, datetime
 from collections import Mapping
 from decimal import Decimal
+from json import JSONEncoder
 
 import numpy as np
 import schedule
@@ -45,9 +46,6 @@ def _running_in_docker():
     """
     with open('/proc/1/cgroup', 'rt') as f:
         return 'docker' in f.read()
-
-
-IN_DOCKER = _running_in_docker()
 
 
 def logged_job(job_func):
@@ -155,3 +153,4 @@ smfr_json_encoder = CustomJSONEncoder().default
 
 # multiprocessing.Manager does not include defaultdict: we need to use a customized Manager
 DefaultDictSyncManager.register('defaultdict', defaultdict, DictProxy)
+IN_DOCKER = _running_in_docker()

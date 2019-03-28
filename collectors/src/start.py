@@ -1,4 +1,5 @@
 import signal
+import sys
 
 from flask_restful import Resource, Api, marshal_with, fields, marshal_with_field
 
@@ -78,6 +79,7 @@ def main():
         background_collector.stop(deactivate=deactivate_collections)
         ondemand_collector.stop(deactivate=deactivate_collections)
         manual_collector.stop(deactivate=deactivate_collections)
+        sys.exit(0)
 
     signals = (signal.SIGINT, signal.SIGTERM, signal.SIGQUIT)
     for sig in signals:
