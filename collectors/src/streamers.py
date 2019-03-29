@@ -177,16 +177,13 @@ class BaseStreamer(TwythonStreamer):
                 logger.warning('Incomplete Read: %s.', e)
                 self.track_error(400, 'Incomplete Read')
             except Exception as e:
+                logger.warning('An error occurred during filtering in Streamer %s: %s. '
+                               'Disconnecting collector due an unexpected error', self.__class__.__name__, e)
+                self.disconnect(deactivate_collections=False)
+                self.track_error(500, str(e))
                 if IS_DEVELOPMENT:
                     import traceback
                     traceback.print_exc()
-                logger.warning('An error occurred during filtering in Streamer %s: %s. '
-                               'Disconnecting collector due an unexpected error', self.__class__.__name__, e)
-                stay_active = False
-                self.connected = False
-                self.is_connected.value = 0
-                self.disconnect(deactivate_collections=False)
-                self.track_error(500, str(e))
 
     def disconnect(self, deactivate_collections=True):
         logger.info('Disconnecting twitter streamer')
@@ -194,6 +191,7 @@ class BaseStreamer(TwythonStreamer):
         if self.process and isinstance(self.process, multiprocessing.Process):
             self.process.terminate()  # this will call handle_termination method because it sends SIGTERM signal
         if self.producer:
+            # closing Kafka producer client
             self.producer.flush()
             self.producer.close()
 

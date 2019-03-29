@@ -71,7 +71,12 @@
                                        {% endif %}
                                        <tr>
                                            <th>Languages:</th>
-                                           <td>{{ data.collection.languages|join(', ') }}</td>
+                                           <td>
+                                               {% if data.collection.languages %}
+                                                {{ data.collection.languages|default([], true)|join(', ') }}
+                                               {% else %}
+                                               &nbsp;
+                                           </td>
 
                                            <th>Last started:</th>
                                            <td>{{ data.collection.started_at|datetimeformat('%Y-%m-%d %H:%M:%S') }}</td>

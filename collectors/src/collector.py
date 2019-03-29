@@ -67,6 +67,7 @@ class BackgroundCollector(BaseCollector):
             logger.info('Sending SIGTERM signal to streamer')
             self.streamer.process.terminate()
             self.streamer.process = None
+            self.streamer.is_connected.value = 0
             sleep(20)
         if self.streamer.is_connected.value == 1:
             logger.info('Trying to start an already connected streamer %s', self.streamer)
