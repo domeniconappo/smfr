@@ -1,9 +1,11 @@
 import signal
 import sys
+import os
 
 from flask_restful import Resource, Api, marshal_with, fields, marshal_with_field
 
 from smfrcore.models.sql import create_app
+from smfrcore.utils import FALSE_VALUES
 
 from collector import BackgroundCollector, OnDemandCollector, ManualCollector, logger
 from config import configuration_object
@@ -66,25 +68,27 @@ def main():
 
     update_ondemand_collections_status(restart_ondemand=False)
 
-    background_collector.start()
-    ondemand_collector.start()
-    manual_collector.start()
+    start_collectors = os.getenv('', 'no')
+    if start_collectors not in FALSE_VALUES:
+        background_collector.start()
+        ondemand_collector.start()
+        manual_collector.start()
 
-    schedule_rra_jobs()
+        schedule_rra_jobs()
 
-    def stop_active_collectors(signum, _):
-        deactivate_collections = False
-        logger.info("Received %d", signum)
-        logger.info("Stopping any running collector...")
-        background_collector.stop(deactivate=deactivate_collections)
-        ondemand_collector.stop(deactivate=deactivate_collections)
-        manual_collector.stop(deactivate=deactivate_collections)
-        sys.exit(0)
+        def stop_active_collectors(signum, _):
+            deactivate_collections = False
+            logger.info("Received %d", signum)
+            logger.info("Stopping any running collector...")
+            background_collector.stop(deactivate=deactivate_collections)
+            ondemand_collector.stop(deactivate=deactivate_collections)
+            manual_collector.stop(deactivate=deactivate_collections)
+            sys.exit(0)
 
-    signals = (signal.SIGINT, signal.SIGTERM, signal.SIGQUIT)
-    for sig in signals:
-        signal.signal(sig, stop_active_collectors)
-    logger.debug('Registered signals for graceful shutdown: %s', signals)
+        signals = (signal.SIGINT, signal.SIGTERM, signal.SIGQUIT)
+        for sig in signals:
+            signal.signal(sig, stop_active_collectors)
+        logger.debug('Registered signals for graceful shutdown: %s', signals)
 
     api.add_resource(CollectorsApi, '/<string:trigger_type>')
 

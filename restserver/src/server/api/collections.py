@@ -13,7 +13,6 @@ from smfrcore.models.cassandra import Tweet, TweetTuple
 from smfrcore.client.marshmallow import Collection as CollectionSchema, Aggregation as AggregationSchema
 from smfrcore.utils import DEFAULT_HANDLER
 from smfrcore.utils.errors import SMFRRestException
-
 from smfrcore.client.api_client import AnnotatorClient, GeocoderClient, CollectorsClient
 from server.config import RestServerConfiguration
 from smfrcore.utils.helpers import (add_collection_helper, add_collection_from_rra_event, fetch_rra_helper, events_to_collections_payload)
@@ -36,26 +35,37 @@ def add_collection(payload):
     if not payload.get('keywords') and not payload.get('languages'):
         payload['languages'], payload['keywords'] = RestServerConfiguration.default_keywords()
 
-    nuts_code = payload.get('nuts2')
+    nuts_code = payload.get('nuts2') or payload.get('efas_id')
     efas_id = None
+    nuts2 = None
+    logger.debug('Nuts code %s', nuts_code)
     if nuts_code:
         try:
             efas_id = int(nuts_code)
+            nuts2 = Nuts2.get_by_efas_id(efas_id)
         except ValueError:
+            # user provided a NUTS2 code (and not the internal efas_id for the area)
             nuts2 = Nuts2.get_by_nuts_code(nuts_code)
             efas_id = nuts2.efas_id if nuts2 else None
         finally:
+            logger.debug('efas id %s', efas_id)
+            logger.debug('Nuts2 object %s', nuts2)
+            logger.debug('payload %s', payload)
             payload['efas_id'] = efas_id
-        if not efas_id and (payload['trigger'] in ('manual', 'on-demand') and not payload.get('bounding_box')):
-            raise SMFRRestException('Manual and ondemand collections needs a proper EFAS ID/NUTS2 code', 400)
+            if nuts2 and efas_id and not (payload.get('bounding_box', {}).get('min_lat') or payload.get('locations')):
+                logger.debug('bbox missing in payload...fetching it from nuts2 table')
+                payload['bounding_box'] = nuts2.bbox
+            logger.debug('payload %s', payload)
 
-    if logger.isEnabledFor(logging.DEBUG):
-        logger.debug(payload['keywords'])
-        logger.debug(payload['languages'])
+        if not efas_id and (payload['trigger'] in ('manual', 'on-demand') and not (payload.get('bounding_box') or payload.get('locations'))):
+            raise SMFRRestException('Manual and ondemand collections needs a proper EFAS ID/NUTS2 code. Otherwise, provide bounding box', 400)
 
-    collection = add_collection_helper(**payload)
-    res = CollectionSchema().dump(collection).data
-    return res, 201
+    try:
+        collection = add_collection_helper(**payload)
+        res = CollectionSchema().dump(collection).data, 201
+    except (ValueError, OperationalError) as e:
+        res = {'error': {'description': str(e)}}, 400
+    return res
 
 
 def add_ondemand(payload):

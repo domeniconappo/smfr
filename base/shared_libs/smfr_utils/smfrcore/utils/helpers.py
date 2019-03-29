@@ -12,8 +12,6 @@ logger = logging.getLogger('SMFR utils')
 
 def add_collection_helper(**data):
     collection = TwitterCollection.create(**data)
-    # when adding an on-demand collection we start collecting tweets right away
-    logger.debug('Created collection %s', collection)
     return collection
 
 
