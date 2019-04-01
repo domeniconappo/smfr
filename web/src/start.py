@@ -17,6 +17,7 @@ def create_app():
     application = Flask(__name__)
     application.secret_key = 'development key'
     Bootstrap(application)
+    application.config['smfr_version'] = open('/app/config/VERSION').read().strip()
     return application
 
 

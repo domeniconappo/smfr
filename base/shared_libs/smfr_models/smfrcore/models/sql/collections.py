@@ -42,9 +42,9 @@ class TwitterCollection(SMFRModel):
 
     ACTIVE_CHOICE = Choice(ACTIVE_STATUS, 'Running')
     INACTIVE_CHOICE = Choice(INACTIVE_STATUS, 'Stopped')
-    TRIGGER_BACKGROUND_CHOICE = (TRIGGER_BACKGROUND, 'Background')
-    TRIGGER_ONDEMAND_CHOICE = (TRIGGER_ONDEMAND, 'On Demand')
-    TRIGGER_MANUAL_CHOICE = (TRIGGER_MANUAL, 'Manual')
+    TRIGGER_BACKGROUND_CHOICE = Choice(TRIGGER_BACKGROUND, 'Background')
+    TRIGGER_ONDEMAND_CHOICE = Choice(TRIGGER_ONDEMAND, 'On Demand')
+    TRIGGER_MANUAL_CHOICE = Choice(TRIGGER_MANUAL, 'Manual')
 
     CHOICES = {
         ACTIVE_STATUS: ACTIVE_CHOICE,
@@ -99,9 +99,10 @@ class TwitterCollection(SMFRModel):
                '\n Trigger: {x}'.format(o=self, x=self.trigger.value)
 
     def __eq__(self, other):
+        if not other:
+            return False
         return self.efas_id == other.efas_id and self.trigger == other.trigger \
-               and self.tracking_keywords == other.tracking_keywords \
-               and self.languages == other.languages and self.locations == other.locations
+            and self.tracking_keywords == other.tracking_keywords and self.languages == other.languages
 
     def __init__(self, *args, **kwargs):
         self.nuts2 = None
@@ -180,44 +181,50 @@ class TwitterCollection(SMFRModel):
     def create(cls, **data):
         user = data.get('user') or User.query.filter_by(role='admin').first()
         if not user:
-            raise SystemError('You have to configure at least one admin user for SMFR system')
+            raise ValueError('You have to configure at least one admin user for SMFR system')
 
         obj = cls()
+        obj.user_id = user.id
         obj.status = cls.CHOICES.get(data.get('status') or cls.INACTIVE_STATUS)
         obj.trigger = cls.CHOICES.get(data['trigger'])
         obj.runtime = cls.convert_runtime(data.get('runtime'))
         obj.forecast_id = data.get('forecast_id')
-        obj.efas_id = data.get('efas_id')
-        obj.user_id = user.id if user else 1
+        obj.efas_id = int(data.get('efas_id', 0)) or None
         obj.use_pipeline = data.get('use_pipeline', False)
+
+        keywords = data.get('keywords') or []
+        languages = data.get('languages') or []
+        locations = data.get('bounding_box') or data.get('locations') or {}
 
         if obj.is_background:
             existing = cls.get_active_background()
             if existing:
                 raise ValueError("You can't have more than one running background collection. "
                                  "First stop the active background collection.")
-            obj._set_keywords_and_languages(data.get('keywords') or [], data.get('languages') or [])
-            obj._set_locations(data.get('bounding_box') or data.get('locations'))
+            obj._set_keywords_and_languages(keywords, languages)
+            obj._set_locations(locations)
             obj.save()
-            cls._update_caches(obj)
-            return obj
-        elif obj.is_ondemand or obj.is_manual:
-            obj.status = cls.ACTIVE_CHOICE  # force active status when creating/updating on demand/manual collections
+        else:
+            obj.status = cls.ACTIVE_CHOICE  # force active status when creating/updating on demand collections
             existing = cls.query.filter_by(efas_id=int(data['efas_id']), status=cls.ACTIVE_CHOICE).first()
             if existing:
                 # a collection for this efas region is already active and running
-                existing.runtime = existing.runtime if existing.forecast_id == obj.forecast_id else obj.runtime
-                existing.save()
-                return existing
+                if existing.trigger == obj.trigger:
+                    existing.runtime = existing.runtime if existing.forecast_id == obj.forecast_id else obj.runtime
+                    existing.save()
+                else:
+                    # example case here: adding a manual collection for a EFAS ID while there's already an on-demand collection that is running
+                    raise ValueError('You can\'t have more than one running collection per EFAS/NUTS2 area.')
+                obj = existing
             else:
                 # create a new collection (it's a new event)
                 obj.started_at = datetime.datetime.utcnow()
-                obj._set_keywords_and_languages(data.get('keywords') or [], data.get('languages') or [])
-                obj._set_locations(data.get('bounding_box') or data.get('locations'))
+                obj._set_keywords_and_languages(keywords, languages)
+                obj._set_locations(locations)
                 obj.save()
-                # updating caches
-                cls._update_caches(obj)
-                return obj
+        # updating caches
+        cls._update_caches(obj)
+        return obj
 
     @classmethod
     def add_rra_events(cls, events):
@@ -373,17 +380,16 @@ class TwitterCollection(SMFRModel):
         def _update_delete():
             cls.cache[collection_key] = None
             try:
-                if obj.is_active_or_recent:
+                if obj.is_active:
                     cls.cache.get(cls.cache_keys['active'], []).remove(obj)
-                    if obj.is_active:
-                        cls.cache.get(cls.cache_keys['running'], []).remove(obj)
-                        if obj.is_manual:
-                            cls.cache.get(cls.cache_keys['manual'], []).remove(obj)
-                        elif obj.is_background:
-                            cls.cache[cls.cache_keys['background']] = None
-                        elif obj.is_ondemand:
-                            cls.cache.get(cls.cache_keys['on-demand'], []).remove(obj)
-                            cls.cache.get(cls.cache_keys['all-on-demand'], []).remove(obj)
+                    cls.cache.get(cls.cache_keys['running'], []).remove(obj)
+                    if obj.is_manual:
+                        cls.cache.get(cls.cache_keys['manual'], []).remove(obj)
+                    elif obj.is_background:
+                        cls.cache[cls.cache_keys['background']] = None
+                    elif obj.is_ondemand:
+                        cls.cache.get(cls.cache_keys['on-demand'], []).remove(obj)
+                        cls.cache.get(cls.cache_keys['all-on-demand'], []).remove(obj)
             except ValueError:
                 pass
 
@@ -557,19 +563,19 @@ class TwitterCollection(SMFRModel):
 
     @property
     def is_active(self):
-        return self.status == self.ACTIVE_STATUS
+        return self.status in (self.ACTIVE_STATUS, self.CHOICES[self.ACTIVE_STATUS])
 
     @property
     def is_ondemand(self):
-        return self.trigger == self.TRIGGER_ONDEMAND
+        return self.trigger in (self.TRIGGER_ONDEMAND, self.CHOICES[self.TRIGGER_ONDEMAND])
 
     @property
     def is_manual(self):
-        return self.trigger == self.TRIGGER_MANUAL
+        return self.trigger in (self.TRIGGER_MANUAL, self.CHOICES[self.TRIGGER_MANUAL])
 
     @property
     def is_background(self):
-        return self.trigger == self.TRIGGER_BACKGROUND
+        return self.trigger in (self.TRIGGER_BACKGROUND, self.CHOICES[self.TRIGGER_BACKGROUND])
 
     @property
     def is_using_pipeline(self):
@@ -577,7 +583,7 @@ class TwitterCollection(SMFRModel):
 
     @property
     def is_active_or_recent(self):
-        return self.status == self.ACTIVE_STATUS or \
+        return self.status in (self.ACTIVE_STATUS, self.CHOICES[self.ACTIVE_STATUS]) or \
                (self.stopped_at and
                 self.stopped_at >= (datetime.datetime.utcnow() - datetime.timedelta(days=2)))
 

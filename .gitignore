@@ -21,6 +21,7 @@ restserver/src/config/*.yaml
 restserver/src/config/*.yml
 web/src/config/*.yaml
 web/src/config/*.yml
+web/src/config/VERSION
 restserver/logs
 scripts/seeds/data/*.json
 jmxremote.password

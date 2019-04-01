@@ -61,6 +61,7 @@ cp ${DIR}/../VERSION base/shared_libs/smfr_models/
 cp ${DIR}/../VERSION base/shared_libs/smfr_clients/
 cp ${DIR}/../VERSION base/shared_libs/smfr_utils/
 cp ${DIR}/../VERSION base/shared_libs/smfr_analysis/
+cp ${DIR}/../VERSION web/src/config/
 
 if [[ -n "`echo ${SERVICES} | xargs -n1 echo | grep ${command}`" ]]; then
     echo  ++++++++++++++++++++ Building ${command} service +++++++++++++++++++++++++++++++
