@@ -68,7 +68,7 @@ def main():
 
     update_ondemand_collections_status(restart_ondemand=False)
 
-    start_collectors = os.getenv('', 'no')
+    start_collectors = os.getenv('START_COLLECTORS', 'no')
     if start_collectors not in FALSE_VALUES:
         background_collector.start()
         ondemand_collector.start()
