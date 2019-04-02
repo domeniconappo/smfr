@@ -20,7 +20,7 @@ from cassandra.query import named_tuple_factory, SimpleStatement
 from cassandra.util import OrderedMapSerializedKey
 import numpy as np
 
-from smfrcore.models.cassandra import new_cassandra_session
+from smfrcore.models.cassandra import new_cassandra_session, Tweet
 from smfrcore.utils import ParserHelpOnError
 
 
@@ -38,11 +38,9 @@ def add_args(parser):
 
 
 def serialize(t):
-
-    res = {'full_text': t.full_text}
-
-    for k, v in t.__dict__['_values'].items():
-        v = v.value
+    res = dict()
+    for k, v in t._asdict().items():
+        # v = v.value
         if isinstance(v, (np.float32, np.float64, Decimal)):
             res[k] = float(v)
         elif isinstance(v, (np.int32, np.int64)):
@@ -66,6 +64,7 @@ def serialize(t):
             res[k] = innerres
         else:
             res[k] = v
+    res['full_text'] = Tweet.get_full_text(t)
     return res
 
 
@@ -117,7 +116,7 @@ def main():
     session.row_factory = named_tuple_factory
 
     # query = Tweet.objects.filter(Tweet.collectionid == conf.collection_id, Tweet.ttype == conf.ttype)
-    query = 'SELECT * FROM smfr_persistent.tweet WHERE collectionid={} AND ttype={}'.format(conf.collection_id, conf.ttype)
+    query = 'SELECT * FROM smfr_persistent.tweet WHERE collectionid={} AND ttype=\'{}\''.format(conf.collection_id, conf.ttype)
 
     if conf.dates:
         from_date, to_date = conf.dates.split('-')
@@ -126,7 +125,7 @@ def main():
         to_date = datetime.datetime.strptime(to_date, '%Y%m%d')
         print('Dates: ', from_date, to_date)
         # query = query.filter(Tweet.created_at >= from_date, Tweet.created_at <= to_date)
-        query = '{} AND created_at>={} AND created_at<={}'.format(query, from_date.strftime('%Y-%m-%d'), to_date.strftime('%Y-%m-%d'))
+        query = '{} AND created_at>=\'{}\' AND created_at<=\'{}\''.format(query, from_date.strftime('%Y-%m-%d'), to_date.strftime('%Y-%m-%d'))
 
     statement = SimpleStatement(query, fetch_size=conf.fetch_size)
     future = session.execute_async(statement)
@@ -148,40 +147,6 @@ def main():
         print('Deleting file', conf.output_file)
         os.remove(conf.output_file)
     print('<============= Execution ended: ', datetime.datetime.now().strftime('%Y-%m-%d %H:%M'))
-
-    #
-    #
-    # page = list(query)
-    # count = 0
-    # while page:
-    #     tweets = []
-    #     for t in page:
-    #         tweets.append(serialize(t))
-    #     count += len(page)
-    #     filenum = int(count/conf.fetch_size) if conf.split else None
-    #     write_jsonl(conf, tweets, filenum)
-    #     sys.stdout.write('\r')
-    #     sys.stdout.write('                                                                                      ')
-    #     sys.stdout.write('\r')
-    #     sys.stdout.write('Exported: %d' % count)
-    #     sys.stdout.flush()
-    #     last = page[-1]
-    #     page = list(query.filter(pk__token__gt=Token(last.pk)))
-    #
-    # if not count:
-    #     print('<============= Execution ended - no results: ', datetime.datetime.now().strftime('%Y-%m-%d %H:%M'))
-    #     print('Empty queryset. Please, check parameters')
-    #     return 0
-    #
-    # if conf.gzip and not conf.split:
-    #     zipped_filename = '{}.gz'.format(conf.output_file)
-    #     print('Compressing file', conf.output_file, 'into', zipped_filename)
-    #     with open(conf.output_file, 'rt') as f_in:
-    #         with gzip.open(zipped_filename, 'wt') as f_out:
-    #             shutil.copyfileobj(f_in, f_out)
-    #     print('Deleting file', conf.output_file)
-    #     os.remove(conf.output_file)
-    # print('<============= Execution ended: ', datetime.datetime.now().strftime('%Y-%m-%d %H:%M'))
 
 
 def write_jsonl(conf, tweets, filenum=None):
