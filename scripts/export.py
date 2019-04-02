@@ -15,11 +15,12 @@ from decimal import Decimal
 
 import ujson
 import jsonlines
-from cassandra.cqlengine.functions import Token
+from cassandra.connection import Event
+from cassandra.query import named_tuple_factory, SimpleStatement
 from cassandra.util import OrderedMapSerializedKey
 import numpy as np
 
-from smfrcore.models.cassandra import Tweet
+from smfrcore.models.cassandra import new_cassandra_session
 from smfrcore.utils import ParserHelpOnError
 
 
@@ -68,6 +69,42 @@ def serialize(t):
     return res
 
 
+class PagedResultHandler:
+
+    def __init__(self, fut, conf):
+        self.count = 0
+        self.error = None
+        self.conf = conf
+        self.finished_event = Event()
+        self.future = fut
+        self.future.add_callbacks(
+            callback=self.handle_page,
+            errback=self.handle_error)
+
+    def handle_page(self, page):
+        tweets = []
+        for t in page:
+            tweets.append(serialize(t))
+        self.count += len(page)
+        filenum = int(self.count / self.conf.fetch_size) if self.conf.split else None
+        # write page...
+        write_jsonl(self.conf, tweets, filenum)
+        sys.stdout.write('\r')
+        sys.stdout.write('                                                                                      ')
+        sys.stdout.write('\r')
+        sys.stdout.write('Exported: %d' % self.count)
+        sys.stdout.flush()
+
+        if self.future.has_more_pages:
+            self.future.start_fetching_next_page()
+        else:
+            self.finished_event.set()
+
+    def handle_error(self, exc):
+        self.error = exc
+        self.finished_event.set()
+
+
 def main():
     print('=============> Execution started: ', datetime.datetime.now().strftime('%Y-%m-%d %H:%M'))
     parser = ParserHelpOnError(description='Export SMFR tweets to a jsonlines file')
@@ -75,40 +112,32 @@ def main():
     conf = parser.parse_args()
     # force output file extension to be coherent with the output format
     conf.output_file = '{}.jsonl'.format(os.path.splitext(conf.output_file)[0])
-    query = Tweet.objects.filter(Tweet.collectionid == conf.collection_id, Tweet.ttype == conf.ttype)
+
+    session = new_cassandra_session()
+    session.row_factory = named_tuple_factory
+
+    # query = Tweet.objects.filter(Tweet.collectionid == conf.collection_id, Tweet.ttype == conf.ttype)
+    future = 'SELECT * FROM smfr_persistent.tweet WHERE collectionid={} AND ttype={}'.format(conf.collection_id, conf.ttype)
+
     if conf.dates:
         from_date, to_date = conf.dates.split('-')
         print('Exporting from', from_date, 'to', to_date)
         from_date = datetime.datetime.strptime(from_date, '%Y%m%d')
         to_date = datetime.datetime.strptime(to_date, '%Y%m%d')
         print('Dates: ', from_date, to_date)
-        query = query.filter(Tweet.created_at >= from_date, Tweet.created_at <= to_date)
+        # query = query.filter(Tweet.created_at >= from_date, Tweet.created_at <= to_date)
+        future = '{} AND created_at>={} AND created_at<={}'.format(future, from_date.strftime('%Y-%m-%d'), to_date.strftime('%Y-%m-%d'))
 
-    query = query.limit(conf.fetch_size).timeout(conf.timeout)
+    statement = SimpleStatement(future, fetch_size=conf.fetch_size)
+    handler = PagedResultHandler(statement, conf)
+    handler.finished_event.wait()
+    if handler.error:
+        raise handler.error
 
-    page = list(query)
-    count = 0
-    while page:
-        tweets = []
-        for i, t in enumerate(page):
-            tweets.append(serialize(t))
-
-        count += len(page)
-        filenum = int(count/conf.fetch_size) if conf.split else None
-        write_jsonl(conf, tweets, filenum)
-
-        sys.stdout.write('\r')
-        sys.stdout.write('                                                                                      ')
-        sys.stdout.write('Exported: %d' % count)
-        sys.stdout.flush()
-        last = page[-1]
-        page = list(query.filter(pk__token__gt=Token(last.collectionid, last.ttype)))
-
-    if not count:
+    if not handler.count:
         print('<============= Execution ended - no results: ', datetime.datetime.now().strftime('%Y-%m-%d %H:%M'))
         print('Empty queryset. Please, check parameters')
         return 0
-
     if conf.gzip and not conf.split:
         zipped_filename = '{}.gz'.format(conf.output_file)
         print('Compressing file', conf.output_file, 'into', zipped_filename)
@@ -118,6 +147,40 @@ def main():
         print('Deleting file', conf.output_file)
         os.remove(conf.output_file)
     print('<============= Execution ended: ', datetime.datetime.now().strftime('%Y-%m-%d %H:%M'))
+
+    #
+    #
+    # page = list(query)
+    # count = 0
+    # while page:
+    #     tweets = []
+    #     for t in page:
+    #         tweets.append(serialize(t))
+    #     count += len(page)
+    #     filenum = int(count/conf.fetch_size) if conf.split else None
+    #     write_jsonl(conf, tweets, filenum)
+    #     sys.stdout.write('\r')
+    #     sys.stdout.write('                                                                                      ')
+    #     sys.stdout.write('\r')
+    #     sys.stdout.write('Exported: %d' % count)
+    #     sys.stdout.flush()
+    #     last = page[-1]
+    #     page = list(query.filter(pk__token__gt=Token(last.pk)))
+    #
+    # if not count:
+    #     print('<============= Execution ended - no results: ', datetime.datetime.now().strftime('%Y-%m-%d %H:%M'))
+    #     print('Empty queryset. Please, check parameters')
+    #     return 0
+    #
+    # if conf.gzip and not conf.split:
+    #     zipped_filename = '{}.gz'.format(conf.output_file)
+    #     print('Compressing file', conf.output_file, 'into', zipped_filename)
+    #     with open(conf.output_file, 'rt') as f_in:
+    #         with gzip.open(zipped_filename, 'wt') as f_out:
+    #             shutil.copyfileobj(f_in, f_out)
+    #     print('Deleting file', conf.output_file)
+    #     os.remove(conf.output_file)
+    # print('<============= Execution ended: ', datetime.datetime.now().strftime('%Y-%m-%d %H:%M'))
 
 
 def write_jsonl(conf, tweets, filenum=None):
@@ -133,12 +196,15 @@ def write_jsonl(conf, tweets, filenum=None):
         zipped_filename = '{}.gz'.format(output_file)
         sys.stdout.write('\r')
         sys.stdout.write('                                                                                      ')
+        sys.stdout.write('\r')
         sys.stdout.write('Compressing file {} into {}'.format(output_file, zipped_filename))
+
         with open(output_file, 'rt') as f_in:
             with gzip.open(zipped_filename, 'wt') as f_out:
                 shutil.copyfileobj(f_in, f_out)
         sys.stdout.write('\r')
         sys.stdout.write('                                                                                      ')
+        sys.stdout.write('\r')
         sys.stdout.write('Deleting file {}'.format(output_file))
         sys.stdout.flush()
         os.remove(output_file)
