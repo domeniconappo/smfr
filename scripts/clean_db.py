@@ -17,7 +17,7 @@ from cassandra.cqlengine.query import BatchQuery
 from smfrcore.models.sql import TwitterCollection, Aggregation, create_app
 from smfrcore.models.cassandra import Tweet
 
-from scripts.utils import ParserHelpOnError
+from smfrcore.utils import ParserHelpOnError
 
 
 def add_args(parser):

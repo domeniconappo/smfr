@@ -360,7 +360,7 @@ class Tweet(cqldb.Model, CassandraHelpers):
     def get_samples(cls, collection_id, ttype, size=10):
         cls.generate_prepared_statements()
         cls.session.row_factory = named_tuple_factory
-        rows = cls.session.execute(cls.samples_stmt, parameters=[collection_id, ttype, size])
+        rows = cls.session.execute(cls.samples_stmt, parameters=(collection_id, ttype, size))
         return rows
 
     @property
