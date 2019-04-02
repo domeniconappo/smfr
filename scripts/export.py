@@ -1,9 +1,9 @@
 """
 Usage:
 
-python scripts/export_background.py -c 123 -t collected
-python scripts/export_background.py -c 450 -t geotagged -o manual_450.jsonl
-python scripts/export_background.py -c 10 -t annotated -d 20180101-20180331 -o background_10_20180101_20180331.jsonl -z
+python scripts/export.py -c 123 -t collected
+python scripts/export.py -c 450 -t geotagged -o manual_450.jsonl
+python scripts/export.py -c 10 -t annotated -d 20180101-20180331 -o background_10_20180101_20180331.jsonl -z
 """
 
 import os
@@ -26,13 +26,12 @@ from smfrcore.utils import ParserHelpOnError
 def add_args(parser):
     parser.add_argument('-c', '--collection_id', help='A TwitterCollection id.', type=int, required=True)
     parser.add_argument('-t', '--ttype', help='Which type of stored tweets to export',
-                        choices=["annotated", "collected", "geotagged"], metavar='ttype', required=True)
+                        choices=["annotated", "collected", "geotagged"],
+                        metavar='tweet_type', required=True)
     parser.add_argument('-d', '--dates', help='Time window defined as YYYYMMDD-YYYYMMDD', metavar='dates')
     parser.add_argument('-o', '--output_file', help='Path to output json file', metavar='output_file', default='exported_tweets.json')
-    parser.add_argument('-s', '--fetch_size', help='Num of rows per page. Can it be tuned for better performances',
-                        metavar='fetch_size', type=int, default=3000)
-    parser.add_argument('-p', '--split', help='Flag to split export in multiple files of <fetch_size> rows each',
-                        metavar='split', action='store_true', default=False)
+    parser.add_argument('-s', '--fetch_size', help='Num of rows per page. Can it be tuned for better performances', type=int, default=3000)
+    parser.add_argument('-p', '--split', help='Flag to split export in multiple files of <fetch_size> rows each', action='store_true', default=False)
     parser.add_argument('-z', '--gzip', help='Compress file', action='store_true', default=True)
 
 
