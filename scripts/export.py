@@ -131,7 +131,7 @@ def write_jsonl(conf, tweets, filenum=None):
     if conf.split and conf.gzip:
         zipped_filename = '{}.gz'.format(output_file)
         print('Compressing file', output_file, 'into', zipped_filename)
-        with open(conf.output_file, 'rt') as f_in:
+        with open(output_file, 'rt') as f_in:
             with gzip.open(zipped_filename, 'wt') as f_out:
                 shutil.copyfileobj(f_in, f_out)
         print('Deleting file', output_file)
