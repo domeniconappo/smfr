@@ -117,7 +117,7 @@ def main():
     session.row_factory = named_tuple_factory
 
     # query = Tweet.objects.filter(Tweet.collectionid == conf.collection_id, Tweet.ttype == conf.ttype)
-    future = 'SELECT * FROM smfr_persistent.tweet WHERE collectionid={} AND ttype={}'.format(conf.collection_id, conf.ttype)
+    query = 'SELECT * FROM smfr_persistent.tweet WHERE collectionid={} AND ttype={}'.format(conf.collection_id, conf.ttype)
 
     if conf.dates:
         from_date, to_date = conf.dates.split('-')
@@ -126,10 +126,11 @@ def main():
         to_date = datetime.datetime.strptime(to_date, '%Y%m%d')
         print('Dates: ', from_date, to_date)
         # query = query.filter(Tweet.created_at >= from_date, Tweet.created_at <= to_date)
-        future = '{} AND created_at>={} AND created_at<={}'.format(future, from_date.strftime('%Y-%m-%d'), to_date.strftime('%Y-%m-%d'))
+        query = '{} AND created_at>={} AND created_at<={}'.format(query, from_date.strftime('%Y-%m-%d'), to_date.strftime('%Y-%m-%d'))
 
-    statement = SimpleStatement(future, fetch_size=conf.fetch_size)
-    handler = PagedResultHandler(statement, conf)
+    statement = SimpleStatement(query, fetch_size=conf.fetch_size)
+    future = session.execute_async(statement)
+    handler = PagedResultHandler(future, conf)
     handler.finished_event.wait()
     if handler.error:
         raise handler.error
