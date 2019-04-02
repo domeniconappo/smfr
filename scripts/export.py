@@ -1,3 +1,11 @@
+"""
+Usage:
+
+python scripts/export_background.py -c 123 -t collected
+python scripts/export_background.py -c 450 -t geotagged -o manual_450.jsonl
+python scripts/export_background.py -c 10 -t annotated -d 20180101-20180331 -o background_10_20180101_20180331.jsonl -z
+"""
+
 import os
 import sys
 import shutil
@@ -20,12 +28,16 @@ def add_args(parser):
     parser.add_argument('-t', '--ttype', help='Which type of stored tweets to export',
                         choices=["annotated", "collected", "geotagged"], metavar='ttype', required=True)
     parser.add_argument('-d', '--dates', help='Time window defined as YYYYMMDD-YYYYMMDD', metavar='dates')
-    parser.add_argument('-o', '--output_file', help='Path to output json file',
-                        metavar='output_file', default='exported_tweets.json')
+    parser.add_argument('-o', '--output_file', help='Path to output json file', metavar='output_file', default='exported_tweets.json')
+    parser.add_argument('-s', '--fetch_size', help='Num of rows per page. Can it be tuned for better performances',
+                        metavar='fetch_size', type=int, default=3000)
+    parser.add_argument('-p', '--split', help='Flag to split export in multiple files of <fetch_size> rows each',
+                        metavar='split', action='store_true', default=False)
     parser.add_argument('-z', '--gzip', help='Compress file', action='store_true', default=True)
 
 
 def serialize(t):
+
     res = {'full_text': t.full_text}
 
     for k, v in t.__dict__['_values'].items():
@@ -58,8 +70,8 @@ def serialize(t):
 
 
 def main():
-    parser = ParserHelpOnError(description='Export tweets for SMFR')
-
+    print('Start: ', datetime.datetime.now().strftime('%Y-%m-%d %H:%M'))
+    parser = ParserHelpOnError(description='Export SMFR tweets to a jsonlines file')
     add_args(parser)
     conf = parser.parse_args()
     # force output file extension to be coherent with the output format
@@ -87,7 +99,12 @@ def main():
         last = page[-1]
         page = list(query.filter(pk__token__gt=Token(last.collectionid, last.ttype)))
 
-    if conf.gzip and count:
+    if not count:
+        print('End: ', datetime.datetime.now().strftime('%Y-%m-%d %H:%M'))
+        print('Empty queryset. Please, check parameters')
+        return 0
+
+    if conf.gzip:
         zipped_filename = '{}.gz'.format(conf.output_file)
         print('Compressing file', conf.output_file, 'into', zipped_filename)
         with open(conf.output_file, 'rt') as f_in:
@@ -95,8 +112,7 @@ def main():
                 shutil.copyfileobj(f_in, f_out)
         print('Deleting file', conf.output_file)
         os.remove(conf.output_file)
-    else:
-        print('Empty queryset. Please, check parameters')
+    print('End: ', datetime.datetime.now().strftime('%Y-%m-%d %H:%M'))
 
 
 def write_jsonl(conf, tweets):
