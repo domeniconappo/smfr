@@ -104,11 +104,11 @@ def main():
         page = list(query.filter(pk__token__gt=Token(last.collectionid, last.ttype)))
 
     if not count:
-        print('<============= Execution ended: ', datetime.datetime.now().strftime('%Y-%m-%d %H:%M'))
+        print('<============= Execution ended - no results: ', datetime.datetime.now().strftime('%Y-%m-%d %H:%M'))
         print('Empty queryset. Please, check parameters')
         return 0
 
-    if conf.gzip:
+    if conf.gzip and not conf.split:
         zipped_filename = '{}.gz'.format(conf.output_file)
         print('Compressing file', conf.output_file, 'into', zipped_filename)
         with open(conf.output_file, 'rt') as f_in:
@@ -128,6 +128,14 @@ def write_jsonl(conf, tweets, filenum=None):
         for t in tweets:
             t['tweet'] = ujson.loads(t['tweet'])
             writer.write(t)
+    if conf.split and conf.gzip:
+        zipped_filename = '{}.gz'.format(output_file)
+        print('Compressing file', output_file, 'into', zipped_filename)
+        with open(conf.output_file, 'rt') as f_in:
+            with gzip.open(zipped_filename, 'wt') as f_out:
+                shutil.copyfileobj(f_in, f_out)
+        print('Deleting file', output_file)
+        os.remove(output_file)
 
 
 if __name__ == '__main__':
