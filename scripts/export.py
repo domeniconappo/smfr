@@ -28,11 +28,12 @@ def add_args(parser):
     parser.add_argument('-t', '--ttype', help='Which type of stored tweets to export',
                         choices=["annotated", "collected", "geotagged"],
                         metavar='tweet_type', required=True)
-    parser.add_argument('-d', '--dates', help='Time window defined as YYYYMMDD-YYYYMMDD', metavar='dates')
-    parser.add_argument('-o', '--output_file', help='Path to output json file', metavar='output_file', default='exported_tweets.json')
+    parser.add_argument('-d', '--dates', help='Time window defined as YYYYMMDD-YYYYMMDD')
+    parser.add_argument('-o', '--output_file', help='Path to output json file', default='exported_tweets.json')
     parser.add_argument('-s', '--fetch_size', help='Num of rows per page. Can it be tuned for better performances', type=int, default=3000)
     parser.add_argument('-p', '--split', help='Flag to split export in multiple files of <fetch_size> rows each', action='store_true', default=False)
     parser.add_argument('-z', '--gzip', help='Compress file', action='store_true', default=True)
+    parser.add_argument('-T', '--timeout', help='Timeout for query (in seconds)', type=int, default=240)
 
 
 def serialize(t):
@@ -61,7 +62,6 @@ def serialize(t):
                         innerres[inner_k] = (encoded_v[0], encoded_v[1])
                 else:
                     innerres[inner_k] = inner_v
-
             res[k] = innerres
         else:
             res[k] = v
@@ -69,7 +69,7 @@ def serialize(t):
 
 
 def main():
-    print('Start: ', datetime.datetime.now().strftime('%Y-%m-%d %H:%M'))
+    print('=============> Execution started: ', datetime.datetime.now().strftime('%Y-%m-%d %H:%M'))
     parser = ParserHelpOnError(description='Export SMFR tweets to a jsonlines file')
     add_args(parser)
     conf = parser.parse_args()
@@ -84,7 +84,7 @@ def main():
         print('Dates: ', from_date, to_date)
         query = query.filter(Tweet.created_at >= from_date, Tweet.created_at <= to_date)
 
-    query = query.limit(conf.fetch_size)
+    query = query.limit(conf.fetch_size).timeout(conf.timeout)
 
     page = list(query)
     count = 0
@@ -104,7 +104,7 @@ def main():
         page = list(query.filter(pk__token__gt=Token(last.collectionid, last.ttype)))
 
     if not count:
-        print('End: ', datetime.datetime.now().strftime('%Y-%m-%d %H:%M'))
+        print('<============= Execution ended: ', datetime.datetime.now().strftime('%Y-%m-%d %H:%M'))
         print('Empty queryset. Please, check parameters')
         return 0
 
@@ -116,7 +116,7 @@ def main():
                 shutil.copyfileobj(f_in, f_out)
         print('Deleting file', conf.output_file)
         os.remove(conf.output_file)
-    print('End: ', datetime.datetime.now().strftime('%Y-%m-%d %H:%M'))
+    print('<============= Execution ended: ', datetime.datetime.now().strftime('%Y-%m-%d %H:%M'))
 
 
 def write_jsonl(conf, tweets, filenum=None):
