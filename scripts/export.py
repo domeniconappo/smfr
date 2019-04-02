@@ -85,7 +85,9 @@ class PagedResultHandler:
     def handle_page(self, page):
         tweets = []
         for t in page:
-            tweets.append(serialize(t))
+            t = serialize(t)
+            t['tweet'] = ujson.loads(t['tweet'])
+            tweets.append(t)
         self.count += len(page)
         filenum = int(self.count / self.conf.fetch_size) if self.conf.split else None
         # write page...
@@ -156,13 +158,12 @@ def write_jsonl(conf, tweets, filenum=None):
         output_file = '{}.jsonl'.format(os.path.splitext(conf.output_file)[0])
     else:
         output_file = '{}.{}.jsonl'.format(os.path.splitext(conf.output_file)[0], filenum)
+
     with jsonlines.open(output_file, mode='a') as writer:
-        for t in tweets:
-            t['tweet'] = ujson.loads(t['tweet'])
-            writer.write(t)
+        writer.write_all(tweets)
+
     if conf.split and conf.gzip:
         zipped_filename = '{}.gz'.format(output_file)
-
         with open(output_file, 'rt') as f_in:
             with gzip.open(zipped_filename, 'wt') as f_out:
                 shutil.copyfileobj(f_in, f_out)
