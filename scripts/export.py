@@ -3,7 +3,9 @@ Usage:
 
 python scripts/export.py -c 123 -t collected
 python scripts/export.py -c 450 -t geotagged -o manual_450.jsonl
-python scripts/export.py -c 10 -t annotated -d 20180101-20180331 -o background_10_20180101_20180331.jsonl -z
+python scripts/export.py -c 10 -t annotated -d 20180101-20181231 -o background_10_20180101_20180331.jsonl -z
+python scripts/export.py -c 10 -t annotated -d 20180101-20181231 -o background_10_20180101_20180331.jsonl -z -p
+python scripts/export.py -c 10 -t annotated -d 20180101-20181231 -o background_10_20180101_20180331.jsonl -z -p -s 5000
 """
 
 import os
@@ -31,7 +33,7 @@ def add_args(parser):
                         metavar='tweet_type', required=True)
     parser.add_argument('-d', '--dates', help='Time window defined as YYYYMMDD-YYYYMMDD')
     parser.add_argument('-o', '--output_file', help='Path to output json file', default='exported_tweets.json')
-    parser.add_argument('-s', '--fetch_size', help='Num of rows per page. Can it be tuned for better performances', type=int, default=3000)
+    parser.add_argument('-s', '--fetch_size', help='Num of rows per page. Can it be tuned for better performances', type=int, default=5000)
     parser.add_argument('-p', '--split', help='Flag to split export in multiple files of <fetch_size> rows each', action='store_true', default=False)
     parser.add_argument('-z', '--gzip', help='Compress file', action='store_true', default=True)
     parser.add_argument('-T', '--timeout', help='Timeout for query (in seconds)', type=int, default=240)
