@@ -78,11 +78,13 @@ def main():
     query = Tweet.objects.filter(Tweet.collectionid == conf.collection_id, Tweet.ttype == conf.ttype)
     if conf.dates:
         from_date, to_date = conf.dates.split('-')
+        print('Exporting from', from_date, 'to', to_date)
         from_date = datetime.datetime.strptime(from_date, '%Y%m%d')
         to_date = datetime.datetime.strptime(to_date, '%Y%m%d')
+        print('Dates: ', from_date, to_date)
         query = query.filter(Tweet.created_at >= from_date, Tweet.created_at <= to_date)
 
-    query = query.limit(1000)
+    query = query.limit(conf.fetch_size)
 
     page = list(query)
     count = 0
@@ -90,8 +92,11 @@ def main():
         tweets = []
         for i, t in enumerate(page):
             tweets.append(serialize(t))
-        write_jsonl(conf, tweets)
+
         count += len(page)
+        filenum = int(count/conf.fetch_size) if conf.split else None
+        write_jsonl(conf, tweets, filenum)
+
         sys.stdout.write('\r')
         sys.stdout.write('Exported: %d' % count)
         sys.stdout.flush()
@@ -114,8 +119,12 @@ def main():
     print('End: ', datetime.datetime.now().strftime('%Y-%m-%d %H:%M'))
 
 
-def write_jsonl(conf, tweets):
-    with jsonlines.open(conf.output_file, mode='a') as writer:
+def write_jsonl(conf, tweets, filenum=None):
+    if not conf.split:
+        output_file = '{}.jsonl'.format(os.path.splitext(conf.output_file)[0])
+    else:
+        output_file = '{}.{}.jsonl'.format(os.path.splitext(conf.output_file)[0], filenum)
+    with jsonlines.open(output_file, mode='a') as writer:
         for t in tweets:
             t['tweet'] = ujson.loads(t['tweet'])
             writer.write(t)
