@@ -35,7 +35,7 @@ def add_args(parser):
     parser.add_argument('-o', '--output_file', help='Path to output json file', default='exported_tweets.json')
     parser.add_argument('-s', '--fetch_size', help='Num of rows per page. Can it be tuned for better performances', type=int, default=5000)
     parser.add_argument('-p', '--split', help='Flag to split export in multiple files of <fetch_size> rows each', action='store_true', default=False)
-    parser.add_argument('-z', '--gzip', help='Compress file', action='store_true', default=True)
+    parser.add_argument('-z', '--gzip', help='Compress file', action='store_true', default=False)
     parser.add_argument('-T', '--timeout', help='Timeout for query (in seconds)', type=int, default=240)
 
 
