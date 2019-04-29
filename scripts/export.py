@@ -42,7 +42,6 @@ def add_args(parser):
 def serialize(t):
     res = dict()
     for k, v in t._asdict().items():
-        # v = v.value
         if isinstance(v, (np.float32, np.float64, Decimal)):
             res[k] = float(v)
         elif isinstance(v, (np.int32, np.int64)):
@@ -119,7 +118,6 @@ def main():
     session = new_cassandra_session()
     session.row_factory = named_tuple_factory
 
-    # query = Tweet.objects.filter(Tweet.collectionid == conf.collection_id, Tweet.ttype == conf.ttype)
     query = 'SELECT * FROM smfr_persistent.tweet WHERE collectionid={} AND ttype=\'{}\''.format(conf.collection_id, conf.ttype)
 
     if conf.dates:

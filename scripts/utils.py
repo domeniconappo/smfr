@@ -1,15 +1,6 @@
 import configparser
 from itertools import chain
 import os
-import datetime
-from decimal import Decimal
-
-from cassandra.util import OrderedMapSerializedKey
-import numpy as np
-
-from smfrcore.models.cassandra import Tweet
-
-
 
 
 def import_env(env_file):

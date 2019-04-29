@@ -6,16 +6,13 @@ python scripts/geocode.py -c 450 -t geotagged
 python scripts/geocode.py -c 10 -t annotated -d 20180101-20181231
 """
 
-import os
 import sys
-import shutil
-import gzip
 import datetime
 
-import ujson
 from cassandra.connection import Event
 from cassandra.query import named_tuple_factory, SimpleStatement
 
+from smfrcore.geocoding import geocoder
 from smfrcore.models.cassandra import new_cassandra_session, Tweet
 from smfrcore.utils import ParserHelpOnError
 
@@ -79,7 +76,6 @@ def main():
     session = new_cassandra_session()
     session.row_factory = named_tuple_factory
 
-    # query = Tweet.objects.filter(Tweet.collectionid == conf.collection_id, Tweet.ttype == conf.ttype)
     query = 'SELECT * FROM smfr_persistent.tweet WHERE collectionid={} AND ttype=\'{}\''.format(conf.collection_id, conf.ttype)
 
     if conf.dates:
