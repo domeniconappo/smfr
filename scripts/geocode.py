@@ -19,8 +19,6 @@ from cassandra.query import named_tuple_factory, SimpleStatement
 from smfrcore.models.cassandra import new_cassandra_session, Tweet
 from smfrcore.utils import ParserHelpOnError
 
-from scripts.utils import serialize
-
 
 def add_args(parser):
     parser.add_argument('-c', '--collection_id', help='A TwitterCollection id.', type=int, required=True)
