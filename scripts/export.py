@@ -25,8 +25,6 @@ import numpy as np
 from smfrcore.models.cassandra import new_cassandra_session, Tweet
 from smfrcore.utils import ParserHelpOnError
 
-from scripts.utils import serialize
-
 
 def add_args(parser):
     parser.add_argument('-c', '--collection_id', help='A TwitterCollection id.', type=int, required=True)
@@ -39,37 +37,37 @@ def add_args(parser):
     parser.add_argument('-p', '--split', help='Flag to split export in multiple files of <fetch_size> rows each', action='store_true', default=False)
     parser.add_argument('-z', '--gzip', help='Compress file', action='store_true', default=False)
     parser.add_argument('-T', '--timeout', help='Timeout for query (in seconds)', type=int, default=240)
-#
-#
-# def serialize(t):
-#     res = dict()
-#     for k, v in t._asdict().items():
-#         # v = v.value
-#         if isinstance(v, (np.float32, np.float64, Decimal)):
-#             res[k] = float(v)
-#         elif isinstance(v, (np.int32, np.int64)):
-#             res[k] = int(v)
-#         elif isinstance(v, datetime.datetime):
-#             res[k] = v.isoformat()
-#         elif isinstance(v, tuple):
-#             res[k] = [float(i) if isinstance(i, (np.float32, np.float64, Decimal)) else i for i in v]
-#         elif isinstance(v, (dict, OrderedMapSerializedKey)):
-#             # cassandra Map column
-#             innerres = {}
-#             for inner_k, inner_v in v.items():
-#                 if isinstance(inner_v, tuple):
-#                     encoded_v = [float(i) if isinstance(i, (np.float32, np.float64, Decimal)) else i for i in inner_v]
-#                     try:
-#                         innerres[inner_k] = dict((encoded_v,))
-#                     except ValueError:
-#                         innerres[inner_k] = (encoded_v[0], encoded_v[1])
-#                 else:
-#                     innerres[inner_k] = inner_v
-#             res[k] = innerres
-#         else:
-#             res[k] = v
-#     res['full_text'] = Tweet.get_full_text(t)
-#     return res
+
+
+def serialize(t):
+    res = dict()
+    for k, v in t._asdict().items():
+        # v = v.value
+        if isinstance(v, (np.float32, np.float64, Decimal)):
+            res[k] = float(v)
+        elif isinstance(v, (np.int32, np.int64)):
+            res[k] = int(v)
+        elif isinstance(v, datetime.datetime):
+            res[k] = v.isoformat()
+        elif isinstance(v, tuple):
+            res[k] = [float(i) if isinstance(i, (np.float32, np.float64, Decimal)) else i for i in v]
+        elif isinstance(v, (dict, OrderedMapSerializedKey)):
+            # cassandra Map column
+            innerres = {}
+            for inner_k, inner_v in v.items():
+                if isinstance(inner_v, tuple):
+                    encoded_v = [float(i) if isinstance(i, (np.float32, np.float64, Decimal)) else i for i in inner_v]
+                    try:
+                        innerres[inner_k] = dict((encoded_v,))
+                    except ValueError:
+                        innerres[inner_k] = (encoded_v[0], encoded_v[1])
+                else:
+                    innerres[inner_k] = inner_v
+            res[k] = innerres
+        else:
+            res[k] = v
+    res['full_text'] = Tweet.get_full_text(t)
+    return res
 
 
 class PagedResultHandler:
