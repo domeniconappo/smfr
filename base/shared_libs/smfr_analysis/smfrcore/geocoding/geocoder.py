@@ -61,13 +61,14 @@ class Geocoder:
                 break
 
         for result in res:
-            if 'lat' not in result.get('geo', {}):
+            geo = result.get('geo', {})
+            if not geo or 'lat' not in geo or geo.get('feature_code', '') == 'ADM1':
                 continue
-            mentions_list.append((float(result['geo']['lat']),
-                                  float(result['geo']['lon']),
-                                  result['geo'].get('country_code3', ''),
-                                  result['geo'].get('place_name', ''),
-                                  result['geo'].get('geonameid', '')))
+            mentions_list.append((float(geo['lat']),
+                                  float(geo['lon']),
+                                  geo.get('country_code3', ''),
+                                  geo.get('place_name', ''),
+                                  geo.get('geonameid', '')))
         return mentions_list
 
     def find_nuts_heuristic(self, tweet, efas_id=None):

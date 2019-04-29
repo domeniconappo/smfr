@@ -53,8 +53,8 @@ def new_cassandra_session():
             cassandra_session.row_factory = named_tuple_factory
             cassandra_default_connection = Connection.from_session(DEFAULT_CONNECTION, session=cassandra_session)
             _connections[DEFAULT_CONNECTION] = cassandra_default_connection
-        except NoHostAvailable:
-            logger.warning('Cassandra host not available yet...sleeping 10 secs')
+        except NoHostAvailable as e:
+            logger.warning('Cassandra host not available yet...sleeping 10 secs: %s', str(e))
             retries -= 1
             time.sleep(10)
         except Exception:
