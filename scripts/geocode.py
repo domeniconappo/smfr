@@ -14,6 +14,7 @@ from cassandra.query import named_tuple_factory, SimpleStatement
 
 from smfrcore.geocoding.geocoder import Geocoder
 from smfrcore.models.cassandra import new_cassandra_session, Tweet
+from smfrcore.models.sql import create_app
 from smfrcore.utils import ParserHelpOnError
 
 
@@ -104,4 +105,6 @@ def main():
 
 
 if __name__ == '__main__':
-    sys.exit(main())
+    app = create_app()
+    with app.app_context():
+        sys.exit(main())
