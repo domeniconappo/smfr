@@ -102,6 +102,7 @@ def main():
     handler = PagedResultHandler(future, conf)
     handler.finished_event.wait()
     if handler.error:
+        print(str(handler.error))
         raise handler.error
 
     if not handler.count:

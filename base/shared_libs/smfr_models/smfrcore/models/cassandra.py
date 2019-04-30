@@ -14,6 +14,7 @@ import ujson as json
 from cachetools import TTLCache
 from cassandra.cluster import Cluster, default_lbp_factory, NoHostAvailable
 from cassandra.cqlengine.connection import Connection, DEFAULT_CONNECTION, _connections
+from cassandra.io.asyncorereactor import AsyncoreConnection
 from cassandra.query import named_tuple_factory, PreparedStatement
 from cassandra.auth import PlainTextAuthProvider
 from cassandra.util import OrderedMapSerializedKey
@@ -45,7 +46,7 @@ def new_cassandra_session():
     while retries >= 0:
         try:
             cluster_kwargs = {'compression': True, 'load_balancing_policy': default_lbp_factory(), 'connect_timeout': 60, 'executor_threads': 5,
-                              'control_connection_timeout': 10.0,
+                              'control_connection_timeout': 10.0, 'connection_class': AsyncoreConnection,
                               'auth_provider': PlainTextAuthProvider(username=_cassandra_user, password=_cassandra_password)}
             cassandra_cluster = Cluster(_hosts, port=_port, **cluster_kwargs) if IN_DOCKER else Cluster(**cluster_kwargs)
             cassandra_session = cassandra_cluster.connect()
@@ -54,12 +55,10 @@ def new_cassandra_session():
             cassandra_session.row_factory = named_tuple_factory
             cassandra_default_connection = Connection.from_session(DEFAULT_CONNECTION, session=cassandra_session)
             _connections[DEFAULT_CONNECTION] = cassandra_default_connection
-        except NoHostAvailable as e:
+        except (NoHostAvailable, Exception) as e:
             logger.warning('Cassandra host not available yet...sleeping 10 secs: %s', str(e))
             retries -= 1
             time.sleep(10)
-        except Exception:
-            retries = -1
         else:
             return cassandra_session
 
