@@ -18,6 +18,10 @@ from smfrcore.models.sql import create_app
 from smfrcore.utils import ParserHelpOnError
 
 
+app = create_app()
+app.app_context().push()
+
+
 def add_args(parser):
     parser.add_argument('-c', '--collection_id', help='A TwitterCollection id.', type=int, required=True)
     parser.add_argument('-t', '--ttype', help='Which type of stored tweets to export',
@@ -105,6 +109,6 @@ def main():
 
 
 if __name__ == '__main__':
-    app = create_app()
-    with app.app_context():
-        sys.exit(main())
+    res = main()
+    # app.app_context().pop()
+    sys.exit(res)
