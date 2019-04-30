@@ -15,7 +15,7 @@ from cassandra.query import named_tuple_factory, SimpleStatement
 # from cassandra.cqlengine.connection import DEFAULT_CONNECTION, _connections
 
 from smfrcore.geocoding.geocoder import Geocoder
-from smfrcore.models.cassandra import new_cassandra_session, Tweet
+
 from smfrcore.models.sql import create_app
 from smfrcore.utils import ParserHelpOnError
 
@@ -26,7 +26,7 @@ def add_args(parser):
                         choices=["annotated", "collected", "geotagged"],
                         metavar='tweet_type', required=True)
     parser.add_argument('-d', '--dates', help='Time window defined as YYYYMMDD-YYYYMMDD')
-    parser.add_argument('-s', '--fetch_size', help='Num of rows per page. Can it be tuned for better performances', type=int, default=5000)
+    parser.add_argument('-s', '--fetch_size', help='Num of rows per page. Can be tuned for better performances', type=int, default=5000)
     parser.add_argument('-T', '--timeout', help='Timeout for query (in seconds)', type=int, default=240)
 
 
@@ -45,8 +45,9 @@ class PagedResultHandler:
 
     def handle_page(self, page):
         app = create_app()
-        Tweet.session = new_cassandra_session()
         print('------------------------  NEW PAGE ------------------------------------')
+        from smfrcore.models.cassandra import new_cassandra_session, Tweet
+        Tweet.session = new_cassandra_session()
         with app.app_context():
             # b = BatchQuery()
             for t in page:
@@ -82,7 +83,7 @@ def main():
     add_args(parser)
     conf = parser.parse_args()
     # force output file extension to be coherent with the output format
-
+    from smfrcore.models.cassandra import new_cassandra_session
     session = new_cassandra_session()
     session.row_factory = named_tuple_factory
 
