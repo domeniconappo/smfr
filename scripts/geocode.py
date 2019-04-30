@@ -10,14 +10,14 @@ import sys
 import datetime
 
 from cassandra.connection import Event
-from cassandra.cqlengine.query import BatchQuery
+# from cassandra.cqlengine.query import BatchQuery
 from cassandra.query import named_tuple_factory, SimpleStatement
+# from cassandra.cqlengine.connection import DEFAULT_CONNECTION, _connections
 
 from smfrcore.geocoding.geocoder import Geocoder
 from smfrcore.models.cassandra import new_cassandra_session, Tweet
 from smfrcore.models.sql import create_app
 from smfrcore.utils import ParserHelpOnError
-
 
 
 def add_args(parser):
@@ -45,23 +45,25 @@ class PagedResultHandler:
 
     def handle_page(self, page):
         app = create_app()
+        Tweet.session = new_cassandra_session()
+        print('------------------------  NEW PAGE ------------------------------------')
         with app.app_context():
-            b = BatchQuery()
+            # b = BatchQuery()
             for t in page:
                 tweet = Tweet.to_obj(t)
                 coordinates, nuts2, nuts_source, country_code, place, geonameid = self.geocoder.find_nuts_heuristic(tweet)
                 if not coordinates:
                     continue
                 tweet.set_geo(coordinates, nuts2, nuts_source, country_code, place, geonameid)
-                tweet.batch(b).save()
-                # tweet.save()
-            b.execute()
+                # tweet.batch(b).save()
+                tweet.save()
+            # b.execute()
 
         self.count += len(page)
         sys.stdout.write('\r')
         sys.stdout.write('                                                                                      ')
         sys.stdout.write('\r')
-        sys.stdout.write('Geocoded so far: %d' % self.count)
+        sys.stdout.write('Geocoded so far: %d \n\n' % self.count)
         sys.stdout.flush()
 
         if self.future.has_more_pages:
@@ -112,5 +114,4 @@ def main():
 
 if __name__ == '__main__':
     res = main()
-    # app.app_context().pop()
     sys.exit(res)
