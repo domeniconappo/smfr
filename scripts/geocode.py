@@ -10,6 +10,7 @@ import sys
 import datetime
 
 from cassandra.connection import Event
+from cassandra.cqlengine.query import BatchQuery
 from cassandra.query import named_tuple_factory, SimpleStatement
 
 from smfrcore.geocoding.geocoder import Geocoder
@@ -17,9 +18,6 @@ from smfrcore.models.cassandra import new_cassandra_session, Tweet
 from smfrcore.models.sql import create_app
 from smfrcore.utils import ParserHelpOnError
 
-
-app = create_app()
-app.app_context().push()
 
 
 def add_args(parser):
@@ -46,14 +44,18 @@ class PagedResultHandler:
             errback=self.handle_error)
 
     def handle_page(self, page):
-
-        for t in page:
-            tweet = Tweet.to_obj(t)
-            coordinates, nuts2, nuts_source, country_code, place, geonameid = self.geocoder.find_nuts_heuristic(tweet)
-            if not coordinates:
-                continue
-            tweet.set_geo(coordinates, nuts2, nuts_source, country_code, place, geonameid)
-            tweet.save()
+        app = create_app()
+        with app.app_context():
+            b = BatchQuery()
+            for t in page:
+                tweet = Tweet.to_obj(t)
+                coordinates, nuts2, nuts_source, country_code, place, geonameid = self.geocoder.find_nuts_heuristic(tweet)
+                if not coordinates:
+                    continue
+                tweet.set_geo(coordinates, nuts2, nuts_source, country_code, place, geonameid)
+                tweet.batch(b).save()
+                # tweet.save()
+            b.execute()
 
         self.count += len(page)
         sys.stdout.write('\r')
