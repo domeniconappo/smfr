@@ -12,7 +12,7 @@ import datetime
 from cassandra.connection import Event
 from cassandra.query import named_tuple_factory, SimpleStatement
 
-from smfrcore.geocoding import geocoder
+from smfrcore.geocoding.geocoder import Geocoder
 from smfrcore.models.cassandra import new_cassandra_session, Tweet
 from smfrcore.utils import ParserHelpOnError
 
@@ -35,6 +35,7 @@ class PagedResultHandler:
         self.conf = conf
         self.finished_event = Event()
         self.future = fut
+        self.geocoder = Geocoder()
         self.future.add_callbacks(
             callback=self.handle_page,
             errback=self.handle_error)
@@ -43,7 +44,7 @@ class PagedResultHandler:
 
         for t in page:
             tweet = Tweet.to_obj(t)
-            coordinates, nuts2, nuts_source, country_code, place, geonameid = geocoder.find_nuts_heuristic(tweet)
+            coordinates, nuts2, nuts_source, country_code, place, geonameid = self.geocoder.find_nuts_heuristic(tweet)
             if not coordinates:
                 continue
             tweet.set_geo(coordinates, nuts2, nuts_source, country_code, place, geonameid)
@@ -84,7 +85,6 @@ def main():
         from_date = datetime.datetime.strptime(from_date, '%Y%m%d')
         to_date = datetime.datetime.strptime(to_date, '%Y%m%d')
         print('Dates: ', from_date, to_date)
-        # query = query.filter(Tweet.created_at >= from_date, Tweet.created_at <= to_date)
         query = '{} AND created_at>=\'{}\' AND created_at<=\'{}\''.format(query, from_date.strftime('%Y-%m-%d'), to_date.strftime('%Y-%m-%d'))
 
     statement = SimpleStatement(query, fetch_size=conf.fetch_size)
