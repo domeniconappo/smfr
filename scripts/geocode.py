@@ -11,6 +11,8 @@ import datetime
 
 from cassandra.connection import Event
 # from cassandra.cqlengine.query import BatchQuery
+from smfrcore.models.cassandra import Tweet
+# from cassandra.cqlengine.query import BatchQuery
 from cassandra.query import named_tuple_factory, SimpleStatement
 # from cassandra.cqlengine.connection import DEFAULT_CONNECTION, _connections
 
@@ -18,6 +20,7 @@ from smfrcore.geocoding.geocoder import Geocoder
 
 from smfrcore.models.sql import create_app
 from smfrcore.utils import ParserHelpOnError
+from smfrcore.utils.kafka import send_to_persister, make_kafka_producer
 
 
 def add_args(parser):
@@ -46,8 +49,9 @@ class PagedResultHandler:
     def handle_page(self, page):
         app = create_app()
         print('------------------------  NEW PAGE ------------------------------------')
-        from smfrcore.models.cassandra import new_cassandra_session, Tweet
-        Tweet.session = new_cassandra_session()
+
+        # Tweet.session = new_cassandra_session()
+        producer = make_kafka_producer()
         with app.app_context():
             # b = BatchQuery()
             for t in page:
@@ -56,8 +60,9 @@ class PagedResultHandler:
                 if not coordinates:
                     continue
                 tweet.set_geo(coordinates, nuts2, nuts_source, country_code, place, geonameid)
+                send_to_persister(producer, tweet)
                 # tweet.batch(b).save()
-                tweet.save()
+                # tweet.save()
             # b.execute()
 
         self.count += len(page)
