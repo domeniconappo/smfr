@@ -57,8 +57,8 @@ def add_collection(payload):
                 payload['bounding_box'] = nuts2.bbox
             logger.debug('payload %s', payload)
 
-        if not efas_id and (payload['trigger'] in ('manual', 'on-demand') and not (payload.get('bounding_box') or payload.get('locations'))):
-            raise SMFRRestException('Manual and ondemand collections needs a proper EFAS ID/NUTS2 code. Otherwise, provide bounding box', 400)
+        if payload['trigger'] == 'on-demand' and not (payload.get('bounding_box') or payload.get('locations') or efas_id):
+            raise SMFRRestException('Ondemand collections needs a proper EFAS ID/NUTS2 code. Otherwise, provide bounding box', 400)
 
     try:
         collection = add_collection_helper(**payload)

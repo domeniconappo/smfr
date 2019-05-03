@@ -6,18 +6,15 @@ python scripts/geocode.py -c 450 -t geotagged
 python scripts/geocode.py -c 10 -t annotated -d 20180101-20181231
 """
 
+import os
 import sys
 import datetime
 
 from cassandra.connection import Event
-# from cassandra.cqlengine.query import BatchQuery
-from smfrcore.models.cassandra import Tweet
-# from cassandra.cqlengine.query import BatchQuery
 from cassandra.query import named_tuple_factory, SimpleStatement
-# from cassandra.cqlengine.connection import DEFAULT_CONNECTION, _connections
 
+from smfrcore.models.cassandra import Tweet
 from smfrcore.geocoding.geocoder import Geocoder
-
 from smfrcore.models.sql import create_app
 from smfrcore.utils import ParserHelpOnError
 from smfrcore.utils.kafka import send_to_persister, make_kafka_producer
@@ -51,7 +48,7 @@ class PagedResultHandler:
         print('------------------------  NEW PAGE ------------------------------------')
 
         # Tweet.session = new_cassandra_session()
-        producer = make_kafka_producer()
+        producer = make_kafka_producer(os.getenv('KAFKA_BOOTSTRAP_SERVERS').split(','))
         with app.app_context():
             # b = BatchQuery()
             for t in page:
