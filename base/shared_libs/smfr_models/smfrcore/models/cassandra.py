@@ -41,11 +41,10 @@ flask_app = create_app()
 
 
 def new_cassandra_session():
-    retries = 3
+    retries = 5
     while retries >= 0:
         try:
-            cluster_kwargs = {'compression': True, 'load_balancing_policy': default_lbp_factory(), 'connect_timeout': 60, 'executor_threads': 5,
-                              'control_connection_timeout': 10.0,
+            cluster_kwargs = {'compression': True, 'load_balancing_policy': default_lbp_factory(),
                               'auth_provider': PlainTextAuthProvider(username=_cassandra_user, password=_cassandra_password)}
             cassandra_cluster = Cluster(_hosts, port=_port, **cluster_kwargs) if IN_DOCKER else Cluster(**cluster_kwargs)
             cassandra_session = cassandra_cluster.connect()

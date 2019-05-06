@@ -126,12 +126,14 @@ class Persister:
                                 continue  # continue the consumer loop without saving tweet
                             tweet.collectionid = collection.id
 
+                        if logger.isEnabledFor(logging.DEBUG):
+                            logger.debug('***** Gonna save in cassandra %s %s', trigger, tweet.tweetid)
                         tweet.save()
-                        collection = tweet.collection
-                        trigger_key = collection.trigger.code
-
                         if logger.isEnabledFor(logging.DEBUG):
                             logger.debug('Saved tweet: %s - collection %d', tweet.tweetid, tweet.collectionid)
+
+                        collection = tweet.collection
+                        trigger_key = collection.trigger.code
 
                         with self._lock:
                             self.shared_counter['{}-{}'.format(trigger_key, tweet.ttype)] += 1
