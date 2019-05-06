@@ -10,6 +10,7 @@ from cassandra import InvalidRequest
 from cassandra.cqlengine import ValidationError, CQLEngineException
 from kafka.errors import CommitFailedError, KafkaTimeoutError
 
+from smfrcore.models.cassandra import Tweet
 from smfrcore.models.sql import TwitterCollection, create_app
 from smfrcore.utils import IN_DOCKER, NULL_HANDLER, DEFAULT_HANDLER, DefaultDictSyncManager
 from smfrcore.utils.kafka import make_kafka_consumer, make_kafka_producer
@@ -94,7 +95,7 @@ class Persister:
         """
         Main method that iterate over messages coming from Kafka queue, build a Tweet object and save it in Cassandra
         """
-        from smfrcore.models.cassandra import Tweet
+        # from smfrcore.models.cassandra import Tweet
         logger.info('Starting %s...Reset counters and making kafka connections', str(self))
         producer = make_kafka_producer()
         consumer = make_kafka_consumer(topic=self.topic)

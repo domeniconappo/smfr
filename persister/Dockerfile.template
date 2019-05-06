@@ -8,7 +8,7 @@ ENV https_proxy ${https_proxy}
 ENV LANG C.UTF-8
 
 RUN mkdir -p /persister && mkdir -p /requirements && mkdir -p /logs \
- && mkdir -p /persister/smfrcore && mkdir -p /config && mkdir -p /scripts
+ && mkdir -p /config && mkdir -p /scripts
 
 COPY base/shared_libs/scripts/wait_for_it.sh /scripts/
 COPY base/shared_libs/smfr_utils/. /smfr_libs/utils/

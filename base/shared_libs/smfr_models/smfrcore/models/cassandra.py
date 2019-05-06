@@ -44,7 +44,9 @@ def new_cassandra_session():
     retries = 5
     while retries >= 0:
         try:
-            cluster_kwargs = {'compression': True, 'load_balancing_policy': default_lbp_factory(),
+            cluster_kwargs = {'compression': True,
+                              'load_balancing_policy': default_lbp_factory(),
+                              'executor_threads': 1,
                               'auth_provider': PlainTextAuthProvider(username=_cassandra_user, password=_cassandra_password)}
             cassandra_cluster = Cluster(_hosts, port=_port, **cluster_kwargs) if IN_DOCKER else Cluster(**cluster_kwargs)
             cassandra_session = cassandra_cluster.connect()
