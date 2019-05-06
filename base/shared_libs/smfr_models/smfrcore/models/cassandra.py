@@ -156,7 +156,8 @@ class Tweet(cqldb.Model, CassandraHelpers):
     """
     A class representing the `tweet` column family in Cassandra
     """
-    session = new_cassandra_session()
+    # session = new_cassandra_session()
+    session = None
     __keyspace__ = _keyspace
 
     ANNOTATED_TYPE = 'annotated'

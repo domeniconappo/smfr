@@ -10,11 +10,12 @@ from cassandra import InvalidRequest
 from cassandra.cqlengine import ValidationError, CQLEngineException
 from kafka.errors import CommitFailedError, KafkaTimeoutError
 
-from smfrcore.models.cassandra import Tweet
+from smfrcore.models.cassandra import Tweet, new_cassandra_session
 from smfrcore.models.sql import TwitterCollection, create_app
 from smfrcore.utils import IN_DOCKER, NULL_HANDLER, DEFAULT_HANDLER, DefaultDictSyncManager
 from smfrcore.utils.kafka import make_kafka_consumer, make_kafka_producer
 from smfrcore.client.api_client import AnnotatorClient
+
 
 logging.getLogger('kafka').setLevel(logging.WARNING)
 logging.getLogger('urllib3').setLevel(logging.WARNING)
@@ -97,6 +98,7 @@ class Persister:
         """
         # from smfrcore.models.cassandra import Tweet
         logger.info('Starting %s...Reset counters and making kafka connections', str(self))
+        Tweet.session = new_cassandra_session()
         producer = make_kafka_producer()
         consumer = make_kafka_consumer(topic=self.topic)
 
@@ -169,7 +171,7 @@ class Persister:
             producer.close(30)
 
     def send_to_pipeline(self, producer, tweet):
-        from smfrcore.models.cassandra import Tweet
+        # from smfrcore.models.cassandra import Tweet
         if not tweet.use_pipeline or tweet.ttype == Tweet.GEOTAGGED_TYPE:
             return
         topic = None

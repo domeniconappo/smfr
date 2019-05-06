@@ -39,4 +39,5 @@ docker-compose -f ${DIR}/../docker-compose.yaml -f ${DIR}/../docker-compose.dbs.
 # cleaning volumes from docker compose configuration
 python3 ${DIR}/compose4deploy.py -i ${DIR}/../docker-compose-parsed.yaml -o ${DIR}/../docker-compose-4deploy.yaml
 
-docker stack deploy --with-registry-auth -c ${DIR}/../docker-compose-4deploy.yaml SMFR -c ${DIR}/../docker-compose.swarm.yaml -c ${DIR}/../docker-compose.dbs.swarm.yaml
+# deploy SMFR stack
+docker stack deploy --with-registry-auth -c ${DIR}/../docker-compose-4deploy.yaml -c ${DIR}/../docker-compose.swarm.yaml -c ${DIR}/../docker-compose.dbs.swarm.yaml SMFR
