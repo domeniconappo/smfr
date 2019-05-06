@@ -6,7 +6,7 @@ import time
 import multiprocessing
 
 import ujson as json
-from cassandra import InvalidRequest
+from cassandra import InvalidRequest, WriteTimeout
 from cassandra.cqlengine import ValidationError, CQLEngineException
 from kafka.errors import CommitFailedError, KafkaTimeoutError
 
@@ -96,7 +96,6 @@ class Persister:
         """
         Main method that iterate over messages coming from Kafka queue, build a Tweet object and save it in Cassandra
         """
-        # from smfrcore.models.cassandra import Tweet
         logger.info('Starting %s...Reset counters and making kafka connections', str(self))
         Tweet.session = new_cassandra_session()
         producer = make_kafka_producer()
@@ -148,7 +147,7 @@ class Persister:
                     except (ValidationError, ValueError, TypeError, InvalidRequest) as e:
                         logger.error(e)
                         logger.error('Poison message for Cassandra: %s', tweet or msg)
-                    except CQLEngineException as e:
+                    except (CQLEngineException, WriteTimeout) as e:
                         logger.error(e)
             except KafkaTimeoutError:
                 logger.warning('Consumer Timeout...sleep 5 seconds')
@@ -171,7 +170,6 @@ class Persister:
             producer.close(30)
 
     def send_to_pipeline(self, producer, tweet):
-        # from smfrcore.models.cassandra import Tweet
         if not tweet.use_pipeline or tweet.ttype == Tweet.GEOTAGGED_TYPE:
             return
         topic = None
