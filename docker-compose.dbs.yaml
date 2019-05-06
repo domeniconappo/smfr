@@ -8,7 +8,10 @@ services:
     container_name: zookeeper
     hostname: zookeeper
     ports:
-      - '2181:2181'
+      - target: 2181
+        published: 2181
+        protocol: tcp
+        mode: host
     networks:
       - back-tier
 
@@ -33,6 +36,11 @@ services:
         published: 9094
         protocol: tcp
         mode: host
+      - target: 9092
+        published: 9092
+        protocol: tcp
+        mode: host
+
     networks:
       - back-tier
     depends_on:
