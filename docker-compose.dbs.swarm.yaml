@@ -9,7 +9,7 @@ services:
         max_attempts: 3
         window: 120s
       placement:
-        constraints: [ node.labels.huge == true ]
+        constraints: [ node.labels.large == true ]
 
   kafka:
     deploy:
@@ -18,7 +18,7 @@ services:
         max_attempts: 5
         window: 240s
       placement:
-        constraints: [ node.labels.huge == true ]
+        constraints: [ node.labels.large == true ]
 
   cassandrasmfr:
     deploy:
