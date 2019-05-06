@@ -109,15 +109,21 @@ class Persister:
                         msg = json.loads(msg)
                         trigger = msg.pop('trigger', TwitterCollection.TRIGGER_ONDEMAND)
                         tweet = Tweet.from_json(msg)
+
+                        if logger.isEnabledFor(logging.DEBUG):
+                            logger.debug('***** Fetched message from persister queue %s %s', trigger, tweet.tweetid)
+
                         if tweet.collectionid == Tweet.NO_COLLECTION_ID:
                             # reconcile with running collections
                             # trigger should be either 'manual' or 'on-demand'
                             collection = self.reconcile_tweet_with_collection(tweet, trigger)
                             if not collection:
+                                if logger.isEnabledFor(logging.DEBUG):
+                                    logger.debug('***** Not reconciled %s %s', trigger, tweet.tweetid)
                                 with self._lock:
                                     self.shared_counter['not-reconciled'] += 1
                                 file_logger.error('%s', msg)
-                                continue  # continue the consumer loop
+                                continue  # continue the consumer loop without saving tweet
                             tweet.collectionid = collection.id
 
                         tweet.save()
