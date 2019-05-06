@@ -31,7 +31,7 @@ def make_kafka_consumer(topic, kafka_servers=None):
             logger.info('Consumer %s-> Trying to connect to %s', topic, str(kafka_servers))
             consumer = KafkaConsumer(
                 topic, check_crcs=False,
-                group_id=topic,
+                # group_id=topic,
                 auto_offset_reset='earliest',
                 max_poll_records=300, max_poll_interval_ms=1000000,
                 bootstrap_servers=kafka_servers,

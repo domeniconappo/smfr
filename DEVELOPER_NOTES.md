@@ -2,12 +2,20 @@
 
 ## Manage DB migrations
 
-Whenever you add new SQLAlchemy models (or add new fields to existing models), you have to create migrations:
+Whenever you add new SQLAlchemy models (or add new fields to existing models), you have to create migrations and push them to repository:
 
 ```bash
-$ flask db migrate
-$ git commit -am"added migrations"
-$ git push origin <my_branch>
+$ alembic -c base/shared_libs/smfr_models/smfrcore/models/sql/migrations/alembic.ini revision --autogenerate -m "create new field or table"
+$ git add base/shared_libs/smfr_models/smfrcore/models/sql/migrations/versions/*
+$ git commit -am"new migrations added"
+$ git push origin <branch_name>
+```
+
+On production server, execute this alembic command to upgrade database.
+
+```bash
+$ cd base/shared_libs/smfr_models/smfrcore/models/sql/migrations/
+$ alembic -c alembic.ini  upgrade head
 ```
 
 ## Generate Marshmallow schemas from smfr.yaml Swagger definitions using a Marshmallow custom driver
