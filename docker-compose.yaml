@@ -371,9 +371,6 @@ services:
       - back-tier
     volumes:
       - './restserver/src:/restserver'
-      - './downloads:/smfr/downloaded'
-      - './restserver/logs:/logs'
-      - '${FLOOD_KEYWORDS_PATH}:/configuration/flood_keywords.yaml'
     depends_on:
       - mysql
       - kafka

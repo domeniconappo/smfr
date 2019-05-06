@@ -72,7 +72,6 @@ class RestServerConfiguration(metaclass=Singleton):
     persister_kafka_topic = os.getenv('PERSISTER_KAFKA_TOPIC', 'persister')
 
     debug = not UNDER_TESTS and os.getenv('DEVELOPMENT', True)
-    not_reconciled_log_path = os.path.join(os.path.dirname(__file__), '../../logs/not_reconciled_tweets.log') if not IN_DOCKER else '/logs/not_reconciled_tweets.log'
 
     logger_level = logging.ERROR if UNDER_TESTS else logging.getLevelName(os.getenv('LOGGING_LEVEL', 'DEBUG').upper())
     logger = logging.getLogger('RestServer config')
