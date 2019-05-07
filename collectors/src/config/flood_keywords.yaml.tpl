@@ -106,3 +106,31 @@ fr:
   - météo vigilance
   - vigilance submersion
   - vigilance vagues
+pt:
+  - inundado
+  - inundação
+  - inundações
+  - tempestade
+  - tromba d'água
+  - alagamento
+  - enxurrada
+  - enxurradas
+  - extravasamento
+  - chuva forte
+  - chuvas torrenciais
+  - alagado
+  - alagada
+  - aluvião
+  - aluviões
+  - cheia no rio
+  - rio transbordou
+  - transbordamento
+  - transbordar
+  - dilúvio
+  - enchente
+  - bomba de agua
+  - extrema chuva
+  - muita chuva
+  - barragem quebrada
+  - nível de água
+  - drenagem urbana
