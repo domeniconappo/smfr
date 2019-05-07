@@ -241,7 +241,7 @@ class BackgroundStreamer(BaseStreamer):
     def _get_collections(self):
         collection = TwitterCollection.get_active_background()
         if not collection:
-            return
+            return []
         return [collection]
 
     def connect(self, collections):
@@ -269,7 +269,7 @@ class OnDemandStreamer(BaseStreamer):
 
     def _get_collections(self):
         collections = TwitterCollection.get_active_ondemand()
-        return collections
+        return collections or []
 
     def on_success(self, data):
 
@@ -291,7 +291,7 @@ class ManualStreamer(OnDemandStreamer):
 
     def _get_collections(self):
         collections = TwitterCollection.get_active_manual()
-        return collections
+        return collections or []
 
     def use_pipeline(self, collection):
         return collection.is_using_pipeline
