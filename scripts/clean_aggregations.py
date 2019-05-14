@@ -10,8 +10,7 @@ python scripts/clean_aggregations.py --all
 import sys
 
 from smfrcore.models.sql import TwitterCollection, Aggregation, create_app
-
-from scripts.utils import ParserHelpOnError
+from smfrcore.utils import ParserHelpOnError
 
 
 def add_args(parser):
