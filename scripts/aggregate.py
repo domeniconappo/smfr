@@ -2,7 +2,7 @@ import sys
 
 from smfrcore.models.sql import create_app, Aggregation, TwitterCollection
 
-from scripts.utils import ParserHelpOnError
+from smfrcore.utils import ParserHelpOnError
 from aggregator.src.aggregator import run_single_aggregation
 
 

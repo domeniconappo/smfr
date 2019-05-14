@@ -115,6 +115,8 @@ def aggregate(running_conf=None):
 def find_collections_to_aggregate(running_conf):
     if running_conf.running:
         collections_to_aggregate = TwitterCollection.get_active()
+        # remove background collection from aggregation when running_conf is --running
+        collections_to_aggregate = [c for c in collections_to_aggregate if c.trigger != TwitterCollection.TRIGGER_BACKGROUND]
     elif running_conf.all:
         collections_to_aggregate = TwitterCollection.query.all()
     elif running_conf.background:
