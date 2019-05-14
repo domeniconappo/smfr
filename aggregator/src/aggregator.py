@@ -178,6 +178,8 @@ def run_single_aggregation(collection_id,
 
     logger.info(' >>>>>>>>>>>> Starting aggregation - %d' % collection_id)
     with flask_app.app_context():
+        collection = TwitterCollection.get_collection(collection_id)
+        aggregation = collection.aggregation
         if not aggregation:
             aggregation = Aggregation.query.filter_by(collection_id=collection_id).first()
 
@@ -197,7 +199,6 @@ def run_single_aggregation(collection_id,
         counter = Counter(initial_values)
         trends = Counter(initial_trends)
         running_aggregators.add(collection_id)
-        collection = aggregation.collection
         try:
             logger.info('[+] Counting collected for %d', collection_id)
             collected_tweets = Tweet.get_iterator(collection_id, Tweet.COLLECTED_TYPE, last_tweetid=last_tweetid_collected)
