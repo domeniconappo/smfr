@@ -36,6 +36,10 @@ en:
   - river overflow
   - rain overflow
   - water overflow
+  - strong storm
+  - tsunami
+  - storm tide
+  - storm surge
 es:
   - inundación
   - inundacion
@@ -134,3 +138,4 @@ pt:
   - barragem quebrada
   - nível de água
   - drenagem urbana
+ar: ['نظام الصرف', 'تصريف المياه', 'الامطار الغزيرة', 'فيضان', 'مغمور بالماء', 'الفيضانات', 'مطر غزير', 'غمر', 'فيضان المطر', 'فيضان النهر', 'تجاوز الصرف الصحي', 'تدفق المياه', 'مثقل بالما', 'العواصف', 'تسونامي', 'عاصفة المد', 'عاصفة قوية']
