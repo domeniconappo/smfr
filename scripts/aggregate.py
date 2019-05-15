@@ -38,7 +38,7 @@ def perform_aggregation(collection_id):
                            aggregation.last_tweetid_collected, aggregation.last_tweetid_annotated, aggregation.last_tweetid_geotagged,
                            aggregation.timestamp_start, aggregation.timestamp_end,
                            aggregation.values, aggregation.relevant_tweets, aggregation.trends,
-                           aggregation)
+                           )
 
 
 def do():
@@ -62,5 +62,5 @@ def do():
 
 
 if __name__ == '__main__':
-    import_env('../.env')
+    import_env('.env')
     sys.exit(do())

@@ -28,8 +28,8 @@ running_aggregators = set()
 
 
 class MostRelevantTweets:
-    min_relevant_probability = int(os.getenv('MIN_RELEVANT_FLOOD_PROBABILITY', 90)) / 100
-    max_size = int(os.getenv('NUM_RELEVANT_TWEETS_AGGREGATED', 300))
+    min_relevant_probability = int(os.getenv('MIN_RELEVANT_FLOOD_PROBABILITY', 80)) / 100
+    max_size = int(os.getenv('NUM_RELEVANT_TWEETS_AGGREGATED', 500))
 
     @classmethod
     def _sortkey(cls, t):
@@ -104,7 +104,7 @@ def aggregate(running_conf=None):
                  aggregation.values,
                  aggregation.relevant_tweets,
                  aggregation.trends,
-                 aggregation)
+                 )
             )
 
         # cpu_count() - 1 aggregation threads running at same time
@@ -156,7 +156,7 @@ def run_single_aggregation(collection_id,
                            last_tweetid_collected, last_tweetid_annotated, last_tweetid_geotagged,
                            timestamp_start, timestamp_end,
                            initial_values, initial_relevant_tweets, initial_trends,
-                           aggregation=None):
+                           ):
     """
     Calculate current stats for a collection
 
@@ -169,7 +169,6 @@ def run_single_aggregation(collection_id,
     :param initial_values: counters dictionary from last execution
     :param initial_relevant_tweets: relevant tweets from last execution
     :param initial_trends:
-    :param aggregation: Aggregation object
     :return:
     """
     from smfrcore.models.cassandra import Tweet
