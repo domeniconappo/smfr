@@ -4,6 +4,7 @@ from smfrcore.models.sql import create_app, Aggregation, TwitterCollection
 
 from smfrcore.utils import ParserHelpOnError
 from aggregator.src.aggregator import run_single_aggregation
+from scripts.utils import import_env
 
 
 def add_args(parser):
@@ -61,4 +62,5 @@ def do():
 
 
 if __name__ == '__main__':
+    import_env('../.env')
     sys.exit(do())

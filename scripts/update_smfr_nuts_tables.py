@@ -4,7 +4,7 @@ import tarfile
 import glob
 import json
 
-from smfrcore.models.cassandra import Nuts2, Nuts3, create_app, sqldb
+from smfrcore.models.sql import Nuts2, Nuts3, create_app, sqldb
 from sqlalchemy.orm import Session
 
 

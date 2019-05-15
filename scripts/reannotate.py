@@ -7,10 +7,10 @@ from smfrcore.models.sql import create_app, TwitterCollection
 from smfrcore.models.cassandra import Tweet
 from smfrcore.utils import DEFAULT_HANDLER
 from smfrcore.ml.annotator import Annotator
-from smfrcore.ml.helpers import available_languages
+from smfrcore.ml.helpers import available_languages, models
 from smfrcore.geocoding.geocoder import Geocoder
 
-from scripts.utils import ParserHelpOnError
+from smfrcore.utils import ParserHelpOnError
 
 logger = logging.getLogger('Reannotator')
 logger.setLevel(logging.DEBUG)
@@ -31,6 +31,7 @@ def process(conf, lang):
         geocoder = Geocoder()
         tweets = Tweet.get_iterator(conf.collection_id, Tweet.COLLECTED_TYPE,
                                     lang=lang, out_format='obj', forked_process=True)
+        logger.info('>>>>> Loading model %s: %s', lang, models[lang])
         model, tokenizer = Annotator.load_annotation_model(lang)
         for i, t in enumerate(tweets, start=1):
             if not (i % 500):
@@ -44,6 +45,7 @@ def process(conf, lang):
             annotate_and_geocode_tweets(buffer_to_annotate, model, tokenizer, geocoder, collection)
             buffer_to_annotate.clear()
     logger.info('Finished processing for lang: %s', lang)
+    logger.info('Model used: %s', models[lang])
 
 
 def coords_in_collection_bbox(coordinates, tweet):

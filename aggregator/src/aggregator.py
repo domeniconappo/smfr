@@ -19,7 +19,7 @@ logging.getLogger('cassandra').setLevel(logging.ERROR)
 
 flask_app = create_app()
 
-flood_propability_ranges_env = os.getenv('FLOOD_PROBABILITY_RANGES', '0-10,10-90,90-100')
+flood_propability_ranges_env = os.getenv('FLOOD_PROBABILITY_RANGES', '0-10,10-80,80-100')
 flood_propability_ranges = [[int(g) for g in t.split('-')] for t in flood_propability_ranges_env.split(',')]
 orange_th = flood_propability_ranges[-2][0]
 red_th = flood_propability_ranges[-1][0]
