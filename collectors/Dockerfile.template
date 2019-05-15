@@ -23,7 +23,8 @@ COPY base/shared_libs/smfr_models/. /smfr_libs/models/
 COPY base/shared_libs/smfr_clients/. /smfr_libs/clients/
 RUN pip3.6 install -r /requirements/requirements.txt && pip3.6 install /smfr_libs/utils/ \
  && pip3.6 install /smfr_libs/models/ && pip3.6 install /smfr_libs/clients/ \
- && chmod -R a+x /scripts/ && rm -R /root/.cache
+ && chmod -R a+x /scripts/ && rm -R /root/.cache && apt-get autoremove -y \
+ && apt-get clean && rm -Rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 COPY ./collectors/src/. /collectors/
 

@@ -4,13 +4,14 @@ MAINTAINER Domenico Nappo <domenico.nappo@ext.ec.europa.eu>
 ENV LANG=C.UTF-8
 
 RUN mkdir -p /scripts && mkdir -p /geocoder && mkdir -p /requirements && mkdir -p /geocoder/smfrcore \
- && pip3.6 install spacy>=2.0.3,<2.1.0 && python3.6 -m spacy download en_core_web_lg-2.1.0
+ && pip3.6 install "spacy>=2.0.3,<2.1.0"
 
 ARG http_proxy
 ARG https_proxy
 
 COPY ./geocoder/requirements.txt /requirements/
-RUN pip3.6 install -r /requirements/requirements.txt
+RUN pip3.6 install -r /requirements/requirements.txt && apt-get autoremove -y \
+ && apt-get clean && rm -Rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 COPY base/shared_libs/scripts/wait_for_it.sh /scripts/
 COPY base/shared_libs/smfr_utils/. /smfr_libs/utils/
@@ -21,6 +22,7 @@ RUN pip3.6 install /smfr_libs/utils/ \
  && pip3.6 install /smfr_libs/models/ \
  && pip3.6 install /smfr_libs/analysis/ \
  && chmod -R a+x /scripts/ && rm -R /root/.cache
+RUN python3.6 -m spacy download en_core_web_lg
 
 COPY ./geocoder/src/. /geocoder
 WORKDIR /geocoder

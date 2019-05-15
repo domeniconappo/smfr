@@ -30,7 +30,8 @@ COPY base/shared_libs/smfr_clients/. /smfr_libs/clients/
 
 RUN pip3 install /smfr_libs/utils/ \
  && pip3 install /smfr_libs/clients/ \
- && chmod -R a+x /scripts/ && rm -R /root/.cache
+ && chmod -R a+x /scripts/ && rm -R /root/.cache && apt-get autoremove -y \
+ && apt-get clean && rm -Rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 EXPOSE 8888
 
