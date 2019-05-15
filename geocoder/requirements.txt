@@ -1,5 +1,5 @@
 numpy>=1.15.0
-mordecai==2.0.1
+mordecai>=2.0.3
 kafka-python==1.4.5
 ujson
 mysqlclient
