@@ -12,6 +12,7 @@ import numpy as np
 import ujson as json
 
 from cachetools import TTLCache
+from cassandra import ConsistencyLevel
 from cassandra.cluster import Cluster, default_lbp_factory, NoHostAvailable
 from cassandra.cqlengine.connection import Connection, DEFAULT_CONNECTION, _connections
 from cassandra.query import named_tuple_factory, PreparedStatement
@@ -51,7 +52,7 @@ def new_cassandra_session():
             cassandra_cluster = Cluster(_hosts, port=_port, **cluster_kwargs) if IN_DOCKER else Cluster(**cluster_kwargs)
             cassandra_session = cassandra_cluster.connect()
             cassandra_session.default_timeout = None
-            cassandra_session.default_fetch_size = os.getenv('CASSANDRA_FETCH_SIZE', 1000)
+            cassandra_session.default_fetch_size = int(os.getenv('CASSANDRA_FETCH_SIZE', 1000))
             cassandra_session.row_factory = named_tuple_factory
             cassandra_default_connection = Connection.from_session(DEFAULT_CONNECTION, session=cassandra_session)
             _connections[DEFAULT_CONNECTION] = cassandra_default_connection
@@ -308,23 +309,37 @@ class Tweet(cqldb.Model, CassandraHelpers):
             cls.samples_stmt = cls.session.prepare(
                 'SELECT * FROM {}.tweet WHERE collectionid=? AND ttype=? ORDER BY tweetid DESC LIMIT ?'.format(cls.__keyspace__)
             )
+            cls.samples_stmt.consistency_level = ConsistencyLevel.ONE
         if not hasattr(cls, 'stmt') or not isinstance(cls.stmt, PreparedStatement):
             cls.stmt = cls.session.prepare(
                 'SELECT * FROM {}.tweet WHERE collectionid=? AND ttype=? ORDER BY tweetid DESC'.format(cls.__keyspace__)
             )
+            cls.stmt.consistency_level = ConsistencyLevel.ONE
         if not hasattr(cls, 'stmt_with_last_tweetid') or not isinstance(cls.stmt_with_last_tweetid, PreparedStatement):
             cls.stmt_with_last_tweetid = cls.session.prepare(
                 'SELECT * FROM {}.tweet WHERE collectionid=? AND ttype=? AND tweet_id>?'.format(cls.__keyspace__)
             )
+            cls.stmt_with_last_tweetid.consistency_level = ConsistencyLevel.ONE
         if not hasattr(cls, 'stmt_single') or not isinstance(cls.stmt_single, PreparedStatement):
             cls.stmt_single = cls.session.prepare(
                 'SELECT * FROM {}.tweet WHERE collectionid=? AND ttype=? and tweetid=?'.format(cls.__keyspace__)
             )
-        fetch_size = os.getenv('CASSANDRA_FETCH_SIZE', 1000)
+            cls.stmt_single.consistency_level = ConsistencyLevel.ONE
+
+        fetch_size = int(os.getenv('CASSANDRA_FETCH_SIZE', 1000))
+        consistency = ConsistencyLevel.ONE
+
         cls.samples_stmt.fetch_size = fetch_size
+        cls.samples_stmt.consistency = consistency
+
         cls.stmt.fetch_size = fetch_size
+        cls.stmt.consistency = consistency
+
         cls.stmt_with_last_tweetid.fetch_size = fetch_size
+        cls.stmt_with_last_tweetid.consistency = consistency
+
         cls.stmt_single.fetch_size = fetch_size
+        cls.stmt_single.consistency = consistency
 
     @classmethod
     def make_table_object(cls, numrow, tweet_tuple):
